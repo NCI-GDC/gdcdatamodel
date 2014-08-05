@@ -1,9 +1,15 @@
 {
   "tcga_dcc" : {
-     "host" : "172.16.128.19:5000",
-     "user" : "",
-     "passwd" : "",
-     "index" : "tcga_dcc",
-     "type" : "analysis"
+      "host" : "http://172.16.128.19:5000",
+      "user" : "",
+      "passwd" : "",
+      "index" : "tcga_dcc",
+      "type" : "analysis"
+  },
+
+  "gdc_did" : {
+      "host" : "http://172.16.128.5:5000",
+      "user" : "",
+      "passwd" : ""
   }
 }
