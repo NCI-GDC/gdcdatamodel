@@ -26,13 +26,16 @@ def md5sum(filename):
 def download_file(url, dl_dir="/tmp"):
     local_filename = os.path.join(dl_dir, url.split("/")[-1])
     r = requests.get(url, stream=True)
+    if r.status_code != 200:
+        return (r.text, r.status_code)
+
     with open(local_filename, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
                 f.flush()
 
-    return local_filename
+    return (local_filename, r.status_code)
 
 class ConflictException(Exception):
     pass
@@ -142,12 +145,12 @@ class DCCDownloader:
             logging.info("work before %s: %s" % (f.__name__, json.dumps(self.work, indent=4,sort_keys=True)))
             f()
             logging.info("work after %s: %s" % (f.__name__, json.dumps(self.work,indent=4,sort_keys=True)))
+            if self.work["import_state"] == "error":
+                return
                          
         
             
     def _new_work(self):
-        #new_query = '{  "query" : { "term" : { "import_state" : "not_started" }}}'
-        #only do non-controlled data for now
         new_query = '{"import_state" : "not_started"}'
         
         r = requests.get(self.search_url, auth=(self.dcc_settings["user"], self.dcc_settings["passwd"]), data=new_query)
@@ -177,10 +180,24 @@ class DCCDownloader:
         self.work["download_start"] = timestamp()
         self.update_state()
 
-        local_md5sum = download_file(self.work["archive_url"] + ".md5", 
+        (local_md5sum, status_code_md5sum) = download_file(self.work["archive_url"] + ".md5", 
                                      dl_dir=self.local_settings["dl_dir"])
-        local_file = download_file(self.work["archive_url"], 
+        
+        if status_code_md5sum != 200:
+            self.work["import_state"] = "error"
+            self.work["message"] = "download md5sum file returned status code %s" % status_code_md5sum
+            self.update_state()
+            return
+
+        (local_file, status_code_file) = download_file(self.work["archive_url"], 
                                    dl_dir=self.local_settings["dl_dir"])
+
+        if status_code_file != 200:
+            self.work["import_state"] = "error"
+            self.work["message"] = "download file returned status code %s" % status_code_md5sum
+            self.update_state()
+            return
+
 
         self.work["filesize"] = os.path.getsize(local_file)
         self.work["download_location"] = local_file
@@ -200,7 +217,7 @@ class DCCDownloader:
         self.work["md5sum_finish"] = timestamp()
         if dl_md5sum != given_md5sum:
             self.work["message"] = "calculated md5sum %s does not match given %s" % (dl_md5sum, given_md5sum)
-            self.work["import_state"] = "md5sum_failed"
+            self.work["import_state"] = "error"
         else:
             self.work["md5"] = dl_md5sum
         
@@ -303,12 +320,12 @@ class DCCDownloader:
 
 
 def main():
-    n = 10000
+    n = 100
     for i in range(0, n):
         logging.info("i:  %d" % i)
         try:
             #probably should reset instead of reinstantiate...?
-            dl = DCCDownloader("test_worker2")            
+            dl = DCCDownloader("dcc_download_worker_01")            
             dl.resume_work()
         except ConflictException:
             logging.info("passing on conflict exception %d" % i)
