@@ -131,7 +131,7 @@ class DCCDownloader:
             workflow_start = 0
         elif self.work["import_state"] == "md5sum":
             workflow_start = 1
-        elif self.work["import_state"] == "upload":
+        elif self.work["import_state"] == "uploading":
             workflow_start = 2
         else:
             logging.error("Unexpected import_state: %s" % self.work["import_state"])
@@ -308,7 +308,7 @@ def main():
         logging.info("i:  %d" % i)
         try:
             #probably should reset instead of reinstantiate...?
-            dl = DCCDownloader("test_worker")            
+            dl = DCCDownloader("test_worker2")            
             dl.resume_work()
         except ConflictException:
             logging.info("passing on conflict exception %d" % i)
