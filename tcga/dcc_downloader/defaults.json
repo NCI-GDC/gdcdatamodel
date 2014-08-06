@@ -1,15 +1,18 @@
 {
   "tcga_dcc" : {
-      "host" : "http://172.16.128.19:5000",
+      "host" : "http://172.16.128.36:5000",
       "user" : "",
       "passwd" : "",
-      "index" : "tcga_dcc",
-      "type" : "analysis"
+      "table" : "tcga_dcc"
   },
 
   "gdc_did" : {
       "host" : "http://172.16.128.5:5000",
       "user" : "",
       "passwd" : ""
+  },
+
+  "local" : {
+      "dl_dir" : "/mnt/scratch/dcc"
   }
 }
