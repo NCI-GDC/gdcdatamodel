@@ -1,0 +1,73 @@
+from bcr_xml import * 
+
+import glob
+import psycopg2
+
+if __name__ == '__main__':
+    
+    # Go to the directory. Get a glob of filenames
+    #os.chdir("/home/martin/my_documents/consulting_practice/NCI/TCGA/05_dcc/all")
+    #files = glob.glob("*Level_1*/*clinical*.xml")
+    files = glob.glob("./nationwidechildrens.org_clinical.TCGA-G2-A2EF.*.xml")
+    num_in_files = len(files)
+    print("Number of files: %s" % num_in_files)
+    
+    # Go over each one, see if it passes muster. Flag those that don't
+    i = 1
+    
+    # Iterate over a copy of the list (not sure why the [:] makes a copy, but hey). Remove files from original list.
+    for file in files[:]:
+        print("%d Filename: %s" % (i, file))
+        i += 1
+        try:
+            xml_clin = BcrClinXmlClass(file)
+        except BadBcrXML as e:
+            print("EXCEPTION1: %s" % repr(e))
+            files.remove(file)
+            next
+        except Exception as e:
+            print("EXCEPTION2: %s" % repr(e))
+            exit()
+            
+#         if (i > 15):
+#             break
+            
+    print("Number of files before %s -  after: %s" % (num_in_files, len(files)))       
+    
+    # Load the ones that passed
+    # Open a DB connection
+    try:
+        conn = psycopg2.connect("dbname='BCR_xml' user='TCGAuser' host='knowitall.meshferguson.local' password='tcga-ster'")
+    except:
+        print("Unable to connect to DB")
+        exit(1)
+        
+    # Go over each file again
+    i = 1
+    cur = conn.cursor()
+    
+    for file in files:
+        print("%d Filename: %s" % (i, file))
+        i += 1
+        xml_clin = BcrClinXmlClass(file)
+        data_array = xml_clin.get_all()
+         
+        # Create a parameterized SQL string with the number of value '%s's = to length of the dictionary
+        sql = '''INSERT INTO clinical_xml_test (%s) VALUES (%s)''' % (','.join(data_array.keys()), ', '.join(['%s'] * len(data_array)))
+        # Creates something like: "INSERT INTO clinical_xml (xml_type,batch,...) VALUES (%s, %s, %s, ...)"
+        #print("SQL: %s" % sql)
+ 
+        try:
+            # Always let the library sub the parameters '%s" with data - DON'T do it above!
+            cur.execute(sql, tuple(data_array.values()))
+        except Exception as e:
+            print("Unable to insert into DB")
+            print(e)
+        finally:
+            conn.commit()
+ 
+#         if (i > 15):
+#             break
+
+    # Close the DB connection
+    conn.close()

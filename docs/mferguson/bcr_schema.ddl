@@ -1,0 +1,300 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: clinical_xml_v01; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE clinical_xml_v01 (
+    case_uuid uuid,
+    case_id character varying(16),
+    batch integer,
+    revision integer,
+    dcc_submission_date date,
+    xml xml,
+    instance_uuid uuid,
+    diff_xml xml,
+    is_latest boolean,
+    "is_PHI" boolean,
+    dcc_data_loaded_date date,
+    serial integer,
+    index integer NOT NULL,
+    schema_version real,
+    xml_type character varying(16),
+    project_code character varying(16),
+    disease_code character varying(16),
+    date_data_loaded_here timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.clinical_xml_v01 OWNER TO postgres;
+
+--
+-- Name: COLUMN clinical_xml_v01.diff_xml; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml_v01.diff_xml IS 'xmldiff output between this clinical XML file and the prior revision.';
+
+
+--
+-- Name: clinical_xml_index_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE clinical_xml_index_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.clinical_xml_index_seq OWNER TO postgres;
+
+--
+-- Name: clinical_xml_index_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE clinical_xml_index_seq OWNED BY clinical_xml_v01.index;
+
+
+--
+-- Name: clinical_xml; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE clinical_xml (
+    case_uuid uuid,
+    case_id character varying(16),
+    batch integer,
+    revision integer,
+    dcc_submission_date date,
+    xml xml,
+    instance_uuid uuid,
+    diff_xml xml,
+    is_latest boolean,
+    "is_PHI" boolean,
+    dcc_data_loaded_date date,
+    serial integer,
+    index integer DEFAULT nextval('clinical_xml_index_seq'::regclass) NOT NULL,
+    schema_version real,
+    xml_type character varying(16),
+    project_code character varying(16),
+    disease_code character varying(16),
+    date_xml_loaded_here timestamp with time zone DEFAULT now(),
+    dir_fname_location character varying(256),
+    tss_id character varying(6),
+    level integer
+);
+
+
+ALTER TABLE public.clinical_xml OWNER TO postgres;
+
+--
+-- Name: COLUMN clinical_xml.case_uuid; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.case_uuid IS 'UUID that is 1:1 with the case. The UUID must be unique across all projects (as opposed to case_id). A case is an individual person who donated tissues and data to TCGA.';
+
+
+--
+-- Name: COLUMN clinical_xml.case_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.case_id IS 'Alpha numeric case ID, assigned by some entity within the project to a patient. This ID is NOT guaranteed to be unique, but is likely to be so within a single project.';
+
+
+--
+-- Name: COLUMN clinical_xml.batch; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.batch IS 'batch is a grouping of CASES within a PROJECT, defined by having had their analytes shipped together the first time. It is an incrementing integer, and should be unique within a PROJECT. It is a key grouping component, permitting characterizations to deconvolute certain batch effects that skew molecular characterization statistics.';
+
+
+--
+-- Name: COLUMN clinical_xml.revision; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.revision IS 'A serial, incrementing index counting data revisions submitted within a particular BATCH.';
+
+
+--
+-- Name: COLUMN clinical_xml.dcc_submission_date; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.dcc_submission_date IS 'date when this XML instance was submitted to DCC (soon GDC).';
+
+
+--
+-- Name: COLUMN clinical_xml.xml; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.xml IS 'The XML.';
+
+
+--
+-- Name: COLUMN clinical_xml.instance_uuid; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.instance_uuid IS 'UUID for this instance of the XML. This must be unique across all PROJECTS. E.g. XML updates (e.g. new follow-up data on a patien) is a REVISION increment, and is therefore a new XML instance, is therefore a new UUID. This will be generated by BCR for XML submitted by them.';
+
+
+--
+-- Name: COLUMN clinical_xml.diff_xml; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.diff_xml IS 'xmldiff output between this clinical XML file and the prior revision.';
+
+
+--
+-- Name: COLUMN clinical_xml.is_latest; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.is_latest IS 'Is this the latest revision of an XML instance. Not implemented here, but is in DCC database.';
+
+
+--
+-- Name: COLUMN clinical_xml."is_PHI"; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml."is_PHI" IS 'boolean flag set if this instance contains PII or PHI and needs to be put in restricted access tier. THIS SHOULD NOT BE PART OF THE GDC RELATIONAL MODEL - IT SHOULD BE K:VALUE IN THE EAV MODEL.';
+
+
+--
+-- Name: COLUMN clinical_xml.serial; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.serial IS 'An incrementing counter in the DCC data model, generally unused. There are some exceptions. May not be necessary for GDC.';
+
+
+--
+-- Name: COLUMN clinical_xml.project_code; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.project_code IS 'CCG project code, e.g. TCGA, TARGET, REBC, ER, etc. This is an admininistrive grouping. THIS SHOULD NOT BE PART OF A GDC RELATIONAL DB MODEL - IT SHOULD BE K:VALUE IN THE EAV MODEL.';
+
+
+--
+-- Name: COLUMN clinical_xml.disease_code; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.disease_code IS 'disease study code, e.g. LUAD, GBM, NBL. Note: this is NOT a diagnostic description of the patiet; it is another grouping patients that is more biomedically oriented. THIS SHOULD NOT BE PART OF A GDC RELATIONAL DB MODEL - IT SHOULD BE K:VALUE IN THE EAV MODEL.';
+
+
+--
+-- Name: COLUMN clinical_xml.date_xml_loaded_here; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.date_xml_loaded_here IS 'Timestamp when this row was created.';
+
+
+--
+-- Name: COLUMN clinical_xml.dir_fname_location; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.dir_fname_location IS 'directory and filename for this XML instance. (Unfortunately) early in TCGA, much important metadata was, and some still is, stored in the directory and filenames. For BCR XML, this has almost all been now captured inside the XML, but for earlier instances, the directory/filename is still needed to get required metadata pertaining to clinical and biospecimen XML instances.';
+
+
+--
+-- Name: COLUMN clinical_xml.tss_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.tss_id IS 'alphanumeric identifier for a Tissue Source Site (TSS), i.e. clinical site where the patient samples and data came from. TSS ID aggregates 2 variables: institution ID and DISEASE STUDY CODE - they will be broken out inside the XML. In TARGET, it is just the DISEASE STUDY CODE.';
+
+
+--
+-- Name: COLUMN clinical_xml.level; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN clinical_xml.level IS 'data level of the XML in this row. DATA LEVEL is an arbitrary, project specific definitions, integer scale that ranks data according to how processed it is. E.g. in general, Level 1 is raw machine ouput, Level 2 is normalized, synthesized some how, Level 3 and 4 are analyzed to some degree and usually aggregated. All BCR clinical data XML and biospecimen data XML are considered Level 1, BCR tab-delimited data are considered Level 2.';
+
+
+--
+-- Name: index; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY clinical_xml_v01 ALTER COLUMN index SET DEFAULT nextval('clinical_xml_index_seq'::regclass);
+
+
+--
+-- Name: clnical_xml_test_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY clinical_xml
+    ADD CONSTRAINT clnical_xml_test_pkey PRIMARY KEY (index);
+
+
+--
+-- Name: cancer_case_batch_rev_index; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE UNIQUE INDEX cancer_case_batch_rev_index ON clinical_xml USING btree (disease_code, case_id, batch, revision);
+
+
+--
+-- Name: INDEX cancer_case_batch_rev_index; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON INDEX cancer_case_batch_rev_index IS 'Should, in theory, be a uniqe key per XML instance. Used by apps to determine whether an XML instance, based on its metadata (as opposed to filesystem name), is already loaded into DB.';
+
+
+--
+-- Name: dir_fname_index; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE UNIQUE INDEX dir_fname_index ON clinical_xml USING btree (dir_fname_location);
+
+
+--
+-- Name: INDEX dir_fname_index; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON INDEX dir_fname_index IS 'Index so apps can rapidly determine whether a particular XML instance, as stored in DCC filesystem (directory/filename) is already loaded into DB.';
+
+
+--
+-- Name: instance_uuid_index; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX instance_uuid_index ON clinical_xml USING btree (instance_uuid);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

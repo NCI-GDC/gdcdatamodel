@@ -1,0 +1,22 @@
+{
+  "dcc" : {
+    "latest" : "http://tcga-data.nci.nih.gov/datareports/resources/latestarchive",
+    "latest_header" : "ARCHIVE_NAME\tDATE_ADDED\tARCHIVE_URL",
+    "open_base" : "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/",
+    "controlled_base" : "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/"
+  },
+
+  "couch" : {
+    "host" : "http://127.0.0.1:5984",
+    "user" : "meta_user",
+    "passwd" : "changeme",
+    "name" : "tcga_dcc"
+  },
+
+  "psql" : {
+    "db" : "metadata",
+    "user" : "meta_user",
+    "passwd" : "changeme",
+    "table" : "tcga_dcc"
+  }
+}

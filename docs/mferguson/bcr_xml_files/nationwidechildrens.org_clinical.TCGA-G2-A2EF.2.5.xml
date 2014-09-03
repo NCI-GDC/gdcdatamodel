@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><blca:tcga_bcr xmlns:blca="http://tcga.nci/bcr/xml/clinical/blca/2.5" xmlns:admin="http://tcga.nci/bcr/xml/administration/2.5" xmlns:cqcf="http://tcga.nci/bcr/xml/clinical/cqcf/2.5" xmlns:rad="http://tcga.nci/bcr/xml/clinical/radiation/2.5" xmlns:rx="http://tcga.nci/bcr/xml/clinical/pharmaceutical/2.5" xmlns:shared="http://tcga.nci/bcr/xml/clinical/shared/2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="2.5" xsi:schemaLocation="http://tcga.nci/bcr/xml/clinical/blca/2.5 http://tcga-data.nci.nih.gov/docs/xsd/BCR/tcga.nci/bcr/xml/clinical/blca/2.5/TCGA_BCR.BLCA_Clinical.xsd">
+    <admin:admin>
+        <admin:bcr xsd_ver="1.17">Nationwide Children's Hospital</admin:bcr>
+        <admin:batch_number xsd_ver="1.17">175.10.0</admin:batch_number>
+        <admin:disease_code xsd_ver="2.3">BLCA</admin:disease_code>
+        <admin:day_of_dcc_upload xsd_ver="1.17">12</admin:day_of_dcc_upload>
+        <admin:month_of_dcc_upload xsd_ver="1.17">4</admin:month_of_dcc_upload>
+        <admin:year_of_dcc_upload xsd_ver="1.17">2012</admin:year_of_dcc_upload>
+    </admin:admin>
+    <blca:patient>
+        <shared:tissue_source_site cde="" owner="TSS" procurement_status="Completed" xsd_ver="2.4">G2</shared:tissue_source_site>
+        <shared:patient_id cde="" owner="TSS" procurement_status="Completed" xsd_ver="2.4">A2EF</shared:patient_id>
+        <shared:bcr_patient_barcode cde="2673794" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" xsd_ver="1.8">TCGA-G2-A2EF</shared:bcr_patient_barcode>
+        <shared:bcr_patient_uuid cde="" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" xsd_ver="2.3">2A142731-119C-495D-AD30-EB0B48BACB46</shared:bcr_patient_uuid>
+        <shared:informed_consent_verified cde="2714689" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="1" xsd_ver="2.4">YES</shared:informed_consent_verified>
+        <shared:icd_o_3_site cde="3226281" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.4">C67.9</shared:icd_o_3_site>
+        <shared:icd_o_3_histology cde="3226275" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.4">8120/3</shared:icd_o_3_histology>
+        <shared:icd_10 cde="3226287" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.4" xsi:nil="true"/>
+        <shared:day_of_form_completion cde="2975716" display_order="2" owner="TSS" preferred_name="Day of Form Completion" procurement_status="Completed" tier="1" xsd_ver="2.2">27</shared:day_of_form_completion>
+        <shared:month_of_form_completion cde="2975718" display_order="1" owner="TSS" preferred_name="Month of Form Completion" procurement_status="Completed" tier="1" xsd_ver="2.2">10</shared:month_of_form_completion>
+        <shared:year_of_form_completion cde="2975720" display_order="3" owner="TSS" preferred_name="Year of Form Completion" procurement_status="Completed" tier="1" xsd_ver="2.2">2011</shared:year_of_form_completion>
+        <blca:tissue_prospective_collection_indicator cde="3088492" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="1" xsd_ver="2.3">NO</blca:tissue_prospective_collection_indicator>
+        <blca:tissue_retrospective_collection_indicator cde="3088528" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="1" xsd_ver="2.3">YES</blca:tissue_retrospective_collection_indicator>
+        <shared:days_to_birth cde="" owner="TSS" precision="day" procurement_status="Completed" tier="1" xsd_ver="1.16">-18467</shared:days_to_birth>
+        <shared:gender cde="2200604" display_order="9" owner="TSS" preferred_name="Gender" procurement_status="Completed" tier="1" xsd_ver="1.8">MALE</shared:gender>
+        <shared:height cde="649" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="1" xsd_ver="2.2">172.7</shared:height>
+        <shared:weight cde="651" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="1" xsd_ver="2.2">73</shared:weight>
+        <shared:race cde="2192199" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="1.8">WHITE</shared:race>
+        <shared:ethnicity cde="2192217" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="1.9">NOT HISPANIC OR LATINO</shared:ethnicity>
+        <shared:prior_diagnosis cde="61396" display_order="12" owner="TSS" preferred_name="Hisotry of Prior Malignancy" procurement_status="Completed" tier="1" xsd_ver="2.2">NO</shared:prior_diagnosis>
+        <shared:pretreatment_history cde="64176" display_order="13" owner="TSS" preferred_name="Neo-Adjuvant (pre-operative) therapy" procurement_status="Completed" tier="1" xsd_ver="1.8">NO</shared:pretreatment_history>
+        <shared:vital_status cde="2939553" display_order="14" owner="TSS" preferred_name="Vital Status (at date last contact)" procurement_status="Completed" tier="1" xsd_ver="1.8">LIVING</shared:vital_status>
+        <shared:days_to_last_followup cde="" owner="TSS" precision="day" procurement_status="Completed" tier="1" xsd_ver="1.16">1497</shared:days_to_last_followup>
+        <shared:days_to_last_known_alive cde="" owner="TSS" procurement_status="Not Available" tier="1" xsd_ver="2.1"/>
+        <shared:days_to_death cde="" owner="TSS" procurement_status="Not Available" tier="1" xsd_ver="1.16"/>
+        <shared:person_neoplasm_cancer_status cde="2759550" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="1.9">TUMOR FREE</shared:person_neoplasm_cancer_status>
+        <blca:person_occupation_description_text cde="2435398" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <blca:occupation_primary_job cde="5714" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">Semi-retired retail salesman</blca:occupation_primary_job>
+        <blca:chemical_exposure_text cde="2596673" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <blca:person_primary_industry_text cde="3135408" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <blca:person_occupation_years_number cde="2435424" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <blca:tobacco_smoking_history_indicator cde="2181650" display_order="84" owner="TSS" preferred_name="Tobacco smoking history indicator" procurement_status="Completed" tier="2" xsd_ver="2.3">2</blca:tobacco_smoking_history_indicator>
+        <blca:age_began_smoking_in_years cde="2178045" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">16</blca:age_began_smoking_in_years>
+        <shared:stopped_smoking_year cde="2228610" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="1" xsd_ver="2.5"/>
+        <shared:number_pack_years_smoked cde="2955385" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.5">35</shared:number_pack_years_smoked>
+        <blca:blood_relative_cancer_history_list>
+            <blca:blood_relative_cancer_history>
+                <blca:family_medical_history_relative_family_member_relationship_type cde="2783641" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">Grandfather</blca:family_medical_history_relative_family_member_relationship_type>
+                <blca:cancer_diagnosis_cancer_type_icd9_text_name cde="2195089" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">Prostate</blca:cancer_diagnosis_cancer_type_icd9_text_name>
+            </blca:blood_relative_cancer_history>
+        </blca:blood_relative_cancer_history_list>
+        <shared:tumor_tissue_site cde="2735776" display_order="54" owner="TSS" preferred_name="Primary Site of Disease" procurement_status="Completed" tier="1" xsd_ver="2.4">BLADDER</shared:tumor_tissue_site>
+        <shared:tumor_histologic_subtype cde="2831122" display_order="56" owner="TSS" preferred_name="Histological Subtype" procurement_status="Completed" tier="1" xsd_ver="2.5">Muscle invasive urothelial carcinoma</shared:tumor_histologic_subtype>
+        <blca:diagnosis_subtype cde="2783887" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">Non-Papillary</blca:diagnosis_subtype>
+        <blca:bladder_tumor_histologic_who_2004_grade cde="2867375" display_order="90" owner="TSS" preferred_name="Tumor Grade" procurement_status="Completed" tier="2" xsd_ver="2.3">High Grade</blca:bladder_tumor_histologic_who_2004_grade>
+        <shared:anatomic_organ_subdivision cde="2008006" display_order="71" owner="TSS" preferred_name="Anatomic Organ Sub-Division" procurement_status="Completed" tier="1" xsd_ver="2.5">Wall, NOS</shared:anatomic_organ_subdivision>
+        <shared:days_to_initial_pathologic_diagnosis cde="" owner="TSS" precision="day" procurement_status="Completed" tier="1" xsd_ver="1.16">0</shared:days_to_initial_pathologic_diagnosis>
+        <shared:age_at_initial_pathologic_diagnosis cde="" owner="TSS" procurement_status="Completed" tier="1" xsd_ver="1.16">50</shared:age_at_initial_pathologic_diagnosis>
+        <shared:year_of_initial_pathologic_diagnosis cde="2896960" display_order="24" owner="TSS" preferred_name="Year of Initial Pathologic Diagnosis" procurement_status="Completed" tier="1" xsd_ver="1.12">2007</shared:year_of_initial_pathologic_diagnosis>
+        <shared:initial_pathologic_diagnosis_method cde="2757941" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.5">Transurethral resection (TURBT)</shared:initial_pathologic_diagnosis_method>
+        <blca:first_pathologic_diagnosis_biospecimen_acquisition_other_method_text cde="2757948" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Applicable" tier="1" xsd_ver="2.3" xsi:nil="true"/>
+        <shared:primary_lymph_node_presentation_assessment cde="2200396" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.5">NO</shared:primary_lymph_node_presentation_assessment>
+        <shared:lymph_node_examined_count cde="3" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.5"/>
+        <shared:number_of_lymphnodes_positive_by_he cde="3086388" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.5"/>
+        <blca:disease_extracapsular_extension_ind-3 cde="64165" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <blca:bladder_carcinoma_extracapsular_extension_status cde="3130374" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <shared:lymphovascular_invasion_present cde="64727" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <shared:ajcc_cancer_staging_handbook_edition cde="2722309" display_order="79" owner="TSS" preferred_name="AJCC Cancer Staging Edition" procurement_status="Completed" tier="1" xsd_ver="2.5">7th</shared:ajcc_cancer_staging_handbook_edition>
+        <blca:bladder_carcinoma_clinical_t_stage cde="3135236" display_order="310" owner="TSS" preferred_name="Clinical Assessment Primary Tumor (cT)" procurement_status="Completed" tier="2" xsd_ver="2.3">pT2a</blca:bladder_carcinoma_clinical_t_stage>
+        <shared:ajcc_tumor_stage_code cde="3045435" display_order="80" owner="TSS" preferred_name="Pathologic T Stage" procurement_status="Not Available" tier="1" xsd_ver="2.5"/>
+        <shared:ajcc_neoplasm_disease_lymph_node_stage cde="3203106" display_order="81" owner="TSS" preferred_name="Pathologic N Stage" procurement_status="Completed" tier="1" xsd_ver="2.5">N0</shared:ajcc_neoplasm_disease_lymph_node_stage>
+        <shared:ajcc_cancer_metastasis_stage_code cde="3045439" display_order="82" owner="TSS" preferred_name="M Stage" procurement_status="Completed" tier="1" xsd_ver="2.5">M0</shared:ajcc_cancer_metastasis_stage_code>
+        <blca:malignant_neoplasm_metastatic_involvement_sites>
+            <blca:malignant_neoplasm_metastatic_involvement_site cde="62835" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">None</blca:malignant_neoplasm_metastatic_involvement_site>
+        </blca:malignant_neoplasm_metastatic_involvement_sites>
+        <blca:other_metastatic_involvement_anatomic_site cde="3135371" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <shared:ajcc_neoplasm_disease_stage cde="3203222" display_order="83" owner="TSS" preferred_name="Stage" procurement_status="Completed" tier="2" xsd_ver="2.5">Stage III</shared:ajcc_neoplasm_disease_stage>
+        <blca:person_concomitant_prostate_carcinoma_occurrence_indicator cde="3135387" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.3">NO</blca:person_concomitant_prostate_carcinoma_occurrence_indicator>
+        <blca:person_concomitant_prostate_carcinoma_pathologic_t_stage cde="3135398" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <blca:gleason_score_combined_pattern_value cde="2634976" display_order="9999" owner="TSS" preferred_name="" procurement_status="Not Available" tier="2" xsd_ver="2.3"/>
+        <shared:karnofsky_performance_score cde="2003853" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="1.8">90</shared:karnofsky_performance_score>
+        <shared:eastern_cancer_oncology_group cde="88" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="1.9">1</shared:eastern_cancer_oncology_group>
+        <blca:follow_ups/>
+        <rx:drugs/>
+        <rad:radiations/>
+        <blca:clinical_cqcf>
+            <shared:anatomic_organ_subdivision cde="2008006" display_order="71" owner="TSS" preferred_name="Anatomic Organ Sub-Division" procurement_status="Pending" tier="1" xsd_ver="2.5" xsi:nil="true"/>
+            <cqcf:consent_or_death_status cde="3288361" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.5">Consented</cqcf:consent_or_death_status>
+            <cqcf:days_to_consent cde="" owner="TSS" precision="day" procurement_status="Completed" tier="2" xsd_ver="2.5">42</cqcf:days_to_consent>
+            <cqcf:diagnosis_subtype cde="2783887" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5"/>
+            <shared:prior_diagnosis cde="61396" display_order="12" owner="TSS" preferred_name="Hisotry of Prior Malignancy" procurement_status="Pending" tier="1" xsd_ver="2.2" xsi:nil="true"/>
+            <cqcf:history_of_neoadjuvant_treatment cde="" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" xsd_ver="2.5">None</cqcf:history_of_neoadjuvant_treatment>
+            <cqcf:normal_tissue_anatomic_site cde="3081938" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5"/>
+            <cqcf:normal_tissue_proximity cde="3088708" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5"/>
+            <cqcf:tumor_focality cde="3174022" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5"/>
+            <cqcf:tumor_type cde="3288124" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.5">Tumor specimen from de novo untreated malignancy of the bladder</cqcf:tumor_type>
+            <cqcf:other_diagnosis cde="3124492" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5" xsi:nil="true"/>
+            <cqcf:histological_subtype cde="3081934" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5"/>
+            <cqcf:other_anatomic_site cde="3320289" display_order="9999" owner="TSS" preferred_name="" procurement_status="Pending" tier="2" xsd_ver="2.5" xsi:nil="true"/>
+            <cqcf:country cde="3203072" display_order="9999" owner="TSS" preferred_name="" procurement_status="Completed" tier="2" xsd_ver="2.5">United States</cqcf:country>
+        </blca:clinical_cqcf>
+    </blca:patient>
+</blca:tcga_bcr>
