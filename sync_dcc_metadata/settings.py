@@ -1,6 +1,5 @@
 import json, requests
 
-
 class Settings(object):
 
     controllerHost = "controller"
