@@ -7,9 +7,10 @@ class Settings(object):
     catalog_api = "v1/catalog"
     services = {}
 
-    def __init__(self,path,namespace,strict=True):
+    def __init__(self,path = None ,namespace = None,strict=True):
         # Load the json settings file provided.
-        self.settings = json.loads(open(path).read(), strict=strict)[namespace]
+        if path and namespace:
+            self.settings = json.loads(open(path).read(), strict=strict)[namespace]
 
     def pollServices(self, controllerHost = None):
 
@@ -26,8 +27,9 @@ class Settings(object):
         r = requests.get(services_uri)
 
         if r.status_code != 200:
-            print "ERROR: unable to communicate with consul server"
-
+            print r.text
+            raise Exception("ERROR: unable to communicate with consul server")
+        
         services = r.json()
         for service in services:
             print "Found service %s" % service

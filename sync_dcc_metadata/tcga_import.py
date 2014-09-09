@@ -59,7 +59,17 @@ class TCGAImporter:
 
         logging.info("archive_metadata: %s"  % json.dumps(archive_metadata, indent=4, sort_keys=True))
 
-        conn = psycopg2.connect(dbname=self.psql_settings["db"], user=self.psql_settings["user"], password=self.psql_settings["passwd"])
+        sets = settings.Settings()
+        sets.pollServices()
+        psql_host = sets.getServiceAddress('datastore')
+        print psql_host
+
+        conn = psycopg2.connect(
+            host     = psql_host,
+            dbname   = self.psql_settings["db"], 
+            user     = self.psql_settings["user"], 
+            password = self.psql_settings["passwd"]
+        )
         cur = conn.cursor()
         #first check if exists
         #        cur.execute("SELECT * FROM tcga_dcc WHERE doc @> %s", (archive_metadata["center_name"],))
