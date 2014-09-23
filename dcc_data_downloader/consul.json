@@ -1,0 +1,6 @@
+{
+    "service": {
+        "name": "dcc_data_downloader",
+        "tags": []
+    }
+}
