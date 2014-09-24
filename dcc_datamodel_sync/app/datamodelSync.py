@@ -9,24 +9,33 @@ class DatamodelSync:
 
         self.plugins = settings['plugins']
 
-        # Caching for imported and converted docs
-        self.imported = {}
-        self.converted = {}
-
         # Load the plugins
-        self.schedulers  = [module.Scheduler()  for module in self.loadPlugins('schedulers')]
-        self.conversions = [module.Conversion() for module in self.loadPlugins('conversions')]
-        self.exports     = [module.Export()     for module in self.loadPlugins('exports')]
+        self.schedulers  = self.loadPlugins('schedulers')
+        self.conversions = self.loadPlugins('conversions')
+        self.exports     = self.loadPlugins('exports')
 
-        
-
-        assert len(self.schedulers) > 0, "No scheduler plugins were set"
-        assert len(self.conversions) > 0, "No conversion plugins were set"
-        assert len(self.exports) > 0, "No export plugins were set"
+        assert len(self.schedulers) > 0, "No scheduler plugins were loaded."
+        assert len(self.conversions) > 0, "No conversion plugins were loaded."
+        assert len(self.exports) > 0, "No export plugins were loaded."
 
         logging.info("Running with schedulers {plugins}".format(plugins = self.schedulers))
         logging.info("Running with conversions {plugins}".format(plugins = self.conversions))
         logging.info("Running with exports {plugins}".format(plugins = self.exports))
+
+    def initializePlugin(self, module, name, pluginType):
+        
+        kwargs = {}
+        if name in settings.settings:
+            kwargs = settings[name]
+            
+        if pluginType == "schedulers":
+            return module.Scheduler(**kwargs)
+        elif pluginType == "conversions":
+            return module.Conversion(**kwargs)
+        elif pluginType == "exports":
+            return module.Export(**kwargs)
+
+        return None
 
     def loadPlugins(self, pluginType):
 
@@ -47,11 +56,12 @@ class DatamodelSync:
 
             # Attempt to import the plugin and add to the list
             try:
-                plugins.append(imp.load_source(plugin, pluginPath))
+                module = imp.load_source(plugin, pluginPath)
+                plugins.append(self.initializePlugin(module, plugin, pluginType))
             except Exception, msg:
                 logging.error("Unable to load plugin: [{ptype}] {plugin}: {msg}".format(ptype = pluginType, plugin = plugin, msg = str(msg)))
             else:
-                logging.info("Plugin loaded successfully: [{ptype}] {plugin}".format(ptype = pluginType, plugin = plugin))
+                logging.info("SUCCESS: Loaded plugin: [{ptype}] {plugin}".format(ptype = pluginType, plugin = plugin))
 
         # Returns a list of plugin objects
         return plugins
@@ -65,6 +75,8 @@ class DatamodelSync:
     def schedule(self, scheduler):
         logging.info("Scheduling work with {scheduler}".format(scheduler = scheduler))
 
+        scheduler.load()
+
         for doc in scheduler:
             for conversion in self.conversions:
                 self.convert(conversion, doc)
@@ -72,13 +84,12 @@ class DatamodelSync:
     def convert(self, conversion, doc):
         logging.debug("Starting conversion with {conversion}".format(conversion = conversion))
 
-        # CONVERT HERE
-        doc = doc
+        converted = conversion.convert(doc)
 
+        # print converted
         for export in self.exports:
-            self.export(export, doc)
+            self.export(export, converted)
 
     def export(self, exporter, doc):
         logging.debug("Starting export with {exporter}".format(exporter = exporter))
-
-        pass
+        exporter.export(doc)

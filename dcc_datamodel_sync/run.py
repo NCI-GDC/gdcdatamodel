@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 import logging
-logging.basicConfig(level = logging.DEBUG, format = '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' )
+# logging.basicConfig(level = logging.DEBUG, format = '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' )
+logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' )
 
 from app.datamodelSync import DatamodelSync
 

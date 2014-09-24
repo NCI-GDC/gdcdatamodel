@@ -13,14 +13,14 @@ class Settings:
 
     default_path = "settings.yaml"
 
-    def lookup(self, key):
+    def lookup(self, key, default = None):
         """ 
         Insert any indirect lookups in this function
         """
 
         if key not in self.settings:
-            logging.error("Key [{key}] was not in settings dictionary".format(key = key))
-            return None
+            logging.error("Settings: Key [{key}] was not in settings dictionary".format(key = key))
+            return default
 
         return self.settings[key]
 
@@ -60,7 +60,7 @@ class Settings:
             logging.error("Unable to load settings from {path}: {msg}".format(path = path, msg = str(msg)))
             logging.info("Proceeding with no settings")
         else:
-            logging.info("Successfully loaded settings from {path}.".format(path = path))
+            logging.info("SUCCESS: loaded settings from {path}.".format(path = path))
             logging.debug(self)
             
         return self

@@ -1,5 +1,5 @@
 
-# Plugin settings
+# Plugins
 plugins:
 
   paths:
@@ -7,12 +7,26 @@ plugins:
     conversions: plugins/conversions
     exports: plugins/exports
 
-  schedulers: 
-    - signpost
+  schedulers:
+    - file
   
   conversions:
     - json_flat
 
   exports:
     - postgres
+    - couchdb
+    - stdout
 
+postgres:
+  database: dcc_datamodel
+  user: postgres
+  password: password
+  host: localhost
+  port: 5432
+
+json_flat:
+  flatten: True
+
+file:
+  path: /home/ubuntu/xml_list

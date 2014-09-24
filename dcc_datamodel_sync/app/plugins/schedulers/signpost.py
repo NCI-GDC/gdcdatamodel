@@ -12,14 +12,12 @@ class Scheduler(base.Scheduler):
     Default signpost scheduler
     """
 
-
     def __init__(self, **kwargs):
-        self.docs = []
+        self.docs = range(10)
 
     def __iter__(self):
-        for attr in dir(self):
-            if not attr.startswith("__"):
-                yield attr
+        for doc in self.docs:
+            yield doc
 
     def load(self, **kwargs):
         pass
