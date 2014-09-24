@@ -14,9 +14,11 @@ class DatamodelSync:
         self.converted = {}
 
         # Load the plugins
-        self.schedulers  = self.loadPlugins('schedulers')
-        self.conversions = self.loadPlugins('conversions')
-        self.exports     = self.loadPlugins('exports')
+        self.schedulers  = [module.Scheduler()  for module in self.loadPlugins('schedulers')]
+        self.conversions = [module.Conversion() for module in self.loadPlugins('conversions')]
+        self.exports     = [module.Export()     for module in self.loadPlugins('exports')]
+
+        
 
         assert len(self.schedulers) > 0, "No scheduler plugins were set"
         assert len(self.conversions) > 0, "No conversion plugins were set"
@@ -33,12 +35,13 @@ class DatamodelSync:
 
         plugins = []
 
+        # Loop over all plugins for given type
         for plugin in self.plugins[pluginType]:
 
             logging.info("Loading plugin: [{ptype}] {plugin}".format(ptype = pluginType, plugin = plugin))
 
             # Build plugin file path
-            pluginDir = self.plugins['paths']['schedulers']
+            pluginDir = self.plugins['paths'][pluginType]
             pluginPath = os.path.join(baseDir, pluginDir, "{plugin}.py".format(plugin = plugin))
             logging.info("Looking for plugin at {path}".format(path = pluginPath))
 
@@ -53,20 +56,29 @@ class DatamodelSync:
         # Returns a list of plugin objects
         return plugins
 
-    def schedule(self, scheduler):
-        logging.info("Scheduling work using {plugin}".format(plugin = scheduler))
-        
-        
-        
-        # for conversion in self.conversions:
-            
-        
-
-    def start(self):
+    def run(self):
         logging.info("Starting DatamodelSync")
         
         for scheduler in self.schedulers:
             self.schedule(scheduler)
         
+    def schedule(self, scheduler):
+        logging.info("Scheduling work with {scheduler}".format(scheduler = scheduler))
+
+        for doc in scheduler:
+            for conversion in self.conversions:
+                self.convert(conversion, doc)
             
-            
+    def convert(self, conversion, doc):
+        logging.debug("Starting conversion with {conversion}".format(conversion = conversion))
+
+        # CONVERT HERE
+        doc = doc
+
+        for export in self.exports:
+            self.export(export, doc)
+
+    def export(self, exporter, doc):
+        logging.debug("Starting export with {exporter}".format(exporter = exporter))
+
+        pass

@@ -7,4 +7,4 @@ from app.datamodelSync import DatamodelSync
 
 if __name__ == '__main__':
     sync = DatamodelSync()
-    sync.start()
+    sync.run()

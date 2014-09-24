@@ -7,6 +7,10 @@ class Scheduler:
         pass
 
     @abc.abstractmethod
+    def __iter__(self):
+        pass
+
+    @abc.abstractmethod
     def load(self, **kwargs):
         pass
 
