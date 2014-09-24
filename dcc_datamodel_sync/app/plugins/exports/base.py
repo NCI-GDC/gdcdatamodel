@@ -2,7 +2,6 @@ import abc
 
 class Export(object):
 
-
     def __init__(self, **kwargs):
         self.ignoreSchedulers  = kwargs.pop('ignoreSchedulers', [])
         self.ignoreConversions = kwargs.pop('ignoreConversions', [])
@@ -15,7 +14,6 @@ class Export(object):
     def _export(self, doc, **kwargs):
         scheduler  = kwargs.pop('schedulerPlugin', '')
         conversion = kwargs.pop('conversionPlugin', '')
-
 
         if scheduler in self.ignoreSchedulers:
             return None
