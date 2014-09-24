@@ -1,0 +1,18 @@
+
+# Plugin settings
+plugins:
+
+  paths:
+    schedulers: plugins/schedulers
+    conversions: plugins/conversions
+    exports: plugins/exports
+
+  schedulers: 
+    - signpost
+  
+  conversions:
+    - json_flat
+
+  exports:
+    - postgres
+
