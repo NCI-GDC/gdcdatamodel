@@ -3,14 +3,13 @@
 
 In order to make a plugin, you need to do three things:
 
-### 1) write a Scheduler(), Conversion(), or Export() class that over-rides the base
+##### 1) write a Scheduler(), Conversion(), or Export() class that over-rides the base class
 
 
+##### 2) add the name of the file to the settings.yaml file
 
-### 2) add the name of the file to the settings.yaml file
 
-
-### 3) add any __init__() arguments to the settings.yaml file
+##### 3) add any __init__() arguments to the settings.yaml file
 
 
 ## Requirements
