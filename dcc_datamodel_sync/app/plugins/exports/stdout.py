@@ -7,7 +7,7 @@ base       = imp.load_source('Export', basePath)
 
 class Export(base.Export):
 
-    def __init__(self, **kwargs):
+    def initialize(self, **kwargs):
         pass
 
     def export(self, doc, **kwargs):

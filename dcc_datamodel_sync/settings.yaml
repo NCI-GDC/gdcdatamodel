@@ -12,9 +12,9 @@ plugins:
   
   conversions:
     - json_flat
+    - json_nested
 
   exports:
-    - postgres
     - couchdb
     - stdout
 
@@ -30,3 +30,12 @@ json_flat:
 
 file:
   path: /home/ubuntu/xml_list
+
+# Below is an example of how to tell a plugin to ignore a scheduler or
+# conversion plugin that passed it a document
+
+stdout:
+  ignoreConversions: 
+    - json_nested
+  ignoreSchedulers: 
+    - signpost

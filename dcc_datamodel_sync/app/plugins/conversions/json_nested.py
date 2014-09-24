@@ -13,6 +13,6 @@ class Conversion(base.Conversion):
 
     def convert(self, doc, **kwargs):
         self.conv.loadFromString(str(doc))
-        doc = self.conv.toJSON(flatten=True)
+        doc = self.conv.toJSON(flatten=False)
         return doc
         

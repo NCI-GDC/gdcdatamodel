@@ -26,6 +26,7 @@ class Scheduler(base.Scheduler):
 
         self.path = kwargs['path']
 
+
     def __iter__(self):
         for url in self.urls:
             local = url.split('/')[-1]

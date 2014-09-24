@@ -42,7 +42,7 @@ class DatamodelSync:
         assert pluginType in self.plugins, "No plugins of type [{ptype}] defined!".format(ptype = pluginType)
         assert pluginType in self.plugins['paths'], "No path to plugins of type [{ptype}] defined!".format(ptype = pluginType)
 
-        plugins = []
+        plugins = {}
 
         # Loop over all plugins for given type
         for plugin in self.plugins[pluginType]:
@@ -57,7 +57,7 @@ class DatamodelSync:
             # Attempt to import the plugin and add to the list
             try:
                 module = imp.load_source(plugin, pluginPath)
-                plugins.append(self.initializePlugin(module, plugin, pluginType))
+                plugins[plugin] = self.initializePlugin(module, plugin, pluginType)
             except Exception, msg:
                 logging.error("Unable to load plugin: [{ptype}] {plugin}: {msg}".format(ptype = pluginType, plugin = plugin, msg = str(msg)))
             else:
@@ -68,28 +68,34 @@ class DatamodelSync:
 
     def run(self):
         logging.info("Starting DatamodelSync")
+
+        # Pass to schedulers
+        for schedulerPlugin, scheduler in self.schedulers.iteritems():
+            self.schedule(scheduler, schedulerPlugin = schedulerPlugin)
         
-        for scheduler in self.schedulers:
-            self.schedule(scheduler)
-        
-    def schedule(self, scheduler):
+    def schedule(self, scheduler, **kwargs):
         logging.info("Scheduling work with {scheduler}".format(scheduler = scheduler))
 
+        # Tell the scheduler to start 
         scheduler.load()
 
+        # Convert all docs
         for doc in scheduler:
-            for conversion in self.conversions:
-                self.convert(conversion, doc)
+            for conversionPlugin, conversion in self.conversions.iteritems():
+                self.convert(conversion, doc, conversionPlugin = conversionPlugin, **kwargs)
             
-    def convert(self, conversion, doc):
+    def convert(self, conversion, doc, **kwargs):
         logging.debug("Starting conversion with {conversion}".format(conversion = conversion))
 
-        converted = conversion.convert(doc)
+        # Convert the doc
+        converted = conversion._convert(doc)
 
-        # print converted
-        for export in self.exports:
-            self.export(export, converted)
+        # Pass doc to exporters
+        for exportPlugin, export in self.exports.iteritems():
+            self.export(export, converted, exportPlugin = exportPlugin, **kwargs)
 
-    def export(self, exporter, doc):
+    def export(self, exporter, doc, **kwargs):
         logging.debug("Starting export with {exporter}".format(exporter = exporter))
-        exporter.export(doc)
+
+        # Export the doc
+        exporter._export(doc, **kwargs)
