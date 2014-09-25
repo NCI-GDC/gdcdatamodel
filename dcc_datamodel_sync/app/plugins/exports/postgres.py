@@ -1,4 +1,4 @@
-import os, imp, json, pprint
+import os, imp, json, pprint, logging
 
 from sqlalchemy import create_engine, select, MetaData, Table, Column, Integer
 
@@ -30,6 +30,9 @@ class Export(base.Export):
 
         table = self.table
         ins = table.insert().returning(table.c.id).values(type=docType, doc=doc)
+        
+        logging.debug("SUCCESS: added document to postgres")
+        
         conn = self.engine.connect()
         result = conn.execute(ins).fetchall()
         conn.close()
