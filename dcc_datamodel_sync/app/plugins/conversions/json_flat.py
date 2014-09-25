@@ -11,8 +11,11 @@ class Conversion(base.Conversion):
     def initialize(self, **kwargs):
         self.conv = xml2json.xml2json()
 
-    def convert(self, doc, **kwargs):
+    def convert(self, doc, schedulerDetails, **kwargs):
         self.conv.loadFromString(str(doc))
+
         doc = self.conv.toJSON(flatten=True)
-        return doc
+        details = {}
+
+        return doc, details
         

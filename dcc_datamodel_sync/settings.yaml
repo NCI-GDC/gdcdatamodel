@@ -12,11 +12,11 @@ plugins:
   
   conversions:
     - json_flat
-    - json_nested
 
   exports:
-    - couchdb
-    - stdout
+    - postgres
+    # - stdout
+
 
 postgres:
   database: dcc_datamodel
@@ -24,6 +24,9 @@ postgres:
   password: password
   host: localhost
   port: 5432
+  table: dcc_datamodel
+  onlyConversions:
+    - json_flat
 
 json_flat:
   flatten: True
@@ -37,5 +40,6 @@ file:
 stdout:
   ignoreConversions: 
     - json_nested
+
   ignoreSchedulers: 
     - signpost

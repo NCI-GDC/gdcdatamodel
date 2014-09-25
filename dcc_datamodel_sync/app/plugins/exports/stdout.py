@@ -10,7 +10,7 @@ class Export(base.Export):
     def initialize(self, **kwargs):
         pass
 
-    def export(self, doc, **kwargs):
+    def export(self, doc, schedulerDetails, conversionDetails, **kwargs):
         pprint(doc)
 
     def close(self, **kwargs):

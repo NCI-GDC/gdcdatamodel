@@ -12,7 +12,7 @@ class Scheduler(base.Scheduler):
     Default signpost scheduler
     """
 
-    def __init__(self, **kwargs):
+    def initialize(self, **kwargs):
         self.docs = range(10)
 
     def __iter__(self):

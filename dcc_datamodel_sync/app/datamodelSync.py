@@ -80,22 +80,22 @@ class DatamodelSync:
         scheduler.load()
 
         # Convert all docs
-        for doc in scheduler:
+        for doc, schedulerDetails in scheduler:
             for conversionPlugin, conversion in self.conversions.iteritems():
-                self.convert(conversion, doc, conversionPlugin = conversionPlugin, **kwargs)
+                self.convert(conversion, doc, schedulerDetails, conversionPlugin = conversionPlugin, **kwargs)
             
-    def convert(self, conversion, doc, **kwargs):
+    def convert(self, conversion, doc, schedulerDetails, **kwargs):
         logging.debug("Starting conversion with {conversion}".format(conversion = conversion))
 
         # Convert the doc
-        converted = conversion._convert(doc)
+        converted, conversionDetails = conversion._convert(doc, schedulerDetails, **kwargs)
 
         # Pass doc to exporters
         for exportPlugin, export in self.exports.iteritems():
-            self.export(export, converted, exportPlugin = exportPlugin, **kwargs)
+            self.export(export, converted, schedulerDetails, conversionDetails, exportPlugin = exportPlugin, **kwargs)
 
-    def export(self, exporter, doc, **kwargs):
+    def export(self, exporter, doc, schedulerDetails, conversionDetails, **kwargs):
         logging.debug("Starting export with {exporter}".format(exporter = exporter))
 
         # Export the doc
-        exporter._export(doc, **kwargs)
+        exporter._export(doc, schedulerDetails, conversionDetails, **kwargs)

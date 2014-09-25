@@ -4,7 +4,10 @@ class Scheduler:
 
     @abc.abstractmethod
     def __init__(self, **kwargs):
-        pass
+        self.initialize(**kwargs)
+
+    def initialize(self, **kwargs):
+        raise NotImplementedError("Scheduler initialize() not overridden")
 
     @abc.abstractmethod
     def __iter__(self):

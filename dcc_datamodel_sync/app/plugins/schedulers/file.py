@@ -15,7 +15,7 @@ class Scheduler(base.Scheduler):
 
     prefix = "Scheduler: file: " 
 
-    def __init__(self, **kwargs):
+    def initialize(self, **kwargs):
 
         args = ['path']
         for arg in args:
@@ -31,8 +31,13 @@ class Scheduler(base.Scheduler):
         for url in self.urls:
             local = url.split('/')[-1]
             logging.info(self.prefix + "pulling file {url}".format(url = local))
+
             response = requests.get(url)
-            yield response.text
+
+            doc = response.text
+            schedulerDetails = {'url': url}
+
+            yield (doc, schedulerDetails)
 
     def load(self, **kwargs):
         with open(self.path) as f:
