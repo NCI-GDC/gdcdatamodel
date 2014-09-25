@@ -151,12 +151,20 @@ def main():
         archive_url = sline[2]
 
         if not in_signpost(archive_name):
+            url_doc = {}
+            url_doc['urls'] = archive_url
+            sp_url_doc = add_signpost(url_doc)
+            data_did = sp_url_doc['did']
+
             date_added = datetime.strptime(sline[1], '%m/%d/%Y %H:%M')
             date_added = date_added.replace(tzinfo=SimpleUTC()).isoformat()
             meta_doc = {}
             meta_doc['meta'] = parse_archive(archive_name, date_added, archive_url)
+            meta_doc['meta']['data_did'] = data_did
             logging.info("Adding archive: %s" % json.dumps(meta_doc, sort_keys=True, indent=4))
             add_signpost(meta_doc)
+
+            
         else:
             logging.info('Archive already in Signpost %s' % archive_name)
 
