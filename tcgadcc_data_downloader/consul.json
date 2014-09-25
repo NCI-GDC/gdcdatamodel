@@ -1,6 +1,6 @@
 {
     "service": {
-        "name": "dcc_data_downloader",
+        "name": "tcgadcc_data_downloader",
         "tags": []
     }
 }
