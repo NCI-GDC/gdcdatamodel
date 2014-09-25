@@ -1,6 +1,6 @@
 {
     "service": {
-        "name": "dcc_sp_meta_sync",
+        "name": "tcgadcc_signpost_sync",
         "tags": []
     }
 }
