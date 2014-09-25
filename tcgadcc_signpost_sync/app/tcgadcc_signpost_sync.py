@@ -179,7 +179,7 @@ class TCGADCCSignpostSync:
 
             if not self.in_signpost(archive_name):
                 url_doc = {}
-                url_doc['urls'] = archive_url
+                url_doc['urls'] = [archive_url]
                 sp_url_doc = self.add_signpost(url_doc)
                 data_did = sp_url_doc['did']
                 
@@ -193,4 +193,4 @@ class TCGADCCSignpostSync:
                 self.add_signpost(meta_doc)
             
             else:
-                logger.info('Archive already in Signpost %s' % archive_name)
+                logger.debug('Archive already in Signpost %s' % archive_name)
