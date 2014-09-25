@@ -37,9 +37,6 @@ class Export(base.Export):
         result = conn.execute(ins).fetchall()
         conn.close()
 
-        print schedulerDetails, conversionDetails
-        pass
-
     def close(self, **kwargs):
         pass
         
