@@ -51,7 +51,7 @@
 # the 'roles' grain having two values that can be matched against:
 grains:
   roles:
-    - workers.dcc_datamodel_sync
+    - workers.tcgadcc_datamodel_sync
 
 # Where cache data goes
 #cachedir: /var/cache/salt/minion
