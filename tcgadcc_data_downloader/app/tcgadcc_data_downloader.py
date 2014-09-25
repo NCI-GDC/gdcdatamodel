@@ -223,6 +223,7 @@ class TCGADCCDataDownloader:
             doc['meta']['import']['message'] = "swift upload failed: %s %s" % (stdout, stderr)
         else:
             doc['meta']['import']['state'] = 'complete'
+            doc['meta']['import']['upload']['finish_time'] = timestamp()
             doc['meta']['import']['finish_time'] = timestamp()
             doc['meta']['import']['host'] = None
             
