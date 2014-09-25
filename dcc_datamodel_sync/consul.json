@@ -1,6 +1,0 @@
-{
-    "service": {
-        "name": "dcc_datamodel_sync",
-        "tags": ["master"],
-    }
-}
