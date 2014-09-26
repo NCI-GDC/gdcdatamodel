@@ -1,0 +1,6 @@
+{
+    "service": {
+        "name": "cghub_signpost_sync",
+        "tags": []
+    }
+}
