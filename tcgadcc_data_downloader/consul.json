@@ -1,0 +1,6 @@
+{
+    "service": {
+        "name": "tcgadcc_data_downloader",
+        "tags": []
+    }
+}
