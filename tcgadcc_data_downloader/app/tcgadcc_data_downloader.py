@@ -87,7 +87,7 @@ class TCGADCCDataDownloader:
                          )
         #OK with conflicts - typically some other host claimed the work before us
         #if req.status_code != 201: raise ValueError(req.text)
-        logging.debug('status_code: %s resp: %s' % (req.status_code, json.dumps(req.json(), indent=4)))
+        logger.debug('status_code: %s resp: %s' % (req.status_code, json.dumps(req.json(), indent=4)))
         return (req.status_code, req.json())
 
     def update_url_doc(self, data_did, swift_url):
@@ -136,7 +136,7 @@ class TCGADCCDataDownloader:
 
     def get_work(self,protected=False):
         criteria = { '_type' : 'tcga_dcc_archive',
-                     'import' : { 'host' : None },
+                     'import' : { 'state' : 'not_started' },
                      'protected' : protected
                    }
 
@@ -214,6 +214,7 @@ class TCGADCCDataDownloader:
         else:
             swift_cmd = ['swift', 'upload', '--object-name', object_name, container, filename]
 
+        logger.info("swift_cmd: %s" % swift_cmd)
         upload_proc = subprocess.Popen(swift_cmd)
         stdout, stderr = upload_proc.communicate()
         rc = upload_proc.returncode
