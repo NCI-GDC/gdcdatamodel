@@ -1,0 +1,3563 @@
+{
+    "ACC": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Mixed_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [
+                [
+                    "bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.Level_3.1.1.0", 
+                    3832752, 
+                    3832752.0, 
+                    1916376.0
+                ], 
+                [
+                    "bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.mage-tab.1.1.0", 
+                    13248, 
+                    13248.0, 
+                    13248.0
+                ]
+            ], 
+            "total_archives": 2, 
+            "completed": 2, 
+            "in_progress": 0, 
+            "not_started": 0
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Mixed_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "DLBC": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }
+    }, 
+    "READ": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 11, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 11
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 23, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 23
+        }, 
+        "IlluminaGA_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "SOLiD_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "microsat_i": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "IlluminaGA_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "SOLiD_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 23, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 23
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 30, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 30
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "GBM": {
+        "HG-CGH-415K_G4124A": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "HuEx-1_0-st-v2": {
+            "imported_archives": [], 
+            "total_archives": 52, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 52
+        }, 
+        "IlluminaDNAMethylation_OMA003_CPI": {
+            "imported_archives": [], 
+            "total_archives": 11, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 11
+        }, 
+        "AgilentG4502A_07_2": {
+            "imported_archives": [], 
+            "total_archives": 13, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 13
+        }, 
+        "AgilentG4502A_07_1": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 21, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 21
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanHap550": {
+            "imported_archives": [], 
+            "total_archives": 31, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 31
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 70, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 70
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 22, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 22
+        }, 
+        "HG-CGH-244A": {
+            "imported_archives": [], 
+            "total_archives": 83, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 83
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "ABI": {
+            "imported_archives": [], 
+            "total_archives": 338, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 338
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 29, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 29
+        }, 
+        "HT_HG-U133A": {
+            "imported_archives": [], 
+            "total_archives": 49, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 49
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaDNAMethylation_OMA002_CPI": {
+            "imported_archives": [], 
+            "total_archives": 13, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 13
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "H-miRNA_8x15K": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 38, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 38
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "THCA": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 53, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 53
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 52, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 52
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }
+    }, 
+    "BLCA": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 25, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 25
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [
+                [
+                    "bcgsc.ca_BLCA.IlluminaGA_miRNASeq.Level_3.1.1.0", 
+                    91933, 
+                    91933.0, 
+                    91933.0
+                ], 
+                [
+                    "bcgsc.ca_BLCA.IlluminaGA_miRNASeq.mage-tab.1.1.0", 
+                    5442, 
+                    5442.0, 
+                    5442.0
+                ]
+            ], 
+            "total_archives": 2, 
+            "completed": 2, 
+            "in_progress": 0, 
+            "not_started": 0
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 24, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 24
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 24, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 24
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 24, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 24
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 71, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 71
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 70, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 70
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "UCEC": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 26, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 26
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 25, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 25
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 25, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 25
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 11, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 11
+        }, 
+        "IlluminaGA_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 25, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 25
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "microsat_i": {
+            "imported_archives": [], 
+            "total_archives": 22, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 22
+        }, 
+        "IlluminaGA_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 71, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 71
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 76, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 76
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "PCPG": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "CESC": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 56, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 56
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 55, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 55
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "UCS": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "microsat_i": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "THYM": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "LIHC": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "Mixed_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "Mixed_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 56, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 56
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 52, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 52
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "CHOL": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "HNSC": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 56, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 56
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 52, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 52
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }
+    }, 
+    "STAD": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 8, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 8
+        }, 
+        "IlluminaGA_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "microsat_i": {
+            "imported_archives": [], 
+            "total_archives": 12, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 12
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 47, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 47
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 52, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 52
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "SKCM": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 14, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 14
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 14, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 14
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 41, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 41
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 31, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 31
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 14, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 14
+        }
+    }, 
+    "COAD": {
+        "microsat_i": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 8, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 8
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "SOLiD_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 63, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 63
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 21, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 21
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 26, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 26
+        }, 
+        "IlluminaGA_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "SOLiD_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "IlluminaGA_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 44, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 44
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "UVM": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "_type": "tcga_dcc_report", 
+    "PAAD": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 13, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 13
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 12, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 12
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 12, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 12
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 12, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 12
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 35, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 35
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 31, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 31
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "TGCT": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }
+    }, 
+    "LUSC": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 23, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 23
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 22, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 22
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 22, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 22
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Human1MDuo": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 22, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 22
+        }, 
+        "CGH-1x1M_G4447A": {
+            "imported_archives": [], 
+            "total_archives": 13, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 13
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "HG-CGH-415K_G4124A": {
+            "imported_archives": [], 
+            "total_archives": 33, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 33
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HT_HG-U133A": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "HuEx-1_0-st-v2": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "Mixed_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 53, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 53
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 69, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 69
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "timestamp": "2014-09-26T00:23:53+00:00", 
+    "CNTL": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }
+    }, 
+    "MESO": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 8, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 8
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }
+    }, 
+    "OV": {
+        "HG-CGH-415K_G4124A": {
+            "imported_archives": [], 
+            "total_archives": 30, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 30
+        }, 
+        "HuEx-1_0-st-v2": {
+            "imported_archives": [], 
+            "total_archives": 57, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 57
+        }, 
+        "AgilentG4502A_07_2": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "CGH-1x1M_G4447A": {
+            "imported_archives": [], 
+            "total_archives": 43, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 43
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "Human1MDuo": {
+            "imported_archives": [], 
+            "total_archives": 34, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 34
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 58, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 58
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "HG-CGH-244A": {
+            "imported_archives": [], 
+            "total_archives": 24, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 24
+        }, 
+        "IlluminaGA_mRNA_DGE": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "ABI": {
+            "imported_archives": [], 
+            "total_archives": 28, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 28
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 47, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 47
+        }, 
+        "HT_HG-U133A": {
+            "imported_archives": [], 
+            "total_archives": 43, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 43
+        }, 
+        "SOLiD_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 6, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 6
+        }, 
+        "H-miRNA_8x15Kv2": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }
+    }, 
+    "ESCA": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 11, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 11
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 32, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 32
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 31, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 31
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 10, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 10
+        }
+    }, 
+    "SARC": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 44, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 44
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 43, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 43
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }
+    }, 
+    "KIRP": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "Mixed_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "Mixed_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 44, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 44
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 46, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 46
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }
+    }, 
+    "LGG": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 50, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 50
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 49, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 49
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }
+    }, 
+    "LAML": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HG-U133_Plus_2": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "IlluminaGA_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 5, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 5
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 8, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 8
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }
+    }, 
+    "PRAD": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 19, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 19
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 18, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 18
+        }, 
+        "IlluminaGA_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 53, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 53
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 52, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 52
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }
+    }, 
+    "LUAD": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 22, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 22
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 14, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 14
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 20, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 20
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 56, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 56
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 56, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 56
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "BRCA": {
+        "IlluminaHiSeq_DNASeqC": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 38, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 38
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 37, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 37
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 37, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 37
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 14, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 14
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 25, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 25
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 37, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 37
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "Mixed_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 104, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 104
+        }, 
+        "IlluminaGA_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 109, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 109
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_WGBS": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }, 
+    "KIRC": {
+        "Mixed_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 16, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 16
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaHiSeq_TotalRNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_Cont_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "IlluminaGA_DNASeq_automated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "AgilentG4502A_07_3": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "MDA_RPPA_Core": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "HumanMethylation27": {
+            "imported_archives": [], 
+            "total_archives": 17, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 17
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 14, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 14
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 35, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 35
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 43, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 43
+        }, 
+        "Mixed_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 15, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 15
+        }
+    }, 
+    "KICH": {
+        "bio": {
+            "imported_archives": [], 
+            "total_archives": 4, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 4
+        }, 
+        "Mixed_DNASeq_Cont_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "IlluminaGA_DNASeq_Cont": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "pathology_reports": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "Mixed_DNASeq_curated": {
+            "imported_archives": [], 
+            "total_archives": 1, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 1
+        }, 
+        "tissue_images": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "IlluminaHiSeq_RNASeqV2": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "HumanMethylation450": {
+            "imported_archives": [], 
+            "total_archives": 8, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 8
+        }, 
+        "IlluminaHiSeq_miRNASeq": {
+            "imported_archives": [], 
+            "total_archives": 2, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 2
+        }, 
+        "Genome_Wide_SNP_6": {
+            "imported_archives": [], 
+            "total_archives": 7, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 7
+        }, 
+        "IlluminaGA_DNASeq": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }, 
+        "diagnostic_images": {
+            "imported_archives": [], 
+            "total_archives": 3, 
+            "completed": 0, 
+            "in_progress": 0, 
+            "not_started": 3
+        }
+    }
+}
