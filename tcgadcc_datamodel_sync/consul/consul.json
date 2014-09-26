@@ -1,6 +1,6 @@
 {
     "service": {
         "name": "tcgadcc_datamodel_sync",
-        "tags": ["master"],
+        "tags": ["master"]
     }
 }
