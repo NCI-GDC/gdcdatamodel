@@ -1,0 +1,14 @@
+signpost:
+  url: http://localhost:5000
+  user: None
+  password: None
+  port: 5000
+
+logging:
+  level: DEBUG
+  format: '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' 
+#  log_dir: '/var/log/tungsten'
+
+download:
+  id: 'cghub_data_downloader_0'
+  dir: '/mnt/cinder/download'

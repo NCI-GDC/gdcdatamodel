@@ -1,0 +1,6 @@
+{
+    "service": {
+        "name": "cghub_data_downloader",
+        "tags": []
+    }
+}
