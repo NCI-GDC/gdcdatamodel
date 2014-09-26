@@ -1,0 +1,6 @@
+{
+    "service": {
+        "name": "tcgadcc_signpost_sync",
+        "tags": []
+    }
+}
