@@ -1,5 +1,4 @@
 import os
-import random
 import subprocess
 
 import signpostclient as signpost
@@ -20,7 +19,7 @@ def validate():
   candi = claim - candi
 
   # Select a candidate.
-  candi = random.choice(list(candi))
+  candi = next(iter(candi))
 
   # Update local state with a claim.
   state['meta']['claimed'][candi] = 'tmp_id'
