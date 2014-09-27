@@ -16,7 +16,7 @@ def validate():
   candi = set(signpost.find(settings['query'])['dids'])
 
   # Find candidates not yet claimed.
-  candi = claim - candi
+  candi = candi - claim
 
   # Select a candidate.
   candi = next(iter(candi))
