@@ -27,7 +27,7 @@ def validate():
   state['meta']['claimed'][candi] = 'tmp_id'
 
   # Attempt to claim a candidate.
-  ret = signpost.post(state['did'],state['rev'],json.dumps(state['meta']),meta=True)
+  ret = signpost.post(state['did'],state['rev'],state['meta'],meta=True)
   if 'error' in ret: return # Early return - we failed to claim a candidate.
 
   # Pull selected candidate state.
