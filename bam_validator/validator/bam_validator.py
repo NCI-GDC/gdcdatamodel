@@ -1,5 +1,4 @@
 import os
-import json
 import random
 import subprocess
 
@@ -9,7 +8,7 @@ from validator import settings
 
 def validate():
   # Get the current state.
-  state = json.loads(signpost.find(settings['state']))
+  state = signpost.find(settings['state'])
 
   # Generate a set of claimed DIDs.
   claim = set(state['meta']['claimed'].keys())
