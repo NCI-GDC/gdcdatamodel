@@ -1,0 +1,19 @@
+signpost:
+  url: http://172.16.128.94
+  user: None
+  password: None
+  port: 80
+
+# Signpost document containing state of worker.
+state: 07e28aec-ba31-409d-821f-18aac205f4a8
+
+# Signpost document containing output of worker.
+output: 1a70cff2-6fa7-4add-8088-3acb5d2e2e2d
+
+# Input document query.
+query: '{"_type":"cghub"}'
+
+logging:
+  level: DEBUG
+  format: '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' 
+  log_dir: '/var/log/tungsten'
