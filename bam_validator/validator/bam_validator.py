@@ -15,7 +15,7 @@ def validate():
   claim = set(state['meta']['claimed'].keys())
 
   # Get the current list of candidates.
-  candi = set(json.loads(signpost.find(settings['query']))['dids'])
+  candi = set(json.loads(signpost.find(settings['query'],no_data=False))['dids'])
 
   # Find candidates not yet claimed.
   candi = claim - candi
@@ -34,7 +34,7 @@ def validate():
   candi_state = json.loads(signpost.find(candi))
 
   # Pull data from candidate data did.
-  filename = json.loads(signpost.find(candi_state['meta']['data_did']))['files'][0]
+  filename = json.loads(signpost.find(candi_state['meta']['data_did'],no_data=False))['files'][0]
 
   # Validate data as bam format.
   valid = bool(subprocess.call(['picard-tools','ValidateSamFile',filename]))
