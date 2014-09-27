@@ -11,7 +11,7 @@ state: 07e28aec-ba31-409d-821f-18aac205f4a8
 output: 1a70cff2-6fa7-4add-8088-3acb5d2e2e2d
 
 # Input document query.
-query: '{"_type":"cghub"}'
+query: '{"_type":"cghub_import","import":{"state":"complete"}}'
 
 logging:
   level: DEBUG
