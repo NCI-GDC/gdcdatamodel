@@ -278,6 +278,8 @@ class CGHubDataDownloader:
             object_name = '/'.join([url_doc['did'], f[0]])
 
             local_file = os.path.join(local_dir, f[0])
+            if local_file.endswith(".bai"):
+                continue
 
             swift_cmd = ['swift', 'upload', '--segment-size', segment_size, '--object-name', object_name, container, local_file]
 
@@ -287,19 +289,19 @@ class CGHubDataDownloader:
             stdout, stderr = upload_proc.communicate()
             rc = upload_proc.returncode
 
-        if rc != 0:
-            doc['meta']['import']['state'] = 'error'
-            doc['meta']['import']['message'] = "swift upload failed: %s %s" % (stdout, stderr)
-        else:
-            doc['meta']['import']['state'] = 'complete'
-            doc['meta']['import']['upload']['finish_time'] = timestamp()
-            doc['meta']['import']['finish_time'] = timestamp()
-            doc['meta']['import']['host'] = None
+            if rc != 0:
+                doc['meta']['import']['state'] = 'error'
+                doc['meta']['import']['message'] = "swift upload failed: %s %s" % (stdout, stderr)
+            else:
+                doc['meta']['import']['state'] = 'complete'
+                doc['meta']['import']['upload']['finish_time'] = timestamp()
+                doc['meta']['import']['finish_time'] = timestamp()
+                doc['meta']['import']['host'] = None
             
             data_did = url_doc['did']
             swift_url = 'swift://' + container + '/' + object_name
             (url_status_code, url_resp) = self.update_url_doc(data_did, swift_url)
-            shutil.rmtree(local_dir)
+        shutil.rmtree(local_dir)
             
         (status_code, doc) = self.update_doc(did, rev, doc)
 
