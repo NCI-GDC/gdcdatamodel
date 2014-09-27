@@ -20,7 +20,7 @@ def validate():
   candi = claim - candi
 
   # Select a candidate.
-  candi = random.choice(candi)
+  candi = random.choice(list(candi))
 
   # Update local state with a claim.
   state['meta']['claimed'][candi] = 'tmp_id'
