@@ -1,0 +1,8 @@
+{
+    "check": {
+        "id": "mem-util",
+        "name": "Memory utilization",
+        "script": "python /home/ubuntu/consul/memory.py",
+        "interval": "10s"
+    }
+}
