@@ -187,6 +187,7 @@ class TCGADCCDataDownloader:
         if status_code != 201: raise ValueError(doc)
         rev = doc['rev']
 
+        logger.info('Download complete, starting md5hash')
         file_list = self._get_file_list(filename)
         md5 = self.md5hash(filename)
         doc['meta']['archive_file_list'] = file_list
@@ -209,12 +210,14 @@ class TCGADCCDataDownloader:
 
         object_name = '/'.join([doc['meta']['disease_code'], did, os.path.basename(filename)])
 
+        logger.debug("filesize: %d segment_size: %s" % (doc['meta']['archive_filesize'], segment_size))
+
         if doc['meta']['archive_filesize'] > segment_size:
             swift_cmd = ['swift', 'upload', '--segment-size', segment_size, '--object-name', object_name, container, filename]
         else:
             swift_cmd = ['swift', 'upload', '--object-name', object_name, container, filename]
 
-        logger.info("swift_cmd: %s" % swift_cmd)
+        logger.info("starting swift upload swift_cmd: %s" % swift_cmd)
         upload_proc = subprocess.Popen(swift_cmd)
         stdout, stderr = upload_proc.communicate()
         rc = upload_proc.returncode
@@ -228,10 +231,10 @@ class TCGADCCDataDownloader:
             doc['meta']['import']['finish_time'] = timestamp()
             doc['meta']['import']['host'] = None
             
-            data_did = doc['meta']['data_did']
-            swift_url = 'swift://' + container + '/' + object_name
-            (url_status_code, url_resp) = self.update_url_doc(data_did, swift_url)
-            os.remove(filename)
+        data_did = doc['meta']['data_did']
+        swift_url = 'swift://' + container + '/' + object_name
+        (url_status_code, url_resp) = self.update_url_doc(data_did, swift_url)
+        os.remove(filename)
             
         (status_code, doc) = self.update_doc(did, rev, doc)
 
