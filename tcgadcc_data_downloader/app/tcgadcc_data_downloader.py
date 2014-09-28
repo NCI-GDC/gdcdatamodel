@@ -202,7 +202,7 @@ class TCGADCCDataDownloader:
         if status_code != 201: raise ValueError(doc)
         rev = doc['rev']
 
-        segment_size = "1000000000"
+        segment_size = 1000000000
         if doc['meta']['protected']:
             container = "tcga_dcc_protected"
         else:
@@ -210,7 +210,7 @@ class TCGADCCDataDownloader:
 
         object_name = '/'.join([doc['meta']['disease_code'], did, os.path.basename(filename)])
 
-        logger.debug("filesize: %d segment_size: %s" % (doc['meta']['archive_filesize'], segment_size))
+        logger.debug("filesize: %d segment_size: %d" % (doc['meta']['archive_filesize'], segment_size))
 
         if doc['meta']['archive_filesize'] > segment_size:
             swift_cmd = ['swift', 'upload', '--segment-size', segment_size, '--object-name', object_name, container, filename]
