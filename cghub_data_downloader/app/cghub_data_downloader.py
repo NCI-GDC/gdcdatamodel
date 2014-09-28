@@ -5,6 +5,7 @@ import logging
 import tarfile
 import hashlib
 import subprocess
+import shutil
 from datetime import datetime, tzinfo, timedelta
 
 from app import settings
@@ -51,18 +52,19 @@ class CGHubDataDownloader:
             return dids['dids'][0]
 
 
-    def _download_file(self, url, dl_dir):
-        local_filename = os.path.join(dl_dir, url.split("/")[-1])
-        r = requests.get(url, stream=True)
-        if r.status_code != 200:
-            return (r.text, r.status_code)
+    def _download_analysis(self, url, dl_dir):
+        analysis_id = url.split('/')[-1]
+        local_dir = os.path.join(dl_dir, analysis_id)
+        logger.info("Downloading %s %s" % (url,analysis_id))
+        log_file = os.path.join(dl_dir, analysis_id + '.log')
+        dl_cmd = ['gtdownload', '-k', '15', '-c', settings['download']['key'], '-l', log_file, analysis_id]
+        logger.debug('Download cmd: %s' % dl_cmd)
 
-        with open(local_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-                    f.flush()
-        return (local_filename, r.status_code)
+        dl_proc = subprocess.Popen(dl_cmd, cwd=dl_dir)
+        stdout, stderr = dl_proc.communicate()
+        rc = dl_proc.returncode
+
+        return (local_dir, rc, stdout, stderr)
 
     def _get_file_list(self,filename):
         tar = tarfile.open(filename)
@@ -100,7 +102,12 @@ class CGHubDataDownloader:
         logger.debug("url doc: %s" % json.dumps(doc, indent=4))
         did = doc['did']
         rev = doc['rev']
-        doc['urls'].insert(0, swift_url)
+
+        if isinstance(doc['urls'], list):
+            doc['urls'].insert(0, swift_url)
+        else:
+            url = doc['urls']
+            doc['urls'] = [swift_url, url]
 
         logger.debug("Updating URL doc %s %s %s " % (did, rev, doc))
 
@@ -164,20 +171,75 @@ class CGHubDataDownloader:
         
         return doc
 
+    def get_md5sums(self, data_did):
+        criteria = { '_type' : 'cghub',
+                     'data_did' : data_did }
+
+        meta_did = self._get_first_did(criteria)
+
+        if meta_did is None:
+            return None
+
+        url = '/'.join([settings['signpost']['url'], meta_did])
+        meta_req = requests.get(url)
+
+        if meta_req.status_code != 200: raise ValueError(meta_req.text)
+
+        meta_doc = meta_req.json()
+        files = []
+        if isinstance(meta_doc['meta']['files']['file'], dict):
+            filename = meta_doc['meta']['files']['file']['filename']['$']
+            checksum = meta_doc['meta']['files']['file']['checksum']['$']
+            files.append((filename, checksum))
+        else:
+            for f in meta_doc['meta']['files']['file']:
+                filename = f['filename']['$']
+                checksum = f['checksum']['$']
+                files.append((filename, checksum))
+
+        return files
+
     def do_work(self, doc):
+        logger.info("doc: %s" % json.dumps(doc, indent=4))
         did = doc['did']
+        data_did = doc['meta']['data_did']
         rev = doc['rev']
-        url = '/'.join([settings['signpost']['url'], doc['did']])
+        url = '/'.join([settings['signpost']['url'], data_did])
 
-        archive_url = doc['meta']['dcc_archive_url']
+        r = requests.get(url)
+        if r.status_code != 200: raise ValueError(r.text)
 
-        logger.info('Downloading: %s' % archive_url)
+        url_doc = r.json()
 
-        (filename, status_code) = self._download_file(archive_url, settings['download']['dir'])
+        logger.debug('url_doc: %s' % json.dumps(url_doc, indent=4))
+        
+        analysis_url = None
 
-        if status_code != 200: raise ValueError('Unexpected download status: %s' % status_code)
+        if isinstance(url_doc['urls'], list):
+            for url in url_doc['urls']:
+                if url.startswith("gtdownload://"):
+                    analysis_url = url
+        else:
+            analysis_url = url_doc['urls']
+        
+        if analysis_url is None:
+            doc['meta']['import']['state'] = 'error'
+            doc['meta']['import']['message'] = "could not get url for" % (did)
+            (status_code, doc) = self.update_doc(did, rev, doc)
+            return
 
-        doc['meta']['archive_filesize'] = os.path.getsize(filename)
+        logger.info('Downloading: %s' % analysis_url)
+
+        (local_dir, rc, stdout, stderr) = self._download_analysis(analysis_url, settings['download']['dir'])
+
+        logger.info('rc: %s' % rc)
+
+        if rc != 0:
+            doc['meta']['import']['state'] = 'error'
+            doc['meta']['import']['message'] = "gtdownload failed: %s %s" % (stdout, stderr)
+            (status_code, doc) = self.update_doc(did, rev, doc)
+            return
+            
         doc['meta']['import']['download']['finish_time'] = timestamp()
         doc['meta']['import']['state'] = 'processing'
         doc['meta']['import']['process']['start_time'] = timestamp()
@@ -186,10 +248,19 @@ class CGHubDataDownloader:
         if status_code != 201: raise ValueError(doc)
         rev = doc['rev']
 
-        file_list = self._get_file_list(filename)
-        md5 = self.md5hash(filename)
-        doc['meta']['archive_file_list'] = file_list
-        doc['meta']['archive_md5'] = md5
+        cghub_md5 = self.get_md5sums(data_did)
+
+        logger.debug('md5s: %s' % cghub_md5)
+        
+        for f in cghub_md5:
+            filename = os.path.join(local_dir, f[0])
+            orig_md5 = f[1]
+            md5 = self.md5hash(filename)
+            if md5 != orig_md5:
+                doc['meta']['import']['state'] = 'error'
+                doc['meta']['import']['message'] = 'md5 for %s do not match %s %s' % (f[0], orig_md5, md5)
+                return
+        
         doc['meta']['import']['process']['finish_time'] = timestamp()
         doc['meta']['import']['state'] = 'uploading'
 
@@ -201,36 +272,36 @@ class CGHubDataDownloader:
         rev = doc['rev']
 
         segment_size = "1000000000"
-        if doc['meta']['protected']:
-            container = "tcga_dcc_protected"
-        else:
-            container = "tcga_dcc_public"
+        container = 'tcga_cghub'
 
-        object_name = '/'.join([doc['meta']['disease_code'], did, os.path.basename(filename)])
+        for f in cghub_md5:
+            object_name = '/'.join([url_doc['did'], f[0]])
 
-        if doc['meta']['archive_filesize'] > segment_size:
-            swift_cmd = ['swift', 'upload', '--segment-size', segment_size, '--object-name', object_name, container, filename]
-        else:
-            swift_cmd = ['swift', 'upload', '--object-name', object_name, container, filename]
+            local_file = os.path.join(local_dir, f[0])
+            if local_file.endswith(".bai"):
+                continue
 
-        logger.info("swift_cmd: %s" % swift_cmd)
-        upload_proc = subprocess.Popen(swift_cmd)
-        stdout, stderr = upload_proc.communicate()
-        rc = upload_proc.returncode
+            swift_cmd = ['swift', 'upload', '--segment-size', segment_size, '--object-name', object_name, container, local_file]
 
-        if rc != 0:
-            doc['meta']['import']['state'] = 'error'
-            doc['meta']['import']['message'] = "swift upload failed: %s %s" % (stdout, stderr)
-        else:
-            doc['meta']['import']['state'] = 'complete'
-            doc['meta']['import']['upload']['finish_time'] = timestamp()
-            doc['meta']['import']['finish_time'] = timestamp()
-            doc['meta']['import']['host'] = None
+            logger.info("swift_cmd: %s" % swift_cmd)
+
+            upload_proc = subprocess.Popen(swift_cmd)
+            stdout, stderr = upload_proc.communicate()
+            rc = upload_proc.returncode
+
+            if rc != 0:
+                doc['meta']['import']['state'] = 'error'
+                doc['meta']['import']['message'] = "swift upload failed: %s %s" % (stdout, stderr)
+            else:
+                doc['meta']['import']['state'] = 'complete'
+                doc['meta']['import']['upload']['finish_time'] = timestamp()
+                doc['meta']['import']['finish_time'] = timestamp()
+                doc['meta']['import']['host'] = None
             
-            data_did = doc['meta']['data_did']
+            data_did = url_doc['did']
             swift_url = 'swift://' + container + '/' + object_name
             (url_status_code, url_resp) = self.update_url_doc(data_did, swift_url)
-            os.remove(filename)
+        shutil.rmtree(local_dir)
             
         (status_code, doc) = self.update_doc(did, rev, doc)
 
@@ -250,12 +321,10 @@ class CGHubDataDownloader:
         else:
             logger.info('Resuming work: %s' % work['did'])
 
-        """
         if work is not None:
             logger.info('Starting work: %s' % work['did'])
             doc = self.do_work(work)
             logger.info('Completed work: %s ' % work['did'])
         else:
             logger.info('Could not claim work')
-        """
 

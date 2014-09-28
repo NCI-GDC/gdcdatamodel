@@ -6,10 +6,10 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 sched = BlockingScheduler()
 sync = CGHubDataDownloader()
 
-@sched.scheduled_job('interval', minutes = 60)
+@sched.scheduled_job('interval', seconds = 5)
 def run():
     sync.run()
 
 if __name__ == '__main__':
-    run()
-#    sched.start()
+#    run()
+    sched.start()

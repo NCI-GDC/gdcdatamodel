@@ -1,0 +1,6 @@
+{
+    "service": {
+        "name": "bam_validator",
+        "tags": ["master"]
+    }
+}
