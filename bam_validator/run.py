@@ -10,4 +10,5 @@ def run():
   validator.validate()
 
 if __name__ == '__main__':
-  run()
+  #run()
+  sched.start()
