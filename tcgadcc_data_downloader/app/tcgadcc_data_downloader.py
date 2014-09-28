@@ -213,7 +213,7 @@ class TCGADCCDataDownloader:
         logger.debug("filesize: %d segment_size: %d" % (doc['meta']['archive_filesize'], segment_size))
 
         if doc['meta']['archive_filesize'] > segment_size:
-            swift_cmd = ['swift', 'upload', '--segment-size', segment_size, '--object-name', object_name, container, filename]
+            swift_cmd = ['swift', 'upload', '--segment-size', str(segment_size), '--object-name', object_name, container, filename]
         else:
             swift_cmd = ['swift', 'upload', '--object-name', object_name, container, filename]
 
