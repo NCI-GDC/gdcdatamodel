@@ -1,0 +1,114 @@
+#Translation Settings for GDC data model
+
+#From the Biospecimen XMLs
+#Some of the edges point to external types that will be created in the graph via other means
+biospecimen:
+  patient:
+    locate: "//bio:patient"
+    _type: patient
+    id: ".//shared:bcr_patient_uuid/text()"
+    properties: "./*[not(*) and not(name()='shared:bcr_patient_uuid') and not(name()='shared:tissue_source_site')]"
+    edges:
+      seen_at:
+        type: tissue_source_site
+        locate: "//shared:tissue_source_site/text()"
+      part_of_project:
+        type: project
+        locate: "//admin:project_code/text()"
+      part_of_study:
+        type: study
+        locate: "//admin:disease_code/text()"
+      part_of_batch:
+        type: batch
+        locate: "//admin:batch_number/text()" #this includes the version as well, perhaps should split into two?
+      part_of_file:
+        type: biospecimen_file
+        locate: "//admin:file_uuid/text()"
+
+  sample:
+    locate: "//bio:sample"
+    _type: sample
+    id: ".//bio:bcr_sample_uuid/text()"
+    properties: "./*[not(*) and not(name()='bio:bcr_sample_uuid')]"
+    edges:
+      donated_by:
+      #derived_from:
+        type: patient
+        locate: "ancestor::bio:patient/shared:bcr_patient_uuid/text()"
+
+  portion:
+    locate: "//bio:portion"
+    _type: portion
+    id: ".//bio:bcr_portion_uuid/text()"
+    properties: "./*[not(*) and not(name()='bio:bcr_portion_uuid')]"
+    edges:
+      #portion_of:
+      derived_from:
+        type: sample
+        locate: "ancestor::bio:sample/bio:bcr_sample_uuid/text()"
+
+  shipment_portion:
+    locate: "//bio:shipment_portion"
+    _type: portion
+    id: ".//bio:bcr_shipment_portion_uuid/text()"
+    properties: "./*[not(*) and not(name()='bio:bcr_shipment_portion_uuid')]"
+    property_name_map:
+      shipment_portion_day_of_shipment: portion_day_of_shipment
+      shipment_portion_month_of_shipment: portion_month_of_shipment
+      shipment_portion_year_of_shipment: portion_year_of_shipment
+    edges:
+      #portion_of:
+      derived_from:
+        type: sample
+        locate: "ancestor::bio:sample/bio:bcr_sample_uuid/text()"
+      shipped_to:
+        type: center
+        locate: ".//bio:center_id/text()"
+
+  analyte:
+    locate: "//bio:analyte"
+    _type: analyte
+    id: ".//bio:bcr_analyte_uuid/text()"
+    properties: "./*[not(*) and not(name()='bio:bcr_analyte_uuid')]"
+    edges:
+      #analyte_of:
+      derived_from:
+        type: portion
+        locate: "ancestor::bio:portion/bio:bcr_portion_uuid/text()"
+
+  aliquot:
+    locate: "//bio:aliquot"
+    _type: aliquot
+    id: ".//bio:bcr_aliquot_uuid/text()"
+    properties: "./*[not(*) and not(name()='bio:bcr_aliquot_uuid')]"
+    edges:
+      #aliquot_of:
+      derived_from:
+        type: analyte
+        locate: "ancestor::bio:analyte/bio:bcr_analyte_uuid/text()"
+      shipped_to:
+        type: center
+        locate: ".//bio:center_id/text()"
+
+  #Need to check if the ID is correct here, protocols don't seem to have UUIDs.
+  protocol:
+    locate: "//bio:protocol"
+    _type: protocol
+    id: ".//bio:experimental_protocol_type/text()"
+    properties: "./*[not(*) and not(name()='bio:experimental_protocol_type')]"
+    edges:
+       applied_to:
+         type: analyte
+         locate: "ancestor::bio:analyte/bio:bcr_analyte_uuid/text()"
+
+  slide:
+    locate: "//bio:slide"
+    _type: slide
+    id: ".//bio:bcr_slide_uuid/text()"
+    properties: "./*[not(*) and not(name()='bio:bcr_slide_uuid')]"
+    edges:
+      histology_of:
+        type: portion
+        locate: "ancestor::bio:portion/bio:bcr_portion_uuid/text()"
+      
+  
