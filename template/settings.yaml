@@ -1,0 +1,36 @@
+##############################
+# ETL settings for worker
+##############################
+
+name: TemplateWorker
+
+##############################
+# Scheduler
+##############################
+schedule: False
+interval:
+  seconds: 5
+
+##############################
+# Pipelines
+##############################
+pipelines:
+  - file:
+    - reverse:
+      - stdout
+    - length:
+      - stdout
+
+##############################
+# Plugins
+##############################
+
+# Arguments to be passed to plugins on initialization
+plugin_kwargs:
+  file:
+    path: /home/ubuntu/urls
+
+# Plugins settings
+plugin_directory: plugins/
+plugin_paths:
+  file: /home/ubuntu/gdc/workers/template/app/plugins/file.py
