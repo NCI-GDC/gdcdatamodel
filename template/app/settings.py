@@ -20,7 +20,7 @@ class Settings:
         """
 
         if key not in self.settings:
-            logger.error("Settings: Key [{key}] was not in settings dictionary".format(key = key))
+            logger.debug("Settings: Key [{key}] was not in settings dictionary".format(key = key))
             return default
 
         return self.settings[key]

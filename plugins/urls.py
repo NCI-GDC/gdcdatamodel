@@ -12,28 +12,17 @@ class PipelinePlugin(base.PipelinePluginBase):
     File pipeline stage
     """
 
-    def initialize(self, **kwargs):
-        self.urls = []
-        self.path = kwargs.get('path', None)
-
     def __iter__(self):
-        for url in self.urls:
+        for doc in self.docs:
             
             # Generate a document
-            local = url.split('/')[-1]
-            logger.info("pulling file {url}".format(url = local.strip()))
-            response = requests.get(url)
+            local = doc.split('/')[-1]
+            logger.info("downloading file {doc}".format(doc = local.strip()))
+            response = requests.get(doc)
             doc = response.text
 
             # Pass state to the next stage
-            self.state['url'] = url.strip()
+            self.state['doc'] = doc.strip()
 
             yield doc
 
-    def start(self):
-        with open(self.path) as f:
-            self.urls = f.readlines()
-
-    def close(self, **kwargs):
-        pass
-        

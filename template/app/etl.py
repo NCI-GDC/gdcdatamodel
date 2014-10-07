@@ -45,7 +45,7 @@ class ETL:
 
         for pipeline in self.pipelines:
             logger.info('Running pipeline {pipeline}'.format(pipeline = pipeline))
-            pipeline.run()
+            pipeline.run(None)
 
 class PipelineStage:
 
@@ -91,7 +91,7 @@ class PipelineStage:
         for child in self.children:
             child.dump(level + 1)
 
-    def run(self, doc = None, **state):
+    def run(self, __doc__, **__state__):
         """
         Passes a document down the tree, loading it into each of stage in the next level
         """
@@ -99,18 +99,19 @@ class PipelineStage:
         logger.debug('Running ' + str(self))
         if self.plugin is None: return self
 
-        # Give the plugin a document
-        self.plugin.load(doc, **state)
+        # Give the plugin a document and start it
+        self.plugin.load(__doc__, **__state__)
+        self.plugin.start()
  
-        # Iterate through plugins documents
-        for doc in self.plugin:
+        # Iterate through plugins __doc__uments
+        for __doc__ in self.plugin:
             # Pass each document to the next stage
-            _doc = copy.deepcopy(doc)
-            _state = copy.deepcopy(self.plugin.state)
+            child_doc = copy.deepcopy(__doc__)
+            child_state = copy.deepcopy(self.plugin.state)
 
             for child in self.children:
                 logger.debug('Passing to ' + child.name)
-                child.run(_doc, **_state)
+                child.run(child_doc, **child_state)
 
         self.plugin.close()
         
@@ -147,25 +148,24 @@ class PipelineStage:
 
         return self
 
-    def loadModule(self, name):
+    def loadModule(self, name, pluginPath = None, directory = None):
         """
         Attempts to load a module of a given name
         """
 
         logger.info("Loading plugin: {plugin}".format(plugin = name))
 
-        # Build plugin file path
-        pluginDir = settings.get('plugin_directory', 'plugins')
-        pluginPath = os.path.join(baseDir, pluginDir, "{plugin}.py".format(plugin = name))
-        pluginPath = settings.get('plugin_paths', {}).get(name, pluginPath)
-        logger.info("Looking for plugin at {path}".format(path = pluginPath))
+        if directory and not os.path.isabs(directory):
+            pluginPath = os.path.join(baseDir, directory, '{name}.py'.format(name = name))
+        elif directory:
+            pluginPath = os.path.join(directory, '{name}.py'.format(name = name))
 
         # Attempt to import and add the plugin
         try:
             module = imp.load_source(name, pluginPath)
         except Exception, msg:
-            logger.error("Unable to load plugin: {plugin}: {msg}".format(plugin = name, msg = str(msg)))
-            module = None
+            logger.info("Unable to load plugin: {plugin}: {msg}".format(plugin = name, msg = str(msg)))
+            return None
         else:
             logger.info("SUCCESS: Loaded plugin: {plugin}".format(plugin = name))
 
@@ -173,15 +173,27 @@ class PipelineStage:
 
     def loadModules(self):
         """
-        Attempts to load aall modules within Pipeline tree
+        Attempts to load all modules within Pipeline tree
         """
 
-        self.module = self.loadModule(self.name)
+        pluginPath = settings.get('plugin_paths', None).get(self.name, None)
+        pluginDirs = settings.get('plugin_directories', []) 
+
+        if pluginPath is not None:
+            logger.info("Looking for plugin {name} at {path}".format(name = self.name, path = pluginPath))
+            self.module = self.loadModule(self.name, pluginPath)
+
+        else:
+            for pluginDir in pluginDirs:
+                logger.info("Looking for plugin {name} in {dir}".format(name = self.name, dir = pluginDir))
+                self.module = self.loadModule(self.name, directory = pluginDir)
+                if self.module is not None: break
 
         for child in self.children:
             child.loadModules()
             
         if self.module is None:
+            logger.error("Unable to load plugin: {plugin}. Is plugin in a 'plugin_directories' directory?".format(plugin = self.name))
             return self
 
         logger.info('Initializing {name}'.format(name = self.name))

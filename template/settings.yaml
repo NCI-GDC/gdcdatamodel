@@ -16,8 +16,12 @@ interval:
 ##############################
 pipelines:
   - file:
-    - length:
-      - stdout
+    - urls:
+      - length:
+        - stdout
+      - reverse:
+        - length:
+          - stdout
 
 ##############################
 # Plugins
@@ -26,9 +30,16 @@ pipelines:
 # Arguments to be passed to plugins on initialization
 plugin_kwargs:
   file:
-    path: /home/ubuntu/urls
+    paths:
+      - /home/ubuntu/urls
+    splitLines: true
+    
+# Plugin directories are places to look for plugins that inherit the
+# base.  Directory paths can be absolute or relative
+plugin_directories:
+  - plugins
+  - ../../plugins
 
-# Plugins settings
-plugin_directory: plugins/
+# You can also specify the absolute path to each plugin manually
 plugin_paths:
-  file: /home/ubuntu/gdc/workers/template/app/plugins/file.py
+  example: /home/ubuntu/example.py

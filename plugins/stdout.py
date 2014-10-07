@@ -14,6 +14,6 @@ class PipelinePlugin(base.PipelinePluginBase):
 
     def __iter__(self):
         for doc in self.docs:
-            pprint(doc)
-            yield None
+            print doc
+            yield {}
 
