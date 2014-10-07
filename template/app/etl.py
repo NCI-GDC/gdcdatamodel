@@ -1,8 +1,8 @@
-import logging, imp, os, sys, pprint
-
+import logging, imp, os, sys, pprint, copy
 from app import settings, baseDir
 
-    
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
+
 class ETL:
 
     def __init__(self):
@@ -10,14 +10,14 @@ class ETL:
         A new instance to extract, transform, and load data
         """
 
-        logging.debug("New ETL instance: " + str(self))
+        logger.debug("New ETL instance: " + str(self))
         self.pipelineTree = settings.get('pipelines', [])
         self.pipelines = []
 
-        logging.info("Loading pipelines ... ")
+        logger.info("Loading pipelines ... ")
         self.loadPipelines()
 
-        logging.info("Loading modules ...")
+        logger.info("Loading modules ...")
         self.loadModules()
 
     def loadPipelines(self):
@@ -25,7 +25,7 @@ class ETL:
         Walk the plugin tree provided in the settings and create stage PipelineStage objects from them
         """
 
-        logging.info("Loading Pipelines... ")
+        logger.info("Loading Pipelines... ")
         for pipeline in self.pipelineTree:
             self.pipelines.append(PipelineStage(pipeline))
         return self
@@ -35,16 +35,16 @@ class ETL:
         Walk the PipelineStage tree create instances of PiplinePlugins objects from them
         """
 
-        logging.info("Loading Modules... ")
+        logger.info("Loading Modules... ")
         for pipeline in self.pipelines:
             pipeline.loadModules()
         return self
 
     def run(self):
-        logging.info("Starting ETL...")
+        logger.info("Starting ETL...")
 
         for pipeline in self.pipelines:
-            logging.info('Running pipeline {pipeline}'.format(pipeline = pipeline))
+            logger.info('Running pipeline {pipeline}'.format(pipeline = pipeline))
             pipeline.run()
 
 class PipelineStage:
@@ -60,7 +60,7 @@ class PipelineStage:
         self.current = None
         self.plugin = None
 
-        if self.name: logging.info("Initializing ETL: {name}".format(name = self.name))
+        if self.name: logger.info("Initializing ETL: {name}".format(name = self.name))
 
         if isinstance(tree, str):
             self.name = tree
@@ -91,24 +91,29 @@ class PipelineStage:
         for child in self.children:
             child.dump(level + 1)
 
-    def run(self, doc = None):
+    def run(self, doc = None, **state):
         """
         Passes a document down the tree, loading it into each of stage in the next level
         """
 
-        logging.debug('Running ' + str(self))
+        logger.debug('Running ' + str(self))
         if self.plugin is None: return self
 
         # Give the plugin a document
-        self.plugin.start(doc)
-
+        self.plugin.load(doc, **state)
+ 
         # Iterate through plugins documents
         for doc in self.plugin:
             # Pass each document to the next stage
+            _doc = copy.deepcopy(doc)
+            _state = copy.deepcopy(self.plugin.state)
+
             for child in self.children:
-                child.run(doc)
+                logger.debug('Passing to ' + child.name)
+                child.run(_doc, **_state)
 
         self.plugin.close()
+        
 
     def loadTree(self, tree, root = None):
         """
@@ -131,7 +136,7 @@ class PipelineStage:
             return self
 
         elif not isinstance(tree, dict):
-            logging.error("Unable to load tree from type {type}".format(type = type(tree)))
+            logger.error("Unable to load tree from type {type}".format(type = type(tree)))
 
         # Recurse over dictionary
         for node, children in tree.iteritems():
@@ -147,22 +152,22 @@ class PipelineStage:
         Attempts to load a module of a given name
         """
 
-        logging.info("Loading plugin: {plugin}".format(plugin = name))
+        logger.info("Loading plugin: {plugin}".format(plugin = name))
 
         # Build plugin file path
         pluginDir = settings.get('plugin_directory', 'plugins')
         pluginPath = os.path.join(baseDir, pluginDir, "{plugin}.py".format(plugin = name))
         pluginPath = settings.get('plugin_paths', {}).get(name, pluginPath)
-        logging.info("Looking for plugin at {path}".format(path = pluginPath))
+        logger.info("Looking for plugin at {path}".format(path = pluginPath))
 
         # Attempt to import and add the plugin
         try:
             module = imp.load_source(name, pluginPath)
         except Exception, msg:
-            logging.error("Unable to load plugin: {plugin}: {msg}".format(plugin = name, msg = str(msg)))
+            logger.error("Unable to load plugin: {plugin}: {msg}".format(plugin = name, msg = str(msg)))
             module = None
         else:
-            logging.info("SUCCESS: Loaded plugin: {plugin}".format(plugin = name))
+            logger.info("SUCCESS: Loaded plugin: {plugin}".format(plugin = name))
 
         return module
 
@@ -179,13 +184,13 @@ class PipelineStage:
         if self.module is None:
             return self
 
-        logging.info('Initializing {name}'.format(name = self.name))
+        logger.info('Initializing {name}'.format(name = self.name))
         try:
             self.plugin = self.module.PipelinePlugin(**settings.get('plugin_kwargs', {}).get(self.name, {}))
         except Exception, msg:
-            logging.error('Initialization of {name} failed: {msg}'.format(name = self.name, msg = str(msg)))
+            logger.error('Initialization of {name} failed: {msg}'.format(name = self.name, msg = str(msg)))
         else:
-            logging.info('Initialization of {name} complete.'.format(name = self.name))
+            logger.info('Initialization of {name} complete.'.format(name = self.name))
 
         return self
 

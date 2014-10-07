@@ -16,8 +16,6 @@ interval:
 ##############################
 pipelines:
   - file:
-    - reverse:
-      - stdout
     - length:
       - stdout
 

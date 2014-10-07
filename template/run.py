@@ -3,6 +3,7 @@
 import logging
 
 logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' )
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
 from app.etl import ETL
 from app import settings

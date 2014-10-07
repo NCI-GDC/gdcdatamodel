@@ -4,8 +4,7 @@ from pprint import pprint
 currentDir = os.path.dirname(os.path.realpath(__file__))
 basePath   = os.path.join(currentDir, 'base.py')
 base       = imp.load_source('PipelinePlugin', basePath)
-
-# File pipeline stage
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
 class PipelinePlugin(base.PipelinePluginBase):
 
@@ -13,23 +12,25 @@ class PipelinePlugin(base.PipelinePluginBase):
     File pipeline stage
     """
 
-    def __init__(self, **kwargs):
-        self.docs = []
+    def initialize(self, **kwargs):
         self.urls = []
         self.path = kwargs.get('path', None)
 
     def __iter__(self):
         for url in self.urls:
+            
+            # Generate a document
             local = url.split('/')[-1]
-            logging.info("pulling file {url}".format(url = local))
+            logger.info("pulling file {url}".format(url = local.strip()))
             response = requests.get(url)
             doc = response.text
+
+            # Pass state to the next stage
+            self.state['url'] = url.strip()
+
             yield doc
 
-    def __call__(self, doc):
-        logging.warn("File plugin was passed a document it doesn't know how to handle")
-
-    def start(self, doc = None):
+    def start(self):
         with open(self.path) as f:
             self.urls = f.readlines()
 

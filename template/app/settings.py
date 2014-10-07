@@ -1,4 +1,5 @@
 import yaml, pprint, os, logging, json
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
 class Settings:
 
@@ -19,7 +20,7 @@ class Settings:
         """
 
         if key not in self.settings:
-            logging.error("Settings: Key [{key}] was not in settings dictionary".format(key = key))
+            logger.error("Settings: Key [{key}] was not in settings dictionary".format(key = key))
             return default
 
         return self.settings[key]
@@ -44,23 +45,23 @@ class Settings:
     def load(self, path = None):
 
         if path is None and self.path is None:
-            logging.error("Unable to load settings, no path specified.")
+            logger.error("Unable to load settings, no path specified.")
             return self
         
         if path is not None: 
-            logging.debug("Updating settings file path {path}".format(path = path))
+            logger.debug("Updating settings file path {path}".format(path = path))
             self.path = path
 
-        logging.info("Loading settings file {path}".format(path = path))
+        logger.info("Loading settings file {path}".format(path = path))
 
         try:
             with open(self.path, 'r') as yaml_file:
                 self.settings = yaml.load(yaml_file)
         except Exception, msg:
-            logging.error("Unable to load settings from {path}: {msg}".format(path = path, msg = str(msg)))
-            logging.info("Proceeding with no settings")
+            logger.error("Unable to load settings from {path}: {msg}".format(path = path, msg = str(msg)))
+            logger.info("Proceeding with no settings")
         else:
-            logging.info("SUCCESS: loaded settings from {path}.".format(path = path))
-            logging.debug(self)
+            logger.info("SUCCESS: loaded settings from {path}.".format(path = path))
+            logger.debug(self)
             
         return self
