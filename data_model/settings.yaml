@@ -1,0 +1,44 @@
+##############################
+# ETL settings for worker
+##############################
+
+name: TemplateWorker
+
+##############################
+# Scheduler
+##############################
+schedule: False
+interval:
+  seconds: 5
+
+##############################
+# Pipelines
+##############################
+pipelines:
+  - file:
+    - data_model:
+      - stdout
+
+##############################
+# Plugins
+##############################
+
+# Arguments to be passed to plugins on initialization
+plugin_kwargs:
+  file:
+    paths:
+      - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
+    splitLines: false
+  data_model:
+    translate_path: /home/ubuntu/workers/data_model/translate.yml
+    data_type: biospecimen
+    
+# Plugin directories are places to look for plugins that inherit the
+# base.  Directory paths can be absolute or relative
+plugin_directories:
+  - plugins
+  - ../../plugins
+
+# You can also specify the absolute path to each plugin manually
+plugin_paths:
+  example: /home/ubuntu/example.py

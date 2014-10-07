@@ -26,6 +26,8 @@ class PipelinePlugin(base.PipelinePluginBase):
     def start(self):
         for path in self.paths:
             with open(path) as f:
-                if self.splitLines : self.docs = [f.read()]
-                else               : self.docs = [f.readlines()]
+                if not self.splitLines:
+                    self.docs = [f.read()]
+                else: 
+                    self.docs = [f.readlines()]
         
