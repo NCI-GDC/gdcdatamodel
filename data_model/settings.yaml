@@ -14,7 +14,7 @@ interval:
 ##############################
 # Pipelines
 ##############################
-pipelines:
+pipelines: 
   - file:
     - data_model:
       - stdout
@@ -26,9 +26,10 @@ pipelines:
 # Arguments to be passed to plugins on initialization
 plugin_kwargs:
   file:
+    splitLines: false
     paths:
       - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
-    splitLines: false
+
   data_model:
     translate_path: /home/ubuntu/workers/data_model/translate.yml
     data_type: biospecimen

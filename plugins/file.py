@@ -24,10 +24,11 @@ class PipelinePlugin(base.PipelinePluginBase):
             yield doc
 
     def start(self):
+        self.docs = []
         for path in self.paths:
             with open(path) as f:
                 if not self.splitLines:
-                    self.docs = [f.read()]
+                    self.docs.append(f.read())
                 else: 
-                    self.docs = [f.readlines()]
+                    self.docs.append(f.readlines())
         
