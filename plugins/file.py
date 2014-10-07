@@ -34,5 +34,5 @@ class PipelinePlugin(base.PipelinePluginBase):
                 if not self.splitLines:
                     self.docs.append(f.read())
                 else: 
-                    self.docs.append(f.readlines())
+                    self.docs += f.readlines()
         

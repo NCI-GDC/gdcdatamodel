@@ -15,13 +15,9 @@ class PipelinePlugin(base.PipelinePluginBase):
     def __iter__(self):
 
         for doc in self.docs:
-            for url in doc:
-                logger.info("downloading file {doc}".format(doc = url))
-                response = requests.get(url)
-                doc = response.text
-    
-                # Pass state to the next stage
-                self.state['doc'] = doc.strip()
-    
-                yield doc
+            logger.info("downloading file {doc}".format(doc = doc))
+            response = requests.get(doc)
+            ret = response.text
+
+            yield doc
     
