@@ -2,7 +2,6 @@ import abc, logging
 
 class PipelinePluginBase:
 
-
     def __init__(self, **kwargs):
         self.docs = []
         self.state = {}
@@ -21,6 +20,14 @@ class PipelinePluginBase:
             self.docs.append(__doc__)
         except:
             self.docs = [__doc__]
+
+
+    def __iter__(self):
+        for doc in self.docs:
+            yield self.next(doc)
+
+    def next(self, doc):
+        return doc
 
     def start(self):
         pass

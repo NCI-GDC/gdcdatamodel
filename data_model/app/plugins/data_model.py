@@ -23,5 +23,5 @@ class PipelinePlugin(base.PipelinePluginBase):
     
     def next(self, doc):
         self.bp.parse_biospecimen(data = doc)
-        return self.bp
+        return self.bp.toJSON()
     

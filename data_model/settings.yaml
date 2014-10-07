@@ -33,6 +33,9 @@ plugin_kwargs:
   data_model:
     translate_path: /home/ubuntu/workers/data_model/translate.yml
     data_type: biospecimen
+
+  stdout:
+    pprint: True
     
 # Plugin directories are places to look for plugins that inherit the
 # base.  Directory paths can be absolute or relative

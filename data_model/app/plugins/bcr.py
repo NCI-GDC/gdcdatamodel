@@ -88,6 +88,24 @@ class BiospecimenParser:
                 if 'edges' in node_settings:
                     self.get_edges(xml_node, node, node_settings['edges'])
 
+    def toJSON(self):
+        rep = {
+            'docs': [],
+            'edge_types': {},
+            }
+
+        for node in self.nodes:
+            rep['docs'].append(self.nodes[node])
+            
+        for edge_type, edges in self.edges.iteritems():
+            rep['edge_types'][edge_type] = []
+            for edge in edges:
+                rep['edge_types'][edge_type].append(edge)
+        return rep
+
+    def __repr__(self):
+        return json.dumps(self.toJSON(), indent=4, sort_keys=True)
+
     def print_graph(self):
         for node in self.nodes:
             logging.info(json.dumps(self.nodes[node], indent=4, sort_keys=True))

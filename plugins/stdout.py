@@ -12,8 +12,16 @@ class PipelinePlugin(base.PipelinePluginBase):
     Prints to stdout
     """
 
+    def initialize(self, **kwargs):
+        self.pprint = kwargs.get('pprint', False)
+
     def __iter__(self):
         for doc in self.docs:
-            print doc
-            yield {}
+
+            if self.pprint: 
+                pprint(doc)
+            else:
+                print doc
+
+            yield doc
 
