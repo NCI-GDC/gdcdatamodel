@@ -18,6 +18,5 @@ class PipelinePlugin(base.PipelinePluginBase):
             logger.info("downloading file {doc}".format(doc = doc))
             response = requests.get(doc)
             ret = response.text
-
-            yield doc
+            yield ret
     
