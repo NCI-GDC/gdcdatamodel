@@ -13,16 +13,15 @@ class PipelinePlugin(base.PipelinePluginBase):
     """
 
     def __iter__(self):
+
         for doc in self.docs:
-            
-            # Generate a document
-            local = doc.split('/')[-1]
-            logger.info("downloading file {doc}".format(doc = local.strip()))
-            response = requests.get(doc)
-            doc = response.text
-
-            # Pass state to the next stage
-            self.state['doc'] = doc.strip()
-
-            yield doc
-
+            for url in doc:
+                logger.info("downloading file {doc}".format(doc = url))
+                response = requests.get(url)
+                doc = response.text
+    
+                # Pass state to the next stage
+                self.state['doc'] = doc.strip()
+    
+                yield doc
+    

@@ -17,11 +17,7 @@ interval:
 pipelines:
   - file:
     - urls:
-      - length:
-        - stdout
-      - reverse:
-        - length:
-          - stdout
+      - stdout
 
 ##############################
 # Plugins
