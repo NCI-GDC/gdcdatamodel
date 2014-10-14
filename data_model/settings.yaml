@@ -2,7 +2,7 @@
 # ETL settings for worker
 ##############################
 
-name: TemplateWorker
+name: DatamodelSync
 
 ##############################
 # Scheduler

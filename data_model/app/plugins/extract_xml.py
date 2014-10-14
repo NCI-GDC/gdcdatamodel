@@ -46,7 +46,8 @@ def download_file(url, dl_dir="/tmp/tcga"):
 class PipelinePlugin(base.PipelinePluginBase):
 
     """
-    
+    extract_xml.py
+    Opens a uri to tarfile and returns any extracted xml docs
     """
 
     def __iter__(self):
