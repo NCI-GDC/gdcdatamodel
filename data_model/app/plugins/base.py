@@ -12,15 +12,9 @@ class PipelinePluginBase:
         pass
 
     def load(self, __doc__, **__state__):
-        self.docs = []
-
         for key, value in __state__.iteritems():
             self.state[key] = value
-        try:
-            self.docs.append(__doc__)
-        except:
-            self.docs = [__doc__]
-
+        self.docs = [__doc__]
 
     def __iter__(self):
         for doc in self.docs:

@@ -21,7 +21,6 @@ class PipelinePlugin(base.PipelinePluginBase):
 
         self.paths = kwargs['paths']
         self.splitLines = kwargs.get('splitLines', False)
-
     
     def __iter__(self):
         for doc in self.docs:

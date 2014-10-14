@@ -15,10 +15,11 @@ interval:
 # Pipelines
 ##############################
 pipelines: 
-  - file:
-    - xml2bcr:
-      - bcr2neo
-      # - stdout
+  - latest_urls:
+    - extract_xml:
+      - xml2bcr:
+        - bcr2neo
+        - count
 
 ##############################
 # Plugins
@@ -31,6 +32,12 @@ plugin_kwargs:
     paths:
       - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
 
+  latest_urls:
+    latest_firstline: 'ARCHIVE_NAME	DATE_ADDED	ARCHIVE_URL'
+    latest_url: http://tcga-data.nci.nih.gov/datareports/resources/latestarchive
+    open_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
+    protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
+    
   xml2bcr:
     translate_path: /home/ubuntu/workers/data_model/translate.yml
     data_type: biospecimen
@@ -40,7 +47,7 @@ plugin_kwargs:
     port: 7474
     
   stdout:
-    pprint: True
+    pprint: False
     
 # Plugin directories are places to look for plugins that inherit the
 # base.  Directory paths can be absolute or relative

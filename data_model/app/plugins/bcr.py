@@ -73,14 +73,13 @@ class BiospecimenParser:
 
             for xml_node in xml_nodes:
                 node = {'_type' : node_settings['_type']}
-                node_id = xml_node.xpath(node_settings['id'], 
-                                         namespaces=self.namespaces)
+                node_id = xml_node.xpath(node_settings['id'], namespaces=self.namespaces)
 
                 if len(node_id) != 1:
                     logging.error('Node does not have one id: %s' % node_id)
-                    raise
-                else:
-                    node['id'] = node_id[0]
+                    return 
+
+                node['id'] = node_id[0]
 
                 self.load_properties(xml_node, node_settings, node)
 
@@ -90,7 +89,14 @@ class BiospecimenParser:
                     self.get_edges(xml_node, node, node_settings['edges'])
 
     def __repr__(self):
-        return json.dumps(self.toJSON(), indent=4, sort_keys=True)
+        return json.dumps(self.doc, indent=4, sort_keys=True)
+
+    def __getitem__(self, key, default = None):
+        if key in self.doc:
+            return self.doc[key]
+        else:
+            return default
+
 
     def print_graph(self):
         for node in self.nodes:

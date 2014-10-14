@@ -164,7 +164,7 @@ class PipelineStage:
         try:
             module = imp.load_source(name, pluginPath)
         except Exception, msg:
-            logger.info("Unable to load plugin: {plugin}: {msg}".format(plugin = name, msg = str(msg)))
+            logger.warn("Unable to load plugin: {plugin}: {msg}".format(plugin = name, msg = str(msg)))
             return None
         else:
             logger.info("SUCCESS: Loaded plugin: {plugin}".format(plugin = name))
