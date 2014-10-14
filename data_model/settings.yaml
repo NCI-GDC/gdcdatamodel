@@ -17,9 +17,8 @@ interval:
 pipelines: 
   - latest_urls:
     - extract_xml:
-      - xml2bcr:
-        - bcr2neo
-        - count
+      - xml2graph:
+        - graph2neo
 
 ##############################
 # Plugins
@@ -38,11 +37,11 @@ plugin_kwargs:
     open_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
     protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
     
-  xml2bcr:
+  xml2graph:
     translate_path: /home/ubuntu/workers/data_model/translate.yml
     data_type: biospecimen
 
-  bcr2neo:
+  graph2neo:
     host: localhost
     port: 7474
     
