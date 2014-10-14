@@ -16,10 +16,39 @@ class PipelinePlugin(base.PipelinePluginBase):
     
     """
     
-    def initialize(self, host = 'localhost', port = 7474, user = None, password = None, **kwargs):
+    def initialize(self, **kwargs):
         self.db = neo4j.GraphDatabaseService()
+        self.max_retries = kwargs.get('max_retries', 4)
+        self.retries = 0
 
     def next(self, doc):
+
+        if self.retries > self.max_retries: 
+            logger.error("Exceeded number of max retries! Aborting: [{r} > {m}]".format(
+                    r=self.retries, m=self.max_retries))
+            self.retries = 0
+            return doc
+
+        try:
+            self.export(doc)
+
+        # except Exception, msg:
+        except py2neo.exceptions.BatchError, msg:
+            logger.error("Unable to complete batch neo4j request: %s" % str(msg))
+            logger.warn("Trying same document again")
+            self.retries += 1
+            self.next(doc)
+
+        except Exception, msg:
+            logger.error("Unrecoverable error: " + str(msg))
+            self.retries = 0
+
+        else:
+            self.retries = 0
+
+        return doc
+
+    def export(self, doc):
 
         assert 'nodes' in doc, "Graph dictionary must have key 'nodes' with a list of nodes."
         assert 'edges' in doc, "Graph dictionary must have key 'edges' with a list of edges."
@@ -67,7 +96,6 @@ class PipelinePlugin(base.PipelinePluginBase):
             batch.append_cypher(add_rel.format(src=src, dst=dst, edge_type=edge_types[i/2]))
 
         rels = batch.submit()
-
         return doc
 
         

@@ -198,7 +198,7 @@ class PipelineStage:
         try:
             self.plugin = self.module.PipelinePlugin(**settings.get('plugin_kwargs', {}).get(self.name, {}))
         except Exception, msg:
-            logger.error('Initialization of {name} failed: {msg}'.format(name = self.name, msg = str(msg)))
+            raise Exception('Initialization of {name} failed: {msg}'.format(name = self.name, msg = str(msg)))
         else:
             logger.info('Initialization of {name} complete.'.format(name = self.name))
 

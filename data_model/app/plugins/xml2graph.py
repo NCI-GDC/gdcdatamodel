@@ -35,7 +35,6 @@ class PipelinePlugin(base.PipelinePluginBase):
             self.translate = yaml.load(f)
 
         self.node_types = self.translate[kwargs['data_type']]
-        # self.bp = bcr.BiospecimenParser(self.translate[kwargs['data_type']])
     
     def next(self, doc):
         return self.parse(doc)
@@ -57,7 +56,7 @@ class PipelinePlugin(base.PipelinePluginBase):
                 node_id = xml_node.xpath(node_settings['id'], namespaces=self.namespaces)
 
                 if len(node_id) != 1:
-                    logging.error('Node [{ntype}] does not have one id: {ids}'.format(
+                    logging.warn('Node [{ntype}] does not have one id: {ids}'.format(
                             ids=node_id, ntype=node_type))
                     return self.doc
 
