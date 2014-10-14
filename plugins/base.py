@@ -24,6 +24,9 @@ class PipelinePluginBase:
 
     def __iter__(self):
         for doc in self.docs:
+            if doc is None:
+                logging.warn("Stage was passed a NoneType doc")
+                continue
             yield self.next(doc)
 
     def next(self, doc):

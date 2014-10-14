@@ -16,8 +16,9 @@ interval:
 ##############################
 pipelines: 
   - file:
-    - data_model:
-      - stdout
+    - xml2bcr:
+      - bcr2neo
+      # - stdout
 
 ##############################
 # Plugins
@@ -30,10 +31,14 @@ plugin_kwargs:
     paths:
       - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
 
-  data_model:
+  xml2bcr:
     translate_path: /home/ubuntu/workers/data_model/translate.yml
     data_type: biospecimen
 
+  bcr2neo:
+    host: localhost
+    port: 7474
+    
   stdout:
     pprint: True
     
