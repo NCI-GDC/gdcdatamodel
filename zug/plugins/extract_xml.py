@@ -10,10 +10,9 @@ from pprint import pprint
 from py2neo import neo4j
 from datetime import datetime, tzinfo, timedelta
 
-currentDir = os.path.dirname(os.path.realpath(__file__))
-basePath   = os.path.join(currentDir, 'base.py')
-base       = imp.load_source('PipelinePlugin', basePath)
-logger     = logging.getLogger(name = "[{name}]".format(name = __name__))
+from zug import basePlugin
+
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
 #because python isoformat() isn't actually compliant without tz
 class SimpleUTC(tzinfo):
@@ -43,7 +42,7 @@ def download_file(url, dl_dir="/tmp/tcga"):
                 f.flush()
     return (local_filename, r.status_code)
 
-class PipelinePlugin(base.PipelinePluginBase):
+class extract_xml(basePlugin):
 
     """
     extract_xml.py

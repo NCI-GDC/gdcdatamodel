@@ -3,14 +3,12 @@ from pprint import pprint
 from py2neo import neo4j
 import py2neo
 
+from zug import basePlugin
+
 currentDir = os.path.dirname(os.path.realpath(__file__))
-basePath   = os.path.join(currentDir, 'base.py')
-base       = imp.load_source('PipelinePlugin', basePath)
-logger     = logging.getLogger(name = "[{name}]".format(name = __name__))
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
-bcr = imp.load_source('bcr', os.path.join(currentDir, 'bcr.py'))
-
-class PipelinePlugin(base.PipelinePluginBase):
+class graph2neo(basePlugin):
 
     """
     

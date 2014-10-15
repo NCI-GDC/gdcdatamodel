@@ -6,15 +6,12 @@ import yaml
 
 from lxml import etree
 from pprint import pprint
+from zug import basePlugin
 
 currentDir = os.path.dirname(os.path.realpath(__file__))
-basePath   = os.path.join(currentDir, 'base.py')
-base       = imp.load_source('PipelinePlugin', basePath)
-logger     = logging.getLogger(name = "[{name}]".format(name = __name__))
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
-bcr = imp.load_source('bcr', os.path.join(currentDir, 'bcr.py'))
-
-class PipelinePlugin(base.PipelinePluginBase):
+class xml2graph(basePlugin):
 
     """
     xml2graph
@@ -56,8 +53,7 @@ class PipelinePlugin(base.PipelinePluginBase):
                 node_id = xml_node.xpath(node_settings['id'], namespaces=self.namespaces)
 
                 if len(node_id) != 1:
-                    logging.warn('Node [{ntype}] does not have one id: {ids}'.format(
-                            ids=node_id, ntype=node_type))
+                    logging.warn('Node [{ntype}] does not have one id: {ids}'.format(ids=node_id, ntype=node_type))
                     return self.doc
 
                 node['id'] = node_id[0]
@@ -102,20 +98,10 @@ class PipelinePlugin(base.PipelinePluginBase):
 
             #Could make into list, for now it's an error
             if tag_nons in properties:
-                logging.error('Already seen property: %s' % tag_nons)
+                logging.error('Duplicate property: %s' % tag_nons)
                 raise
 
             if property_node.text is not None:
                 properties[tag_nons] = property_node.text.strip()
             else:
                 properties[tag_nons] = property_node.text
-                
-
-    def __repr__(self):
-        return json.dumps(self.doc, indent=4, sort_keys=True)
-
-    def __getitem__(self, key, default = None):
-        if key in self.doc:
-            return self.doc[key]
-        else:
-            return default

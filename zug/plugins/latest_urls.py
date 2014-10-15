@@ -1,13 +1,16 @@
-import os, imp, requests, logging, re
+import os
+import imp
+import requests
+import logging
+import re
+import py2neo
+
 from pprint import pprint
 from py2neo import neo4j
-import py2neo
 from datetime import datetime, tzinfo, timedelta
 
-currentDir = os.path.dirname(os.path.realpath(__file__))
-basePath   = os.path.join(currentDir, 'base.py')
-base       = imp.load_source('PipelinePlugin', basePath)
-logger     = logging.getLogger(name = "[{name}]".format(name = __name__))
+from zug import basePlugin
+logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
 #because python isoformat() isn't actually compliant without tz
 class SimpleUTC(tzinfo):
@@ -16,7 +19,7 @@ class SimpleUTC(tzinfo):
     def utcoffset(self, dt):
         return timedelta(0)
 
-class PipelinePlugin(base.PipelinePluginBase):
+class latest_urls(basePlugin):
 
     """
     
