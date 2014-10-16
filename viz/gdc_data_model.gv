@@ -7,7 +7,7 @@ digraph gdc_data_model {
 
 	node [fillcolor = lightblue, style=filled]; 
 
-	patient -> tissue_source_site [ label = "seen_at" ];
+	patient -> tissue_source_site [ label = "processed_at" ];
 	#patient -> program [ label = "part_of" ]; #patient should just go to project, not all the way to program
 	patient -> project [ label = "part_of" ];
 	patient -> batch [ label = "part_of" ];
@@ -44,9 +44,9 @@ digraph gdc_data_model {
 
 	node[fillcolor = bisque, peripheries=2 ] 
 	#these nodes would have multiple types based on Junjun's spreadsheet + TARGET, just made single node to reduce clutter for now
-	file -> platform [ label = "??" ] 
-	file -> data_type [ label = "??" ]
+	file -> platform [ label = "generated_by" ] 
+	file -> data_type [ label = "contains" ]
 	#file -> data_level [ label = "??" ]
-	data_type -> data_category [label = "??" ]
+	data_type -> data_category [label = "part_of" ]
 	file -> file [label = "derived_from", style=dashed ];
 }
