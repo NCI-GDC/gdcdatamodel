@@ -1,8 +1,7 @@
 
 import zug
 
-@zug.callables.register()
+@zug.next
 def count(doc):
-    print len(doc)
     return len(doc)
 

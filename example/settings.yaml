@@ -16,10 +16,9 @@ interval:
 ##############################
 plugins: 
   - latest_urls:
-    - count
-    # - extract_xml:
-    #   - xml2graph:
-    #     - graph2neo
+    - extract_xml:
+      - count:
+        - stdout
 
 ##############################
 # Plugins

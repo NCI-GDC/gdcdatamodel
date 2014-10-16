@@ -1,23 +1,27 @@
 import os
 import imp
+import traceback
 from zug import Zug, basePlugin
 
 from settings import Settings
 
 baseDir = os.path.dirname(os.path.realpath(__file__))
 
-class Callables():
+# Functions below are used as decorators 
 
-    def __init__(self):
-        self.callables = {}
- 
-    def register(self):
-        def func_wrapper(func):
-            name = func.__name__
-            self.callables[name] = func
-        return func_wrapper
+def next(f):
+    f.zug_next = True
+    return f
 
-    def __getitem__(self, key):
-        return self.callables['key']
+def initialize(f):
+    f.zug_initialize = True
+    return f
 
-callables = Callables()
+def start(f):
+    f.zug_start = True
+    return f
+
+def start(f):
+    f.zug___iter__ = True
+    return f
+

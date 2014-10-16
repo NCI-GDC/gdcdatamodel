@@ -10,9 +10,12 @@ logger = logging.getLogger(name = "[{name}]".format(name=__name__))
 pluginBasePath = os.path.join(os.path.dirname(baseDir), 'plugins', 'base.py')
 basePlugin = imp.load_source('ZugPluginBase', pluginBasePath).ZugPluginBase
 
+decoratables = ['next', 'initialize', '__iter__', 'start']
+DECORATOR_PREFIX = 'zug_'
+
 class Zug:
 
-    def __init__(self, settings, callables):
+    def __init__(self, settings):
         """
         A new instance to extract, transform, and load data
         """
@@ -20,7 +23,6 @@ class Zug:
         logger.info("New ETL instance: " + str(self))
 
         self.settings = settings
-        self.callables = callables
         self.pluginTree = self.settings.get('plugins', [])
         self.plugins = []
 
@@ -191,14 +193,37 @@ class PluginTreeLevel:
 
         logger.info('Initializing {name}'.format(name = self.name))
 
-        if self.name in self.zug.callables.callables:
-            self.plugin = basePlugin(**self.zug.settings.get('plugin_kwargs', {}).get(self.name, {}))
-            self.plugin.next = self.zug.callables.callables[self.name]
-        else:
+        # Attempt to load as class
+        try:
             className = self.zug.settings.get('plugin_class_names', {}).get(self.name, self.name)
             pluginClass = getattr(self.module, className)
             self.plugin = pluginClass(**self.zug.settings.get('plugin_kwargs', {}).get(self.name, {}))
+            return 
 
+        except Exception, msg:
+            logger.info("Unable to load plugin as class. Attempting to use decorators: " + str(msg))
+
+        # Attempt to load by decorators
+        try:
+            self.plugin = basePlugin(**self.zug.settings.get('plugin_kwargs', {}).get(self.name, {}))
+
+            # Check the module for functions handled by decorators
+            for dec in decoratables:
+                attr = DECORATOR_PREFIX + dec
+                decs = [a for a in dir(self.module) if hasattr(self.module.__dict__[a], attr)]
+
+                # Override the base class functions
+                if len(decs) > 0: self.plugin.__dict__[dec] = self.module.__dict__[decs[-1]]
+            return 
+
+        except Exception, msg:
+            logger.info("Unable to load plugin by decorators: " + str(msg))
+            raise
+
+        else:
+            return
+
+        raise Exception("Unable to load plugin by class or decorators")
 
     def loadModules(self):
         """
@@ -227,7 +252,6 @@ class PluginTreeLevel:
         # Walk tree for children modules
         for child in self.children:
             child.loadModules()
-
         try:
             self.initializeModule()
         except Exception, msg:

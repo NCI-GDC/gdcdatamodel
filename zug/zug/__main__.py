@@ -11,13 +11,15 @@ sched = BlockingScheduler()
 
 DEFAULT_INTERVAL  = {'minutes': 1}
 
-from zug import Zug, baseDir, callables
-from zug.settings import Settings
+from __init__ import Zug, baseDir
+from settings import Settings
 
 def setup():
 
+    defaultSettingsPath = os.path.join(os.getcwdu(), 'settings.yaml')
+
     parser = argparse.ArgumentParser(description='Zug workload distributor.')
-    parser.add_argument('--settings', '-s', action="store", default='settings.yaml')
+    parser.add_argument('--settings', '-s', action="store", default=defaultSettingsPath)
     args = parser.parse_args()
 
     settingsDir  = os.path.dirname(baseDir)
@@ -29,7 +31,7 @@ def setup():
 if __name__ == '__main__':
 
     settings = setup()
-    zug = Zug(settings, callables)
+    zug = Zug(settings)
     zug.run()
 
     if settings.get('schedule', False):

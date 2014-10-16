@@ -2,7 +2,7 @@
 # ETL settings for worker
 ##############################
 
-name: DatamodelSync
+name: ExampleZug
 
 ##############################
 # Scheduler
@@ -14,17 +14,17 @@ interval:
 ##############################
 # Pipelines
 ##############################
-pipelines: 
+plugins: 
   - latest_urls:
     - extract_xml:
-      - xml2graph:
-        - graph2neo
+      - count:
+        - stdout
 
 ##############################
 # Plugins
 ##############################
 
-# Arguments to be passed to plugins on initialization
+##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
   file:
     splitLines: false
@@ -47,13 +47,16 @@ plugin_kwargs:
     
   stdout:
     pprint: False
-    
-# Plugin directories are places to look for plugins that inherit the
-# base.  Directory paths can be absolute or relative
-plugin_directories:
-  - plugins
-  - ../../plugins
 
-# You can also specify the absolute path to each plugin manually
+##### You can specify plugin class names, the default is the module name    
+# plugin_class_names:
+#   latest_urls: latest_urls
+    
+##### Plugin directories are places to look for plugins that inherit the
+##### base.  Directory paths can be absolute or relative
+# plugin_directories:
+#   - plugins
+
+##### You can also specify the absolute path to each plugin manually
 plugin_paths:
   example: /home/ubuntu/example.py
