@@ -1,0 +1,49 @@
+digraph gdc_data_model {
+	rankdir=BT;
+	node [shape = oval];
+	node [fillcolor = chartreuse, style=filled];
+	study, project, center, tissue_source_site;
+	study -> project [ label ="part_of_project" ]
+
+	node [fillcolor = lightblue, style=filled]; 
+
+	patient -> tissue_source_site [ label = "seen_at" ];
+	#patient -> project [ label = "part_of_project" ];
+	patient -> study [ label = "part_of_study" ];
+	patient -> batch [ label = "part_of_batch" ];
+	patient -> biospecimen_file [ label = "from_file" ]
+
+	sample -> patient [ label = "donated_by"];
+	portion -> sample [ label = "derived_from" ];
+	portion -> center [label = "shipped_to", style=dashed];
+	analyte -> portion [ label = "derived_from" ];
+	aliquot -> analyte [ label = "derived_from"];		
+	aliquot -> center [ label = "shipped_to"];
+	protocol -> analyte [ label = "applied_to"];
+	slide -> portion [ label = "histology_of"];
+
+	node [fillcolor = yellow];
+	annotation -> patient [ label = "annotation_of", style=dashed ];
+	annotation -> sample [ label = "annotation_of", style=dashed  ];
+	annotation -> portion [ label = "annotation_of", style=dashed  ];
+	annotation -> analyte [ label = "annotation_of", style=dashed  ];
+	annotation -> aliquot [ label = "annotation_of", style=dashed  ];
+
+	node [fillcolor = white];
+	archive -> study [ label = "part_of_study" ]
+	archive -> batch [ label = "contains_batch" ]
+	file -> center [ label = "received_from", style=dashed];
+	file -> archive [ label = "part_of", style=dashed ];
+	file -> patient [ label = "data_from", style=dashed];
+	file -> sample [ label = "data_from", style=dashed];
+	file -> portion [ label = "data_from", style=dashed];
+	file -> analyte [ label = "data_from", style=dashed];
+	file -> aliquot [ label = "data_from", style=dashed];
+	file -> slide [ label = "data_from", style=dashed];
+	
+
+	node[fillcolor = bisque, peripheries=2 ]
+	file -> platform [ label = "??" ]
+	file -> data_type [ label = "??" ]
+	file -> data_level [ label = "??" ]
+}
