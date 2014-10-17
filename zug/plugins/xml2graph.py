@@ -24,8 +24,6 @@ class xml2graph(basePlugin):
        }
     } 
 
-    
-
     """
 
     def initialize(self, **kwargs):
@@ -79,17 +77,12 @@ class xml2graph(basePlugin):
         for edge_type, edge_settings in edge_types.iteritems():
 
             endpoints = elem.xpath(edge_settings['locate'], namespaces=self.namespaces)
-
             src_id = node['id']
             if src_id not in self.edges: self.edges[src_id] = {}
 
             for dst_id in endpoints:
-                edge = (node['id'], edge_type, node['id'])
-
-                if dst_id in self.edges[src_id]:
-                    logger.error("Node {src_id} has multiple edges for {dst_id}".format(src_id=src_id, dst_id=dst_id))
-                
-                self.edges[src_id][dst_id] = (edge_type, edge_settings['type'])
+                edge = (edge_type, edge_settings['type'])
+                self.edges[src_id][dst_id] = edge
     
 
     def load_properties(self, elem, node_settings, properties):

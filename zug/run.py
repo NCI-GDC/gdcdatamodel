@@ -5,9 +5,14 @@ import logging
 import argparse
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(name)-6s %(levelname)-4s %(message)s' )
 logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 sched = BlockingScheduler()
+
+log_levels = {
+    'INFO': logging.INFO,
+    'WARN': logging.WARN,
+    'DEBUG': logging.DEBUG,
+}
 
 DEFAULT_INTERVAL  = {'minutes': 1}
 
@@ -29,6 +34,10 @@ def setup():
 if __name__ == '__main__':
 
     settings = setup()
+    
+    log_level = log_levels[settings.get('log_level', 'WARN')]
+    logging.basicConfig(level=log_level, format='%(asctime)s %(name)-6s %(levelname)-4s %(message)s' )
+
     zug = Zug(settings, callables)
     zug.run()
 

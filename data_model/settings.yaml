@@ -3,6 +3,7 @@
 ##############################
 
 name: ExampleZug
+log_level: INFO
 
 ##############################
 # Scheduler
@@ -15,15 +16,14 @@ interval:
 # Pipelines
 ##############################
 plugins: 
-  # - latest_urls:
-  #   - extract_tar:
-  #     - xml2graph:
-  #       - graph2neo
-
-  # Test with a single file
   - uri:
     - xml2graph:
       - graph2neo
+
+  - latest_urls:
+    - extract_tar:
+      - xml2graph:
+        - graph2neo
 
         
 ##############################

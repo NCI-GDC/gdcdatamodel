@@ -14,7 +14,7 @@ logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 class graph2neo(basePlugin):
 
     """
-    
+    converts a a dictionary of edges and nodes to neo4j
     """
     
     def initialize(self, **kwargs):
