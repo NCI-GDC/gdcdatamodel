@@ -10,6 +10,8 @@ from py2neo import neo4j
 from datetime import datetime, tzinfo, timedelta
 
 from zug import basePlugin
+from zug.exceptions import IgnoreDocumentException
+
 logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
 #because python isoformat() isn't actually compliant without tz
@@ -25,12 +27,12 @@ class latest_urls(basePlugin):
     
     """
         
-    def initialize(self, **kwargs):
+    def initialize(self, constraints = {}, **kwargs):
         self.open_url = kwargs['open_url']
         self.latest_firstline = kwargs['latest_firstline']
         self.latest_url = kwargs['latest_url']
         self.protected_url = kwargs['protected_url']
-
+        
     def start(self):
         self.docs = []
         logger.info('TCGA DCC Signpost Sync Running')
@@ -46,7 +48,16 @@ class latest_urls(basePlugin):
             self.docs.append(sline)
  
     def next(self, doc):
-        return self.parse_archive(*doc)
+
+        archive = self.parse_archive(*doc)
+        for key, value in self.kwargs.get('constraints', {}).iteritems():
+            if archive[key] != value: 
+                raise IgnoreDocumentException()
+        
+        url = archive[self.kwargs['url_key']]
+        self.state['archive'] = archive
+
+        return url
 
     def pull_dcc_latest(self):
         r = requests.get(self.latest_url)

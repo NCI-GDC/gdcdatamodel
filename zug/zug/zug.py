@@ -5,6 +5,8 @@ import sys
 import pprint
 import copy
 
+import exceptions
+
 baseDir = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(name = "[{name}]".format(name=__name__))
 pluginBasePath = os.path.join(os.path.dirname(baseDir), 'plugins', 'base.py')

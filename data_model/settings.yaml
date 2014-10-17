@@ -15,27 +15,42 @@ interval:
 # Pipelines
 ##############################
 plugins: 
-  - latest_urls:
-    - extract_xml:
-      - count:
-        - stdout
+  # - latest_urls:
+  #   - extract_tar:
+  #     - xml2graph:
+  #       - graph2neo
 
+  # Test with a single file
+  - uri:
+    - xml2graph:
+      - graph2neo
+
+        
 ##############################
 # Plugins
 ##############################
 
 ##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
-  file:
-    splitLines: false
-    paths:
+
+  uri:
+    uris:
       - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
 
+  extract_tar:
+    regex: ".*\\.xml"
+      
   latest_urls:
     latest_firstline: 'ARCHIVE_NAME	DATE_ADDED	ARCHIVE_URL'
     latest_url: http://tcga-data.nci.nih.gov/datareports/resources/latestarchive
     open_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
     protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
+
+    constraints:
+      data_level: Level_1
+      platform: bio
+
+    url_key: dcc_archive_url
     
   xml2graph:
     translate_path: /home/ubuntu/workers/data_model/translate.yml
@@ -44,6 +59,7 @@ plugin_kwargs:
   graph2neo:
     host: localhost
     port: 7474
+    max_retries: 0
     
   stdout:
     pprint: False

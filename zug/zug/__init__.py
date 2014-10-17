@@ -1,7 +1,6 @@
 import os
 import imp
-import traceback
-from zug import Zug, basePlugin
+from zug import Zug, basePlugin, exceptions
 
 from settings import Settings
 

@@ -11,11 +11,21 @@ from zug import basePlugin
 currentDir = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
+
 class xml2graph(basePlugin):
 
     """
     xml2graph
     takes in an xml as a string and compiles a list of nodes and edges
+
+    edges = {
+       source_id: {
+          destination_id : (edge_type, destination_type),
+       }
+    } 
+
+    
+
     """
 
     def initialize(self, **kwargs):
@@ -66,16 +76,20 @@ class xml2graph(basePlugin):
 
     def get_edges(self, elem, node, edge_types):
 
-        if not edge_types: return
-
         for edge_type, edge_settings in edge_types.iteritems():
 
             endpoints = elem.xpath(edge_settings['locate'], namespaces=self.namespaces)
-            if edge_type not in self.edges: self.edges[edge_type] = []
 
-            for endpoint_id in endpoints:
-                edge = ((node['_type'], node['id']), (edge_settings['type'], endpoint_id))
-                self.edges[edge_type].append(edge)
+            src_id = node['id']
+            if src_id not in self.edges: self.edges[src_id] = {}
+
+            for dst_id in endpoints:
+                edge = (node['id'], edge_type, node['id'])
+
+                if dst_id in self.edges[src_id]:
+                    logger.error("Node {src_id} has multiple edges for {dst_id}".format(src_id=src_id, dst_id=dst_id))
+                
+                self.edges[src_id][dst_id] = (edge_type, edge_settings['type'])
     
 
     def load_properties(self, elem, node_settings, properties):

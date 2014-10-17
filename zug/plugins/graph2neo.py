@@ -1,5 +1,8 @@
-import os, imp, requests, logging, re
+import os
+import logging
+
 from pprint import pprint
+
 from py2neo import neo4j
 import py2neo
 
@@ -40,6 +43,7 @@ class graph2neo(basePlugin):
         except Exception, msg:
             logger.error("Unrecoverable error: " + str(msg))
             self.retries = 0
+            raise
 
         else:
             self.retries = 0
@@ -51,49 +55,43 @@ class graph2neo(basePlugin):
         assert 'nodes' in doc, "Graph dictionary must have key 'nodes' with a list of nodes."
         assert 'edges' in doc, "Graph dictionary must have key 'edges' with a list of edges."
 
-        batch = neo4j.WriteBatch(self.db)
-        
         nodes = []
         rels = {}
-        edge_types = []
+        edges = doc['edges']
+        ordered_edges = []
 
-        for edge_type, edges in doc['edges'].iteritems():
-            # walk the edges once to create key value mapping by id
-            for edge in edges:
-                origin, dest = edge
-                node_type, id = origin
-                if node_type not in rels: rels[node_type] = {}
-                rels[node_type][id] = edge_type, dest
+        batch = neo4j.WriteBatch(self.db)
 
-        for id, node in doc['nodes'].iteritems():
-            node_type = node.get('_type', None)
+        for src_id, node in doc['nodes'].iteritems():
 
-            edge_type, dest = rels[node_type][id]
-            dest_type, dest_id = dest
-            dest = {'_type': dest_type, 'id': dest_id}
+            src_type = node['_type']
 
-            # create nodes
-            src_node = py2neo.node(node)
-            dst_node = py2neo.node(dest)
-
-            # Get or create index, source node, and destination node
-            index = self.db.get_or_create_index(neo4j.Node, node_type)
-            src = batch.get_or_create_indexed_node(node_type, 'id', id, src_node)
-            dst = batch.get_or_create_indexed_node(dest_type, 'id', dest_id, dst_node)
-
-            # Keep a record of the edge type in order
-            edge_types.append(edge_type)
-
+            for dst_id, edge in edges[src_id].iteritems():
+    
+                # Pull edge info gathered before
+                edge_type, dst_type = edges[src_id][dst_id]
+                dest = {'_type': dst_type, 'id': dst_id}
+    
+                # create nodes
+                src_node = py2neo.node(node)
+                dst_node = py2neo.node(dest)
+    
+                # Get or create index, source node, and destination node
+                index = self.db.get_or_create_index(neo4j.Node, src_type)
+                src = batch.get_or_create_indexed_node(src_type, 'id', src_id, src_node)
+                dst = batch.get_or_create_indexed_node(dst_type, 'id', dst_id, dst_node)
+                ordered_edges.append(edge_type)
+    
         nodes = batch.submit()
 
         batch = neo4j.WriteBatch(self.db)
-        add_rel = "START n=node({src}), m=node({dst}) create unique (n)-[r:{edge_type}]->(m)"
+        add_rel = "START n=node({src}), m=node({dst}) CREATE UNIQUE (n)-[r:{edge_type}]->(m)"
         for i in range(0, len(nodes)-1, 2):
             src = nodes[i]._id
             dst = nodes[i+1]._id
-            batch.append_cypher(add_rel.format(src=src, dst=dst, edge_type=edge_types[i/2]))
+            batch.append_cypher(add_rel.format(src=src, dst=dst, edge_type=ordered_edges[i/2]))
+        nodes = batch.submit()
 
-        rels = batch.submit()
         return doc
 
         

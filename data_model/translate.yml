@@ -32,7 +32,6 @@ biospecimen:
     properties: "./*[not(*) and not(name()='bio:bcr_sample_uuid')]"
     edges:
       donated_by:
-      #derived_from:
         type: patient
         locate: "ancestor::bio:patient/shared:bcr_patient_uuid/text()"
 
@@ -42,7 +41,6 @@ biospecimen:
     id: ".//bio:bcr_portion_uuid/text()"
     properties: "./*[not(*) and not(name()='bio:bcr_portion_uuid')]"
     edges:
-      #portion_of:
       derived_from:
         type: sample
         locate: "ancestor::bio:sample/bio:bcr_sample_uuid/text()"
@@ -57,7 +55,6 @@ biospecimen:
       shipment_portion_month_of_shipment: portion_month_of_shipment
       shipment_portion_year_of_shipment: portion_year_of_shipment
     edges:
-      #portion_of:
       derived_from:
         type: sample
         locate: "ancestor::bio:sample/bio:bcr_sample_uuid/text()"
@@ -71,7 +68,6 @@ biospecimen:
     id: ".//bio:bcr_analyte_uuid/text()"
     properties: "./*[not(*) and not(name()='bio:bcr_analyte_uuid')]"
     edges:
-      #analyte_of:
       derived_from:
         type: portion
         locate: "ancestor::bio:portion/bio:bcr_portion_uuid/text()"
@@ -82,7 +78,6 @@ biospecimen:
     id: ".//bio:bcr_aliquot_uuid/text()"
     properties: "./*[not(*) and not(name()='bio:bcr_aliquot_uuid')]"
     edges:
-      #aliquot_of:
       derived_from:
         type: analyte
         locate: "ancestor::bio:analyte/bio:bcr_analyte_uuid/text()"
@@ -90,6 +85,7 @@ biospecimen:
         type: center
         locate: ".//bio:center_id/text()"
 
+        
   #Need to check if the ID is correct here, protocols don't seem to have UUIDs.
   protocol:
     locate: "//bio:protocol"
