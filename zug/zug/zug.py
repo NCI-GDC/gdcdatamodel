@@ -4,15 +4,19 @@ import os
 import sys
 import pprint
 import copy
+import time
 
 import exceptions
+from multiprocessing import Process
+from multiprocessing import JoinableQueue as Queue
+import threading
 
 baseDir = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(name = "[{name}]".format(name=__name__))
 pluginBasePath = os.path.join(os.path.dirname(baseDir), 'plugins', 'base.py')
 basePlugin = imp.load_source('ZugPluginBase', pluginBasePath).ZugPluginBase
 
-decoratables = ['next', 'initialize', '__iter__', 'start']
+decoratables = ['process', 'initialize']
 DECORATOR_PREFIX = 'zug_'
 
 class Zug:
@@ -55,12 +59,26 @@ class Zug:
             plugin.loadModules()
         return self
 
+    def runPlugins(self):
+        for plugin in self.plugins:
+            plugin.runTree()
+
     def run(self):
-        logger.info("Starting ETL...")
+
+        logger.info("Starting zug manager...")
+        for plugin in self.plugins:
+            plugin.startTree()            
 
         for plugin in self.plugins:
-            logger.info('Running plugin {plugin}'.format(plugin = plugin))
-            plugin.run(None)
+            docs = self.settings.get('plugin_kwargs', {}).get(plugin.name, {}).get('docs', [])
+            for doc in docs: 
+                plugin.q_new_work.put(doc)
+            plugin.q_new_work.put(exceptions.EndOfQueue())
+
+        while True:
+            logger.info("Running zugs ...")
+            self.runPlugins()
+
 
 class PluginTreeLevel:
 
@@ -75,6 +93,10 @@ class PluginTreeLevel:
         self.module = None
         self.current = None
         self.plugin = None
+        self.processes = []
+
+        self.q_new_work = Queue()
+        self.q_finished_work = Queue()
 
         if self.name: logger.info("Initializing ETL: {name}".format(name = self.name))
 
@@ -91,46 +113,37 @@ class PluginTreeLevel:
 
         self.children.append(TreeLevel)
 
-    def __repr__(self):
-        """
-        String representation
-        """
-
-        return "<PluginTreeLevel '{name}'>".format(name = self.name)
-
-    def dump(self, level = 0):
-        """
-        Print text representation of tree to stdout
-        """
-
-        print '| '*level + '+ ' + self.name
-        for child in self.children:
-            child.dump(level + 1)
-
-    def run(self, __doc__, **__state__):
+    def runTree(self, **__state__):
         """
         Passes a document down the tree, loading it into each of TreeLevel in the next level
         """
 
         logger.debug('Running ' + str(self))
-        if self.plugin is None: return self
 
-        # Give the plugin a document and start it
-        self.plugin.load(__doc__, **__state__)
-        self.plugin.start()
- 
-        # Iterate through plugins __doc__uments
-        for __doc__ in self.plugin:
-            # Pass each document to the next TreeLevel
-            child_doc = copy.deepcopy(__doc__)
-            child_state = copy.deepcopy(self.plugin.state)
-
+        try:
+            doc = self.q_finished_work.get(False)
             for child in self.children:
-                logger.debug('Passing to ' + child.name)
-                child.run(child_doc, **child_state)
+                toChild = copy.deepcopy(doc)
+                child.q_new_work.put(toChild)
+                child.runTree()
+        except:
+            time.sleep(1)
 
-        self.plugin.close()
-        
+    def startTree(self):
+        """
+        Loads a python pluginstructure, assuming that it is a list,
+        dictionary (or single name) containing the names of plugins
+        """
+
+        logger.info('Starting daemon ' + str(self.name))
+        process = Process(target=self.plugin.start)
+        process.start()
+        self.processes.append(process)
+
+        for child in self.children:
+            child.startTree()
+
+        return self
 
     def loadTree(self, tree, root = None):
         """
@@ -193,21 +206,29 @@ class PluginTreeLevel:
         Attempt to load class from module and initialize plugin
         """
 
-        logger.info('Initializing {name}'.format(name = self.name))
+        logger.info("Attempting to initialize [{name}] as class.".format(name=self.name))
 
         # Attempt to load as class
         try:
             className = self.zug.settings.get('plugin_class_names', {}).get(self.name, self.name)
             pluginClass = getattr(self.module, className)
-            self.plugin = pluginClass(**self.zug.settings.get('plugin_kwargs', {}).get(self.name, {}))
+            kwargs = self.zug.settings.get('plugin_kwargs', {}).get(self.name, {})
+            self.plugin = pluginClass(__pluginName__=self.name, **kwargs)
+            
+            self.plugin.q_new_work = self.q_new_work
+            self.plugin.q_finished_work = self.q_finished_work
+            
             return 
 
         except Exception, msg:
-            logger.info("Unable to load plugin as class. Attempting to use decorators: " + str(msg))
+            logger.info("Unable to initialize plugin as class: " + str(msg))
+            
+        logger.info("Attempting to initialize [{name}] using decorators.".format(name=self.name))
 
         # Attempt to load by decorators
         try:
-            self.plugin = basePlugin(**self.zug.settings.get('plugin_kwargs', {}).get(self.name, {}))
+            kwargs = self.zug.settings.get('plugin_kwargs', {}).get(self.name, {})
+            self.plugin = basePlugin(__pluginName__=self.name, **kwargs)
 
             # Check the module for functions handled by decorators
             for dec in decoratables:
@@ -215,7 +236,13 @@ class PluginTreeLevel:
                 decs = [a for a in dir(self.module) if hasattr(self.module.__dict__[a], attr)]
 
                 # Override the base class functions
-                if len(decs) > 0: self.plugin.__dict__[dec] = self.module.__dict__[decs[-1]]
+                if len(decs) > 0: 
+                    logging.debug("Injecting function into base class instance: {func}".format(func=decs[-1]))
+                    self.plugin.__dict__[dec] = self.module.__dict__[decs[-1]]
+
+            self.plugin.q_new_work = self.q_new_work
+            self.plugin.q_finished_work = self.q_finished_work
+            
             return 
 
         except Exception, msg:
@@ -262,3 +289,19 @@ class PluginTreeLevel:
             logger.info('Initialization of {name} complete.'.format(name=self.name))
 
         return self
+
+    def __repr__(self):
+        """
+        String representation
+        """
+
+        return "<PluginTreeLevel '{name}'>".format(name = self.name)
+
+    def dump(self, level = 0):
+        """
+        Print text representation of tree to stdout
+        """
+
+        print '| '*level + '+ ' + self.name
+        for child in self.children:
+            child.dump(level + 1)

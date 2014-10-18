@@ -3,7 +3,7 @@
 ##############################
 
 name: ExampleZug
-log_level: INFO
+log_level: DEBUG
 
 ##############################
 # Scheduler
@@ -17,13 +17,15 @@ interval:
 ##############################
 plugins: 
   - uri:
-    - xml2graph:
-      - graph2neo
+    - stdout
+    - uri:
+      - stdout
+    #   - graph2neo
 
-  - latest_urls:
-    - extract_tar:
-      - xml2graph:
-        - graph2neo
+  # - latest_urls:
+  #   - extract_tar:
+  #     - xml2graph:
+  #       - graph2neo
 
         
 ##############################
@@ -34,8 +36,9 @@ plugins:
 plugin_kwargs:
 
   uri:
-    uris:
-      - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
+    docs:
+      # - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
+      - /home/ubuntu/test3
 
   extract_tar:
     regex: ".*\\.xml"
@@ -60,9 +63,6 @@ plugin_kwargs:
     host: localhost
     port: 7474
     max_retries: 0
-    
-  stdout:
-    pprint: False
 
 ##### You can specify plugin class names, the default is the module name    
 # plugin_class_names:
