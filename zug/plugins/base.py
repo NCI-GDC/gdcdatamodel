@@ -52,7 +52,7 @@ class ZugPluginBase(object):
     def enqueue(self, doc):
         self.q_new_work.put(doc)
 
-    def finished(self, doc):
+    def yieldDoc(self, doc):
         for q in self.qs_finished_work:
             q.put(doc)
 
@@ -65,10 +65,12 @@ class ZugPluginBase(object):
             self.logger.debug("Waiting for new document")
             doc = self.q_new_work.get()
 
+            doc = copy.copy(doc)
+
             if isinstance(doc, zug.exceptions.EndOfQueue):
                 self.logger.warn("Closing queue")
                 self.q_new_work.close()
-                self.finished(doc)
+                self.yieldDoc(doc)
                 return
 
             try:
@@ -77,7 +79,7 @@ class ZugPluginBase(object):
                 processed = self.process(doc)
 
                 if processed is not None:
-                    self.finished(processed)
+                    self.yieldDoc(copy.deepcopy(processed))
 
                 self.logger.debug("Sucessfully processed: " + str(type(doc)))
 
@@ -88,6 +90,7 @@ class ZugPluginBase(object):
                 self.logger.info("End of queue")
                 return
 
-            except Exception, msg:
-                self.logger.error("Exception: " + str(msg))
+            # except Exception, msg:
+            #     self.logger.error("Exception: " + str(msg))
+            #     # print doc
         

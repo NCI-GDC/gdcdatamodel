@@ -34,9 +34,6 @@ class extract_tar(basePlugin):
         stream = urllib2.urlopen(doc)
         tfile = tarfile.open(fileobj=stream, mode=self.mode)
 
-        print doc
         for entry in tfile:
             if not self.pattern or self.pattern.match(entry.name):
-                self.finished(tfile.extractfile(entry).read())
-                
-        raise IgnoreDocumentException()
+                self.yieldDoc(tfile.extractfile(entry).read())

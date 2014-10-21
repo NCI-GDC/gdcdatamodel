@@ -26,6 +26,11 @@ plugins:
 # Plugins
 ##############################
 
+processors:
+  extract_tar: 1
+  xml2graph: 2
+  graph2neo: 1
+
 ##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
 

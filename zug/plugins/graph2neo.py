@@ -38,7 +38,7 @@ class graph2neo(basePlugin):
             logger.error("Unable to complete batch neo4j request: %s" % str(msg))
             logger.warn("Trying same document again")
             self.retries += 1
-            self.next(doc)
+            self.process(doc)
 
         except Exception, msg:
             logger.error("Unrecoverable error: " + str(msg))
@@ -47,8 +47,6 @@ class graph2neo(basePlugin):
 
         else:
             self.retries = 0
-
-        return doc
 
     def export(self, doc):
 

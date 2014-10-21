@@ -28,15 +28,18 @@ class PluginTreeLevel:
     """
 
     def __init__(self, zug, tree = None):
-        self.zug = zug
-        self.name = self.zug.settings.get('name', None)
-        self.children = []
-        self.parent = None
-        self.module = None
-        self.current = None
-        self.plugin = None
+
+        self.name = zug.settings.get('name', None)
+        self.zug  = zug
+
         self.processes = []
-        self.block = True
+        self.children  = []
+
+        self.parent    = None
+        self.module    = None
+        self.current   = None
+        self.plugin    = None
+        self.block     = True
 
         self.q_new_work = Queue()
         self.qs_finished_work = []
@@ -48,7 +51,6 @@ class PluginTreeLevel:
         else:
             self.name = tree.keys()[0]
             self.loadTree(tree[self.name])
-            
 
     def loadTree(self, tree, root = None):
         """
@@ -72,8 +74,6 @@ class PluginTreeLevel:
 
         elif not isinstance(tree, dict):
             logger.error("Unable to load tree from type {type}".format(type=type(tree)))
-
-        print self.parent
 
         # Recurse over dictionary
         for node, children in tree.iteritems():
@@ -217,7 +217,6 @@ class PluginTreeLevel:
         for process in self.processes:
             process.join()
 
-
 class Zug:
 
     def __init__(self, settings):
@@ -257,7 +256,6 @@ class Zug:
         for plugin in self.plugins:
             plugin.loadModules()
         return self
-
 
     def run(self):
 
