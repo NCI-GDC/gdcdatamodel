@@ -44,15 +44,9 @@ class latest_urls(basePlugin):
         self.latest_report = latest_report
 
         for line in latest_report[1:]:
-<<<<<<< HEAD
             sline = line.strip().split('\t')
-            self.docs.append(sline)
+            self.enqueue(sline)
  
-    def process(self, doc):
-=======
-            self.enqueue(line.strip().split('\t'))
->>>>>>> d8a56a15aa93ba3572e1203c5215e4e767e7ead3
-
         self.enqueue(EndOfQueue())
  
     def process(self, doc):

@@ -15,8 +15,3 @@ def process(f):
 def initialize(f):
     f.zug_initialize = True
     return f
-<<<<<<< HEAD
-=======
-
-
->>>>>>> d8a56a15aa93ba3572e1203c5215e4e767e7ead3
