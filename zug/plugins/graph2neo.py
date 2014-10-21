@@ -22,7 +22,7 @@ class graph2neo(basePlugin):
         self.max_retries = kwargs.get('max_retries', 4)
         self.retries = 0
 
-    def next(self, doc):
+    def process(self, doc):
 
         if self.retries > self.max_retries: 
             logger.error("Exceeded number of max retries! Aborting: [{r} > {m}]".format(

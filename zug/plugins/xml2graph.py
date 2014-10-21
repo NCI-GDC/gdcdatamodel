@@ -41,7 +41,7 @@ class xml2graph(basePlugin):
 
         self.node_types = self.translate[kwargs['data_type']]
     
-    def next(self, doc):
+    def process(self, doc):
         return self.parse(doc)
 
     def parse(self, data, reset = True):

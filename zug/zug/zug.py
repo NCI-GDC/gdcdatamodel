@@ -12,7 +12,7 @@ logger = logging.getLogger(name = "[{name}]".format(name=__name__))
 pluginBasePath = os.path.join(os.path.dirname(baseDir), 'plugins', 'base.py')
 basePlugin = imp.load_source('ZugPluginBase', pluginBasePath).ZugPluginBase
 
-decoratables = ['next', 'initialize', '__iter__', 'start']
+decoratables = ['process', 'initialize']
 DECORATOR_PREFIX = 'zug_'
 
 class Zug:

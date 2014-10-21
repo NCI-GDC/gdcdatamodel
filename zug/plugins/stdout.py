@@ -1,7 +1,7 @@
 import pprint
 import zug
 
-@zug.next
+@zug.process
 def stdout(doc):
     pprint.pprint(doc)
     return doc

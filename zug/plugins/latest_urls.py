@@ -47,7 +47,7 @@ class latest_urls(basePlugin):
             sline = line.strip().split('\t')
             self.docs.append(sline)
  
-    def next(self, doc):
+    def process(self, doc):
 
         archive = self.parse_archive(*doc)
         for key, value in self.kwargs.get('constraints', {}).iteritems():

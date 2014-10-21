@@ -21,13 +21,13 @@ class ZugPluginBase(object):
     def __iter__(self):
         for doc in self.docs:
             try:
-                returned_doc = self.next(doc)
+                returned_doc = self.process(doc)
             except IgnoreDocumentException:
                 continue
             else:
                 yield returned_doc
 
-    def next(self, doc):
+    def process(self, doc):
         return doc
 
     def start(self):

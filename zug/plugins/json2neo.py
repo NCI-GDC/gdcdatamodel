@@ -22,7 +22,7 @@ class PipelinePlugin(base.PipelinePluginBase):
 
         self.db = neo4j.GraphDatabaseService()
 
-    def next(self, doc):
+    def process(self, doc):
 
         assert 'docs' in doc, "Stage {name} was passed a doc without field 'docs'".format(name=__name__)
         assert 'edge_types' in doc, "Stage {name} was passed a doc without field 'edge_types'".format(name=__name__)
