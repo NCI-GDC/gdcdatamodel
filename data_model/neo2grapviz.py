@@ -7,6 +7,7 @@ result = neo4j.CypherQuery(db, query_string).execute()
 
 dot = Digraph(comment="XML Generate Datamodel")
 for r in result:
+    print r.values
     this, label, that = r.values
     dot.node(this)
     dot.node(that)

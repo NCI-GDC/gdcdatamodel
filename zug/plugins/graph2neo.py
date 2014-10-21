@@ -1,10 +1,14 @@
 import os
 import logging
+import copy 
 
 from pprint import pprint
 
 from py2neo import neo4j
 import py2neo
+import threading 
+
+py2neo.packages.httpstream.http.ConnectionPool._puddles = {}
 
 from zug import basePlugin
 
@@ -38,7 +42,7 @@ class graph2neo(basePlugin):
             logger.error("Unable to complete batch neo4j request: %s" % str(msg))
             logger.warn("Trying same document again")
             self.retries += 1
-            self.next(doc)
+            self.process(doc)
 
         except Exception, msg:
             logger.error("Unrecoverable error: " + str(msg))
@@ -47,8 +51,6 @@ class graph2neo(basePlugin):
 
         else:
             self.retries = 0
-
-        return doc
 
     def export(self, doc):
 
@@ -62,6 +64,7 @@ class graph2neo(basePlugin):
 
         batch = neo4j.WriteBatch(self.db)
 
+        index = 0
         for src_id, node in doc['nodes'].iteritems():
 
             src_type = node['_type']
@@ -71,25 +74,25 @@ class graph2neo(basePlugin):
                 # Pull edge info gathered before
                 edge_type, dst_type = edges[src_id][dst_id]
                 dest = {'_type': dst_type, 'id': dst_id}
-    
-                # create nodes
-                src_node = py2neo.node(node)
-                dst_node = py2neo.node(dest)
-    
-                # Get or create index, source node, and destination node
-                index = self.db.get_or_create_index(neo4j.Node, src_type)
-                src = batch.get_or_create_indexed_node(src_type, 'id', src_id, src_node)
-                dst = batch.get_or_create_indexed_node(dst_type, 'id', dst_id, dst_node)
-                ordered_edges.append(edge_type)
-    
-        nodes = batch.submit()
 
-        batch = neo4j.WriteBatch(self.db)
-        add_rel = "START n=node({src}), m=node({dst}) CREATE UNIQUE (n)-[r:{edge_type}]->(m)"
-        for i in range(0, len(nodes)-1, 2):
-            src = nodes[i]._id
-            dst = nodes[i+1]._id
-            batch.append_cypher(add_rel.format(src=src, dst=dst, edge_type=ordered_edges[i/2]))
+                # Merge the source node
+                properties = ['a.{key} = "{value}"'.format(key=key, value=value) for key, value in node.items()]
+                merge = 'MERGE (a:{_type} {{ id:"{id}" }}) ON MATCH SET {properties}'
+                a = merge.format(_type=src_type, id=src_id, properties=', '.join(properties))
+                batch.append_cypher(a)
+
+                # Merge the destination node
+                properties = ['b.{key} = "{value}"'.format(key=key, value=value) for key, value in dest.items()]
+                merge = 'MERGE (b:{_type} {{ id:"{id}" }}) ON MATCH SET {properties}'
+                b = merge.format(_type=dst_type, id=dst_id, properties=', '.join(properties))
+                batch.append_cypher(b)
+
+                # Create a unique relationship between the nodes
+                r = 'MATCH (a:{src_type} {{ id:"{src_id}" }}), (b:{dst_type} {{ id:"{dst_id}" }}) '.format(
+                    src_type=src_type, src_id=src_id, dst_type=dst_type, dst_id=dst_id)
+                r += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge_type)
+                batch.append_cypher(r)
+                
         nodes = batch.submit()
 
         return doc

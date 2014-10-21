@@ -29,14 +29,12 @@ class extract_tar(basePlugin):
         else:
             self.pattern = None
 
-    def __iter__(self):
+    def process(self, doc):
 
-        for doc in self.docs:
+        stream = urllib2.urlopen(doc)
+        tfile = tarfile.open(fileobj=stream, mode=self.mode)
 
-            stream = urllib2.urlopen(doc)
-            tfile = tarfile.open(fileobj=stream, mode=self.mode)
-    
-            for entry in tfile:
-                if not self.pattern or self.pattern.match(entry.name):
-                    yield tfile.extractfile(entry).read()
-                    sys.exit(0)
+        for entry in tfile:
+            if not self.pattern or self.pattern.match(entry.name):
+                self.yieldDoc(tfile.extractfile(entry).read())
+

@@ -15,9 +15,12 @@ interval:
 ##############################
 # Pipelines
 ##############################
-plugins: 
+plugins:
+  - uri:
+    - xml2graph:
+      - graph2neo
+
   - latest_urls:
-    - stdout
     - extract_tar:
       - xml2graph:
         - graph2neo
@@ -26,11 +29,20 @@ plugins:
 # Plugins
 ##############################
 
+processors:
+  extract_tar: 4
+  xml2graph: 4
+  graph2neo: 1
+
 ##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
 
+  uri:
+    docs:
+      - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
+
   extract_tar:
-    regex: ".*\\.xml"
+    regex: ".*(bio).*(Level_1).*\\.xml"
       
   latest_urls:
     latest_firstline: 'ARCHIVE_NAME	DATE_ADDED	ARCHIVE_URL'
@@ -52,9 +64,6 @@ plugin_kwargs:
     host: localhost
     port: 7474
     max_retries: 0
-    
-  stdout:
-    pprint: False
 
 ##### You can specify plugin class names, the default is the module name    
 # plugin_class_names:
@@ -68,3 +77,4 @@ plugin_kwargs:
 ##### You can also specify the absolute path to each plugin manually
 plugin_paths:
   example: /home/ubuntu/example.py
+  
