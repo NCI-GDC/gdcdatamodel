@@ -2,6 +2,8 @@
 from zug.exceptions import IgnoreDocumentException, EndOfQueue
 import zug
 import logging
+import copy
+import time
 
 def overrideWarn(f):
     f.overrideWarn = True
@@ -17,8 +19,10 @@ def checkoverride(bases):
 class OverrideWarned(type):
     def __new__(cls, name, bases, dct):
         for name in [name for name in dct if name in checkoverride(bases)]:
-            logging.error("You really shouldn't override the function {name}()!!!".format(name=name))
+            logging.error("{cls}: You really shouldn't override the function {name}()!!!".format(
+                    name=name, cls=str(cls)))
             logging.error("But I'll assume you know what you're doing!")
+            time.sleep(3)
         return type.__new__(cls, name, bases, dct)
 
 class ZugPluginBase(object):
@@ -26,15 +30,16 @@ class ZugPluginBase(object):
     __metaclass__ = OverrideWarned
 
     @overrideWarn
-    def __init__(self, **kwargs):
+    def __init__(self, q_new_work, qs_finished_work, **kwargs):
         self.name = kwargs.pop('__pluginName__', 'plugin')
         self.docs = []
         self.state = {}
         self.kwargs = kwargs
-        self.initialize(**kwargs)
-        self.q_new_work = None
-        self.q_finished_work = None
+        self.q_new_work = q_new_work
+        self.qs_finished_work = qs_finished_work
         self.logger = logging.getLogger(name = "[{name}]".format(name=self.name))
+
+        self.initialize(**kwargs)
 
     def process(self, doc):
         """Override this"""
@@ -44,9 +49,12 @@ class ZugPluginBase(object):
         """Override this"""
         pass
 
-    @overrideWarn
-    def __iter__(self):
-        yield self.q_out.get()
+    def enqueue(self, doc):
+        self.q_new_work.put(doc)
+
+    def finished(self, doc):
+        for q in self.qs_finished_work:
+            q.put(doc)
 
     @overrideWarn
     def start(self):
@@ -60,18 +68,23 @@ class ZugPluginBase(object):
             if isinstance(doc, zug.exceptions.EndOfQueue):
                 self.logger.warn("Closing queue")
                 self.q_new_work.close()
-                self.q_finished_work.put(doc)
-                break
+                self.finished(doc)
+                return
 
-            # if isinstance(doc, EndOfQueue): break
-            self.logger.debug("Processing new document: " + str(type(doc)))
             try:
-                self.q_finished_work.put(self.process(doc))
+                self.logger.debug("Processing new document: " + str(type(doc)))
+
+                processed = self.process(doc)
+                # processed = self.process(copy.deepcopy(doc))
+
+                if processed is not None:
+                    self.finished(processed)
+
                 self.logger.debug("Sucessfully processed: " + str(type(doc)))
+
+            except IgnoreDocumentException:
+                pass
+
             except Exception, msg:
                 self.logger.error("Exception: " + str(msg))
-                pass
-                
-    def close(self):
-        pass
         

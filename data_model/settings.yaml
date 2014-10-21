@@ -3,7 +3,7 @@
 ##############################
 
 name: ExampleZug
-log_level: DEBUG
+log_level: INFO
 
 ##############################
 # Scheduler
@@ -16,17 +16,14 @@ interval:
 # Pipelines
 ##############################
 plugins: 
-  - uri:
-    - stdout
-    - uri:
-      - stdout
-    #   - graph2neo
+  # - uri:
+  #   - xml2graph:
+  #     - graph2neo
 
-  # - latest_urls:
-  #   - extract_tar:
-  #     - xml2graph:
-  #       - graph2neo
-
+  - latest_urls:
+    - extract_tar:
+      - xml2graph:
+        - graph2neo
         
 ##############################
 # Plugins
@@ -37,8 +34,8 @@ plugin_kwargs:
 
   uri:
     docs:
-      # - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
-      - /home/ubuntu/test3
+      - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
+      - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
 
   extract_tar:
     regex: ".*\\.xml"

@@ -10,7 +10,7 @@ from py2neo import neo4j
 from datetime import datetime, tzinfo, timedelta
 
 from zug import basePlugin
-from zug.exceptions import IgnoreDocumentException
+from zug.exceptions import IgnoreDocumentException, EndOfQueue
 
 logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 
@@ -33,29 +33,33 @@ class latest_urls(basePlugin):
         self.latest_url = kwargs['latest_url']
         self.protected_url = kwargs['protected_url']
         
-    def start(self):
-        self.docs = []
-        logger.info('TCGA DCC Signpost Sync Running')
         latest_report = self.pull_dcc_latest().splitlines()
         header = latest_report[0]
  
         if header != self.latest_firstline:
             logger.error('Unexpected header for latest report: "%s"' % header)
             sys.exit(-1)
-    
-        for line in latest_report[1:]:
-            sline = line.strip().split('\t')
-            self.docs.append(sline)
+
+        self.latest_report = latest_report
+        self.enqueue(latest_report[1].strip().split('\t'))
+        self.index = 2
  
-    def next(self, doc):
+    def process(self, doc):
+        
+        sline = self.latest_report[self.index].strip().split('\t')
+        self.enqueue(sline)
+        self.index += 1
 
         archive = self.parse_archive(*doc)
         for key, value in self.kwargs.get('constraints', {}).iteritems():
             if archive[key] != value: 
                 raise IgnoreDocumentException()
-        
+
         url = archive[self.kwargs['url_key']]
         self.state['archive'] = archive
+
+        if self.index >= len(self.latest_report):
+            raise EndOfQueue()
 
         return url
 
