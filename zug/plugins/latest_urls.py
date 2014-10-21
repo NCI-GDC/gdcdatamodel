@@ -8,7 +8,7 @@ import py2neo
 from pprint import pprint
 from py2neo import neo4j
 from datetime import datetime, tzinfo, timedelta
-
+from multiprocessing import JoinableQueue as Queue
 from zug import basePlugin
 from zug.exceptions import IgnoreDocumentException, EndOfQueue
 
@@ -40,16 +40,16 @@ class latest_urls(basePlugin):
             logger.error('Unexpected header for latest report: "%s"' % header)
             sys.exit(-1)
 
+        self.q_new_work = Queue()
         self.latest_report = latest_report
-        self.enqueue(latest_report[1].strip().split('\t'))
-        self.index = 2
+
+        for line in latest_report[1:]:
+            self.enqueue(line.strip().split('\t'))
+
+        self.enqueue(EndOfQueue())
  
     def process(self, doc):
         
-        sline = self.latest_report[self.index].strip().split('\t')
-        self.enqueue(sline)
-        self.index += 1
-
         archive = self.parse_archive(*doc)
         for key, value in self.kwargs.get('constraints', {}).iteritems():
             if archive[key] != value: 
@@ -57,9 +57,6 @@ class latest_urls(basePlugin):
 
         url = archive[self.kwargs['url_key']]
         self.state['archive'] = archive
-
-        if self.index >= len(self.latest_report):
-            raise EndOfQueue()
 
         return url
 

@@ -3,14 +3,15 @@ import imp
 import requests
 import logging
 import yaml
+import copy
 
 from lxml import etree
 from pprint import pprint
 from zug import basePlugin
+from zug.exceptions import IgnoreDocumentException, EndOfQueue
 
 currentDir = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(name = "[{name}]".format(name = __name__))
-
 
 class xml2graph(basePlugin):
 
@@ -42,7 +43,8 @@ class xml2graph(basePlugin):
         self.node_types = self.translate[kwargs['data_type']]
     
     def process(self, doc):
-        parsed = self.parse(doc)
+        if doc is None: raise IgnoreDocumentException()
+        parsed = self.parse(copy.deepcopy(doc))
         return parsed
 
     def parse(self, data, reset = True):

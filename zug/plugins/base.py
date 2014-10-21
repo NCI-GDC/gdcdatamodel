@@ -75,7 +75,6 @@ class ZugPluginBase(object):
                 self.logger.debug("Processing new document: " + str(type(doc)))
 
                 processed = self.process(doc)
-                # processed = self.process(copy.deepcopy(doc))
 
                 if processed is not None:
                     self.finished(processed)
@@ -84,6 +83,10 @@ class ZugPluginBase(object):
 
             except IgnoreDocumentException:
                 pass
+
+            except EndOfQueue:
+                self.logger.info("End of queue")
+                return
 
             except Exception, msg:
                 self.logger.error("Exception: " + str(msg))

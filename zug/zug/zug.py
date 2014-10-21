@@ -61,7 +61,7 @@ class PluginTreeLevel:
 
         # End of recursion
         if isinstance(tree, str):
-            root.addChild(PluginTreeLevel(self.zug, tree))
+            root.children.append(PluginTreeLevel(self.zug, tree))
             return self
 
         # Handle the case where we were passed a list

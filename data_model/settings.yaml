@@ -15,10 +15,7 @@ interval:
 ##############################
 # Pipelines
 ##############################
-plugins: 
-  # - uri:
-  #   - xml2graph:
-  #     - graph2neo
+plugins:
 
   - latest_urls:
     - extract_tar:
@@ -35,10 +32,9 @@ plugin_kwargs:
   uri:
     docs:
       - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
-      - /home/ubuntu/nationwidechildrens.org_biospecimen.TCGA-AR-A1AR.xml
 
   extract_tar:
-    regex: ".*\\.xml"
+    regex: ".*(bio).*(Level_1).*\\.xml"
       
   latest_urls:
     latest_firstline: 'ARCHIVE_NAME	DATE_ADDED	ARCHIVE_URL'

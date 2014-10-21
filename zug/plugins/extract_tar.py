@@ -4,10 +4,11 @@ import requests
 import logging
 import re
 import tarfile
-import urllib
+import urllib2
 import sys
 
 from datetime import datetime, tzinfo, timedelta
+from zug.exceptions import IgnoreDocumentException, EndOfQueue
 
 from zug import basePlugin
 
@@ -23,7 +24,6 @@ class extract_tar(basePlugin):
     def initialize(self, uris = [], mode = "r|gz", regex = None, **kwargs):
 
         self.mode = mode
-
         if regex:
             self.pattern = re.compile(regex)
         else:
@@ -31,9 +31,12 @@ class extract_tar(basePlugin):
 
     def process(self, doc):
 
-        stream = urllib.urlopen(doc)
+        stream = urllib2.urlopen(doc)
         tfile = tarfile.open(fileobj=stream, mode=self.mode)
 
+        print doc
         for entry in tfile:
             if not self.pattern or self.pattern.match(entry.name):
                 self.finished(tfile.extractfile(entry).read())
+                
+        raise IgnoreDocumentException()
