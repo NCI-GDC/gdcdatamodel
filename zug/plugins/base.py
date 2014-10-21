@@ -89,8 +89,4 @@ class ZugPluginBase(object):
             except EndOfQueue:
                 self.logger.info("End of queue")
                 return
-
-            # except Exception, msg:
-            #     self.logger.error("Exception: " + str(msg))
-            #     # print doc
         
