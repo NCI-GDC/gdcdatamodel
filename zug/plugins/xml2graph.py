@@ -43,6 +43,11 @@ class xml2graph(basePlugin):
         self.node_types = self.translate[kwargs['data_type']]
     
     def process(self, doc):
+
+        self.nodes = {}
+        self.edges = {}
+        self.doc = {'edges': self.edges, 'nodes': self.nodes}
+
         if doc is None: raise IgnoreDocumentException()
         parsed = self.parse(copy.deepcopy(doc))
         return parsed
