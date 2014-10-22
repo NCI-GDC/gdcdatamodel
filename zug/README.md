@@ -3,27 +3,24 @@
 
 In order to make a plugin, you need to do three things:
 
-##### 1) write a Scheduler(), Conversion(), or Export() class that over-rides the base class
+##### 1) copy paste the base and override the following functions
 
-The functions that are required to be over-ridden are listed below:
-
-###### Schedulers
+The functions that can be over-ridden are listed below:
 
 * `initialize(self, **kwargs)`: setup the scheduler and pull **kwargs from settings.yaml
-* `load(self, **kwargs)`: make a connection to outside resource and load documents
-* `__iter__(self)`: needs to yeild a document until all documents have been converted
-
-###### Conversions
-
-* `initialize(self, **kwargs)`: setup the conversion and pull **kwargs from settings.yaml
-* `convert(doc, **kwargs)`: return a converted document
- 
-###### Exports
-
-* `initialize(self, **kwargs)`: setup the exporter and pull **kwargs from settings.yaml
-* `export(doc, **kwargs)`: exports the document to an outside resource
+* `process(self, **kwargs)`: make a connection to outside resource and load documents
 
 ##### 2) add the name of the file to the settings.yaml file
+
+### OR
+
+##### 1) write a callable 
+
+Write a function that takes a doc and returns a doc:
+`process(doc)`. Decorate it with `@zug.process`.
+
+##### 2) add the name of the file to the settings.yaml file
+
 
 ```
 plugins:
@@ -36,27 +33,55 @@ plugins:
     - postgres
 ```
 
-The excerpt from the settings file above specifies a pipeline that reads urls from a file and downloads an xml.  It then passes it to the Conversion plugin called `json_flat`, which returns a document containing the flattened json conversion.  Then the converted document is passed to BOTH exporter plugins `stdout` and `postgres`.
-
-##### 3) add any __init__() arguments to the settings.yaml file
-
-Example for an Export() plugin called ```postgres```.
+##### 3) add kwargs to the settings file per plugin
 
 ```
-postgres: 
-  database: name
-  user: user
-  password: password1
+plugin_kwargs:
+  uri:
+    docs: [/home/ubuntu/workers/data_model/centerCodes.tsv]
   
-  ignoreConversions:
-    - flat_nested
-  ignoreSchedulers:
-    - signpost
+  tsv2graph:
+    type: center
+    id_field: Code
+      
+  graph2neo:
+    host: localhost
+    port: 7474
 ```
 
-The super class of the Export plugin will pre-emptively return None if it is passed a document from a Conversion or Scheduler listed in the ignoreConversions, ignoreSchedulers fields respectively
+## Plugin Class
 
-## Requirements
+**Don't override __init__(), start(), yieldDoc()**.  You can, but
+  don't do it.  The zugflow is based on concurrency.  Each plugin has
+  it's own process, and it's own queue that gets piped into it.  Each
+  plugin then returns finished documents from process(), or calls
+  self.yieldDoc() to pass a finished document to each plugin the next
+  level down.
+
+
+### Things to consider
+
+#### `self.isDaemon = True`
+
+This will prevent the plugin process from closing if its input queue
+is empty.  Possibly useful for root plugins that need to handle large
+amounts of data and can't enqueue it all at once.
+
+### `self.enqueue(doc)`
+
+This is the main way that a document can schedule work for itself
+upfront in initialize().  Keep in mind the default queue len is 10.
+If you try to add more docs to the queue in initialize, the app qill
+block.  See below.
+
+### Setting the max queue_len
+
+You can set the queue length per plugin, or, for a root plugin, you
+can simply replace the imput queue with one of infinite length.
+
+## XML Requirements
 	sudo -E apt-get update
 	sudo -E apt-get install python-dev libxml2-dev libxslt-dev
 
+## Install for {dev}/{production}
+        sudo python setup.py {develop}/{install}

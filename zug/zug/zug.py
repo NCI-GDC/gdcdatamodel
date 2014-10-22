@@ -267,6 +267,9 @@ class Zug:
             for doc in docs: 
                 plugin.q_new_work.put(doc)
 
+            if not plugin.plugin.__dict__.get('isDaemon', False):
+                plugin.q_new_work.put(exceptions.EndOfQueue())
+
         for plugin in self.plugins:
             plugin.joinTree()
 

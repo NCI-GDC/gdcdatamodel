@@ -16,10 +16,6 @@ interval:
 # Pipelines
 ##############################
 plugins:
-  - uri:
-    - xml2graph:
-      - graph2neo
-
   - latest_urls:
     - extract_tar:
       - xml2graph:
@@ -32,7 +28,7 @@ plugins:
 processors:
   extract_tar: 2
   xml2graph: 2
-  graph2neo: 1
+  graph2neo: 4
 
 ##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
