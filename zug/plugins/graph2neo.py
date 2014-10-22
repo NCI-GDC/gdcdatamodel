@@ -1,14 +1,11 @@
 import os
 import logging
 import copy 
+import sys
+import requests
+import json
 
 from pprint import pprint
-
-from py2neo import neo4j
-import py2neo
-import threading 
-
-py2neo.packages.httpstream.http.ConnectionPool._puddles = {}
 
 from zug import basePlugin
 
@@ -22,7 +19,6 @@ class graph2neo(basePlugin):
     """
     
     def initialize(self, **kwargs):
-        self.db = neo4j.GraphDatabaseService()
         self.max_retries = kwargs.get('max_retries', 4)
         self.retries = 0
 
@@ -37,13 +33,6 @@ class graph2neo(basePlugin):
         try:
             self.export(doc)
 
-        # except Exception, msg:
-        except py2neo.exceptions.BatchError, msg:
-            logger.error("Unable to complete batch neo4j request: %s" % str(msg))
-            logger.warn("Trying same document again")
-            self.retries += 1
-            self.process(doc)
-
         except Exception, msg:
             logger.error("Unrecoverable error: " + str(msg))
             self.retries = 0
@@ -57,44 +46,51 @@ class graph2neo(basePlugin):
         assert 'nodes' in doc, "Graph dictionary must have key 'nodes' with a list of nodes."
         assert 'edges' in doc, "Graph dictionary must have key 'edges' with a list of edges."
 
-        nodes = []
-        rels = {}
-        edges = doc['edges']
-        ordered_edges = []
+        self.batch = []
 
-        batch = neo4j.WriteBatch(self.db)
-
-        index = 0
         for src_id, node in doc['nodes'].iteritems():
+            
+            self.appendPath(node)
 
-            src_type = node['_type']
-
-            for dst_id, edge in edges[src_id].iteritems():
-    
-                # Pull edge info gathered before
-                edge_type, dst_type = edges[src_id][dst_id]
+            for dst_id, edge in doc['edges'].get(src_id, {}).iteritems():
+                edge_type, dst_type = doc['edges'][src_id][dst_id]
                 dest = {'_type': dst_type, 'id': dst_id}
+                self.appendPath(node, edge_type, dest, create_src = False)
 
-                # Merge the source node
-                properties = ['a.{key} = "{value}"'.format(key=key, value=value) for key, value in node.items()]
-                merge = 'MERGE (a:{_type} {{ id:"{id}" }}) ON MATCH SET {properties}'
-                a = merge.format(_type=src_type, id=src_id, properties=', '.join(properties))
-                batch.append_cypher(a)
-
-                # Merge the destination node
-                properties = ['b.{key} = "{value}"'.format(key=key, value=value) for key, value in dest.items()]
-                merge = 'MERGE (b:{_type} {{ id:"{id}" }}) ON MATCH SET {properties}'
-                b = merge.format(_type=dst_type, id=dst_id, properties=', '.join(properties))
-                batch.append_cypher(b)
-
-                # Create a unique relationship between the nodes
-                r = 'MATCH (a:{src_type} {{ id:"{src_id}" }}), (b:{dst_type} {{ id:"{dst_id}" }}) '.format(
-                    src_type=src_type, src_id=src_id, dst_type=dst_type, dst_id=dst_id)
-                r += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge_type)
-                batch.append_cypher(r)
+        nodes = self.submit()
                 
-        nodes = batch.submit()
+    def appendPath(self, src, edge_type = None, dst = None, create_src = True):
 
-        return doc
+        merge = 'MERGE (n:{_type} {{ id:"{id}" }}) ON CREATE SET {properties} ON MATCH SET {properties}'
+        properties = lambda node: [
+            'n.{key}="{val}"'.format( key=key.replace(' ','_').lower(), val=val) for key, val in node.items()
+        ]
 
-        
+        src_type, src_id = src['_type'], src['id']
+        if create_src:
+            self.append_cypher(merge.format(_type=src_type, id=src_id, properties=', '.join(properties(src))))
+
+        if dst is not None:
+            dst_type, dst_id = dst['_type'], dst['id']
+            self.append_cypher(merge.format(_type=dst_type, id=dst_id, properties=', '.join(properties(dst))))
+
+        if dst is None or edge_type is None: 
+            return 
+
+        r = 'MATCH (a:{src_type} {{ id:"{src_id}" }}), (b:{dst_type} {{ id:"{dst_id}" }}) '.format(
+            src_type=src_type, src_id=src_id, dst_type=dst_type, dst_id=dst_id)
+
+        r += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge_type)
+        self.append_cypher(r)
+
+    def append_cypher(self, query):
+        self.batch.append({"statement": query})
+
+    def submit(self):
+        data = {"statements": self.batch}
+        url = 'http://localhost:7474/db/data/transaction/commit'
+        logger.info("Batch request for {0} statements".format(len(self.batch)))
+        print data
+        r = requests.post(url, data=json.dumps(data))
+        if r.status_code != 200:
+            logger.error("Batch request for {0} statements failed: ".format(len(self.batch)) + r.text)

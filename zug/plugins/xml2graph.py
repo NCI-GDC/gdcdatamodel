@@ -64,7 +64,7 @@ class xml2graph(basePlugin):
                 node_id = xml_node.xpath(node_settings['id'], namespaces=self.namespaces)
 
                 if len(node_id) != 1:
-                    logging.warn('Node [{ntype}] does not have one id: {ids}'.format(ids=node_id, ntype=node_type))
+                    logger.warn('Node [{ntype}] does not have one id: {ids}'.format(ids=node_id, ntype=node_type))
                     return self.doc
 
                 node['id'] = node_id[0]

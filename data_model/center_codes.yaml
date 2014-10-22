@@ -1,0 +1,24 @@
+##############################
+# Center code insertion
+##############################
+
+name: center_codes
+log_level: INFO
+
+plugins:
+  - uri:
+    - tsv2graph:
+      - graph2neo
+        
+plugin_kwargs:
+  uri:
+    docs:
+      - /home/ubuntu/workers/data_model/centerCodes.tsv
+  
+  tsv2graph:
+    type: center
+    id_field: Code
+      
+  graph2neo:
+    host: localhost
+    port: 7474

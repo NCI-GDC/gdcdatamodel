@@ -54,14 +54,9 @@ class Settings:
 
         logger.info("Loading settings file {path}".format(path = path))
 
-        try:
-            with open(self.path, 'r') as yaml_file:
-                self.settings = yaml.load(yaml_file)
-        except Exception, msg:
-            logger.error("Unable to load settings from {path}: {msg}".format(path = path, msg = str(msg)))
-            logger.info("Proceeding with no settings")
-        else:
-            logger.info("SUCCESS: loaded settings from {path}.".format(path = path))
-            logger.debug(self)
+        with open(self.path, 'r') as yaml_file:
+            self.settings = yaml.load(yaml_file)
+
+        logger.info("SUCCESS: loaded settings from {path}.".format(path = path))
             
         return self

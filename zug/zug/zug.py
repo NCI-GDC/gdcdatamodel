@@ -29,7 +29,6 @@ class PluginTreeLevel:
 
     def __init__(self, zug, tree = None):
 
-        self.name = zug.settings.get('name', None)
         self.zug  = zug
 
         self.processes = []
@@ -41,16 +40,16 @@ class PluginTreeLevel:
         self.plugin    = None
         self.block     = True
 
-        self.q_new_work = Queue()
-        self.qs_finished_work = []
-
-        if self.name: logger.info("Initializing ETL: {name}".format(name = self.name))
-
         if isinstance(tree, str):
             self.name = tree
         else:
             self.name = tree.keys()[0]
             self.loadTree(tree[self.name])
+
+        self.q_new_work = Queue(zug.settings.get('queue_len', {}).get(self.name, 10))
+        self.qs_finished_work = []
+
+        if self.name: logger.info("Initializing ETL: {name}".format(name = self.name))
 
     def loadTree(self, tree, root = None):
         """
@@ -90,9 +89,9 @@ class PluginTreeLevel:
         Attempts to load all modules within Plugin tree
         """
 
-        pluginPath = self.zug.settings.get('plugin_paths', None).get(self.name, None)
+        pluginPath = self.zug.settings.get('plugin_paths', {}).get(self.name, None)
         defaultDir = os.path.join(os.path.dirname(baseDir), 'plugins')
-        pluginDirs = [defaultDir] + self.zug.settings.get('plugin_directories', []) 
+        pluginDirs = self.zug.settings.get('plugin_directories', []) + [os.getcwd(), defaultDir]
 
         if pluginPath is not None:
             self.module = self.loadModule(self.name, pluginPath)
@@ -169,10 +168,11 @@ class PluginTreeLevel:
             kwargs = self.zug.settings.get('plugin_kwargs', {}).get(self.name, {})
             self.plugin = pluginClass(self.q_new_work, self.qs_finished_work, __pluginName__=self.name, **kwargs)
             self.startDaemon()
+            logger.info("SUCCESS: Initialized class: {plugin}".format(plugin=self.name))
             return 
 
         except Exception, msg:
-            logger.info("Unable to initialize plugin as class: " + str(msg))
+            logger.warn("Unable to initialize plugin as class: " + str(msg))
             
         logger.info("Attempting to initialize [{name}] using decorators.".format(name=self.name))
 
@@ -197,6 +197,7 @@ class PluginTreeLevel:
                 raise Exception('No decorators found')
 
             self.startDaemon()
+            logger.info("SUCCESS: Initialized injected class: {plugin}".format(plugin=self.name))
             return
 
         except Exception, msg:
