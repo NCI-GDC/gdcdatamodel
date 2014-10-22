@@ -90,7 +90,6 @@ class graph2neo(basePlugin):
         data = {"statements": self.batch}
         url = 'http://localhost:7474/db/data/transaction/commit'
         logger.info("Batch request for {0} statements".format(len(self.batch)))
-        print data
         r = requests.post(url, data=json.dumps(data))
         if r.status_code != 200:
             logger.error("Batch request for {0} statements failed: ".format(len(self.batch)) + r.text)

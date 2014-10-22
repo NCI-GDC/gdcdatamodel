@@ -12,8 +12,7 @@ plugins:
         
 plugin_kwargs:
   uri:
-    docs:
-      - /home/ubuntu/workers/data_model/centerCodes.tsv
+    docs: [/home/ubuntu/workers/data_model/centerCodes.tsv]
   
   tsv2graph:
     type: center
