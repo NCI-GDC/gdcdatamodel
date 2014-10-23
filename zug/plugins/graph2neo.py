@@ -18,15 +18,15 @@ class graph2neo(basePlugin):
     converts a a dictionary of edges and nodes to neo4j
 
     [{
+        'node': {
+            'matches': {'key': value}, # the key, values to match when making node
+            'node_type': '',
+            'body': {}
+        }
         'edges': {                    
             'matches': {'key': value }  # the key, values to match when making edge
             'node_type': '',
             'edge_type': '',
-        'node': {
-            'matches': {'key': value}, # the key, values to match when making node
-            'node_type': '',
-            'body': node
-        }
     },]
 
     """

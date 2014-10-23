@@ -22,24 +22,23 @@ class xml2graph(basePlugin):
 
     [{
         'edges': {                    
-            'matches': { 'id': dst_id }
-            'node_type': edge_settings['type'],
-            'edge_type': edge_type,
+            'matches': {'key': value }  # the key, values to match when making edge
+            'node_type': '',
+            'edge_type': '',
         'node': {
-            'matches': {'id': node_id[0]},
-            'node_type': node['_type'],
-            'body': node
+            'matches': {'key': value}, # the key, values to match when making node
+            'node_type': '',
+            'body': {}
         }
     },]
 
     """
-
     
     def initialize(self, **kwargs):
         assert 'translate_path' in kwargs, "Please specify path to translate.yml"
         assert 'data_type'      in kwargs, "Please specify data_type (i.e. biospecimen)"
 
-        self.xml_root = None
+        self.xml_root = None 
         self.namespaces = None
         self.graph = []
 
