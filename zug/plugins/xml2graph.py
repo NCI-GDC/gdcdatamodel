@@ -20,23 +20,28 @@ class xml2graph(basePlugin):
     xml2graph
     takes in an xml as a string and compiles a list of nodes and edges
 
-    edges = {
-       source_id: {
-          destination_id : (edge_type, destination_type),
-       }
-    } 
+    [{
+        'edges': {                    
+            'matches': { 'id': dst_id }
+            'node_type': edge_settings['type'],
+            'edge_type': edge_type,
+        'node': {
+            'matches': {'id': node_id[0]},
+            'node_type': node['_type'],
+            'body': node
+        }
+    },]
 
     """
 
+    
     def initialize(self, **kwargs):
         assert 'translate_path' in kwargs, "Please specify path to translate.yml"
         assert 'data_type'      in kwargs, "Please specify data_type (i.e. biospecimen)"
 
         self.xml_root = None
         self.namespaces = None
-        self.nodes = {}
-        self.edges = {}
-        self.doc = {'edges': self.edges, 'nodes': self.nodes}
+        self.graph = []
 
         with open(kwargs['translate_path']) as f: 
             self.translate = yaml.load(f)
@@ -45,25 +50,21 @@ class xml2graph(basePlugin):
     
     def process(self, doc):
 
-        self.nodes = {}
-        self.edges = {}
-        self.doc = {'edges': self.edges, 'nodes': self.nodes}
-
         if doc is None: raise IgnoreDocumentException()
 
         try:
-            parsed = self.parse(copy.deepcopy(doc))
+            graph = self.parse(copy.deepcopy(doc))
         except Exception, msg:
             logger.error(str(msg))
             logger.error(str(doc))
             traceback.print_exc()
             raise IgnoreDocumentException()
 
-        return parsed
+        return graph
         
-
     def parse(self, data, reset = True):
 
+        graph = []
         # Base xml
         self.xml_root = etree.fromstring(data).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
@@ -80,28 +81,42 @@ class xml2graph(basePlugin):
 
                 if len(node_id) != 1:
                     logger.warn('Node [{ntype}] does not have one id: {ids}'.format(ids=node_id, ntype=node_type))
-                    return self.doc
+                    return 
 
                 node['id'] = node_id[0]
 
-                self.nodes[node['id']] = node
                 self.load_properties(xml_node, node_settings, node)
-                self.get_edges(xml_node, node, edges)
+                edge = self.get_edges(xml_node, node, edges)
 
-        return self.doc
+                graph.append({
+                    'edges': edge,
+                    'node': {
+                        'node_type': node['_type'],
+                        'matches': {'id': node_id[0]},
+                        'body': node
+                    }
+                })
+
+        return graph
 
     def get_edges(self, elem, node, edge_types):
 
+        edges = []
         for edge_type, edge_settings in edge_types.iteritems():
 
             endpoints = elem.xpath(edge_settings['locate'], namespaces=self.namespaces)
             src_id = node['id']
-            if src_id not in self.edges: self.edges[src_id] = {}
 
             for dst_id in endpoints:
-                edge = (edge_type, edge_settings['type'])
-                self.edges[src_id][dst_id] = edge
-    
+                edges.append({
+                    'edge_type': edge_type,
+                    'node_type': edge_settings['type'],
+                    'matches': {
+                        'id': dst_id
+                    }
+                })
+
+        return edges
 
     def load_properties(self, elem, node_settings, properties):
 

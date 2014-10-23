@@ -16,6 +16,19 @@ class graph2neo(basePlugin):
 
     """
     converts a a dictionary of edges and nodes to neo4j
+
+    [{
+        'edges': {                    
+            'matches': {'key': value }  # the key, values to match when making edge
+            'node_type': '',
+            'edge_type': '',
+        'node': {
+            'matches': {'key': value}, # the key, values to match when making node
+            'node_type': '',
+            'body': node
+        }
+    },]
+
     """
     
     def initialize(self, **kwargs):
@@ -48,46 +61,46 @@ class graph2neo(basePlugin):
 
     def export(self, doc):
 
-        assert 'nodes' in doc, "Graph dictionary must have key 'nodes' with a list of nodes."
-        assert 'edges' in doc, "Graph dictionary must have key 'edges' with a list of edges."
-
         self.batch = []
-
-        for src_id, node in doc['nodes'].iteritems():
-            
-            self.appendPath(node)
-
-            for dst_id, edge in doc['edges'].get(src_id, {}).iteritems():
-                edge_type, dst_type = doc['edges'][src_id][dst_id]
-                dest = {'_type': dst_type, 'id': dst_id}
-                self.appendPath(node, edge_type, dest, create_src = False)
+        for node in doc:            
+            src = node['node']
+            self.appendPath(src)
+            for edge in node['edges']:
+                self.appendPath(src, edge, create_src = False)
 
         nodes = self.submit()
-                
-    def appendPath(self, src, edge_type = None, dst = None, create_src = True):
 
-        merge = 'MERGE (n:{_type} {{ id:"{id}" }}) ON CREATE SET {properties} ON MATCH SET {properties}'
-        properties = lambda node: [
-            'n.{key}="{val}"'.format( key=key.replace(' ','_').lower(), val=val) for key, val in node.items()
-        ]
+    def appendPath(self, src, edge = None, create_src = True):
 
-        src_type, src_id = src['_type'], src['id']
-        if create_src:
-            self.append_cypher(merge.format(_type=src_type, id=src_id, properties=', '.join(properties(src))))
+        src_matches, src_properties, src_cypher = self.parse(src)
+        if create_src: self.append_cypher(src_cypher)
 
-        if dst is not None:
-            dst_type, dst_id = dst['_type'], dst['id']
-            self.append_cypher(merge.format(_type=dst_type, id=dst_id, properties=', '.join(properties(dst))))
+        if edge is None: return
 
-        if dst is None or edge_type is None: 
-            return 
+        dst_matches, dst_properties, dst_cypher = self.parse(edge)
+        self.append_cypher(dst_cypher)
 
-        r = 'MATCH (a:{src_type} {{ id:"{src_id}" }}), (b:{dst_type} {{ id:"{dst_id}" }}) '.format(
-            src_type=src_type, src_id=src_id, dst_type=dst_type, dst_id=dst_id)
+        src_type = src['node_type']
+        dst_type = edge['node_type']
 
-        r += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge_type)
+        r = 'MATCH (a:{src_type} {{ {src_matches} }}), (b:{dst_type} {{ {dst_matches} }}) '.format(
+            src_type=src_type, src_matches=src_matches, dst_type=dst_type, dst_matches=dst_matches)
+
+        r += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge['edge_type'])
         self.append_cypher(r)
 
+    def parse(self, node):
+
+        body = node.get('body', node['matches'])
+        cmd = 'MERGE (n:{_type} {{ {matches} }}) ON CREATE SET {properties} ON MATCH SET {properties}'
+        matches =  ['{key}:"{value}"'.format(key=key.replace(' ','_'), value=value) for key, value in node['matches'].items()]
+        properties = ['n.{key}="{val}"'.format(key=key.replace(' ','_').lower(), val=val) for key, val in body.items()]
+
+        matches = ', '.join(matches)
+        properties = ', '.join(properties)
+        cypher = cmd.format(_type=node['node_type'], matches=matches, properties=properties)
+        return matches, properties, cypher
+                
     def append_cypher(self, query):
         self.batch.append({"statement": query})
 

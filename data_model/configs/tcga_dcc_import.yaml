@@ -57,7 +57,7 @@ plugin_kwargs:
     data_type: biospecimen
 
   graph2neo:
-    host: 172.16.128.74
+    host: localhost
     port: 7474
     max_retries: 2
 
