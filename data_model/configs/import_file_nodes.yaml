@@ -7,7 +7,8 @@ log_level: INFO
 
 plugins:
   - latest_urls:
-      - archive2graph
+      - archive2graph:
+          - graph2neo
   
 plugin_kwargs:
 

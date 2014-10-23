@@ -29,17 +29,25 @@ class archive2graph(basePlugin):
     """
 
     def initialize(self, **kwargs):
-        self.props = {
+
+
+        # 'archive_key': 'node_key'
+        self.properties = {
             'archive_name': 'archive_name',
             'revision': 'revision',
             'date_added': 'date_added', 
+            'dcc_archive_url': 'legacy_url',
         }
         
-        # {edge_type: key}
+        # 'archive_key': ('node_type', 'edge_type', 'match_key')
         self.edges = {
-            'batch': 'batch',
-            'center': 
+            'batch': ('batch', 'data_from', 'id'),
+            'center_name': ('center', 'received_from', 'center_name'),
+            'disease_code': ('study', 'data_from', 'id'),
+            'platform': ('platform', 'generated_by', 'id'),
+            'data_level': ('data_level', 'data_from', 'id'),
         }
+
 
     def process(self, doc):
 
@@ -58,25 +66,34 @@ class archive2graph(basePlugin):
 
     def parse(self, doc):
 
-        nodes = {}
-        edges = {}
-        ret = {'edges': edges, 'nodes': nodes}
+        node = {}
+        edges = []
 
-        id = doc['archive_name']
-        nodes[id] = {}
+        node['id'] = doc['archive_name']
 
+        for archive_key, node_key in self.properties.items():
+            try: node[node_key] = doc[archive_key]
+            except: logger.error("Node missing key: " + archive_key)
 
+        for archive_key, trans in self.edges.items():
+            try:
+                dst_type, edge_type, match_key = trans
+                
+                edges.append({
+                    'matches': {match_key: doc[archive_key]},  # the key, values to match when making edge
+                    'node_type': dst_type,
+                    'edge_type': edge_type,
+                })
+            except: 
+                logger.error("Node missing key: " + archive_key)
 
-        nodes[id][id] = doc['archive_name']
-        nodes[id]['_type'] = doc['_type']
-        nodes[id]['batch'] = doc['batch']
-        nodes[id]['disease_code'] = doc['']
-        nodes[id][''] = doc['']
-        nodes[id][''] = doc['']
-        nodes[id][''] = doc['']
-        nodes[id][''] = doc['']
-        nodes[id][''] = doc['']
-        nodes[id][''] = doc['']
-        nodes[id][''] = doc['']
-        
-        return doc
+        graph = [{
+            'edges': edges,
+            'node': {
+                'matches': {'id': node['id']},
+                'node_type': 'file',
+                'body': node,
+            }
+        }]
+
+        return graph
