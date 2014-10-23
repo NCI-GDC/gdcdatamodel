@@ -6,7 +6,6 @@ A 'zug' is a deployable GDC data processing microservice. They have a basic shar
 Each zug should have a meaningful name that describes the process performed. Examples of zugs include:
   -  tcgadcc_data_downloader: a zug that queries the Neo4j data model and downloads archives that have not yet been downloaded
   -  tcgadcc_datamodel_sync: a zug that pulls in the various XML, code tables and other sources of metadata to construct the GDC data model representation in Neo4j
-  -  
   
 Future zugs will include those that perform bioinformatics QC and harmonization tasks.
 
