@@ -8,7 +8,7 @@ log_level: INFO
 plugins:
   - uri:
     - tsv2graph:
-      - neo_merge
+      - graph2neo
         
 plugin_kwargs:
   uri:
@@ -20,7 +20,7 @@ plugin_kwargs:
     id_field: Code
       
   graph2neo:
-    host: localhost
+    host: 172.16.128.74
     port: 7474
 
 plugin_directories:

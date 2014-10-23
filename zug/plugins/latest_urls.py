@@ -3,10 +3,8 @@ import imp
 import requests
 import logging
 import re
-import py2neo
 
 from pprint import pprint
-from py2neo import neo4j
 from datetime import datetime, tzinfo, timedelta
 from multiprocessing import JoinableQueue as Queue
 from zug import basePlugin
@@ -55,11 +53,14 @@ class latest_urls(basePlugin):
         for key, value in self.kwargs.get('constraints', {}).iteritems():
             if archive[key] != value: 
                 raise IgnoreDocumentException()
+        
+        ret_key = self.kwargs.get('url_key', None)
+        if ret_key:
+            ret = archive[ret_key]
+        else:
+            ret = archive
 
-        url = archive[self.kwargs['url_key']]
-        self.state['archive'] = archive
-
-        return url
+        return ret
 
     def pull_dcc_latest(self):
         r = requests.get(self.latest_url)

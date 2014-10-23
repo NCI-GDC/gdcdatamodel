@@ -1,9 +1,9 @@
-
 from zug.exceptions import IgnoreDocumentException, EndOfQueue
 import zug
 import logging
 import copy
 import time
+import traceback
 
 def overrideWarn(f):
     f.overrideWarn = True
@@ -89,4 +89,9 @@ class ZugPluginBase(object):
             except EndOfQueue:
                 self.logger.info("End of queue")
                 return
-        
+
+            except Exception, msg:
+                self.logger.error(str(msg))
+                self.logger.error(str(doc))
+                traceback.print_exc()
+

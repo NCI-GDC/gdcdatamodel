@@ -81,7 +81,7 @@ can simply replace the imput queue with one of infinite length.
 
 ## XML Requirements
 	sudo -E apt-get update
-	sudo -E apt-get install python-dev libxml2-dev libxslt-dev
+	sudo -E apt-get install python-dev libxml2-dev libxslt-dev zlib1g-dev
 
 ## Install for {dev}/{production}
         sudo python setup.py {develop}/{install}

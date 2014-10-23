@@ -22,6 +22,11 @@ class graph2neo(basePlugin):
         self.max_retries = kwargs.get('max_retries', 4)
         self.retries = 0
 
+        self.host = kwargs.get('host', 'localhost')
+        self.port = kwargs.get('port', '7474')
+
+        self.url = 'http://{host}:{port}/db/data/transaction/commit'.format(host=self.host, port=self.port)
+
     def process(self, doc):
 
         if self.retries > self.max_retries: 
@@ -87,9 +92,8 @@ class graph2neo(basePlugin):
         self.batch.append({"statement": query})
 
     def submit(self):
-        data = {"statements": self.batch}
-        url = 'http://localhost:7474/db/data/transaction/commit'
+        data = {"statements": self.batch}        
         logger.info("Batch request for {0} statements".format(len(self.batch)))
-        r = requests.post(url, data=json.dumps(data))
+        r = requests.post(self.url, data=json.dumps(data))
         if r.status_code != 200:
             logger.error("Batch request for {0} statements failed: ".format(len(self.batch)) + r.text)

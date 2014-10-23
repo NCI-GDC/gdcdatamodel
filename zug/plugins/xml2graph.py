@@ -4,6 +4,7 @@ import requests
 import logging
 import yaml
 import copy
+import traceback
 
 from lxml import etree
 from pprint import pprint
@@ -49,8 +50,17 @@ class xml2graph(basePlugin):
         self.doc = {'edges': self.edges, 'nodes': self.nodes}
 
         if doc is None: raise IgnoreDocumentException()
-        parsed = self.parse(copy.deepcopy(doc))
+
+        try:
+            parsed = self.parse(copy.deepcopy(doc))
+        except Exception, msg:
+            logger.error(str(msg))
+            logger.error(str(doc))
+            traceback.print_exc()
+            raise IgnoreDocumentException()
+
         return parsed
+        
 
     def parse(self, data, reset = True):
 
