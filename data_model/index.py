@@ -1,13 +1,15 @@
 import requests
 import json
 
+host = '172.16.128.74'
+
 def append_cypher(batch, query):
     batch.append({"statement": query})
 
 def submit(batch):
     data = {"statements": batch}        
     print "Batch request for {0} statements".format(len(batch))
-    r = requests.post('http://localhost:7474/db/data/transaction/commit', data=json.dumps(data))
+    r = requests.post('http://{0}:7474/db/data/transaction/commit'.format(host), data=json.dumps(data))
     if r.status_code != 200: 
         raise Exception("Batch request for {0} statements failed: ".format(len(batch)) + r.text)
     return r.text

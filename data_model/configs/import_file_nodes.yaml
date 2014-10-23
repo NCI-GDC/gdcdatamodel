@@ -1,0 +1,22 @@
+##############################
+# Center code insertion
+##############################
+
+name: center_codes
+log_level: INFO
+
+plugins:
+  - latest_urls:
+      - archive2graph
+  
+plugin_kwargs:
+
+  latest_urls:
+    latest_firstline: 'ARCHIVE_NAME	DATE_ADDED	ARCHIVE_URL'
+    latest_url: http://tcga-data.nci.nih.gov/datareports/resources/latestarchive
+    open_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
+    protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
+
+plugin_directories:
+  - /home/ubuntu/zugs/data_model/plugins
+    
