@@ -126,6 +126,7 @@ class graph2neo(basePlugin):
     def submit(self):
         data = {"statements": self.batch}        
         logger.info("Batch request for {0} statements".format(len(self.batch)))
+        # pprint(data)
         r = requests.post(self.url, data=json.dumps(data))
         if r.status_code != 200:
             logger.error("Batch request for {0} statements failed: ".format(len(self.batch)) + r.text)

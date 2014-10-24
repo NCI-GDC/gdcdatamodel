@@ -1,0 +1,69 @@
+#Translation Settings for GDC data model
+
+result:
+
+  nodes:
+    locate: files/file
+    match_to_key: file_name
+    access_group: study
+    properties:
+      file_name:
+        locate: filename
+      file_size:
+        locate: filesize
+      md5:
+        locate: checksum
+    
+  edges:
+
+    aliquot:
+      locate: aliquot_id
+      match_to_key: id
+      edge_type: data_from
+        
+    center:
+      locate: center_name
+      match_to_key: id
+      edge_type: received_from
+                
+    study:
+      locate: disease_abbr
+      match_to_key: id
+      edge_type: data_from
+        
+    sample:
+      locate: sample_id
+      match_to_key: id
+      edge_type: data_from
+        
+    patient:
+      locate: participant_id
+      match_to_key: id
+      edge_type: data_from
+
+  properties:
+
+    last_modified:
+      locate: last_modified
+        
+    published_date:
+      locate: published_date
+        
+    platform:
+      locate: platform
+        
+    refassem_short_name:
+      locate: refassem_short_name
+        
+    analysis_id:
+      locate: analysis_id
+        
+    analysis_submission_uri:
+      locate: analysis_submission_uri
+        
+    analysis_full_uri:
+      locate: analysis_full_uri
+        
+    legacy_url:
+      locate: analysis_data_uri
+        

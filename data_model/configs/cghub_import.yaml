@@ -1,0 +1,59 @@
+##############################
+# ETL settings for worker
+##############################
+
+name: CGHubImport
+log_level: INFO
+
+##############################
+# Scheduler
+##############################
+schedule: False
+interval:
+  seconds: 5
+
+##############################
+# Pipelines
+##############################
+plugins:
+  - uri:
+    - cghub_xml2graph:
+        - graph2neo
+        
+##############################
+# Plugins
+##############################
+
+# processors:
+#   extract_tar: 8
+#   xml2graph: 8
+#   graph2neo: 1
+
+##### Arguments to be passed to plugins on initialization
+plugin_kwargs:
+
+  uri:
+    docs:
+      - /home/ubuntu/cghub_full.xml
+
+  cghub_xml2graph:
+    translate_path: /home/ubuntu/zugs/data_model/configs/cghub_translate.yaml
+
+  graph2neo:
+    host: localhost
+    port: 7474
+    max_retries: 2
+
+##### You can specify plugin class names, the default is the module name    
+# plugin_class_names:
+#   latest_urls: latest_urls
+    
+##### Plugin directories are places to look for plugins that inherit the
+##### base.  Directory paths can be absolute or relative
+# plugin_directories:
+#   - plugins
+
+##### You can also specify the absolute path to each plugin manually
+plugin_paths:
+  example: /home/ubuntu/example.py
+  
