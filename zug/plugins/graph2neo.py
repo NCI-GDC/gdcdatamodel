@@ -17,19 +17,22 @@ class graph2neo(basePlugin):
     """
     converts a a dictionary of edges and nodes to neo4j
 
+    """
+
     [{
         'node': {
-            'matches': {'key': value}, # the key, values to match when making node
+            'matches': {'key': 'value'}, # the key, values to match when making node
             'node_type': '',
-            'body': {}
-        }
+            'body': {}, # these values will be written/overwritten
+            'on_match': {}, # these values will only be written if the node ALREADY exists
+            'on_create': {}, # these values will only be written if the node DOES NOT exist
+        },
         'edges': {                    
-            'matches': {'key': value }  # the key, values to match when making edge
+            'matches': {'key': 'value' },  # the key, values to match when making edge
             'node_type': '',
             'edge_type': '',
+        }
     },]
-
-    """
     
     def initialize(self, **kwargs):
         self.max_retries = kwargs.get('max_retries', 4)
@@ -72,12 +75,12 @@ class graph2neo(basePlugin):
 
     def appendPath(self, src, edge = None, create_src = True):
 
-        src_matches, src_properties, src_cypher = self.parse(src)
+        src_matches, src_cypher = self.parse(src)
         if create_src: self.append_cypher(src_cypher)
 
         if edge is None: return
 
-        dst_matches, dst_properties, dst_cypher = self.parse(edge)
+        dst_matches, dst_cypher = self.parse(edge)
         self.append_cypher(dst_cypher)
 
         src_type = src['node_type']
@@ -92,14 +95,27 @@ class graph2neo(basePlugin):
     def parse(self, node):
 
         body = node.get('body', node['matches'])
-        cmd = 'MERGE (n:{_type} {{ {matches} }}) ON CREATE SET {properties} ON MATCH SET {properties}'
-        matches =  ['{key}:"{value}"'.format(key=key.replace(' ','_'), value=value) for key, value in node['matches'].items()]
-        properties = ['n.{key}="{val}"'.format(key=key.replace(' ','_').lower(), val=val) for key, val in body.items()]
+        on_match = node.get('on_match', {})
+        on_create = node.get('on_create', node['matches'])
 
-        matches = ', '.join(matches)
-        properties = ', '.join(properties)
-        cypher = cmd.format(_type=node['node_type'], matches=matches, properties=properties)
-        return matches, properties, cypher
+        for key, value in body.items():
+            on_match[key] = value
+            on_create[key] = value
+        
+        cmd = 'MERGE (n:{_type} {{ {matches} }}) ON CREATE SET {on_create} '
+        if len(on_create) != 0: 
+            cmd += 'ON MATCH SET {on_match}'
+
+        match_lst =  ['{key}:"{val}"'.format(key=key.replace(' ','_'), val=val) for key, val in node['matches'].items()]
+        on_match_lst = ['n.{key}="{val}"'.format(key=key.replace(' ','_').lower(), val=val) for key, val in on_match.items()]
+        on_create_lst = ['n.{key}="{val}"'.format(key=key.replace(' ','_').lower(), val=val) for key, val in on_create.items()]
+
+        match_str = ', '.join(match_lst)
+        on_match_str = ', '.join(on_match_lst)
+        on_create_str = ', '.join(on_create_lst)
+
+        cypher = cmd.format(_type=node['node_type'], matches=match_str, on_create=on_create_str, on_match=on_match_str)
+        return match_str, cypher
                 
     def append_cypher(self, query):
         self.batch.append({"statement": query})

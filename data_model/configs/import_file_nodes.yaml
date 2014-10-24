@@ -2,7 +2,7 @@
 # Center code insertion
 ##############################
 
-name: center_codes
+name: import_file_nodes
 log_level: INFO
 
 plugins:
@@ -17,6 +17,9 @@ plugin_kwargs:
     latest_url: http://tcga-data.nci.nih.gov/datareports/resources/latestarchive
     open_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
     protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
+
+  graph2neo:
+    host: localhost
 
 plugin_directories:
   - /home/ubuntu/zugs/data_model/plugins

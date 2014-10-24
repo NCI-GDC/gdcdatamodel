@@ -5,6 +5,7 @@ import logging
 import yaml
 import copy
 import traceback
+import uuid
 
 from lxml import etree
 from pprint import pprint
@@ -19,12 +20,6 @@ class archive2graph(basePlugin):
     """
     archive2graph
     takes in an xml as a string and compiles a list of nodes and edges
-
-    edges = {
-       source_id: {
-          destination_id : (edge_type, destination_type),
-       }
-    } 
 
     """
 
@@ -69,7 +64,7 @@ class archive2graph(basePlugin):
         node = {}
         edges = []
 
-        node['id'] = doc['archive_name']
+        node['_type'] = 'file'
 
         for archive_key, node_key in self.properties.items():
             try: node[node_key] = doc[archive_key]
@@ -90,9 +85,10 @@ class archive2graph(basePlugin):
         graph = [{
             'edges': edges,
             'node': {
-                'matches': {'id': node['id']},
+                'matches': {'archive_name': node['archive_name']},
                 'node_type': 'file',
                 'body': node,
+                'on_create': {'id': str(uuid.uuid4())},
             }
         }]
 

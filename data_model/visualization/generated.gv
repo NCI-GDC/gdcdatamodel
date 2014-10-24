@@ -39,4 +39,28 @@ digraph {
 	portion
 	center
 		portion -> center [label=shipped_to]
+	file
+	center
+		file -> center [label=received_from]
+	file
+	0
+		file -> 0 [label=generated_by]
+	file
+	study
+		file -> study [label=data_from]
+	file
+	1
+		file -> 1 [label=data_from]
+	2
+	center
+		2 -> center [label=received_from]
+	3
+	4
+		3 -> 4 [label=generated_by]
+	5
+	study
+		5 -> study [label=data_from]
+	6
+	7
+		6 -> 7 [label=data_from]
 }
