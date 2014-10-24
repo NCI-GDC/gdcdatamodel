@@ -97,6 +97,9 @@ class graph2neo(basePlugin):
         body = node.get('body', node['matches'])
         on_match = node.get('on_match', {})
         on_create = node.get('on_create', node['matches'])
+        
+        if '_type' not in on_create and '_type' not in body:
+            on_create['_type'] = node['node_type']
 
         for key, value in body.items():
             on_match[key] = value
@@ -106,9 +109,9 @@ class graph2neo(basePlugin):
         if len(on_create) != 0: 
             cmd += 'ON MATCH SET {on_match}'
 
-        match_lst =  ['{key}:"{val}"'.format(key=key.replace(' ','_'), val=val) for key, val in node['matches'].items()]
-        on_match_lst = ['n.{key}="{val}"'.format(key=key.replace(' ','_').lower(), val=val) for key, val in on_match.items()]
-        on_create_lst = ['n.{key}="{val}"'.format(key=key.replace(' ','_').lower(), val=val) for key, val in on_create.items()]
+        match_lst =  ['{key}:{val}'.format(key=key.replace(' ','_'), val=json.dumps(val)) for key, val in node['matches'].items()]
+        on_match_lst = ['n.{key}={val}'.format(key=key.replace(' ','_').lower(), val=json.dumps(val)) for key, val in on_match.items()]
+        on_create_lst = ['n.{key}={val}'.format(key=key.replace(' ','_').lower(), val=json.dumps(val)) for key, val in on_create.items()]
 
         match_str = ', '.join(match_lst)
         on_match_str = ', '.join(on_match_lst)

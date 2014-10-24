@@ -19,7 +19,7 @@ plugin_kwargs:
     protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
 
   graph2neo:
-    host: localhost
+    host: 172.16.128.74
 
 plugin_directories:
   - /home/ubuntu/zugs/data_model/plugins

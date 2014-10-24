@@ -66,6 +66,11 @@ class archive2graph(basePlugin):
 
         node['_type'] = 'file'
 
+        if doc.get('protected', False):
+            node['access_group'] = ['phs000178']
+        else:
+            node['access_group'] = []
+
         for archive_key, node_key in self.properties.items():
             try: node[node_key] = doc[archive_key]
             except: logger.error("Node missing key: " + archive_key)
