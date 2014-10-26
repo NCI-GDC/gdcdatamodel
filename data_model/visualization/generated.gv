@@ -43,24 +43,24 @@ digraph {
 	center
 		file -> center [label=received_from]
 	file
-	0
-		file -> 0 [label=generated_by]
+	platform
+		file -> platform [label=generated_by]
 	file
 	study
 		file -> study [label=data_from]
 	file
-	1
-		file -> 1 [label=data_from]
-	2
-	center
-		2 -> center [label=received_from]
-	3
-	4
-		3 -> 4 [label=generated_by]
-	5
-	study
-		5 -> study [label=data_from]
-	6
-	7
-		6 -> 7 [label=data_from]
+	batch
+		file -> batch [label=data_from]
+	file
+	data_level
+		file -> data_level [label=data_from]
+	file
+	aliquot
+		file -> aliquot [label=data_from]
+	file
+	sample
+		file -> sample [label=data_from]
+	file
+	patient
+		file -> patient [label=data_from]
 }

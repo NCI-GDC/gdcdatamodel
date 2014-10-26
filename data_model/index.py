@@ -1,7 +1,8 @@
 import requests
 import json
 
-host = '172.16.128.74'
+# host = 'localhost'
+# host = '172.16.128.74'
 
 def append_cypher(batch, query):
     batch.append({"statement": query})

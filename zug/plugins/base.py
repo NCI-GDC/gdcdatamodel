@@ -22,7 +22,7 @@ class OverrideWarned(type):
             logging.error("{cls}: You really shouldn't override the function {name}()!!!".format(
                     name=name, cls=str(cls)))
             logging.error("But I'll assume you know what you're doing!")
-            time.sleep(3)
+            time.sleep(1)
         return type.__new__(cls, name, bases, dct)
 
 class ZugPluginBase(object):
