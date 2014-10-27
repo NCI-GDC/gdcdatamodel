@@ -16,14 +16,14 @@ interval:
 # Pipelines
 ##############################
 plugins:
-  # - latest_urls:
-  #   - extract_tar:
-  #     - xml2graph:
-  #       - graph2neo
+  - latest_urls:
+    - extract_tar:
+      - xml2graph:
+        - graph2neo
 
-  - uri:
-    - xml2graph:
-       - graph2neo
+  # - uri:
+  #   - xml2graph:
+  #      - graph2neo
         
 ##############################
 # Plugins

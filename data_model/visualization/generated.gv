@@ -36,4 +36,22 @@ digraph {
 	protocol
 	analyte
 		protocol -> analyte [label=applied_to]
+	file
+	center
+		file -> center [label=received_from]
+	file
+	platform
+		file -> platform [label=generated_by]
+	file
+	study
+		file -> study [label=data_from]
+	file
+	batch
+		file -> batch [label=data_from]
+	file
+	data_level
+		file -> data_level [label=data_from]
+	portion
+	center
+		portion -> center [label=shipped_to]
 }
