@@ -40,7 +40,7 @@ plugin_kwargs:
     translate_path: /home/ubuntu/zugs/data_model/configs/cghub_translate.yaml
 
   graph2neo:
-    host: localhost
+    host: 172.16.128.74
     port: 7474
     max_retries: 2
 

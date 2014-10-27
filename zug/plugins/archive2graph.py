@@ -78,7 +78,7 @@ class archive2graph(basePlugin):
         for archive_key, trans in self.edges.items():
             try:
                 dst_type, edge_type, match_key = trans
-                
+
                 edges.append({
                     'matches': {match_key: doc[archive_key]},  # the key, values to match when making edge
                     'node_type': dst_type,
