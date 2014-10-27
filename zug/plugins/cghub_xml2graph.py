@@ -6,6 +6,7 @@ import yaml
 import copy
 import traceback
 import uuid
+import sys
 
 from lxml import etree
 from pprint import pprint
@@ -67,11 +68,17 @@ class cghub_xml2graph(basePlugin):
 
         xml_root = etree.fromstring(data).getroottree()
         results = xml_root.findall('Result')
+        graph = []
+        count = 0
         for result in results:
-            self.yield_result(result)
-        
+            count += 1
+            graph += self.yield_result(result)
+            if not count % 100:
+                print "{perc} %\r".format(perc=count*100./len(results)),
+                sys.stdout.flush()
+        self.yieldDoc(graph)
+            
     def yield_result(self, elem):
-    
         graph = []
         for xml_node in elem.findall(self.nodes['locate']):
             node = {}
@@ -87,7 +94,8 @@ class cghub_xml2graph(basePlugin):
                 'edges': self.get_edges(elem),
             })
             
-        self.yieldDoc(graph)
+        # self.yieldDoc(graph)
+        return graph
 
     def add_properties(self, elem, settings, node):
         for key, values in settings.items():
