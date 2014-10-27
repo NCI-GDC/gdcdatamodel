@@ -1,66 +1,39 @@
 // XML Generate Datamodel
 digraph {
-	aliquot
-	analyte
-		aliquot -> analyte [label=derived_from]
-	aliquot
-	center
-		aliquot -> center [label=shipped_to]
-	analyte
-	portion
-		analyte -> portion [label=derived_from]
-	sample
 	patient
-		sample -> patient [label=donated_by]
-	patient
-	batch
-		patient -> batch [label=part_of_batch]
+	study
+		patient -> study [label=part_of_study]
 	patient
 	tissue_source_site
 		patient -> tissue_source_site [label=seen_at]
 	patient
-	study
-		patient -> study [label=part_of_study]
-	portion
-	sample
-		portion -> sample [label=derived_from]
-	protocol
-	analyte
-		protocol -> analyte [label=applied_to]
+	biospecimen_file
+		patient -> biospecimen_file [label=part_of_file]
+	patient
+	batch
+		patient -> batch [label=part_of_batch]
 	patient
 	project
 		patient -> project [label=part_of_project]
+	aliquot
+	center
+		aliquot -> center [label=shipped_to]
+	aliquot
+	analyte
+		aliquot -> analyte [label=derived_from]
+	analyte
+	portion
+		analyte -> portion [label=derived_from]
+	portion
+	sample
+		portion -> sample [label=derived_from]
+	sample
 	patient
-	biospecimen_file
-		patient -> biospecimen_file [label=part_of_file]
+		sample -> patient [label=donated_by]
 	slide
 	portion
 		slide -> portion [label=histology_of]
-	portion
-	center
-		portion -> center [label=shipped_to]
-	file
-	center
-		file -> center [label=received_from]
-	file
-	platform
-		file -> platform [label=generated_by]
-	file
-	study
-		file -> study [label=data_from]
-	file
-	batch
-		file -> batch [label=data_from]
-	file
-	data_level
-		file -> data_level [label=data_from]
-	file
-	aliquot
-		file -> aliquot [label=data_from]
-	file
-	sample
-		file -> sample [label=data_from]
-	file
-	patient
-		file -> patient [label=data_from]
+	protocol
+	analyte
+		protocol -> analyte [label=applied_to]
 }

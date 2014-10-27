@@ -55,7 +55,7 @@ class xml2graph(basePlugin):
             graph = self.parse(copy.deepcopy(doc))
         except Exception, msg:
             logger.error(str(msg))
-            logger.error(str(doc))
+            logger.debug(str(doc))
             traceback.print_exc()
             raise IgnoreDocumentException()
 

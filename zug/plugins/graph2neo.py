@@ -75,28 +75,44 @@ class graph2neo(basePlugin):
 
     def appendPath(self, src, edge = None, create_src = True):
 
-        src_matches, src_cypher = self.parse(src)
-        if create_src: self.append_cypher(src_cypher)
+        src_statement = self.parse(src)
+        if create_src: self.append_statement(src_statement)
 
         if edge is None: return
 
-        dst_matches, dst_cypher = self.parse(edge)
-        self.append_cypher(dst_cypher)
+        dst_statement = self.parse(edge)
+        self.append_statement(dst_statement)
 
         src_type = src['node_type']
         dst_type = edge['node_type']
 
-        r = 'MATCH (a:{src_type} {{ {src_matches} }}), (b:{dst_type} {{ {dst_matches} }}) '.format(
-            src_type=src_type, src_matches=src_matches, dst_type=dst_type, dst_matches=dst_matches)
+        match_lst =  ['{key}:{{src_matches}}.{key}'.format(key=key.replace(' ','_')) for key, val in src['matches'].items()]
+        src_matches = ', '.join(match_lst)
+        match_lst =  ['{key}:{{dst_matches}}.{key}'.format(key=key.replace(' ','_')) for key, val in edge['matches'].items()]
+        dst_matches = ', '.join(match_lst)
 
-        r += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge['edge_type'])
-        self.append_cypher(r)
+        cmd = 'MATCH (a:{src_type} {{ {src_matches} }}), (b:{dst_type} {{ {dst_matches} }}) '.format(
+            src_type=src_type,
+            src_matches=src_matches,
+            dst_type=dst_type,
+            dst_matches=dst_matches
+        )
+        cmd += 'CREATE UNIQUE (a)-[r:{edge_type}]->(b)'.format(edge_type=edge['edge_type'])
+
+        statement = {
+            "statement": cmd,
+            "parameters": {
+                "src_matches": src['matches'],
+                "dst_matches": edge['matches'],
+            }
+        }
+        self.append_statement(statement)
 
     def parse(self, node):
 
-        body = node.get('body', node['matches'])
+        body = node.get('body', copy.copy(node['matches']))
         on_match = node.get('on_match', {})
-        on_create = node.get('on_create', node['matches'])
+        on_create = node.get('on_create', copy.copy(node['matches']))
         
         if '_type' not in on_create and '_type' not in body:
             on_create['_type'] = node['node_type']
@@ -104,24 +120,32 @@ class graph2neo(basePlugin):
         for key, value in body.items():
             on_match[key] = value
             on_create[key] = value
+
+        match_lst =  ['{key}:{{matches}}.{key}'.format(key=key.replace(' ','_')) for key, val in node['matches'].items()]
+        matches = ', '.join(match_lst)
+
+        cmd = 'MERGE (n:{_type} {{{matches}}}) ON CREATE SET n += {{on_create}} '.format(
+            matches=matches,
+            _type=node['node_type'])
+
+        if len(on_match) != 0: 
+            cmd += 'ON MATCH SET n += {on_match}'
+
+        statement = {
+            "statement": cmd,
+            "parameters": {
+                "matches": node['matches'],
+                "on_create": { key.replace(' ','_').lower(): val for key, val in on_create.items() }
+            }
+        }
+
+        if len(on_match) != 0: 
+            statement['parameters']['on_match'] = { key.replace(' ','_').lower(): val for key, val in on_create.items() }
         
-        cmd = 'MERGE (n:{_type} {{ {matches} }}) ON CREATE SET {on_create} '
-        if len(on_create) != 0: 
-            cmd += 'ON MATCH SET {on_match}'
+        return statement
 
-        match_lst =  ['{key}:{val}'.format(key=key.replace(' ','_'), val=json.dumps(val)) for key, val in node['matches'].items()]
-        on_match_lst = ['n.{key}={val}'.format(key=key.replace(' ','_').lower(), val=json.dumps(val)) for key, val in on_match.items()]
-        on_create_lst = ['n.{key}={val}'.format(key=key.replace(' ','_').lower(), val=json.dumps(val)) for key, val in on_create.items()]
-
-        match_str = ', '.join(match_lst)
-        on_match_str = ', '.join(on_match_lst)
-        on_create_str = ', '.join(on_create_lst)
-
-        cypher = cmd.format(_type=node['node_type'], matches=match_str, on_create=on_create_str, on_match=on_match_str)
-        return match_str, cypher
-                
-    def append_cypher(self, query):
-        self.batch.append({"statement": query})
+    def append_statement(self, statement):
+        self.batch.append(statement)
 
     def submit(self):
         data = {"statements": self.batch}        
@@ -130,3 +154,5 @@ class graph2neo(basePlugin):
         r = requests.post(self.url, data=json.dumps(data))
         if r.status_code != 200:
             logger.error("Batch request for {0} statements failed: ".format(len(self.batch)) + r.text)
+        logger.info("Batch request for {0} statements returned successfully".format(len(self.batch)))
+        pprint(r.json())

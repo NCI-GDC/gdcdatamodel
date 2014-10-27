@@ -92,6 +92,5 @@ class ZugPluginBase(object):
 
             except Exception, msg:
                 self.logger.error(str(msg))
-                # self.logger.error(str(doc))
                 traceback.print_exc()
 
