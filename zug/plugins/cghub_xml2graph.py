@@ -73,7 +73,7 @@ class cghub_xml2graph(basePlugin):
         for result in results:
             count += 1
             graph += self.create_graph(result)
-            if not count % 1000:
+            if not count % 10:
                 logging.info("Completion: {perc} %".format(perc=count*100./len(results)))
                 self.yieldDoc(copy.copy(graph))
                 graph = []
