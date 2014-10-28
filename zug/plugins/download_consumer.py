@@ -48,7 +48,7 @@ class download_consumer(basePlugin):
         self.work = None
         self.bai = None
         self.url = 'http://{host}:{port}/db/data/cypher'.format(
-            host=kwargs.get('host', 'neo4j'), port=kwargs.get('port', '7474'))
+            host=kwargs.get('neo4j', 'neo4j'), port=kwargs.get('port', '7474'))
 
     def set_state(self, state):
         self.state = state
