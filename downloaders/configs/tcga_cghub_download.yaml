@@ -24,7 +24,8 @@ processors:
 plugin_kwargs:
 
   download_consumer:
-    host: localhost
+    neo4j: neo4j
+    signpost: signpost
     port: 7474
 
     cghub_key: /etc/tungsten/authorization/cghub/download_key
