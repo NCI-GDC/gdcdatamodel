@@ -42,7 +42,9 @@ class download_consumer(basePlugin):
         self.signpost = 'http://{signpost}/v0/'.format(signpost=kwargs.get('signpost', 'signpost'))
 
         self.check_count = int(kwargs.get('check_count', 5))
-        self.id = str(uuid.uuid4())
+        # self.id = str(uuid.uuid4())
+        with open('/etc/tungsten/name') as f:
+            self.id = f.read().strip()
 
         self.state = 'IDLE'
         self.work = None
@@ -300,7 +302,6 @@ class download_consumer(basePlugin):
             result = self.submit([
                 'MATCH (n:file {{id:"{file_id}"}})',
                 'SET n.import_state="ERROR", n.error_msg="{msg}"',
-                'REMOVE n.importer',
             ], file_id=self.work['id'], msg=msg)
             logger.warn("Successfully set file state to ERROR.")
         except Exception, msg: 
