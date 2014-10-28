@@ -13,7 +13,10 @@ import atexit
 import sys
 import subprocess
 import hashlib
+import re
 
+from os import listdir
+from os.path import isfile, join
 from pprint import pprint
 from zug import basePlugin
 from zug.exceptions import IgnoreDocumentException, EndOfQueue
@@ -45,6 +48,10 @@ class download_consumer(basePlugin):
         self.url = 'http://{host}:{port}/db/data/cypher'.format(
             host=kwargs.get('host', 'localhost'), port=kwargs.get('port', '7474'))
 
+    def set_state(self, state):
+        self.state = state
+        logger.info("Entering state: {0}".format(state))
+
     def start(self):
         while True:
             self.do_carefully(self.get_work)
@@ -59,13 +66,14 @@ class download_consumer(basePlugin):
         try: 
             func()
         except KeyboardInterrupt: 
-            self.check_error()
+            self.post_error('KeyboardInterrupt')
+            raise
         except NoMoreWork: 
             self.check_error()
-        except:
+        except Exception, msg:
             traceback.print_exc()
             logging.error('Downloader errored while executing {f}'.format(f=func))
-            self.check_error()
+            self.check_error(msg)
             return self.start()
 
     def verify_claim(self, file_id):
@@ -92,7 +100,7 @@ class download_consumer(basePlugin):
             ])
 
         if not len(result['data']):
-            self.state = 'EXITING'
+            self.set_state('EXITING')
             raise NoMoreWork('No More Work')
 
         file_id = result['data'][0][0]['data']['id']
@@ -112,21 +120,22 @@ class download_consumer(basePlugin):
             if not self.verify_claim(file_id): 
                 return False                
                 
-        self.state = 'SCHEDULED'
+        self.set_state('SCHEDULED')
         return True        
 
     def finish_work(self):
-        self.state = 'FINISHING'
+        self.set_state('FINISHING')
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
             'SET n.import_state="COMPLETE"',
             'REMOVE n.importer',
         ], file_id=self.work['id'])
-        self.state = 'IDLE'
+        self.set_state('IDLE')
 
     def download(self):
-        self.state = 'DOWNLOADING'
+        self.set_state('DOWNLOADING')
         if self.work is None: raise Exception('download() was called with no work')
+        directory = self.kwargs['download_path']
 
         cmd = ' '.join([
             'sudo gtdownload -k 15',
@@ -136,34 +145,65 @@ class download_consumer(basePlugin):
             '{aid}', 
         ]).format(
             cghub_key=self.kwargs['cghub_key'], 
-            download_path=self.kwargs['download_path'], 
+            download_path=directory,
             aid=self.work.get('analysis_id'),
         )
-        print cmd
+
         child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         output, err = child.communicate()
+
         if child.returncode:
             logger.error(err)
             raise Exception('Downloader returned with non-zero exit code')
 
-        # self.kwargs['download_path']
+        directory += self.work.get('analysis_id')
+        files = [f for f in listdir(directory) if isfile(join(directory,f))]
+        self.files = [
+            os.path.join(directory, f) for f in files if f.endswith('.bam') or f.endswith('.bai')
+        ]
+        for f in self.files:
+            logger.info('Successfully downloaded file: ' + f)
+
+
+    def get_bai(self):
+        aid = self.work['analysis_id']
+        print aid
+        result = self.submit([
+            'MATCH (n:file)',
+            'WHERE n.analysis_id="{aid}"',
+            'AND right(n.file_name, 4) = ".bai"',
+            'RETURN n',
+        ], aid=aid)
+
+        try: 
+            return result['data'][0][0]['data']
+        except: 
+            return None
 
     def checksum(self):
-        # md5 = hashlib.md5()
-        # with open(filename, 'rb') as f:
-        #     for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
-        #         md5.update(chunk)
-        # checksum = md5.hexdigest()
-        pass
+        self.set_state('CHECK_SUMMING')
+        for path in self.files:
+            md5 = hashlib.md5()
+            with open(path, 'rb') as f:
+                for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
+                    md5.update(chunk)
+                checksum = md5.hexdigest()
+            
+            work = self.get_bai() if path.endswith('.bai') else self.work
+            if not work: continue
+
+            if checksum != work['md5']:
+                raise Exception('incorrect checksum')
+        self.set_state('CHECK_SUMMED')
 
     def post(self):
-        self.state = 'POSTING'
+        self.set_state('POSTING')
 
     def upload(self):
-        self.state = 'UPLOADING'
+        self.set_state('UPLOADING')
 
     def get_work(self):
-        self.state = 'SCHEDULING'
+        self.set_state('SCHEDULING')
         while not self.claim_work(): 
             logger.info("Failed to get work, trying again")
         
@@ -172,10 +212,30 @@ class download_consumer(basePlugin):
         data = {"query": cypher}
         r = requests.post(self.url, data=json.dumps(data))
         if r.status_code != 200:
-                    logger.info("FAILURE: cypher query")
+            traceback.print_exc()
+            logger.error("FAILURE: cypher query")
+            logger.error(json.text)
         return r.json()
 
-    def check_error(self):
+    def post_error(self, msg = "none"):
+        msg = str(msg)
+        logger.warn("Posting error state: " + msg)
+        try:
+            if not self.work: 
+                logger.error("No work to set to state ERROR.")
+                return
+            result = self.submit([
+                'MATCH (n:file {{id:"{file_id}"}})',
+                'SET n.import_state="ERROR", n.error_msg="{msg}"',
+                'REMOVE n.importer',
+            ], file_id=self.work['id'], msg=msg)
+            logger.warn("Successfully set file state to ERROR.")
+        except Exception, msg: 
+            logger.error("UNABLE TO POST ERRORED STATE TO DATAMODEL !!")
+            logger.error(str(msg))
+    
+
+    def check_error(self, msg = 'none'):
         logger.info("Checking for correct exit state, state = {0}".format(self.state))
         should_be_exiting = ['IDLE', 'EXITING']
 
@@ -183,19 +243,5 @@ class download_consumer(basePlugin):
             logger.info("state okay.")
             return 
         logger.error("DOWNLOADER EXITING WITH ERRORED STATE.")
-
-        try:
-            if not self.work: 
-                logger.error("No work to set to state ERROR.")
-                return
-            result = self.submit([
-                'MATCH (n:file {{id:"{file_id}"}})',
-                'SET n.import_state="ERROR"',
-                'REMOVE n.importer',
-            ], file_id=self.work['id'])
-            logger.warn("Successfully set file state to ERROR.")
-        except: 
-            traceback.print_exc()
-            logger.error("UNABLE TO POST ERRORED STATE TO DATAMODEL !!")
-                
+        self.post_error(msg)
         self.work = None
