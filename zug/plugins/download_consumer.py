@@ -39,7 +39,7 @@ class download_consumer(basePlugin):
         assert 'cghub_key' in kwargs, 'Please specify path to a cghub downloader key: cghub_key'
         assert 'download_path' in kwargs, 'Please specify directory to place the file: download_path'
 
-        self.signpost = 'http://172.16.128.85/v0/'
+        self.signpost = 'http://signpost/v0/'
 
         self.check_count = int(kwargs.get('check_count', 5))
         self.id = str(uuid.uuid4())
@@ -123,6 +123,7 @@ class download_consumer(basePlugin):
                 return False                
                 
         self.set_state('SCHEDULED')
+        logger.info("Claimed: {0}".format(self.work['id']))
         return True        
 
     def delete_scratch(self, path):
@@ -184,7 +185,7 @@ class download_consumer(basePlugin):
 
     def get_bai(self):
         aid = self.work['analysis_id']
-        print aid
+        logger.info("Got .bai file: " + aid)
         result = self.submit([
             'MATCH (n:file)',
             'WHERE n.analysis_id="{aid}"',
@@ -214,17 +215,14 @@ class download_consumer(basePlugin):
                 raise Exception('incorrect checksum')
         self.set_state('CHECK_SUMMED')
 
-
     def post_did(self, data):
-
         acls = data.get('access_group', [])
         protection = "protected" if len(acls) else "public"
         base_url = "swift://rados-bionimbus-pdc.http://opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
         url = base_url.format(protection=protection, aid=data['analysis_id'], name=data['file_name'])
-
         data = {"acls": acls, "did": data['id'], "urls": [url]}
         r = requests.put(self.signpost, data=json.dumps(data), headers={'Content-Type': 'application/json'})
-        print r.text
+        logger.info("Post: " + r.text)
 
     def post(self):    
         self.set_state('POSTING')
@@ -239,10 +237,10 @@ class download_consumer(basePlugin):
 
     def upload_file(self, data, path):
         logger.info("Uploading file: " + path)
-        if 'access_group' not in data or not len(data['access_group']):
-            protection = "public"
-        else:
-            protection = "protected"
+        # if 'access_group' not in data or not len(data['access_group']):
+        #     protection = "public"
+        # else:
+        protection = "protected"
 
         cmd = ' '.join([
             'swift upload ',
