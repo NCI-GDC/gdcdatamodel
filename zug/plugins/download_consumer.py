@@ -154,6 +154,8 @@ class download_consumer(basePlugin):
         if self.work is None: raise Exception('download() was called with no work')
         directory = self.kwargs['download_path']
 
+        logger.info("Downloading file: {0} bytes".format(self.work.get('file_size', '?')))
+
         cmd = ' '.join([
             'sudo gtdownload -k 15',
             '-c {cghub_key}',
@@ -236,18 +238,21 @@ class download_consumer(basePlugin):
         self.set_state('POSTED')
 
     def upload_file(self, data, path):
+        name = path.replace('/mnt/cinder/scratch/','')
         logger.info("Uploading file: " + path)
-
+        logger.info("Uploading file to " + name)
+        
         cmd = ' '.join([
             'swift upload ',
             '--use-slo -S {segment}',
             'tcga_cghub_protected',
-            '{path}'
+            '{path}',
+            '--object-name {name}',
         ]).format(
             novarc=self.kwargs.get('novarc', '/etc/tungsten/authorization/cghub/novarc_datamanager'),
             segment=self.kwargs.get('segment_size', 1073741824),
-            protection=protection,
-            path=path.replace('mnt/cinder/scratch/',''),
+            path=path,
+            name=name,
         )
 
         child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
@@ -256,8 +261,9 @@ class download_consumer(basePlugin):
         if child.returncode:
             logger.error(err)
             raise Exception('Upload command returned with non-zero exit code')
+
         logger.info("Upload complete: " + path)
-        
+
     def upload(self):
         self.set_state('UPLOADING')
 
