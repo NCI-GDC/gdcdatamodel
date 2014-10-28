@@ -237,21 +237,17 @@ class download_consumer(basePlugin):
 
     def upload_file(self, data, path):
         logger.info("Uploading file: " + path)
-        # if 'access_group' not in data or not len(data['access_group']):
-        #     protection = "public"
-        # else:
-        protection = "protected"
 
         cmd = ' '.join([
             'swift upload ',
             '--use-slo -S {segment}',
-            'tcga_cghub_{protection}',
+            'tcga_cghub_protected',
             '{path}'
         ]).format(
             novarc=self.kwargs.get('novarc', '/etc/tungsten/authorization/cghub/novarc_datamanager'),
             segment=self.kwargs.get('segment_size', 1073741824),
             protection=protection,
-            path=path, 
+            path=path.replace('mnt/cinder/scratch/',''),
         )
 
         child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
