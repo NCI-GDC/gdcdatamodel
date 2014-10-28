@@ -39,7 +39,7 @@ class download_consumer(basePlugin):
         assert 'cghub_key' in kwargs, 'Please specify path to a cghub downloader key: cghub_key'
         assert 'download_path' in kwargs, 'Please specify directory to place the file: download_path'
 
-        self.signpost = 'http://signpost/v0/'
+        self.signpost = 'http://{signpost}/v0/'.format(signpost=kwargs.get('signpost', 'signpost'))
 
         self.check_count = int(kwargs.get('check_count', 5))
         self.id = str(uuid.uuid4())
@@ -48,7 +48,7 @@ class download_consumer(basePlugin):
         self.work = None
         self.bai = None
         self.url = 'http://{host}:{port}/db/data/cypher'.format(
-            host=kwargs.get('host', 'localhost'), port=kwargs.get('port', '7474'))
+            host=kwargs.get('neo4j', 'neo4j'), port=kwargs.get('port', '7474'))
 
     def set_state(self, state):
         self.state = state
