@@ -1,0 +1,41 @@
+##############################
+# ETL settings for worker
+##############################
+
+name: tcga_dcc_archive_merge
+log_level: INFO
+
+##############################
+# Pipelines
+##############################
+plugins:
+  - uri:
+     - merge_tcga_dcc
+        
+##############################
+# Plugins
+##############################
+
+# processors:
+#   extract_tar: 8
+#   xml2graph: 8
+#   graph2neo: 1
+
+##### Arguments to be passed to plugins on initialization
+plugin_kwargs:
+
+  uri:
+    docs:
+      - /home/ubuntu/tcga_dcc_download_public.txt
+    split: True
+
+  merge_tcga_dcc:
+    node_type: file
+    host: 172.16.128.74
+    port: 7474
+    
+  graph2neo:
+    # host: localhostn
+    host: 172.16.128.74
+    port: 7474
+    max_retries: 2

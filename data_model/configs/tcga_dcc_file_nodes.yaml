@@ -7,8 +7,8 @@ log_level: INFO
 
 plugins:
   - latest_urls:
-      - archive2graph:
-          - graph2neo
+    - archive2graph:
+      - graph2neo
   
 plugin_kwargs:
 
@@ -18,8 +18,9 @@ plugin_kwargs:
     open_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/
     protected_url: https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/
 
-  graph2neo:
-    host: 172.16.128.74
+  # graph2neo:
+    # host: 172.16.128.74
+    
 
 plugin_directories:
   - /home/ubuntu/zugs/data_model/plugins

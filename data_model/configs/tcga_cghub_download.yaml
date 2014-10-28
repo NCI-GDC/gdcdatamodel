@@ -1,0 +1,28 @@
+##############################
+# ETL settings for worker
+##############################
+
+name: CGHubDowload
+log_level: INFO
+
+
+##############################
+# Plugins
+##############################
+
+plugins:
+  - download_consumer
+  
+##############################
+# Plugins
+##############################
+
+processors:
+  download_consumer: 10
+
+##### Arguments to be passed to plugins on initialization
+plugin_kwargs:
+
+  download_consumer:
+    host: localhost
+    port: 7474
