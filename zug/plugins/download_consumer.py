@@ -39,12 +39,14 @@ class download_consumer(basePlugin):
         assert 'cghub_key' in kwargs, 'Please specify path to a cghub downloader key: cghub_key'
         assert 'download_path' in kwargs, 'Please specify directory to place the file: download_path'
 
+        self.signpost = 'http://172.16.128.85/v0/'
+
         self.check_count = int(kwargs.get('check_count', 5))
         self.id = str(uuid.uuid4())
 
         self.state = 'IDLE'
         self.work = None
-
+        self.bai = None
         self.url = 'http://{host}:{port}/db/data/cypher'.format(
             host=kwargs.get('host', 'localhost'), port=kwargs.get('port', '7474'))
 
@@ -66,7 +68,7 @@ class download_consumer(basePlugin):
         try: 
             func()
         except KeyboardInterrupt: 
-            self.post_error('KeyboardInterrupt')
+            self.post_error('KeyboardInterrupt: Process was stopped by user')
             raise
         except NoMoreWork: 
             self.check_error()
@@ -123,6 +125,15 @@ class download_consumer(basePlugin):
         self.set_state('SCHEDULED')
         return True        
 
+    def delete_scratch(self, path):
+
+        directory = os.path.dirname(path)
+        cmd = 'sudo rm -rf {directory}'.format(directory=directory)
+        child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        output, err = child.communicate()
+        if child.returncode: logger.error(err)
+        
+
     def finish_work(self):
         self.set_state('FINISHING')
         result = self.submit([
@@ -130,6 +141,11 @@ class download_consumer(basePlugin):
             'SET n.import_state="COMPLETE"',
             'REMOVE n.importer',
         ], file_id=self.work['id'])
+
+        for f in self.files:
+            try: self.delete_scratch(f)
+            except: logger.error("Unable to delete scratch.  Will likely run out of space in the future")
+
         self.set_state('IDLE')
 
     def download(self):
@@ -164,6 +180,7 @@ class download_consumer(basePlugin):
         for f in self.files:
             logger.info('Successfully downloaded file: ' + f)
 
+        self.set_state('DOWNLOADED')
 
     def get_bai(self):
         aid = self.work['analysis_id']
@@ -176,7 +193,8 @@ class download_consumer(basePlugin):
         ], aid=aid)
 
         try: 
-            return result['data'][0][0]['data']
+            self.bai = result['data'][0][0]['data']
+            return self.bai
         except: 
             return None
 
@@ -196,11 +214,66 @@ class download_consumer(basePlugin):
                 raise Exception('incorrect checksum')
         self.set_state('CHECK_SUMMED')
 
-    def post(self):
+
+    def post_did(self, data):
+
+        acls = data.get('access_group', [])
+        protection = "protected" if len(acls) else "public"
+        base_url = "swift://rados-bionimbus-pdc.http://opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
+        url = base_url.format(protection=protection, aid=data['analysis_id'], name=data['file_name'])
+
+        data = {"acls": acls, "did": data['id'], "urls": [url]}
+        r = requests.put(self.signpost, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+        print r.text
+
+    def post(self):    
         self.set_state('POSTING')
 
+        for path in self.files:
+            if path.endswith('.bai'): 
+                self.post_did(self.bai)
+            else: 
+                self.post_did(self.work)
+
+        self.set_state('POSTED')
+
+    def upload_file(self, data, path):
+        logger.info("Uploading file: " + path)
+        if 'access_group' not in data or not len(data['access_group']):
+            protection = "public"
+        else:
+            protection = "protected"
+
+        cmd = ' '.join([
+            'swift upload ',
+            '--use-slo -S {segment}',
+            'tcga_cghub_{protection}',
+            '{path}'
+        ]).format(
+            novarc=self.kwargs.get('novarc', '/etc/tungsten/authorization/cghub/novarc_datamanager'),
+            segment=self.kwargs.get('segment_size', 1073741824),
+            protection=protection,
+            path=path, 
+        )
+
+        child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        output, err = child.communicate()
+
+        if child.returncode:
+            logger.error(err)
+            raise Exception('Upload command returned with non-zero exit code')
+        logger.info("Upload complete: " + path)
+        
     def upload(self):
         self.set_state('UPLOADING')
+
+        for path in self.files:
+            if path.endswith('.bai'): 
+                self.upload_file(self.bai, path)
+            else: 
+                self.upload_file(self.work, path)
+
+        self.set_state('UPLOADED')
 
     def get_work(self):
         self.set_state('SCHEDULING')
@@ -214,7 +287,7 @@ class download_consumer(basePlugin):
         if r.status_code != 200:
             traceback.print_exc()
             logger.error("FAILURE: cypher query")
-            logger.error(json.text)
+            logger.error(r.text)
         return r.json()
 
     def post_error(self, msg = "none"):
