@@ -142,12 +142,18 @@ class download_consumer(basePlugin):
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
             'SET n.import_state="COMPLETE"',
-            'REMOVE n.importer',
         ], file_id=self.work['id'])
 
         for f in self.files:
             try: self.delete_scratch(f)
             except: logger.error("Unable to delete scratch.  Will likely run out of space in the future")
+
+        if not self.bai: continue
+
+        result = self.submit([
+            'MATCH (n:file {{id:"{file_id}"}})',
+            'SET n.import_state="COMPLETE"',
+        ], file_id=self.bai['id'])
 
         self.set_state('IDLE')
 
