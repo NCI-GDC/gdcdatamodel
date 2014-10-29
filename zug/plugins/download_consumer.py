@@ -324,4 +324,9 @@ class download_consumer(basePlugin):
             return 
         logger.error("DOWNLOADER EXITING WITH ERRORED STATE.")
         self.post_error(msg)
+
+        for f in self.files:
+            try: self.delete_scratch(f)
+            except: logger.error("Unable to delete scratch.  Will likely run out of space in the future")
+
         self.work = None
