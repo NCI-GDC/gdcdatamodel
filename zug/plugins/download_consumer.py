@@ -148,7 +148,7 @@ class download_consumer(basePlugin):
             try: self.delete_scratch(f)
             except: logger.error("Unable to delete scratch.  Will likely run out of space in the future")
 
-        if not self.bai: continue
+        if not self.bai: return
 
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
