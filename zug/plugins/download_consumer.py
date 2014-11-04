@@ -97,6 +97,7 @@ class download_consumer(basePlugin):
             'MATCH (n:file)',
             'WHERE n.import_state="NOT_STARTED"'
             'AND right(n.file_name, 4) <> ".bai"',
+            'AND n.access_group = ["phs000178"]',
             # 'OR n.import_state="ERROR"',
             # 'AND right(n.file_name, 4) <> ".bai"',
             'WITH n LIMIT 1',
@@ -212,17 +213,27 @@ class download_consumer(basePlugin):
     def checksum(self):
         self.set_state('CHECK_SUMMING')
         for path in self.files:
-            md5 = hashlib.md5()
-            with open(path, 'rb') as f:
-                for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
-                    md5.update(chunk)
-                checksum = md5.hexdigest()
             
+            logger.info("Checksumming file: {0}".format(path)
+
             work = self.get_bai() if path.endswith('.bai') else self.work
             if not work: continue
+    
+            cmd = ' '.join([
+                'md5sum -c',
+                '<(echo {md5} {path})',
+            ]).format(
+                md5 = work['md5'],
+                path=path,
+            )
+    
+            child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            output, err = child.communicate()
+    
+            if child.returncode:
+                logger.error(err)
+                raise Exception('Checksum check returned with non-zero exit code')
 
-            if checksum != work['md5']:
-                raise Exception('incorrect checksum')
         self.set_state('CHECK_SUMMED')
 
     def post_did(self, data):
