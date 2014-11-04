@@ -220,8 +220,8 @@ class download_consumer(basePlugin):
             if not work: continue
             
             cmd = ' '.join([
-                'md5sum -c',
-                '<(echo {md5} {path})',
+                '/bin/bash -c'
+                '"md5sum -c <(echo {md5} {path})"',
             ]).format(
                 md5 = work['md5'],
                 path=path,
