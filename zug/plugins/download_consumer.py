@@ -214,11 +214,11 @@ class download_consumer(basePlugin):
         self.set_state('CHECK_SUMMING')
         for path in self.files:
             
-            logger.info("Checksumming file: {0}".format(path)
-
+            logger.info("Checksumming file: {0}".format(path))
+            
             work = self.get_bai() if path.endswith('.bai') else self.work
             if not work: continue
-    
+            
             cmd = ' '.join([
                 'md5sum -c',
                 '<(echo {md5} {path})',
@@ -226,14 +226,14 @@ class download_consumer(basePlugin):
                 md5 = work['md5'],
                 path=path,
             )
-    
+            
             child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
             output, err = child.communicate()
-    
+            
             if child.returncode:
                 logger.error(err)
                 raise Exception('Checksum check returned with non-zero exit code')
-
+                
         self.set_state('CHECK_SUMMED')
 
     def post_did(self, data):
