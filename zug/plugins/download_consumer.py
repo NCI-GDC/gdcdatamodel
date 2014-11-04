@@ -177,11 +177,11 @@ class download_consumer(basePlugin):
             aid=self.work.get('analysis_id'),
         )
 
+        logger.info("cmd: {0}".format(cmd))
         child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         output, err = child.communicate()
 
         if child.returncode:
-            logger.error("Error message: " + err)
             raise Exception('Downloader returned with non-zero exit code')
 
         directory += self.work.get('analysis_id')
@@ -221,17 +221,17 @@ class download_consumer(basePlugin):
             
             cmd = ' '.join([
                 '/bin/bash -c'
-                '"md5sum -c <(echo {md5} {path})"',
+                '"md5sum -c <(echo \"{md5}\" \"{path}\")"',
             ]).format(
                 md5 = work['md5'],
                 path=path,
             )
             
+            logger.info("cmd: {0}".format(cmd))
             child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
             output, err = child.communicate()
             
             if child.returncode:
-                logger.error("Error message: " + err)
                 raise Exception('Checksum check returned with non-zero exit code')
                 
         self.set_state('CHECK_SUMMED')
@@ -278,7 +278,6 @@ class download_consumer(basePlugin):
         output, err = child.communicate()
 
         if child.returncode:
-            logger.error(err)
             raise Exception('Upload command returned with non-zero exit code')
 
         logger.info("Upload complete: " + path)
