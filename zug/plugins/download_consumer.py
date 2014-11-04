@@ -56,6 +56,16 @@ class download_consumer(basePlugin):
         self.state = state
         logger.info("Entering state: {0}".format(state))
 
+        if self.work and 'id' in self.work:
+            try:
+                result = self.submit([
+                    'MATCH (n:file {{id:"{file_id}"}})',
+                    'SET n.importer_state="{state}"',
+                ], file_id=self.work['id'], state=state)
+            except:
+                logger.error("Unable to update importer_state in datamodel")
+        logger.info("Entered state: {0}".format(state))
+
     def start(self):
         while True:
             self.do_carefully(self.get_work)
@@ -114,7 +124,7 @@ class download_consumer(basePlugin):
             'MATCH (n:file {{id:"{file_id}"}})',
             'WHERE n.import_state="NOT_STARTED"'
             # 'OR n.import_state="ERROR"',
-            'SET n.importer="{id}", n.import_state="STARTED"',
+            'SET n.importer="{id}", n.import_state="STARTED", n.import_started = timestamp()',
             'RETURN n', 
         ], file_id=file_id, id=self.id)
 
@@ -142,7 +152,7 @@ class download_consumer(basePlugin):
         self.set_state('FINISHING')
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
-            'SET n.import_state="COMPLETE"',
+            'SET n.import_state="COMPLETE", n.importer_state="FINISHED", n.import_completed = timestamp()',
         ], file_id=self.work['id'])
 
         for f in self.files:
