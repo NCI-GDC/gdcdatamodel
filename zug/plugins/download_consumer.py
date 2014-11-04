@@ -97,7 +97,7 @@ class download_consumer(basePlugin):
             'MATCH (n:file)',
             'WHERE n.import_state="NOT_STARTED"'
             'AND right(n.file_name, 4) <> ".bai"',
-            'AND n.access_group = ["phs000178"]',
+            # 'AND n.access_group = ["phs000178"]',
             # 'OR n.import_state="ERROR"',
             # 'AND right(n.file_name, 4) <> ".bai"',
             'WITH n LIMIT 1',
@@ -181,7 +181,7 @@ class download_consumer(basePlugin):
         output, err = child.communicate()
 
         if child.returncode:
-            logger.error(err)
+            logger.error("Error message: " + err)
             raise Exception('Downloader returned with non-zero exit code')
 
         directory += self.work.get('analysis_id')
@@ -231,7 +231,7 @@ class download_consumer(basePlugin):
             output, err = child.communicate()
             
             if child.returncode:
-                logger.error(err)
+                logger.error("Error message: " + err)
                 raise Exception('Checksum check returned with non-zero exit code')
                 
         self.set_state('CHECK_SUMMED')
@@ -333,7 +333,7 @@ class download_consumer(basePlugin):
         if self.state in should_be_exiting:
             logger.info("state okay.")
             return 
-        logger.error("DOWNLOADER EXITING WITH ERRORED STATE.")
+        logger.error("EXITING WITH ERRORED STATE.")
         self.post_error(msg)
 
         for f in self.files:

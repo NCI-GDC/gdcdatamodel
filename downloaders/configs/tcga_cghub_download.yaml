@@ -23,7 +23,7 @@ processors:
 ##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
 
-  downloader:
+  download_consumer:
     host: neo4j
     cghub_key: /etc/tungsten/authorization/cghub/download_key
     download_path: /mnt/cinder/scratch/
