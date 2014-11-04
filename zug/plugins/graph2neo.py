@@ -137,7 +137,7 @@ class graph2neo(basePlugin):
                 "matches": node['matches'],
                 "on_create": { key.replace(' ','_').lower(): val for key, val in on_create.items() }
             }
-        }
+       }
 
         if len(on_match) != 0: 
             statement['parameters']['on_match'] = { key.replace(' ','_').lower(): val for key, val in on_create.items() }

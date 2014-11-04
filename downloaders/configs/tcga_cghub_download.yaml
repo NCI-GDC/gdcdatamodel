@@ -11,7 +11,12 @@ log_level: INFO
 ##############################
 
 plugins:
-  - download_consumer
+  - claim_work:
+    - downloader:
+      - checksum:
+        - upload2swift:
+          - post2signpost:
+            - finish_work
   
 ##############################
 # Plugins
@@ -23,10 +28,12 @@ processors:
 ##### Arguments to be passed to plugins on initialization
 plugin_kwargs:
 
-  download_consumer:
-    neo4j: neo4j
-    signpost: signpost
-    port: 7474
+  claim_work:
+    host: neo4j
 
+  post2signpost:
+    host: signpost
+
+  downloader:
     cghub_key: /etc/tungsten/authorization/cghub/download_key
     download_path: /mnt/cinder/scratch/
