@@ -30,18 +30,24 @@ class archive2graph(basePlugin):
         self.properties = {
             'archive_name': 'archive_name',
             'revision': 'revision',
-            'date_added': 'date_added', 
+            'date_added': 'date_added',
             'dcc_archive_url': 'legacy_url',
         }
-        
+
+        if 'edge_yaml' in kwargs:
+            edge_file = kwargs['edge_yaml']
+        else:
+            edge_file = "edges.yaml"
+
+        self.edges = yaml.load(open(edge_file))
         # 'archive_key': ('node_type', 'edge_type', 'match_key')
-        self.edges = {
-            'batch': ('batch', 'data_from', 'id'),
-            'center_name': ('center', 'received_from', 'center_name'),
-            'disease_code': ('study', 'data_from', 'id'),
-            'platform': ('platform', 'generated_by', 'id'),
-            'data_level': ('data_level', 'data_from', 'id'),
-        }
+        #~ self.edges = {
+            #~ 'batch': ('batch', 'data_from', 'id'),
+            #~ 'center_name': ('center', 'received_from', 'center_name'),
+            #~ 'disease_code': ('study', 'data_from', 'id'),
+            #~ 'platform': ('platform', 'generated_by', 'id'),
+            #~ 'data_level': ('data_level', 'data_from', 'id'),
+        #~ }
 
 
     def process(self, doc):
@@ -57,7 +63,7 @@ class archive2graph(basePlugin):
             raise IgnoreDocumentException()
 
         return parsed
-        
+
 
     def parse(self, doc):
 
@@ -71,6 +77,7 @@ class archive2graph(basePlugin):
         else:
             node['access_group'] = []
 
+        # verify the doc has the keys we expect to be there
         for archive_key, node_key in self.properties.items():
             try: node[node_key] = doc[archive_key]
             except: logger.error("Node missing key: " + archive_key)
@@ -84,7 +91,7 @@ class archive2graph(basePlugin):
                     'node_type': dst_type,
                     'edge_type': edge_type,
                 })
-            except: 
+            except:
                 logger.error("Node missing key: " + archive_key)
 
         graph = [{

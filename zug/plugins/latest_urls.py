@@ -22,18 +22,20 @@ class SimpleUTC(tzinfo):
 class latest_urls(basePlugin):
 
     """
-    
+
     """
-        
+
     def initialize(self, constraints = {}, **kwargs):
         self.open_url = kwargs['open_url']
         self.latest_firstline = kwargs['latest_firstline']
         self.latest_url = kwargs['latest_url']
         self.protected_url = kwargs['protected_url']
-        
+
+        # get the latest archive files
         latest_report = self.pull_dcc_latest().splitlines()
         header = latest_report[0]
- 
+
+        # verify the file has the expected header
         if header != self.latest_firstline:
             logger.error('Unexpected header for latest report: "%s"' % header)
             sys.exit(-1)
@@ -41,19 +43,20 @@ class latest_urls(basePlugin):
         self.q_new_work = Queue()
         self.latest_report = latest_report
 
+        # queue up the lines to be processed
         for line in latest_report[1:]:
             sline = line.strip().split('\t')
             self.enqueue(sline)
- 
+
         self.enqueue(EndOfQueue())
- 
+
     def process(self, doc):
-        
+
         archive = self.parse_archive(*doc)
         for key, value in self.kwargs.get('constraints', {}).iteritems():
-            if archive[key] != value: 
+            if archive[key] != value:
                 raise IgnoreDocumentException()
-        
+
         ret_key = self.kwargs.get('url_key', None)
         if ret_key:
             ret = archive[ret_key]
@@ -64,7 +67,7 @@ class latest_urls(basePlugin):
 
     def pull_dcc_latest(self):
         r = requests.get(self.latest_url)
-        if r.status_code != 200: 
+        if r.status_code != 200:
             return None
         return r.text
 
@@ -90,7 +93,7 @@ class latest_urls(basePlugin):
         archive['data_level'] = m.group(4).replace('.', '') if m.group(4) else None
         archive['batch'] = int(m.group(5))
         archive['revision'] = int(m.group(6))
-        
+
 
     def parse_archive_url(self, archive):
         archive_url = archive['dcc_archive_url']
@@ -111,12 +114,12 @@ class latest_urls(basePlugin):
             logger.warning("Unmatched disease code between Archive URL and Archive Name: " + parts[8] + " vs " + archive['disease_code'])
         if (parts[10] != archive['center_name']):
             logger.warning("Unmatched center_name between Archive URL and Archive Name: " + parts[10] + " vs " + archive['center_name'])
-        
+
         archive['center_type'] = parts[9]
         archive['platform_in_url'] = parts[11]
         archive['data_type_in_url'] = parts[12]
 
-    
+
     def parse_archive(self, archive_name, date_added, archive_url):
         archive = {}
         archive['_type'] ='tcga_dcc_archive'
@@ -135,7 +138,7 @@ class latest_urls(basePlugin):
         archive['import']['process'] = {}
         archive['import']['process']['start_time'] = None
         archive['import']['process']['finish_time'] = None
-        
+
         archive['archive_name'] = archive_name
         archive['date_added'] = date_added
         archive['dcc_archive_url'] = archive_url
