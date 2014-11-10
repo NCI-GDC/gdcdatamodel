@@ -14,12 +14,17 @@ import sys
 import subprocess
 import hashlib
 import re
+import boto
+
+import boto.s3.connection
+from boto.s3.key import Key
 
 from os import listdir
 from os.path import isfile, join
 from pprint import pprint
 from zug import basePlugin
 from zug.exceptions import IgnoreDocumentException, EndOfQueue
+
 
 currentDir = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(name = "[{name}]".format(name = __name__))
@@ -39,18 +44,45 @@ class download_consumer(basePlugin):
         assert 'cghub_key' in kwargs, 'Please specify path to a cghub downloader key: cghub_key'
         assert 'download_path' in kwargs, 'Please specify directory to place the file: download_path'
 
-        self.signpost = 'http://{signpost}/v0/'.format(signpost=kwargs.get('signpost', 'signpost'))
-
-        self.check_count = int(kwargs.get('check_count', 5))
-        # self.id = str(uuid.uuid4())
-        with open('/etc/tungsten/name') as f:
-            self.id = f.read().strip()
-
         self.state = 'IDLE'
         self.work = None
         self.bai = None
+
+        self.check_count = int(kwargs.get('check_count', 5))
+
+        self.load_name()
+        self.load_s3_settings()
+        self.load_signpost_settings()
+        self.load_neo4j_settings()
+
+    def load_neo4j_settings(self):
+        logger.info('Loading neo4j settings')
         self.url = 'http://{host}:{port}/db/data/cypher'.format(
-            host=kwargs.get('neo4j', 'neo4j'), port=kwargs.get('port', '7474'))
+            host=self.kwargs.get('neo4j', 'neo4j'), 
+            port=self.kwargs.get('port', '7474')
+        )
+
+    def load_signpost_settings(self):
+        logger.info('Loading signpost settings')
+        host = self.kwargs.get('signpost', 'signpost')
+        self.signpost = 'http://{host}/v0/'.format(host=host)
+
+    def load_name(self):
+        logger.info('Loading name')
+        with open('/etc/tungsten/name') as f:
+            self.id = f.read().strip()
+
+    def load_s3_settings(self):
+        logger.info('Loading s3 settings')
+        s3_auth_path = self.kwargs.get('s3_auth_path', None)
+
+        if not s3_auth_path:
+            raise Exception('No path specified for s3 authentication')
+
+        with open(s3_auth_path) as f:
+            s3_auth = yaml.load(f.read().strip())
+            self.s3_access_key = s3_auth['access_key']
+            self.s3_secret_key = s3_auth['secret_key']
 
     def set_state(self, state):
         self.state = state
@@ -266,7 +298,66 @@ class download_consumer(basePlugin):
 
         self.set_state('POSTED')
 
+
+    def no_proxy(func):
+        def wrapped(*args, **kwargs):
+            http_proxy = os.environ.get('http_proxy', None)
+            https_proxy = os.environ.get('https_proxy', None)
+    
+            if http_proxy: 
+                logger.info("Unsetting http_proxy")
+                del os.environ['http_proxy']
+    
+            if https_proxy: 
+                logger.info("Unsetting https_proxy")
+                del os.environ['https_proxy']
+                
+            ret = func(*args, **kwargs) 
+    
+            if http_proxy:
+                logger.info("Resetting http_proxy: " + http_proxy)
+                os.environ['http_proxy'] = http_proxy
+    
+            if https_proxy:
+                logger.info("Resetting https_proxy: " + https_proxy)
+                os.environ['https_proxy'] = https_proxy
+
+            return ret
+        return wrapped
+
+    @no_proxy
     def upload_file(self, data, path):
+
+        name = path.replace('/mnt/cinder/scratch/','')
+        logger.info("Uploading file: " + path)
+        logger.info("Uploading file to " + name)
+
+        try:
+            conn = boto.connect_s3(
+                aws_access_key_id = self.s3_access_key,
+                aws_secret_access_key = self.s3_secret_key,
+                host = 's3',
+                is_secure=False,
+                calling_format = boto.s3.connection.OrdinaryCallingFormat(),
+            )
+        except Exception, msg:
+            logger.error(msg)
+            raise Exception("Unable to connect to s3 endpoint: ")
+        else:
+            logger.info("Connected to s3")
+
+        try:
+            bucket = conn.get_bucket('tcga_cghub_protected')
+            key = Key(bucket)
+            key.key = name
+            key.set_contents_from_filename(path)
+        except Exception, msg:
+            logger.error(msg)
+            raise Exception("Unable to upload to s3: ")
+
+        logger.info("Upload complete: " + path)
+
+    def upload_file_swift(self, data, path):
         name = path.replace('/mnt/cinder/scratch/','')
         logger.info("Uploading file: " + path)
         logger.info("Uploading file to " + name)

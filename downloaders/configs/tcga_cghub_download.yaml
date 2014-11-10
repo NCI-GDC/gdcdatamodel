@@ -27,3 +27,4 @@ plugin_kwargs:
     host: neo4j
     cghub_key: /etc/tungsten/authorization/cghub/download_key
     download_path: /mnt/cinder/scratch/
+    s3_auth_path: /etc/tungsten/authorization/s3/dev_rack.yaml
