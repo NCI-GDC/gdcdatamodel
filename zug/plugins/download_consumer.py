@@ -15,6 +15,7 @@ import subprocess
 import hashlib
 import re
 import boto
+import math 
 
 import boto.s3.connection
 from boto.s3.key import Key
@@ -22,7 +23,7 @@ from boto.s3.key import Key
 from os import listdir
 from os.path import isfile, join
 from pprint import pprint
-from zug import basePlugin
+from zug import basePlugin, no_proxy
 from zug.exceptions import IgnoreDocumentException, EndOfQueue
 
 
@@ -299,32 +300,6 @@ class download_consumer(basePlugin):
         self.set_state('POSTED')
 
 
-    def no_proxy(func):
-        def wrapped(*args, **kwargs):
-            http_proxy = os.environ.get('http_proxy', None)
-            https_proxy = os.environ.get('https_proxy', None)
-    
-            if http_proxy: 
-                logger.info("Unsetting http_proxy")
-                del os.environ['http_proxy']
-    
-            if https_proxy: 
-                logger.info("Unsetting https_proxy")
-                del os.environ['https_proxy']
-                
-            ret = func(*args, **kwargs) 
-    
-            if http_proxy:
-                logger.info("Resetting http_proxy: " + http_proxy)
-                os.environ['http_proxy'] = http_proxy
-    
-            if https_proxy:
-                logger.info("Resetting https_proxy: " + https_proxy)
-                os.environ['https_proxy'] = https_proxy
-
-            return ret
-        return wrapped
-
     @no_proxy
     def upload_file(self, data, path):
 
@@ -333,6 +308,7 @@ class download_consumer(basePlugin):
         logger.info("Uploading file to " + name)
 
         try:
+            logger.info("Connecting to S3")
             conn = boto.connect_s3(
                 aws_access_key_id = self.s3_access_key,
                 aws_secret_access_key = self.s3_secret_key,
@@ -342,15 +318,28 @@ class download_consumer(basePlugin):
             )
         except Exception, msg:
             logger.error(msg)
-            raise Exception("Unable to connect to s3 endpoint: ")
+            raise Exception("Unable to connect to s3 endpoint")
         else:
             logger.info("Connected to s3")
 
         try:
+
+            block_size = 1073741824 # bytes (1 GiB)
             bucket = conn.get_bucket('tcga_cghub_protected')
-            key = Key(bucket)
-            key.key = name
-            key.set_contents_from_filename(path)
+            
+            logger.info("Initiating multipart upload")
+            mp = bucket.initiate_multipart_upload(name)
+
+            logger.info("Multipart upload")
+            with open(path, 'rb') as f:
+                index = 1
+                for chunk in iter(lambda: f.read(block_size), b''):
+                    mp.upload_part_from_file(chunk, index)
+                    index += 1
+
+            logger.info("Completing multipart upload")
+            mp.complete_upload()
+        
         except Exception, msg:
             logger.error(msg)
             raise Exception("Unable to upload to s3: ")
@@ -399,6 +388,7 @@ class download_consumer(basePlugin):
         while not self.claim_work(): 
             logger.info("Failed to get work, trying again")
         
+    @no_proxy
     def submit(self, cypher, **params):
         if isinstance(cypher, list): cypher = ' '.join(cypher).format(**params)
         data = {"query": cypher}
