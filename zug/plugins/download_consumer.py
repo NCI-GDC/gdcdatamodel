@@ -16,6 +16,7 @@ import hashlib
 import re
 import boto
 import math 
+from cStringIO import StringIO
 
 import boto.s3.connection
 from boto.s3.key import Key
@@ -48,6 +49,7 @@ class download_consumer(basePlugin):
         self.state = 'IDLE'
         self.work = None
         self.bai = None
+        self.files = []
 
         self.check_count = int(kwargs.get('check_count', 5))
 
@@ -139,8 +141,8 @@ class download_consumer(basePlugin):
         result = self.submit([
             'MATCH (n:file)',
             'WHERE n.import_state="NOT_STARTED"'
+            'AND n.access_group = ["phs000178"]',
             'AND right(n.file_name, 4) <> ".bai"',
-            # 'AND n.access_group = ["phs000178"]',
             # 'OR n.import_state="ERROR"',
             # 'AND right(n.file_name, 4) <> ".bai"',
             'WITH n LIMIT 1',
@@ -299,14 +301,13 @@ class download_consumer(basePlugin):
 
         self.set_state('POSTED')
 
-
     @no_proxy
     def upload_file(self, data, path):
-
+        
         name = path.replace('/mnt/cinder/scratch/','')
         logger.info("Uploading file: " + path)
         logger.info("Uploading file to " + name)
-
+        
         try:
             logger.info("Connecting to S3")
             conn = boto.connect_s3(
@@ -321,29 +322,32 @@ class download_consumer(basePlugin):
             raise Exception("Unable to connect to s3 endpoint")
         else:
             logger.info("Connected to s3")
-
+            
         try:
-
-            block_size = 1073741824 # bytes (1 GiB)
+            block_size = 1073741824 # bytes (1 GiB) must be > 5 MB
+            logger.info("Getting bucket")
             bucket = conn.get_bucket('tcga_cghub_protected')
             
             logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
-
-            logger.info("Multipart upload")
+            
+            logger.info("Loading file")
             with open(path, 'rb') as f:
                 index = 1
+                logger.info("Starting upload")
                 for chunk in iter(lambda: f.read(block_size), b''):
-                    mp.upload_part_from_file(chunk, index)
+                    logger.info("Posting part {0}".format(index))
+                    mp.upload_part_from_file(StringIO(chunk), index)
+                    logger.info("Posted part {0}".format(index))
                     index += 1
-
+                    
             logger.info("Completing multipart upload")
             mp.complete_upload()
-        
+                    
         except Exception, msg:
             logger.error(msg)
-            raise Exception("Unable to upload to s3: ")
-
+            raise Exception("Unable to upload to s3")
+            
         logger.info("Upload complete: " + path)
 
     def upload_file_swift(self, data, path):

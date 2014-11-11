@@ -19,21 +19,21 @@ def no_proxy(func):
         logger.info("no_proxy: " + str(func))
 
         if http_proxy: 
-            logger.info("Unsetting http_proxy")
+            logger.debug("Unsetting http_proxy")
             del os.environ['http_proxy']
 
         if https_proxy: 
-            logger.info("Unsetting https_proxy")
+            logger.debug("Unsetting https_proxy")
             del os.environ['https_proxy']
             
         ret = func(*args, **kwargs) 
 
         if http_proxy:
-            logger.info("Resetting http_proxy: " + http_proxy)
+            logger.debug("Resetting http_proxy: " + http_proxy)
             os.environ['http_proxy'] = http_proxy
 
         if https_proxy:
-            logger.info("Resetting https_proxy: " + https_proxy)
+            logger.debug("Resetting https_proxy: " + https_proxy)
             os.environ['https_proxy'] = https_proxy
 
         return ret
