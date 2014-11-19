@@ -34,7 +34,7 @@ logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 class NoMoreWork(Exception):
     pass
 
-class download_consumer(basePlugin):
+class target_download_consumer(basePlugin):
 
     """
     takes in an xml as a string and compiles a list of nodes and edges
