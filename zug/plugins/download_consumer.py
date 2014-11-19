@@ -284,7 +284,7 @@ class download_consumer(basePlugin):
     def post_did(self, data):
         acls = data.get('access_group', [])
         protection = "protected" if len(acls) else "public"
-        base_url = "swift://rados-bionimbus-pdc.http://opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
+        base_url = "s3://gyarados.opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
         url = base_url.format(protection=protection, aid=data['analysis_id'], name=data['file_name'])
         data = {"acls": acls, "did": data['id'], "urls": [url]}
         r = requests.put(self.signpost, data=json.dumps(data), headers={'Content-Type': 'application/json'})
