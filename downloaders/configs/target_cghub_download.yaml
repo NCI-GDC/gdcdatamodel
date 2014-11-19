@@ -5,13 +5,12 @@
 name: CGHubDowload
 log_level: INFO
 
-
 ##############################
 # Plugins
 ##############################
 
 plugins:
-  - target_cghub_
+  - target_download_consumer
   
 ##############################
 # Plugins
