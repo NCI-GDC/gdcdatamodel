@@ -1,0 +1,30 @@
+##############################
+# ETL settings for worker
+##############################
+
+name: CGHubDowload
+log_level: INFO
+
+
+##############################
+# Plugins
+##############################
+
+plugins:
+  - target_cghub_
+  
+##############################
+# Plugins
+##############################
+
+processors:
+  download_consumer: 1
+
+##### Arguments to be passed to plugins on initialization
+plugin_kwargs:
+
+  download_consumer:
+    host: neo4j
+    cghub_key: /etc/tungsten/authorization/cghub/download_key
+    download_path: /mnt/cinder/scratch/
+    s3_auth_path: /etc/tungsten/authorization/s3/dev_rack.yaml
