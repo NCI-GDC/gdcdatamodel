@@ -84,6 +84,7 @@ class cghub_xml2graph(basePlugin):
         graph = []
         for xml_node in elem.findall(self.nodes['locate']):
             node = {}
+            node['access_group'] = [a.text for a in elem.findall(self.nodes['access_group'])]
             self.add_properties(xml_node, self.nodes['properties'], node)
             self.add_properties(elem, self.properties, node)
             graph.append({

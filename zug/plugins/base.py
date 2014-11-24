@@ -30,7 +30,7 @@ class ZugPluginBase(object):
     __metaclass__ = OverrideWarned
 
     @overrideWarn
-    def __init__(self, q_new_work, qs_finished_work, **kwargs):
+    def __init__(self, q_new_work, qs_finished_work, global_vars = {}, **kwargs):
         self.name = kwargs.pop('__pluginName__', 'plugin')
         self.docs = []
         self.state = {}
@@ -40,6 +40,12 @@ class ZugPluginBase(object):
         self.logger = logging.getLogger(name = "[{name}]".format(name=self.name))
 
         self.initialize(**kwargs)
+
+    def update_global_var(self, key, value, default = None):
+        pass
+
+    def atomic_global_var(self, key, f, default = None):
+        pass
 
     def process(self, doc):
         """Override this"""

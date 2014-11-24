@@ -34,7 +34,7 @@ logger = logging.getLogger(name = "[{name}]".format(name = __name__))
 class NoMoreWork(Exception):
     pass
 
-class download_consumer(basePlugin):
+class target_download_consumer(basePlugin):
 
     """
     takes in an xml as a string and compiles a list of nodes and edges
@@ -141,10 +141,8 @@ class download_consumer(basePlugin):
         result = self.submit([
             'MATCH (n:file)',
             'WHERE n.import_state="NOT_STARTED"'
-            'AND n.access_group = ["phs000178"]',
+            'AND n.access_group[0] =~ "phs0004(64|65|66|67|68|69|71)"',
             'AND right(n.file_name, 4) <> ".bai"',
-            # 'OR n.import_state="ERROR"',
-            # 'AND right(n.file_name, 4) <> ".bai"',
             'WITH n LIMIT 1',
             'RETURN n',
             ])
@@ -158,7 +156,6 @@ class download_consumer(basePlugin):
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
             'WHERE n.import_state="NOT_STARTED"'
-            # 'OR n.import_state="ERROR"',
             'SET n.importer="{id}", n.import_state="STARTED", n.import_started = timestamp()',
             'RETURN n', 
         ], file_id=file_id, id=self.id)
@@ -284,7 +281,7 @@ class download_consumer(basePlugin):
     def post_did(self, data):
         acls = data.get('access_group', [])
         protection = "protected" if len(acls) else "public"
-        base_url = "s3://gyarados.opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
+        base_url = "s3://gyarados.opensciencedatacloud.org/target_cghub_{protection}/{aid}/{name}"
         url = base_url.format(protection=protection, aid=data['analysis_id'], name=data['file_name'])
         data = {"acls": acls, "did": data['id'], "urls": [url]}
         r = requests.put(self.signpost, data=json.dumps(data), headers={'Content-Type': 'application/json'})
@@ -326,7 +323,7 @@ class download_consumer(basePlugin):
         try:
             block_size = 1073741824 # bytes (1 GiB) must be > 5 MB
             logger.info("Getting bucket")
-            bucket = conn.get_bucket('tcga_cghub_protected')
+            bucket = conn.get_bucket('target_cghub_protected')
             
             logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
@@ -358,7 +355,7 @@ class download_consumer(basePlugin):
         cmd = ' '.join([
             'swift upload ',
             '--use-slo -S {segment}',
-            'tcga_cghub_protected',
+            'target_cghub_protected',
             '{path}',
             '--object-name {name}',
         ]).format(
