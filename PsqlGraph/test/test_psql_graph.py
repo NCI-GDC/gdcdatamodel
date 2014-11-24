@@ -45,12 +45,13 @@ class TestPostgresGraphDriver(unittest.TestCase):
         self.driver.connect_to_table('nodes')
 
         tempid = str(uuid.uuid4())
+        # tempid = u'4f4fa670-8b2c-4cc8-80cc-8212f730343a'
+        print tempid
         properties = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.node_merge(tempid, properties=properties)
 
-        nodes = self.driver.node_lookup(tempid)
-        self.assertEqual(len(nodes), 1, 'Expected a single node to be found, instead found {count}'.format(count=len(nodes)))
-        self.assertEqual(properties, nodes[0].properties)
+        node = self.driver.node_lookup_unique(tempid, get_data=True)
+        self.assertEqual(properties, node.properties)
 
     def test_node_update(self):
         self.driver.connect_to_table('nodes')
@@ -63,10 +64,10 @@ class TestPostgresGraphDriver(unittest.TestCase):
         propertiesB = {'key1':None, 'new_key':2, 'timestamp':time.time()}
         self.driver.node_merge(tempid, properties=propertiesB)
 
-        node = self.driver.node_lookup_unique(tempid)
+        node = self.driver.node_lookup_unique(tempid, get_data=True)
         self.assertEqual(properties, node.properties, 'Node properties do not match expected properties')
 
-        nodes = self.driver.node_lookup(tempid, include_voided=True)
+        nodes = self.driver.node_lookup(tempid, include_voided=True, get_data=True)
         self.assertEqual(len(nodes), 1, 'Expected a single voided node to be found, instead found {count}'.format(count=len(nodes)))
         self.assertEqual(properties, nodes[0].properties, 'Node properties do not match expected properties')
 
@@ -80,11 +81,11 @@ class TestPostgresGraphDriver(unittest.TestCase):
             properties = {'key1':None, 'key2':2, 'key3':time.time(), 'tally': tally}
             self.driver.node_merge(tempid, properties=properties)
 
-        nodes = self.driver.node_lookup(tempid)
+        nodes = self.driver.node_lookup(tempid, get_data=True)
         self.assertEqual(len(nodes), 1, 'Expected a single non-voided node to be found, instead found {count}'.format(count=len(nodes)))
         self.assertEqual(properties, nodes[0].properties, 'Node properties do not match expected properties')
 
-        nodes = self.driver.node_lookup(tempid, voided=True)
+        nodes = self.driver.node_lookup(tempid, voided=True, get_data=True)
         self.assertEqual(len(nodes), update_count - 1, 'Expected a {update_count} voided nodes to be found, instead found {count}'.format(
                         update_count=update_count, count=len(nodes)))
 
@@ -98,7 +99,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         propertiesB = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.node_clobber(tempid, properties=propertiesB)
 
-        nodes = self.driver.node_lookup(tempid)
+        nodes = self.driver.node_lookup(tempid, get_data=True)
         self.assertEqual(len(nodes), 1, 'Expected a single node to be found, instead found {count}'.format(count=len(nodes)))
         self.assertEqual(propertiesB, nodes[0].properties, 'Node properties do not match expected properties')
 
@@ -112,7 +113,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         properties.pop('key2')
         properties.pop('key3')
 
-        nodes = self.driver.node_lookup(tempid)
+        nodes = self.driver.node_lookup(tempid, get_data=True)
         self.assertEqual(len(nodes), 1, 'Expected a single node to be found, instead found {count}'.format(count=len(nodes)))
         self.assertEqual(properties, nodes[0].properties)
 
@@ -127,7 +128,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         annotations.pop('key2')
         annotation.pop('key3')
 
-        nodes = self.driver.node_lookup(tempid)
+        nodes = self.driver.node_lookup(tempid, get_data=True)
         self.assertEqual(len(nodes), 1, 'Expected a single node to be found, instead found {count}'.format(count=len(nodes)))
         self.assertEqual(properties, nodes[0].properties)
 
@@ -138,10 +139,10 @@ class TestPostgresGraphDriver(unittest.TestCase):
         self.driver.node_merge(tempid)
         self.driver.node_delete(tempid)
 
-        nodes = self.driver.node_lookup(tempid)
+        nodes = self.driver.node_lookup(tempid, get_data=True)
         self.assertEqual(len(nodes), 0, 'Expected a no non-voided nodes to be found, instead found {count}'.format(count=len(nodes)))
 
-        nodes = self.driver.node_lookup(tempid)
+        nodes = self.driver.node_lookup(tempid, get_data=True)
         self.assertEqual(len(nodes), 0, 'Expected a single no non-voided nodes to be found, instead found {count}'.format(count=len(nodes)))
 
     def test_repeated_node_delete(self):
@@ -153,10 +154,10 @@ class TestPostgresGraphDriver(unittest.TestCase):
             self.driver.node_merge(tempid)
             self.driver.node_delete(tempid)
 
-        nodes = self.driver.node_lookup(tempid, include_voided=False)
+        nodes = self.driver.node_lookup(tempid, include_voided=False, get_data=True)
         self.assertEqual(len(nodes), 0, 'Expected a no non-voided nodes to be found, instead found {count}'.format(count=len(nodes)))
 
-        nodes = self.driver.node_lookup(tempid, include_voided=True)
+        nodes = self.driver.node_lookup(tempid, include_voided=True, get_data=True)
         self.assertEqual(len(nodes), void_count - 1, 'Expected a single {exp} non-voided nodes to be found, instead found {real}'.format(
                         exp=void_count, real=len(nodes)))
 
@@ -167,7 +168,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         properties = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.edge_merge(tempid, properties=properties)
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single edge to be found, instead found {count}'.format(count=len(edges)))
         assertTrue(cmp(properties, edges[0].properties) == 0)
 
@@ -182,11 +183,11 @@ class TestPostgresGraphDriver(unittest.TestCase):
         propertiesB = {'key1':None, 'new_key':2, 'timestamp':time.time()}
         self.driver.edge_merge(tempid, properties=propertiesB)
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single non-voided edge to be found, instead found {count}'.format(count=len(edges)))
         self.assertEqual(properties, edges[0].properties, 'Edge properties do not match expected properties')
 
-        edges = self.driver.edge_lookup(tempid, include_voided=True)
+        edges = self.driver.edge_lookup(tempid, include_voided=True, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single voided edge to be found, instead found {count}'.format(count=len(edges)))
         self.assertEqual(properties, edges[0].properties, 'Edge properties do not match expected properties')
 
@@ -201,11 +202,11 @@ class TestPostgresGraphDriver(unittest.TestCase):
             properties = {'key1':None, 'key2':2, 'key3':time.time(), 'tally': tally}
             self.driver.edge_merge(tempid, properties=properties)
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single non-voided edge to be found, instead found {count}'.format(count=len(edges)))
         self.assertEqual(properties, edges[0].properties, 'Edge properties do not match expected properties')
 
-        edges = self.driver.edge_lookup(tempid, voided=True)
+        edges = self.driver.edge_lookup(tempid, voided=True, get_data=True)
         self.assertEqual(len(edges), update_count - 1, 'Expected a {update_count} voided edges to be found, instead found {count}'.format(
                         update_count=update_count, count=len(edges)))
 
@@ -219,7 +220,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         propertiesB = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.edge_clobber(tempid, properties=propertiesB)
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single edge to be found, instead found {count}'.format(count=len(edges)))
         self.assertEqual(propertiesB, edges[0].properties, 'Edge properties do not match expected properties')
 
@@ -233,7 +234,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         properties.pop('key2')
         properties.pop('key3')
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single edge to be found, instead found {count}'.format(count=len(edges)))
         self.assertEqual(properties, edges[0].properties)
 
@@ -248,7 +249,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         annotations.pop('key2')
         annotation.pop('key3')
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 1, 'Expected a single edge to be found, instead found {count}'.format(count=len(edges)))
         self.assertEqual(properties, edges[0].properties)
 
@@ -259,10 +260,10 @@ class TestPostgresGraphDriver(unittest.TestCase):
         self.driver.edge_merge(tempid)
         self.driver.edge_delete(tempid)
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 0, 'Expected a no non-voided edges to be found, instead found {count}'.format(count=len(edges)))
 
-        edges = self.driver.edge_lookup(tempid)
+        edges = self.driver.edge_lookup(tempid, get_data=True)
         self.assertEqual(len(edges), 0, 'Expected a single no non-voided edges to be found, instead found {count}'.format(count=len(edges)))
 
     def test_repeated_edge_delete(self):
@@ -274,10 +275,10 @@ class TestPostgresGraphDriver(unittest.TestCase):
             self.driver.edge_merge(tempid)
             self.driver.edge_delete(tempid)
 
-        edges = self.driver.edge_lookup(tempid, include_voided=False)
+        edges = self.driver.edge_lookup(tempid, include_voided=False, get_data=True)
         self.assertEqual(len(edges), 0, 'Expected a no non-voided edges to be found, instead found {count}'.format(count=len(edges)))
 
-        edges = self.driver.edge_lookup(tempid, include_voided=True)
+        edges = self.driver.edge_lookup(tempid, include_voided=True, get_data=True)
         self.assertEqual(len(edges), void_count - 1, 'Expected a single {exp} non-voided edges to be found, instead found {real}'.format(
                         exp=void_count, real=len(edges)))
 

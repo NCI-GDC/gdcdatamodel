@@ -69,14 +69,14 @@ def create_node_table(host, user, password, database):
 
     new_table = Table(
         table_name, metadata,
-        Column('node_id', UUID, nullable=False),
+        Column('node_id', Text, nullable=False),
         Column('key', Integer, primary_key=True),
         Column('voided', TIMESTAMP),
         Column('created', TIMESTAMP, nullable=False, default=time.time()),
-        Column('acl', ARRAY(Text), nullable=False),
-        Column('system_annotations', JSONB, nullable=False, default={}),
+        Column('acl', ARRAY(Text)),
+        Column('system_annotations', JSONB, default={}),
         Column('label', Text),
-        Column('properties', JSONB, nullable=False, default={}),
+        Column('properties', JSONB, default={}),
     )
 
     metadata.create_all(engine)
@@ -104,7 +104,7 @@ def create_edge_table(host, user, password, database):
 
     new_table = Table(
         table_name, metadata,
-        Column('edge_id', UUID, nullable=False),
+        Column('edge_id', Text, nullable=False),
         Column('key', Integer, primary_key=True),
         Column('voided', TIMESTAMP, nullable=False),
         Column('created', TIMESTAMP, nullable=False, default=time.time()),
