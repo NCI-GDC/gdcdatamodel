@@ -44,7 +44,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
     def test_node_merge_and_lookup(self):
         self.driver.connect_to_table('nodes')
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         properties = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.node_merge(tempid, properties=properties)
 
@@ -55,7 +55,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
     def test_node_update(self):
         self.driver.connect_to_table('nodes')
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         propertiesA = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.node_merge(tempid, properties=propertiesA)
@@ -63,9 +63,8 @@ class TestPostgresGraphDriver(unittest.TestCase):
         propertiesB = {'key1':None, 'new_key':2, 'timestamp':time.time()}
         self.driver.node_merge(tempid, properties=propertiesB)
 
-        nodes = self.driver.node_lookup(tempid)
-        self.assertEqual(len(nodes), 1, 'Expected a single non-voided node to be found, instead found {count}'.format(count=len(nodes)))
-        self.assertEqual(properties, nodes[0].properties, 'Node properties do not match expected properties')
+        node = self.driver.node_lookup_unique(tempid)
+        self.assertEqual(properties, node.properties, 'Node properties do not match expected properties')
 
         nodes = self.driver.node_lookup(tempid, include_voided=True)
         self.assertEqual(len(nodes), 1, 'Expected a single voided node to be found, instead found {count}'.format(count=len(nodes)))
@@ -75,8 +74,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
         self.driver.connect_to_table('nodes')
 
         update_count = 5000
-
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         for tally in range(update_count):
             properties = {'key1':None, 'key2':2, 'key3':time.time(), 'tally': tally}
@@ -92,7 +90,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_node_clobber(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         propertiesA = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.node_merge(tempid, properties=propertiesA)
@@ -106,7 +104,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_node_delete_property_keys(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         properties = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.node_merge(tempid, properties=properties)
 
@@ -120,7 +118,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_node_delete_system_annotation_keys(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         annotations = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.node_merge(tempid, system_annotations=annotations)
 
@@ -135,7 +133,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_node_delete(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         self.driver.node_merge(tempid)
         self.driver.node_delete(tempid)
@@ -148,7 +146,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_repeated_node_delete(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         void_count = 5
 
         for i in range(void_count):
@@ -165,7 +163,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
     def test_edge_merge_and_lookup(self):
         self.driver.connect_to_table('edges')
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         properties = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.edge_merge(tempid, properties=properties)
 
@@ -176,7 +174,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
     def test_edge_update(self):
         self.driver.connect_to_table('edges')
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         propertiesA = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.edge_merge(tempid, properties=propertiesA)
@@ -197,7 +195,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
         update_count = 5000
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         for tally in range(update_count):
             properties = {'key1':None, 'key2':2, 'key3':time.time(), 'tally': tally}
@@ -213,7 +211,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_edge_clobber(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         propertiesA = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.edge_merge(tempid, properties=propertiesA)
@@ -227,7 +225,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_edge_delete_property_keys(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         properties = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.edge_merge(tempid, properties=properties)
 
@@ -241,7 +239,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_edge_delete_system_annotation_keys(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         annotations = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.edge_merge(tempid, system_annotations=annotations)
 
@@ -256,7 +254,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_edge_delete(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
 
         self.driver.edge_merge(tempid)
         self.driver.edge_delete(tempid)
@@ -269,7 +267,7 @@ class TestPostgresGraphDriver(unittest.TestCase):
 
     def test_repeated_edge_delete(self):
 
-        tempid = uuid.uuid4()
+        tempid = str(uuid.uuid4())
         void_count = 5
 
         for i in range(void_count):
