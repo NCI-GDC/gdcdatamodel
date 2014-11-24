@@ -4,6 +4,7 @@ import logging
 import copy
 import time
 import traceback
+import atexit
 
 def overrideWarn(f):
     f.overrideWarn = True
@@ -40,6 +41,9 @@ class ZugPluginBase(object):
         self.logger = logging.getLogger(name = "[{name}]".format(name=self.name))
 
         self.initialize(**kwargs)
+        # fly - in case we'd rather have the exit happen later (when everything quits), use this
+        # and disable the manual self.cleanup calls below.
+#        atexit.register(self.cleanup)
 
     def update_global_var(self, key, value, default = None):
         pass
@@ -52,6 +56,10 @@ class ZugPluginBase(object):
         return doc
 
     def initialize(self, **kwargs):
+        """Override this"""
+        pass
+
+    def cleanup(self):
         """Override this"""
         pass
 
@@ -77,6 +85,7 @@ class ZugPluginBase(object):
                 self.logger.warn("Closing queue")
                 self.q_new_work.close()
                 self.yieldDoc(doc)
+                self.cleanup()
                 return
 
             try:
@@ -94,6 +103,7 @@ class ZugPluginBase(object):
 
             except EndOfQueue:
                 self.logger.info("End of queue")
+                self.cleanup()
                 return
 
             except Exception, msg:
