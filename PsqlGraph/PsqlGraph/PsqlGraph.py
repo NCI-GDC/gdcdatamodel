@@ -3,9 +3,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, select, MetaData, Table, Column, Integer, Text, String
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
-
+import uuid
 from sqlalchemy.dialects.postgres import *
-
+from pprint import pprint
 Base = declarative_base()
 
 """
@@ -35,6 +35,24 @@ class PsqlNode(Base):
        return "<PostgresNode(key={key}, node_id={node_id}, voided={voided})>".format(
            node_id=self.node_id, key=self.key, voided=(self.voided is not None)
        )
+
+    def merge(self, acl=None, system_annotations=None, label=None, properties=None):
+
+        new_system_annotations = {key: value for key, value in self.system_annotations.iteritems()}
+        new_properties = {key: value for key, value in self.properties.iteritems()}
+        new_acl = acl[:]
+        
+        if system_annotations: 
+            for key, value in system_annotations.iteritems(): new_system_annotations[key] = value
+        if properties: 
+            for key, value in properties.iteritems(): new_properties[key] = value
+        if acl: new_acl = new_acl + acl
+
+        if not label: label = self.label
+
+        return PsqlNode(node_id=self.node_id, acl=acl, system_annotations=new_system_annotations,
+                        label=label, properties=new_properties)
+
 
 class PsqlEdge(Base):
 
@@ -79,71 +97,47 @@ class PsqlGraphDriver(object):
     def is_connected(self):
         return self.table is not None
 
-    def _merge_values(self, old, new):
-
-        if old is None: return new
-
-        if type(old) != type(new):
-            raise Exception('Cannot merge values of type {new} onto {old}'.format(new=type(new), old=type(old)))
-
-        if isinstance(old, list):
-            old += new
-            return old
-
-        elif isinstance(old, dict):
-            for key, value in new.iteritems():
-                old[key] = value
-            return old
-            
-        if new is not None: return new
-
-        return new
-
-    def node_merge(self, node_id=None, property_matches=None, system_annotation_matches=None, 
+    def node_merge(self, node=None, node_id=None, property_matches=None, system_annotation_matches=None, 
                    acl=[], system_annotations={}, label=None, properties={}):
-        """
-        :param node_id: unique id that is only important inside postgres, referenced by edges
-        :param matches: key-values to match node if node_id is not provided
-        :param acl: authoritative list that drives object store acl amongst others
-        :param system_annotations: the only property to be mutable? This would allow for flexible kv storage tied to the node that does not bloat the database for things like downloaders, and harmonizers
-        :param label: this is the node type
-        :param properties: the jsonb document containing the node properties
-        """
 
+        if not node:
+            node = self.node_lookup_unique(node_id, property_matches, system_annotation_matches)
+
+        if node:
+            new_node = node.merge(system_annotations=system_annotations, acl=acl, label=label, properties=properties)
+        else:
+            if not node_id: node_id = str(uuid.uuid4())
+            new_node = PsqlNode(node_id=node_id, system_annotations=system_annotations, acl=acl, label=label, properties=properties)
+
+        self.node_void_and_create(new_node, node)
+
+    def node_void_and_create(self, new_node, old_node):
+        """
+        This function assumes that you have already done a query for an existing node!
+        """
 
         Session = sessionmaker()
         Session.configure(bind=self.engine)
         session = Session()
 
-        old = self.node_lookup_unique(node_id, property_matches, system_annotation_matches)
-
-        if old:
-            system_annotations = self._merge_values(old.system_annotations, system_annotations)
-            properties = self._merge_values(old.properties, properties)
-            label = self._merge_values(old.label, label)
-            acl = self._merge_values(old.acl, acl)
-
-        new = PsqlNode(node_id=node_id, acl=acl, system_annotations=system_annotations, label=label, properties=properties)
-                       
-        if old: 
-            old.voided = datetime.now()
-            voided = session.merge(old)
+        if old_node: 
+            old_node.voided = datetime.now()
+            voided = session.merge(old_node)
             
-        session.add(new)
+        session.add(new_node)
         session.commit()
-        
-    def node_lookup_unique(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False, session=None):
+
+    def node_lookup_unique(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
         """
         
-        nodes = self.node_lookup(node_id, property_matches, system_annotation_matches, include_voided, session)
-        print nodes
+        nodes = self.node_lookup(node_id, property_matches, system_annotation_matches, include_voided)
         assert len(nodes) <= 1, 'Expected a single non-voided node to be found, instead found {count}'.format(count=len(nodes))
         return None if not len(nodes) else nodes[0]
 
-    def node_lookup(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False, session=None):
+    def node_lookup(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
@@ -156,12 +150,12 @@ class PsqlGraphDriver(object):
             raise QueryException("No node_id or kv matches specified")
 
         if node_id is not None:
-            return self.node_lookup_by_id(node_id, include_voided, session)
+            return self.node_lookup_by_id(node_id, include_voided)
 
         else:
             return self.node_lookup_by_matches(property_matches, include_voided)
 
-    def node_lookup_by_id(self, node_id, include_voided=False, session=None):
+    def node_lookup_by_id(self, node_id, include_voided=False):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
@@ -169,10 +163,9 @@ class PsqlGraphDriver(object):
 
         table = self.connect_to_table('nodes')        
 
-        if not session:
-            Session = sessionmaker()
-            Session.configure(bind=self.engine)
-            session = Session()
+        Session = sessionmaker()
+        Session.configure(bind=self.engine)
+        session = Session()
 
         query = session.query(PsqlNode).filter(PsqlNode.node_id == node_id)
         if not include_voided: query = query.filter(PsqlNode.voided.is_(None))

@@ -44,12 +44,10 @@ class TestPsqlGraphDriver(unittest.TestCase):
         self.driver.connect_to_table('nodes')
 
         tempid = str(uuid.uuid4())
-        # tempid = u'4f4fa670-8b2c-4cc8-80cc-8212f730343a'
-        print tempid
         properties = {'key1':None, 'key2':2, 'key3':time.time()}
         self.driver.node_merge(tempid, properties=properties)
 
-        node = self.driver.node_lookup_unique(tempid, get_data=True)
+        node = self.driver.node_lookup_unique(tempid)
         self.assertEqual(properties, node.properties)
 
     def test_node_update(self):
@@ -59,11 +57,11 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         # Add first node
         propertiesA = {'key1':None, 'key2':2, 'key3':time.time()}
-        self.driver.node_merge(tempid, properties=propertiesA)
+        self.driver.node_merge(node_id=tempid, properties=propertiesA)
 
         # Add second node
         propertiesB = {'key1':None, 'new_key':2, 'timestamp':time.time()}
-        self.driver.node_merge(tempid, properties=propertiesB)
+        self.driver.node_merge(node_id=tempid, properties=propertiesB)
 
         # Merge properties
         for key, val in propertiesA.iteritems(): 
@@ -76,24 +74,24 @@ class TestPsqlGraphDriver(unittest.TestCase):
         # Test to make sure that there are 2 voided nodes with tempid
         nodes = self.driver.node_lookup(tempid, include_voided=True)
         self.assertEqual(len(nodes), 2, 'Expected a single voided node to be found, instead found {count}'.format(count=len(nodes)))
-        self.assertEqual(propertiesB, nodes[0].properties, 'Node properties do not match expected properties')
+        self.assertEqual(propertiesB, nodes[1].properties)
 
     def test_repeated_node_update(self):
         self.driver.connect_to_table('nodes')
 
-        update_count = 5000
+        update_count = 100
         tempid = str(uuid.uuid4())
 
         for tally in range(update_count):
             properties = {'key1':None, 'key2':2, 'key3':time.time(), 'tally': tally}
-            self.driver.node_merge(tempid, properties=properties)
+            self.driver.node_merge(node_id=tempid, properties=properties)
 
         nodes = self.driver.node_lookup(tempid)
         self.assertEqual(len(nodes), 1, 'Expected a single non-voided node to be found, instead found {count}'.format(count=len(nodes)))
         self.assertEqual(properties, nodes[0].properties, 'Node properties do not match expected properties')
 
-        nodes = self.driver.node_lookup(tempid, voided=True)
-        self.assertEqual(len(nodes), update_count - 1, 'Expected a {update_count} voided nodes to be found, instead found {count}'.format(
+        nodes = self.driver.node_lookup(tempid, include_voided=True)
+        self.assertEqual(len(nodes), update_count, 'Expected a {update_count} voided nodes to be found, instead found {count}'.format(
                         update_count=update_count, count=len(nodes)))
 
     def test_node_clobber(self):
@@ -101,7 +99,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
         tempid = str(uuid.uuid4())
 
         propertiesA = {'key1': None, 'key2': 2, 'key3': time.time()}
-        self.driver.node_merge(tempid, properties=propertiesA)
+        self.driver.node_merge(node_id=tempid, properties=propertiesA)
 
         propertiesB = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.node_clobber(tempid, properties=propertiesB)
@@ -114,7 +112,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
         properties = {'key1': None, 'key2': 2, 'key3': time.time()}
-        self.driver.node_merge(tempid, properties=properties)
+        self.driver.node_merge(node_id=tempid, properties=properties)
 
         self.driver.node_delete_property_keys(tempid, ['key2', 'key3'])
         properties.pop('key2')
@@ -128,7 +126,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
         annotations = {'key1': None, 'key2': 2, 'key3': time.time()}
-        self.driver.node_merge(tempid, system_annotations=annotations)
+        self.driver.node_merge(node_id=tempid, system_annotations=annotations)
 
         self.driver.node_delete_system_annotations_keys(tempid, ['key2', 'key3'])
 
@@ -143,7 +141,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
 
-        self.driver.node_merge(tempid)
+        self.driver.node_merge(node_id=tempid)
         self.driver.node_delete(tempid)
 
         nodes = self.driver.node_lookup(tempid)
@@ -158,7 +156,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
         void_count = 5
 
         for i in range(void_count):
-            self.driver.node_merge(tempid)
+            self.driver.node_merge(node_id=tempid)
             self.driver.node_delete(tempid)
 
         nodes = self.driver.node_lookup(tempid, include_voided=False)
@@ -173,7 +171,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
         properties = {'key1':None, 'key2':2, 'key3':time.time()}
-        self.driver.edge_merge(tempid, properties=properties)
+        self.driver.edge_merge(node_id=tempid, properties=properties)
 
         edges = self.driver.edge_lookup(tempid)
         self.assertEqual(len(edges), 1, 'Expected a single edge to be found, instead found {count}'.format(count=len(edges)))
@@ -185,10 +183,10 @@ class TestPsqlGraphDriver(unittest.TestCase):
         tempid = str(uuid.uuid4())
 
         propertiesA = {'key1':None, 'key2':2, 'key3':time.time()}
-        self.driver.edge_merge(tempid, properties=propertiesA)
+        self.driver.edge_merge(node_id=tempid, properties=propertiesA)
 
         propertiesB = {'key1':None, 'new_key':2, 'timestamp':time.time()}
-        self.driver.edge_merge(tempid, properties=propertiesB)
+        self.driver.edge_merge(node_id=tempid, properties=propertiesB)
 
         edges = self.driver.edge_lookup(tempid)
         self.assertEqual(len(edges), 1, 'Expected a single non-voided edge to be found, instead found {count}'.format(count=len(edges)))
@@ -207,7 +205,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         for tally in range(update_count):
             properties = {'key1':None, 'key2':2, 'key3':time.time(), 'tally': tally}
-            self.driver.edge_merge(tempid, properties=properties)
+            self.driver.edge_merge(node_id=tempid, properties=properties)
 
         edges = self.driver.edge_lookup(tempid)
         self.assertEqual(len(edges), 1, 'Expected a single non-voided edge to be found, instead found {count}'.format(count=len(edges)))
@@ -222,7 +220,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
         tempid = str(uuid.uuid4())
 
         propertiesA = {'key1': None, 'key2': 2, 'key3': time.time()}
-        self.driver.edge_merge(tempid, properties=propertiesA)
+        self.driver.edge_merge(node_id=tempid, properties=propertiesA)
 
         propertiesB = {'key1': None, 'key2': 2, 'key3': time.time()}
         self.driver.edge_clobber(tempid, properties=propertiesB)
@@ -235,7 +233,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
         properties = {'key1': None, 'key2': 2, 'key3': time.time()}
-        self.driver.edge_merge(tempid, properties=properties)
+        self.driver.edge_merge(node_id=tempid, properties=properties)
 
         self.driver.edge_delete_property_keys(tempid, ['key2', 'key3'])
         properties.pop('key2')
@@ -249,7 +247,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
         annotations = {'key1': None, 'key2': 2, 'key3': time.time()}
-        self.driver.edge_merge(tempid, system_annotations=annotations)
+        self.driver.edge_merge(node_id=tempid, system_annotations=annotations)
 
         self.driver.edge_delete_system_annotations_keys(tempid, ['key2', 'key3'])
 
@@ -264,7 +262,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
 
         tempid = str(uuid.uuid4())
 
-        self.driver.edge_merge(tempid)
+        self.driver.edge_merge(node_id=tempid)
         self.driver.edge_delete(tempid)
 
         edges = self.driver.edge_lookup(tempid)
@@ -279,7 +277,7 @@ class TestPsqlGraphDriver(unittest.TestCase):
         void_count = 5
 
         for i in range(void_count):
-            self.driver.edge_merge(tempid)
+            self.driver.edge_merge(node_id=tempid)
             self.driver.edge_delete(tempid)
 
         edges = self.driver.edge_lookup(tempid, include_voided=False)
