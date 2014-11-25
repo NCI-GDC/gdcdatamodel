@@ -1,5 +1,12 @@
-from sqlalchemy import create_engine, select, MetaData, Table, Column, Integer
+import time
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, select, MetaData, Table, Column, Integer, Text, String
 from datetime import datetime
+from sqlalchemy.ext.declarative import declarative_base
+
+from sqlalchemy.dialects.postgres import *
+
+Base = declarative_base()
 
 """
 Driver to implement the graph model in postgres
@@ -11,38 +18,45 @@ class NotConnected(Exception):
 class QueryException(Exception):
     pass
 
-class PostgresNode(object):
+class PsqlNode(Base):
 
-    def __init__(self, kwargs):
+    __tablename__ = 'nodes'
 
-        self.key                = kwargs.key if kwargs.has_key('key') else None
-        self.node_id            = kwargs.node_id if kwargs.has_key('node_id') else None
-        self.voided             = kwargs.voided if kwargs.has_key('voided') else None
-        self.created            = kwargs.created if kwargs.has_key('created') else None
-        self.acl                = kwargs.acl if kwargs.has_key('acl') else None
-        self.system_annotations = kwargs.system_annotations if kwargs.has_key('system_annotations') else None
-        self.label              = kwargs.label if kwargs.has_key('label') else None
-        self.properties         = kwargs.properties if kwargs.has_key('properties') else None
-        
+    key = Column(Integer, primary_key=True)
+    node_id = Column(String(36), nullable=False)
+    voided = Column(TIMESTAMP)
+    created = Column(TIMESTAMP, nullable=False, default=datetime.now())
+    acl = Column(ARRAY(Text))
+    system_annotations = Column(JSONB, default={})
+    label = Column(Text)
+    properties = Column(JSONB, default={})
 
-class PostgresEdge(object):
+    def __repr__(self):
+       return "<PostgresNode(key={key}, node_id={node_id}, voided={voided})>".format(
+           node_id=self.node_id, key=self.key, voided=(self.voided is not None)
+       )
 
-    def __init__(self, key, edge_id=None, src_id=None, dst_id=None, voided=None, 
-                 created=None, acl=[], system_annotations={}, label=None, properties={}):
+class PsqlEdge(Base):
 
-        self.key = key
-        self.edge_id = edge_id
-        self.key = key
-        self.voided = voided
-        self.created = created
-        self.src_id = src_id
-        self.dst_id = dst_id
-        self.acl = acl
-        self.system_annotations = system_annotations
-        self.label = label
-        self.properties = properties    
+    __tablename__ = 'edges'
 
-class PostgresGraphDriver(object):
+    key = Column(Integer, primary_key=True)
+    edge_id = Column(String(36), nullable=False)
+    voided = Column(TIMESTAMP)
+    created = Column(TIMESTAMP, nullable=False, default=datetime.now())
+    src_id = Column(String(36), nullable=False)
+    dst_id = Column(String(36), nullable=False)
+    acl = Column(ARRAY(Text))
+    system_annotations = Column(JSONB, default={})
+    label = Column(Text)
+    properties = Column(JSONB, default={})
+
+    def __repr__(self):
+       return "<PostgresNode(node_id={node_id}, key={key}, acl={acl})>".format(
+           node_id=node_id, key=key, acl=acl
+       )
+
+class PsqlGraphDriver(object):
     
     def __init__(self, host, user, password, database):
 
@@ -96,45 +110,40 @@ class PostgresGraphDriver(object):
         :param properties: the jsonb document containing the node properties
         """
 
-        node = self.node_lookup_unique(node_id, property_matches, system_annotation_matches, get_data=True)
 
-        if node:
-            properties = self._merge_values(node.properties, properties)
-            system_annotations = self._merge_values(node.system_annotations, system_annotations)
-            acl = self._merge_values(node.acl, acl)
-            label = self._merge_values(node.label, label)
+        Session = sessionmaker()
+        Session.configure(bind=self.engine)
+        session = Session()
 
-        self._node_insert(node_id, acl, system_annotations, label, properties)
+        old = self.node_lookup_unique(node_id, property_matches, system_annotation_matches)
 
+        if old:
+            system_annotations = self._merge_values(old.system_annotations, system_annotations)
+            properties = self._merge_values(old.properties, properties)
+            label = self._merge_values(old.label, label)
+            acl = self._merge_values(old.acl, acl)
 
-    def _node_insert(self, node_id=None, acl=[], system_annotations={}, label=None, properties={}):
-        table = self.connect_to_table('nodes')
-
-        ins = table.insert().returning(table.c.node_id).values(
-            node_id=node_id,
-            acl=acl,
-            properties=properties,
-            created=datetime.now(),
-            system_annotations=system_annotations,
-            label=label,
-        )
-
-        conn = self.engine.connect()
-        result = conn.execute(ins).fetchall()
-        conn.close()
-
-    def node_lookup_unique(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False, get_data=False):
+        new = PsqlNode(node_id=node_id, acl=acl, system_annotations=system_annotations, label=label, properties=properties)
+                       
+        if old: 
+            old.voided = datetime.now()
+            voided = session.merge(old)
+            
+        session.add(new)
+        session.commit()
+        
+    def node_lookup_unique(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False, session=None):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
-        :param get_data: default to ``False`` and will return only the unique key of the node. If set to ``True`` then the lookup will return all node properties
         """
         
-        nodes = self.node_lookup(node_id, property_matches, system_annotation_matches, include_voided, get_data)
+        nodes = self.node_lookup(node_id, property_matches, system_annotation_matches, include_voided, session)
+        print nodes
         assert len(nodes) <= 1, 'Expected a single non-voided node to be found, instead found {count}'.format(count=len(nodes))
         return None if not len(nodes) else nodes[0]
 
-    def node_lookup(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False, get_data=False):
+    def node_lookup(self, node_id=None, property_matches=None, system_annotation_matches=None, include_voided=False, session=None):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
@@ -147,12 +156,12 @@ class PostgresGraphDriver(object):
             raise QueryException("No node_id or kv matches specified")
 
         if node_id is not None:
-            return self.node_lookup_by_id(node_id, include_voided, get_data)
+            return self.node_lookup_by_id(node_id, include_voided, session)
 
         else:
-            return self.node_lookup_by_matches(property_matches, include_voided, get_data)
+            return self.node_lookup_by_matches(property_matches, include_voided)
 
-    def node_lookup_by_id(self, node_id, include_voided=False, get_data=False):
+    def node_lookup_by_id(self, node_id, include_voided=False, session=None):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
@@ -160,55 +169,24 @@ class PostgresGraphDriver(object):
 
         table = self.connect_to_table('nodes')        
 
-        if get_data:
-            returning = [ 
-                table.c.node_id, table.c.key, table.c.voided, table.c.created, table.c.acl, 
-                table.c.system_annotations, table.c.label, table.c.properties 
-            ]
-        else: returning = [table.c.key]
+        if not session:
+            Session = sessionmaker()
+            Session.configure(bind=self.engine)
+            session = Session()
 
-        query = select(returning).where(table.c.node_id==node_id)
-        if not include_voided: query = query.where(table.c.voided==None)
+        query = session.query(PsqlNode).filter(PsqlNode.node_id == node_id)
+        if not include_voided: query = query.filter(PsqlNode.voided.is_(None))
+        session.commit()
 
-        conn = self.engine.connect()
+        return query.all()
 
-        results = conn.execute(query).fetchall()
-        conn.close()
-        
-        nodes = [PostgresNode(row) for row in results]
-        
-        return nodes
-
-    def node_lookup_by_matches(self, property_matches=None, system_annotation_matches=None, include_voided=False, get_data=False):
+    def node_lookup_by_matches(self, property_matches=None, system_annotation_matches=None, include_voided=False):
         """
         :param node_id: unique id that is only important inside postgres, referenced by edges
         :param matches: key-values to match node if node_id is not provided
         """
 
         table = self.connect_to_table('nodes')
-
-        if get_data:
-            returning = [ 
-                Table.c.node_id, table.c.key, table.c.voided, table.c.created, table.c.acl, 
-                table.c.system_annotations, table.c.label, table.c.properties 
-            ]
-        else: returning = [table.c.key]
-
-        query = select(returning)
-        
-        if property_matches:
-            for key, value in property_matches.iteritems(): 
-                qeury = query.where(table.c.properties[key]==value)
-
-        if system_annotation_matches:
-            for key, value in syste_annotation_matches.iteritems(): 
-                qeury = query.where(table.c.properties[key]==value)
-
-        conn = self.engine.connect()
-        result = conn.execute(query).fetchall()
-        conn.close()
-
-        return result
 
 
     def node_clobber(self, node_id=None, matches={}, acl=[], system_annotations={}, label=None, properties={}):

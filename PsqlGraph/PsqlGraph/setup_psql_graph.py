@@ -1,6 +1,7 @@
 import time
-from sqlalchemy import create_engine, text, MetaData, Table, Column, Integer, Boolean, Text
-from sqlalchemy.dialects.postgres import *
+
+from PsqlGraph import Base, PsqlGraphDriver
+from sqlalchemy import create_engine, select, MetaData, Table, Column, Integer, Text
 
 from cdisutils import log
 logger = log.get_logger(__name__)
@@ -52,78 +53,12 @@ def setup_database(user, password, database):
     
     conn.close()
 
-def create_node_table(host, user, password, database):
+def create_tables(host, user, password, database):
     """
     create a table 
     """
     
-    table_name = 'nodes'
-
-    conn_str = 'postgresql://{user}:{password}@{host}/{database}'.format(
-        user=user, password=password, host=host, database=database)
-
-    engine = create_engine(conn_str)
-    metadata = MetaData()
+    driver = PsqlGraphDriver(host, user, password, database)
+    Base.metadata.create_all(driver.engine)
     
-    """Create the table"""
-
-    new_table = Table(
-        table_name, metadata,
-        Column('node_id', Text, nullable=False),
-        Column('key', Integer, primary_key=True),
-        Column('voided', TIMESTAMP),
-        Column('created', TIMESTAMP, nullable=False, default=time.time()),
-        Column('acl', ARRAY(Text)),
-        Column('system_annotations', JSONB, default={}),
-        Column('label', Text),
-        Column('properties', JSONB, default={}),
-    )
-
-    metadata.create_all(engine)
-
-    """Revoke update privileges"""
-
-    immutables = ['node_id', 'key', 'created', 'acl', 'system_annotations', 'label', 'properties']
-    conn = engine.connect()
-    conn.execute("commit")
-    create_stmt = 'REVOKE UPDATE ({immutes}) ON {table} from {user}'.format(
-        immutes=','.join(immutables), table=table_name, user=user)
-    conn.execute(create_stmt)
-
-def create_edge_table(host, user, password, database):
-    """
-    create a table 
-    """
-    
-    table_name = 'edges'
-    conn_str = 'postgresql://{user}:{password}@{host}/{database}'.format(
-        user=user, password=password, host=host, database=database)
-
-    engine = create_engine(conn_str)
-    metadata = MetaData()
-
-    new_table = Table(
-        table_name, metadata,
-        Column('edge_id', Text, nullable=False),
-        Column('key', Integer, primary_key=True),
-        Column('voided', TIMESTAMP, nullable=False),
-        Column('created', TIMESTAMP, nullable=False, default=time.time()),
-        Column('src_node', UUID, nullable=False),
-        Column('dst_node', UUID, nullable=False),
-        Column('system_annotations', JSONB, nullable=False, default={}),
-        Column('label', Text),
-        Column('properties', JSONB, nullable=False),
-    )
-
-    metadata.create_all(engine)
-
-    immutables = ['edge_id', 'key', 'created', 'src_node', 'dst_node', 'system_annotations', 'label', 'properties']
-    conn = engine.connect()
-    conn.execute("commit")
-    create_stmt = 'REVOKE UPDATE ({immutes}) ON {table} from {user}'.format(
-        immutes=','.join(immutables), table=table_name, user=user)
-    conn.execute(create_stmt)
-
-# if __name__ == '__main__':
-
     
