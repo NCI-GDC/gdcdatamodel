@@ -44,8 +44,9 @@ def session_scope(engine, session=None):
 
     try:
         yield local
-        logging.info('Committing session {session}'.format(session=local))
-        local.commit()
+        if not session:
+            logging.info('Committing session {session}'.format(session=local))
+            local.commit()
 
     except Exception, msg:
         logging.error('Failed to commit session: {msg}'.format(msg=msg))
@@ -54,13 +55,13 @@ def session_scope(engine, session=None):
         raise
 
     finally:
-        if session:
-            return
+        if not session:
 
-        logging.info('Expunging objects from {session}'.format(session=local))
-        local.expunge_all()
-        logging.info('Closing session {session}'.format(session=local))
-        local.close()
+            logging.info('Expunging objects from {session}'.format(
+                session=local))
+            local.expunge_all()
+            logging.info('Closing session {session}'.format(session=local))
+            local.close()
 
 
 class PsqlNode(Base):

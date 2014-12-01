@@ -2,7 +2,7 @@ import uuid
 import unittest
 import time
 from cdisutils import log
-from PsqlGraph import PsqlGraphDriver
+from PsqlGraph import PsqlGraphDriver, session_scope
 from PsqlGraph.setup_psql_graph import setup_database, create_tables, \
     try_drop_test_data
 from multiprocessing import Process
@@ -15,7 +15,7 @@ database = 'automated_test'
 table = 'test'
 
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class TestPsqlGraphSetup(unittest.TestCase):
@@ -84,10 +84,12 @@ class TestPsqlGraphDriver(unittest.TestCase):
                              count=len(nodes)))
         self.assertEqual(propertiesB, nodes[1].properties)
 
-    def test_repeated_node_update(self):
+    def test_repeated_node_update(self, tempid=None):
 
-        update_count = 500
-        tempid = str(uuid.uuid4())
+        update_count = 200
+
+        if not tempid:
+            tempid = str(uuid.uuid4())
 
         for tally in range(update_count):
             properties = {'key1': None,
@@ -108,34 +110,67 @@ class TestPsqlGraphDriver(unittest.TestCase):
                          'voided nodes to be found, found {count}'.format(
                              update_count=update_count, count=len(nodes)))
 
+    def test_sessioned_node_update(self, tempid=None):
+
+        update_count = 200
+
+        if not tempid:
+            tempid = str(uuid.uuid4())
+
+        with session_scope(self.driver.engine) as session:
+            for tally in range(update_count):
+                properties = {'key1': None,
+                              'key2': 2,
+                              'key3': time.time(),
+                              'tally':  tally}
+                self.driver.node_merge(node_id=tempid, properties=properties,
+                                       session=session)
+
+            nodes = self.driver.node_lookup(node_id=tempid, session=session)
+            self.assertEqual(len(nodes), 1, 'Expected a single non-voided node'
+                             ' to be found, instead found {count}'.format(
+                                 count=len(nodes)))
+            self.assertEqual(properties, nodes[0].properties, 'Node properties'
+                             'do not match expected properties')
+
+            nodes = self.driver.node_lookup(tempid, include_voided=True,
+                                            session=session)
+            self.assertEqual(len(nodes), update_count, 'Expected a '
+                             '{update_count} voided nodes to be found, found '
+                             '{count}'.format(update_count=update_count,
+                                              count=len(nodes)))
+
     def test_concurrent_node_update(self):
 
-        update_count = 20
+        process_count = 5
         tempid = str(uuid.uuid4())
 
         processes = []
 
-        for tally in range(update_count):
-            driver = PsqlGraphDriver(host, user, password, database)
-            properties = {'key1': None,
-                          'key2': 2,
-                          'key3': time.time(),
-                          'tally':  tally}
-            p = Process(target=driver.node_merge,
-                        kwargs={'node_id': tempid,
-                                'properties': properties})
+        for tally in range(process_count):
+            p = Process(target=self.test_repeated_node_update,
+                        kwargs={'tempid': tempid})
             p.start()
             processes.append(p)
 
-            for p in processes:
-                p.join()
+        for p in processes:
+            p.join()
 
-        nodes = self.driver.node_lookup(tempid)
-        self.assertEqual(len(nodes), 1)
-        self.assertEqual(properties, nodes[0].properties)
+    def test_sessioned_concurrent_node_update(self):
 
-        nodes = self.driver.node_lookup(tempid, include_voided=True)
-        self.assertEqual(len(nodes), update_count)
+        process_count = 5
+        tempid = str(uuid.uuid4())
+
+        processes = []
+
+        for tally in range(process_count):
+            p = Process(target=self.test_sessioned_node_update,
+                        kwargs={'tempid': tempid})
+            p.start()
+            processes.append(p)
+
+        for p in processes:
+            p.join()
 
     def test_node_clobber(self):
 
