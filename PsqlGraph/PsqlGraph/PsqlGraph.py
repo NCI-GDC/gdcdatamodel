@@ -1,13 +1,13 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData, Table, Column, \
-    Integer,  Text, String
+    Integer, Text, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgres import TIMESTAMP, ARRAY, JSONB
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from contextlib import contextmanager
 from datetime import datetime
-
+import time
+import random
 import logging
 import copy
 
@@ -128,6 +128,64 @@ class PsqlEdge(Base):
         )
 
 
+DEFAULT_RETRIES = 32
+
+
+def default_backoff(retries, max_retries):
+    """This is the default backoff function used in the case of a retry by
+    and function wrapped with the ``@retryable`` decorator.
+
+    The behavior of the default backoff function is to sleep for a
+    pseudo-random time between 0 and 2 seconds.
+
+    """
+
+    time.sleep(random.random()*(max_retries-retries)/max_retries*2)
+
+
+def retryable(func, backoff=default_backoff):
+    """
+
+    This wrapper can be used to decorate a function to retry an
+    operation in the case of an SQLalchemy IntegrityError.  This error
+    means that a race-condition has occured and operations that have
+    occured within the session may no longer be valid.
+
+    You can set the number of retries by passing the keyword argument
+    ``max_retries`` to the wrapped function.  It's therefore important
+    that ``max_retries`` is included as a kwarg in the definition of
+    the wrapped function.
+
+    Setting ``max_retries`` to 0 will prevent retries upon failure;
+    wrapped function will execute once.
+
+    Similar to ``max_retries``, the kwarg ``backoff`` is a callback
+    function that allows the user of the library to over-ride the
+    default backoff function in the case of a retry.  See `func
+    default_backoff`
+
+    """
+
+    def inner(*args, **kwargs):
+        retries = 0
+        max_retries = kwargs.get('max_retries', DEFAULT_RETRIES)
+        backoff = kwargs.get('backoff', default_backoff)
+        while retries <= max_retries:
+            try:
+                func(*args, **kwargs)
+            except IntegrityError:
+                logging.warn('Race-condition caught ({0}/{1} retries)'
+                             ''.format(retries, max_retries))
+                if retries >= max_retries:
+                    logging.error('Max retries exceeded')
+                    raise
+                retries += 1
+                backoff(retries, max_retries)
+            else:
+                break
+    return inner
+
+
 class PsqlGraphDriver(object):
 
     def __init__(self, host, user, password, database):
@@ -136,17 +194,23 @@ class PsqlGraphDriver(object):
         self.database = database
         self.host = host
         self.logger = logging.getLogger('PsqlGraph')
+        self.default_retries = 10
 
         conn_str = 'postgresql://{user}:{password}@{host}/{database}'.format(
             user=user, password=password, host=host, database=database)
 
         self.engine = create_engine(conn_str)
 
+    @retryable
     def node_merge(self, node=None, node_id=None, property_matches=None,
                    system_annotation_matches=None, acl=[],
-                   system_annotations={}, label=None,
-                   properties={}, session=None):
-        """This is meant to be the main interaction function with the
+                   system_annotations={}, label=None, properties={},
+                   session=None,
+                   max_retries=DEFAULT_RETRIES,
+                   backoff=default_backoff):
+        """
+
+        This is meant to be the main interaction function with the
         library. It handles the traditional get_one_or_create while
         overloading the merging of properties, system_annotations.
 
@@ -155,6 +219,11 @@ class PsqlGraphDriver(object):
         - If the node does exist, it will be updated.
 
         - This function is thread safe.
+
+        - This function is wrapped by ``retryable`` decorator, set the
+          number of maximum number of times that the merge will retry
+          after a concurrency error, set the keyword arg ``max_retries``
+
         """
 
         self.logger.info('Merging node')
@@ -206,16 +275,29 @@ class PsqlGraphDriver(object):
         self.logger.info('Voiding a node to create a new one')
 
         with session_scope(self.engine, session) as local:
-            self.node_void(old_node, session)
-            local.add(new_node)
+            try:
+                self.node_void(old_node, session)
+                local.add(new_node)
+            except:
+                raise
 
-    def node_void(self, node, session):
+    def node_void(self, node, session=None):
+        """if passed a non-null node, then ``node_void`` will set the
+        timestamp on the voided column of the entry.
 
+        If a session is provided, then this action will be carried out
+        within the session (and not commited).
+
+        If no session is provided, this function will commit to the
+        database in a self-contained session.
+
+        """
         if not node:
             return
 
-        node.voided = datetime.now()
-        session.merge(node)
+        with session_scope(self.engine, session) as local:
+            node.voided = datetime.now()
+            local.merge(node)
 
     def node_lookup_one(self, node_id=None, property_matches=None,
                         system_annotation_matches=None, include_voided=False,
@@ -224,6 +306,8 @@ class PsqlGraphDriver(object):
         This function is simply a wrapper for ``node_lookup`` that
         constrains the query to return a single node.  If multiple
         nodes are found matchin the query, an exception will be raised
+
+        If no nodes match the query, the return will be NoneType.
         """
         nodes = self.node_lookup(
             node_id=node_id,

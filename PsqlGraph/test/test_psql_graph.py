@@ -7,6 +7,7 @@ from PsqlGraph.setup_psql_graph import setup_database, create_tables, \
     try_drop_test_data
 from multiprocessing import Process
 import logging
+import random
 
 host = 'localhost'
 user = 'test'
@@ -15,7 +16,7 @@ database = 'automated_test'
 table = 'test'
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 
 
 class TestPsqlGraphSetup(unittest.TestCase):
@@ -43,6 +44,18 @@ class TestPsqlGraphDriver(unittest.TestCase):
     def setUp(self):
         self.logger = log.get_logger(__name__)
         self.driver = PsqlGraphDriver(host, user, password, database)
+
+    def verify_node_count(self, count, node_id=None, matches=None,
+                          voided=False):
+        nodes = self.driver.node_lookup(
+            node_id=node_id,
+            property_matches=matches,
+            include_voided=voided
+        )
+        self.assertEqual(len(nodes), count, 'Expected a {n} nodes to '
+                         'be found, instead found {count}'.format(
+                             n=count, count=len(nodes)))
+        return nodes
 
     def test_connect_to_node_table(self):
         self.driver.connect_to_table('nodes')
@@ -78,13 +91,17 @@ class TestPsqlGraphDriver(unittest.TestCase):
         self.assertEqual(propertiesB, node.properties)
 
         # Test to make sure that there are 2 voided nodes with tempid
-        nodes = self.driver.node_lookup(tempid, include_voided=True)
-        self.assertEqual(len(nodes), 2, 'Expected a single voided node to be '
-                         'found instead found {count}'.format(
-                             count=len(nodes)))
+        nodes = self.verify_node_count(2, node_id=tempid, voided=True)
         self.assertEqual(propertiesB, nodes[1].properties)
 
     def test_repeated_node_update(self, tempid=None):
+        """-
+
+        Verify that updates repeated updates to a single node create
+        the correct number of voided transactions and a single valid
+        node with the correct properties
+
+        """
 
         update_count = 200
 
@@ -95,22 +112,21 @@ class TestPsqlGraphDriver(unittest.TestCase):
             properties = {'key1': None,
                           'key2': 2,
                           'key3': time.time(),
-                          'tally':  tally}
+                          'rand':  random.random()}
             self.driver.node_merge(node_id=tempid, properties=properties)
 
-        nodes = self.driver.node_lookup(tempid)
-        self.assertEqual(len(nodes), 1, 'Expected a single non-voided node to'
-                         'be found, instead found {count}'.format(
-                             count=len(nodes)))
-        self.assertEqual(properties, nodes[0].properties, 'Node properties'
+        node = self.driver.node_lookup_one(tempid)
+        self.assertEqual(properties, node.properties, 'Node properties'
                          'do not match expected properties')
-
-        nodes = self.driver.node_lookup(tempid, include_voided=True)
-        self.assertEqual(len(nodes), update_count, 'Expected a {update_count}'
-                         'voided nodes to be found, found {count}'.format(
-                             update_count=update_count, count=len(nodes)))
+        self.verify_node_count(update_count, node_id=tempid, voided=True)
 
     def test_sessioned_node_update(self, tempid=None):
+        """
+
+        Repeate test_repeated_node_update but passing a single session for
+        all interactions to use
+
+        """
 
         update_count = 200
 
@@ -122,43 +138,38 @@ class TestPsqlGraphDriver(unittest.TestCase):
                 properties = {'key1': None,
                               'key2': 2,
                               'key3': time.time(),
-                              'tally':  tally}
+                              'rand':  random.random()}
                 self.driver.node_merge(node_id=tempid, properties=properties,
                                        session=session)
 
-            nodes = self.driver.node_lookup(node_id=tempid, session=session)
-            self.assertEqual(len(nodes), 1, 'Expected a single non-voided node'
-                             ' to be found, instead found {count}'.format(
-                                 count=len(nodes)))
-            self.assertEqual(properties, nodes[0].properties, 'Node properties'
+            node = self.driver.node_lookup_one(node_id=tempid, session=session)
+            self.assertEqual(properties, node.properties, 'Node properties'
                              'do not match expected properties')
 
-            nodes = self.driver.node_lookup(tempid, include_voided=True,
-                                            session=session)
-            self.assertEqual(len(nodes), update_count, 'Expected a '
-                             '{update_count} voided nodes to be found, found '
-                             '{count}'.format(update_count=update_count,
-                                              count=len(nodes)))
+        self.verify_node_count(update_count, tempid, voided=True)
 
     def test_concurrent_node_update(self):
 
-        process_count = 5
+        process_count = 3
         tempid = str(uuid.uuid4())
 
         processes = []
 
         for tally in range(process_count):
-            p = Process(target=self.test_repeated_node_update,
-                        kwargs={'tempid': tempid})
+            processes.append(Process(target=self.test_repeated_node_update,
+                                     kwargs={'tempid': tempid}))
+
+        for p in processes:
             p.start()
-            processes.append(p)
 
         for p in processes:
             p.join()
 
+        self.verify_node_count(process_count*200, tempid, voided=True)
+
     def test_sessioned_concurrent_node_update(self):
 
-        process_count = 5
+        process_count = 10
         tempid = str(uuid.uuid4())
 
         processes = []
@@ -172,11 +183,15 @@ class TestPsqlGraphDriver(unittest.TestCase):
         for p in processes:
             p.join()
 
+        self.verify_node_count(process_count*200, tempid, voided=True)
+
     def test_node_clobber(self):
 
         tempid = str(uuid.uuid4())
 
-        propertiesA = {'key1':  None, 'key2':  2, 'key3':  time.time()}
+        propertiesA =
+
+        {'key1':  None, 'key2':  2, 'key3':  time.time()}
         self.driver.node_merge(node_id=tempid, properties=propertiesA)
 
         propertiesB = {'key1':  None, 'key2':  2, 'key3':  time.time()}
