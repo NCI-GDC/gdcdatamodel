@@ -50,6 +50,8 @@ def setup_database(user, password, database):
 
     perm_stmt = 'GRANT ALL PRIVILEGES ON DATABASE {database} to {password}'.format(
         database=database, password=password)
+
+    conn.execute("commit")
     
     conn.close()
 
@@ -60,5 +62,23 @@ def create_tables(host, user, password, database):
     
     driver = PsqlGraphDriver(host, user, password, database)
     Base.metadata.create_all(driver.engine)
+
+    conn = driver.engine.connect()
+
+    # non_null_stmt = """
+    # CREATE UNIQUE INDEX constraint_voided_non_null
+    # ON nodes (node_id, voided)
+    # WHERE voided IS NOT NULL;
+    # """
+    # conn.execute(non_null_stmt)
+
+    null_stmt = """
+    CREATE UNIQUE INDEX constraint_voided_null
+    ON nodes (node_id)
+    WHERE voided IS NULL;
+    """
+    conn.execute(null_stmt)
+
+    conn.close()
     
     
