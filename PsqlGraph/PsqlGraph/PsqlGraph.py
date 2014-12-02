@@ -56,7 +56,6 @@ def session_scope(engine, session=None):
 
     finally:
         if not session:
-
             logging.info('Expunging objects from {session}'.format(
                 session=local))
             local.expunge_all()
