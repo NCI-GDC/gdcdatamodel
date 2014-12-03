@@ -1,0 +1,7 @@
+{
+  "type": "record", 
+  "name": "aliquot", 
+  "namespace": "edu.uchicago.cdis", 
+  "doc": "TODO: add fields and document", 
+  "fields": []
+}

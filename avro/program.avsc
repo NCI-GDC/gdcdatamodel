@@ -1,0 +1,7 @@
+{
+  "type": "record", 
+  "name": "program", 
+  "namespace": "edu.uchicago.cdis", 
+  "doc": "TODO: add fields and document", 
+  "fields": []
+}
