@@ -1,7 +1,0 @@
-{
-  "type": "record", 
-  "name": "analyte", 
-  "namespace": "edu.uchicago.cdis", 
-  "doc": "TODO: add fields and document", 
-  "fields": []
-}

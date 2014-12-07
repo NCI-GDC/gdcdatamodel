@@ -1,7 +1,0 @@
-{
-  "type": "record", 
-  "name": "archive", 
-  "namespace": "edu.uchicago.cdis", 
-  "doc": "TODO: add fields and document", 
-  "fields": []
-}

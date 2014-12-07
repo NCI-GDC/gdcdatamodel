@@ -1,7 +1,0 @@
-{
-  "type": "record", 
-  "name": "tissue_source_site", 
-  "namespace": "edu.uchicago.cdis", 
-  "doc": "TODO: add fields and document", 
-  "fields": []
-}
