@@ -1,0 +1,89 @@
+[
+  {
+    "type": "record",
+    "name": "aliquot_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "aliquot_barcode",
+        "type": "string"
+      },
+      {
+        "name": "is_derived_from_ffpe",
+        "type": "boolean"
+      },
+      {
+        "name": "source_center",
+        "type": "string"
+      },
+      {
+        "name": "biospecimen_barcode_bottom",
+        "type": "string"
+      },
+      {
+        "name": "center_id",
+        "type": "string"
+      },
+      {
+        "name": "shipment_date",
+        "type": "string"
+      },
+      {
+        "name": "plate_column",
+        "type": "string"
+      },
+      {
+        "name": "amount",
+        "type": "string"
+      },
+      {
+        "name": "plate_row",
+        "type": "string"
+      },
+      {
+        "name": "concentration",
+        "type": "string"
+      },
+      {
+        "name": "plate_id",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "portion_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "sample_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "participant_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "project_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "program_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  }
+]

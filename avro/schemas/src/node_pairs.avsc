@@ -1,0 +1,107 @@
+[
+  {
+    "type": "record",
+    "name": "src_dest_nodes",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_id",
+        "type": "string"
+      },
+      {
+        "name": "dest_node_id",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "aliquot:analyte",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "aliquot_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "analyte_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte:portion",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "analyte_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "portion_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "portion:sample",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "portion_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "sample_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "sample:participant",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "sample_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "participant_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "participant:project",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "participant_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "project_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "project:program",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "project_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "program_enum"
+      }
+    ]
+  }
+]
