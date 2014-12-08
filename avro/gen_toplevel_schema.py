@@ -3,9 +3,9 @@ import avro.schema
 
 
 def load_file_list(file_list):
-	known_schemas = avro.schema.Names()
+	known_schemata = avro.schema.Names()
 	for filename in file_list:
-		gen_schema = load_avsc(filename, known_schemas)
+		gen_schema = load_avsc(filename, known_schemata)
 
 	return gen_schema
 
@@ -30,21 +30,21 @@ def main():
 	For now all hardcoded for initial prototype, should be a config
 	"""
 
-	node_schema_list = ["schemas/src/node_types.avsc", "schemas/src/node_properties.avsc", "schemas/src/nodes.avsc"]
+	node_schema_list = ["schemata/src/node_types.avsc", "schemata/src/node_properties.avsc", "schemata/src/nodes.avsc"]
 	node_schema = load_file_list(node_schema_list)
-	output_file = open("schemas/gdc_nodes.avsc", "w")
+	output_file = open("schemata/gdc_nodes.avsc", "w")
 	output_file.write(json.dumps(node_schema.to_json(), indent=2))
 	output_file.close()
 
-	edge_schema_list = ["schemas/src/node_types.avsc", "schemas/src/node_pairs.avsc", "schemas/src/edges.avsc"]
+	edge_schema_list = ["schemata/src/node_types.avsc", "schemata/src/node_pairs.avsc", "schemata/src/edges.avsc"]
 	edge_schema = load_file_list(edge_schema_list)	
-	output_file = open("schemas/gdc_edges.avsc", "w")
+	output_file = open("schemata/gdc_edges.avsc", "w")
 	output_file.write(json.dumps(edge_schema.to_json(), indent=2))
 	output_file.close()
 
 	"""
 	top_schema = node_schema.to_json() + edge_schema.to_json()
-	output_file = open("schemas/gdc_nodes_edges.avsc", "w")
+	output_file = open("schemata/gdc_nodes_edges.avsc", "w")
 	output_file.write(json.dumps(top_schema, indent=2))
 	output_file.close()
 	"""

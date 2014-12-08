@@ -1,0 +1,437 @@
+[
+  {
+    "type": "record",
+    "name": "aliquot",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "Pertaining to a portion of the whole; any one of two or more samples of something, of the same volume or weight.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Aliquot ID"
+      },
+      {
+        "name": "type",
+        "type": [
+          "aliquot_enum"
+        ],
+        "doc": "String constant representing the aliquot type"
+      },
+      {
+        "name": "properties",
+        "type": [
+          "aliquot_properties"
+        ],
+        "doc": "Key-values representing aliquot properties"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "analyte_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "analyte_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "portion",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "portion_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "portion_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "sample",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "sample_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "sample_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "participant",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "participant_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "participant_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "project",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "project_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "project_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "program",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "program_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "program_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "center",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "center_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "center_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "platform",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "platform_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "platform_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_type",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "data_type_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "data_type_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_subtype",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "data_subtype_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "data_subtype_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "experimental_strategy",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "experimental_strategy_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "experimental_strategy_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_format",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "data_format_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "data_format_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "file_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "file_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "archive",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "archive_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "archive_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "annotation_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "annotation_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "clinical",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "clinical_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "clinical_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "slide",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "slide_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "slide_properties"
+        ]
+      }
+    ]
+  }
+]

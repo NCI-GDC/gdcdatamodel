@@ -1,0 +1,170 @@
+[
+  {
+    "type": "record",
+    "name": "aliquot_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of an aliquot",
+    "fields": [
+      {
+        "name": "legacy_barcode",
+        "type": "string",
+        "doc": "The legacy (often semantic) barcode used before prior to the use UUIDs, varies by project."
+      },
+      {
+        "name": "is_derived_from_ffpe",
+        "type": [
+          "null",
+          "boolean"
+        ],
+        "doc": "Indicator to signify whether or not the tissue sample was derived from a specimen fixed in formalin and embedded in paraffin (FFPE)."
+      },
+      {
+        "name": "source_center",
+        "type": "string",
+        "doc": "TODO: def from BCR"
+      },
+      {
+        "name": "biospecimen_barcode_bottom",
+        "type": "string",
+        "doc": "TODO: def from BCR"
+      },
+      {
+        "name": "center_id",
+        "type": "string",
+        "doc": "The center to which the aliquot was shipped."
+      },
+      {
+        "name": "shipment_date",
+        "type": "long",
+        "doc": "The date of shipment encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date shipped."
+      },
+      {
+        "name": "plate_column",
+        "type": "string",
+        "doc": "TODO: def from BCR"
+      },
+      {
+        "name": "amount",
+        "type": "float",
+        "doc": "TODO: def from BCR"
+      },
+      {
+        "name": "plate_row",
+        "type": "string",
+        "doc": "TODO: def from BCR"
+      },
+      {
+        "name": "concentration",
+        "type": "float",
+        "doc": "TODO: def from BCR"
+      },
+      {
+        "name": "plate_id",
+        "type": "string",
+        "doc": "TODO: def from BCR"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "portion_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "sample_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "participant_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "project_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "program_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "center_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "platform_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_type_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_subtype_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "experimental_strategy_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_format_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "file_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "archive_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "annotation_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "clinical_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "slide_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  }
+]

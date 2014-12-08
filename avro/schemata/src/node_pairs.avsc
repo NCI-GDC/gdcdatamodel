@@ -1,0 +1,482 @@
+[
+  {
+    "type": "record",
+    "name": "src_dest_nodes",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_id",
+        "type": "string"
+      },
+      {
+        "name": "dest_node_id",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "aliquot:analyte",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "aliquot_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "analyte_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte:portion",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "analyte_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "portion_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "portion:sample",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "portion_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "sample_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "sample:participant",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "sample_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "participant_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "participant:project",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "participant_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "project_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "project:program",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "project_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "program_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "participant:center",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "participant_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "center_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "archive:project",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "archive_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "project_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:archive",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "archive_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation:aliquot",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "aliquot_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation:analyte",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "analyte_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation:portion",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "portion_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation:sample",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "sample_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation:participant",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "participant_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation:file",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "file_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:experimental_strategy",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "data_subtype_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:data_format",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "data_format_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "experimental_strategy:data_subtype",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "experimental_strategy_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "data_subtype_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_subtype:data_type",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "data_subtype_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "data_type_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:platform",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "platform_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:aliquot",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "aliquot_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:analyte",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "analyte_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:portion",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "portion_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:sample",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "sample_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:participant",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "participant_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:file",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "file_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "clinical:participant",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "participant_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "clinical_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "aliquot:center",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "aliquot_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "center_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "portion:center",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "portion_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "center_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "slide:portion",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "slide_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "portion_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:slide",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "slide_enum"
+      }
+    ]
+  }
+]
