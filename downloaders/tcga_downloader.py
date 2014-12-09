@@ -10,39 +10,66 @@ import atexit
 import subprocess
 import boto
 from cStringIO import StringIO
-
 import boto.s3.connection
-
 from os import listdir
 from os.path import isfile, join
-from zug import basePlugin, no_proxy
 
 
-currentDir = os.path.dirname(os.path.realpath(__file__))
-logger = logging.getLogger(name="[{name}]".format(name=__name__))
+logger = logging.getLogger(name="{name}".format(name=__file__))
+
+
+def no_proxy(func):
+    def wrapped(*args, **kwargs):
+        http_proxy = os.environ.get('http_proxy', None)
+        https_proxy = os.environ.get('https_proxy', None)
+
+        logger.info("no_proxy: " + str(func))
+
+        if http_proxy:
+            logger.debug("Unsetting http_proxy")
+            del os.environ['http_proxy']
+
+        if https_proxy:
+            logger.debug("Unsetting https_proxy")
+            del os.environ['https_proxy']
+
+        ret = func(*args, **kwargs)
+
+        if http_proxy:
+            logger.debug("Resetting http_proxy: " + http_proxy)
+            os.environ['http_proxy'] = http_proxy
+
+        if https_proxy:
+            logger.debug("Resetting https_proxy: " + https_proxy)
+            os.environ['https_proxy'] = https_proxy
+
+        return ret
+    return wrapped
 
 
 class NoMoreWork(Exception):
     pass
 
 
-class download_consumer(basePlugin):
+class TCGADownloader(object):
 
     """
     takes in an xml as a string and compiles a list of nodes and edges
     """
 
-    def initialize(self, **kwargs):
-        atexit.register(self.check_error)
-
-        assert 'cghub_key' in kwargs, 'Please specify path to a cghub downloader key: cghub_key'
-        assert 'download_path' in kwargs, 'Please specify directory to place the file: download_path'
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        assert 'cghub_key' in kwargs, \
+            'Please specify path to a cghub downloader key: cghub_key'
+        assert 'download_path' in kwargs, \
+            'Please specify directory to place the file: download_path'
 
         self.state = 'IDLE'
         self.work = None
         self.bai = None
         self.files = []
 
+        atexit.register(self.check_error)
         self.check_count = int(kwargs.get('check_count', 5))
 
         self.load_name()
@@ -116,7 +143,7 @@ class download_consumer(basePlugin):
             logging.error('Downloader errored while executing {f}'.format(
                 f=func))
             self.check_error(msg)
-            return self.start()
+            time.sleep(2)
 
     def verify_claim(self, file_id):
         time.sleep(random.random()*10 + 1)
@@ -136,8 +163,6 @@ class download_consumer(basePlugin):
             'WHERE n.import_state="NOT_STARTED"'
             'AND n.access_group = ["phs000178"]',
             'AND right(n.file_name, 4) <> ".bai"',
-            # 'OR n.import_state="ERROR"',
-            # 'AND right(n.file_name, 4) <> ".bai"',
             'WITH n LIMIT 1',
             'RETURN n',
             ])
@@ -151,8 +176,9 @@ class download_consumer(basePlugin):
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
             'WHERE n.import_state="NOT_STARTED"'
-            # 'OR n.import_state="ERROR"',
-            'SET n.importer="{id}", n.import_state="STARTED", n.import_started = timestamp()',
+            'SET n.importer="{id}", ',
+            'n.import_state="STARTED", ',
+            'n.import_started = timestamp()',
             'RETURN n',
         ], file_id=file_id, id=self.id)
 
@@ -182,14 +208,17 @@ class download_consumer(basePlugin):
         self.set_state('FINISHING')
         self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
-            'SET n.import_state="COMPLETE", n.importer_state="FINISHED", n.import_completed = timestamp()',
+            'SET n.import_state="COMPLETE", ',
+            'n.importer_state="FINISHED",',
+            'n.import_completed = timestamp()',
         ], file_id=self.work['id'])
 
         for f in self.files:
             try:
                 self.delete_scratch(f)
             except:
-                logger.error("Unable to delete scratch.  Will likely run out of space in the future")
+                logger.error("Unable to delete scratch.  Will likely run out"
+                             " of space in the future")
 
         if not self.bai:
             return
@@ -286,9 +315,11 @@ class download_consumer(basePlugin):
         acls = data.get('access_group', [])
         protection = "protected" if len(acls) else "public"
         base_url = "s3://gyarados.opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
-        url = base_url.format(protection=protection, aid=data['analysis_id'], name=data['file_name'])
+        url = base_url.format(protection=protection, aid=data['analysis_id'],
+                              name=data['file_name'])
         data = {"acls": acls, "did": data['id'], "urls": [url]}
-        r = requests.put(self.signpost, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+        r = requests.put(self.signpost, data=json.dumps(data),
+                         headers={'Content-Type': 'application/json'})
         logger.info("Post: " + r.text)
 
     def post(self):
@@ -436,6 +467,14 @@ class download_consumer(basePlugin):
             try:
                 self.delete_scratch(f)
             except:
-                logger.error("Unable to delete scratch.  Will likely run out of space in the future")
-
+                logger.error("Unable to delete scratch.  Will likely run out "
+                             "of space in the future.")
         self.work = None
+
+if __name__ == '__main__':
+    downloader = TCGADownloader(
+        cghub_key='cghub_key',
+        download_path='~/scratch/',
+        s3_auth_path='s3.yaml'
+    )
+    downloader.start()
