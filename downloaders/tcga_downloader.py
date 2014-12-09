@@ -1,3 +1,4 @@
+
 import os
 import requests
 import logging
@@ -87,7 +88,9 @@ class TCGADownloader(object):
     def load_signpost_settings(self):
         logger.info('Loading signpost settings')
         host = self.kwargs.get('signpost', 'signpost')
-        self.signpost = 'http://{host}/v0/'.format(host=host)
+        sp_port = self.kwargs.get('sp_port', '8080')
+        self.signpost = 'http://{host}:{port}/v0/'.format(
+            host=host, port=sp_port)
 
     def load_name(self):
         logger.info('Loading name')
@@ -146,7 +149,7 @@ class TCGADownloader(object):
             time.sleep(2)
 
     def verify_claim(self, file_id):
-        time.sleep(random.random()*10 + 1)
+        time.sleep(random.random()*3 + 1)
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
             'WHERE n.importer="{id}"',
@@ -163,6 +166,7 @@ class TCGADownloader(object):
             'WHERE n.import_state="NOT_STARTED"'
             'AND n.access_group = ["phs000178"]',
             'AND right(n.file_name, 4) <> ".bai"',
+            'AND n.file_size/1000000000 < 150', # GB
             'WITH n LIMIT 1',
             'RETURN n',
             ])
@@ -336,7 +340,7 @@ class TCGADownloader(object):
     @no_proxy
     def upload_file(self, data, path):
 
-        name = path.replace('/mnt/cinder/scratch/','')
+        name = path.replace(self.kwargs['download_path'], '')
         logger.info("Uploading file: " + path)
         logger.info("Uploading file to " + name)
 
@@ -382,31 +386,6 @@ class TCGADownloader(object):
 
         logger.info("Upload complete: " + path)
 
-    def upload_file_swift(self, data, path):
-        name = path.replace('/mnt/cinder/scratch/', '')
-        logger.info("Uploading file: " + path)
-        logger.info("Uploading file to " + name)
-
-        cmd = ' '.join([
-            'swift upload ',
-            '--use-slo -S {segment}',
-            'tcga_cghub_protected',
-            '{path}',
-            '--object-name {name}',
-        ]).format(
-            novarc=self.kwargs.get('novarc', '/etc/tungsten/authorization/cghub/novarc_datamanager'),
-            segment=self.kwargs.get('segment_size', 1073741824),
-            path=path,
-            name=name,
-        )
-
-        child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output, err = child.communicate()
-
-        if child.returncode:
-            raise Exception('Upload command returned with non-zero exit code')
-
-        logger.info("Upload complete: " + path)
 
     def upload(self):
         self.set_state('UPLOADING')
@@ -472,9 +451,15 @@ class TCGADownloader(object):
         self.work = None
 
 if __name__ == '__main__':
+    home=os.path.expanduser('~')+'/'
+    logging.basicConfig(level=logging.INFO)
     downloader = TCGADownloader(
-        cghub_key='cghub_key',
-        download_path='~/scratch/',
-        s3_auth_path='s3.yaml'
+        cghub_key=home+'authorization/jmiller_cghub_key',
+        download_path=home+'scratch/',
+        s3_auth_path=home+'authorization/gdc.yaml',
+        signpost='localhost',
+        sp_port='8080',
+        neo4j='localhost',
+        s3='192.170.230.172',
     )
     downloader.start()
