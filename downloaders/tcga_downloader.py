@@ -100,6 +100,7 @@ class TCGADownloader(object):
     def load_s3_settings(self):
         logger.info('Loading s3 settings')
         s3_auth_path = self.kwargs.get('s3_auth_path', None)
+        self.s3_url = self.kwargs.get('s3_url', 's3')
 
         if not s3_auth_path:
             raise Exception('No path specified for s3 authentication')
@@ -349,7 +350,7 @@ class TCGADownloader(object):
             conn = boto.connect_s3(
                 aws_access_key_id=self.s3_access_key,
                 aws_secret_access_key=self.s3_secret_key,
-                host='s3',
+                host=self.s3_url,
                 is_secure=False,
                 calling_format=boto.s3.connection.OrdinaryCallingFormat(),
             )
@@ -460,6 +461,6 @@ if __name__ == '__main__':
         signpost='localhost',
         sp_port='8080',
         neo4j='localhost',
-        s3='192.170.230.172',
+        s3_url='192.170.230.172',
     )
     downloader.start()
