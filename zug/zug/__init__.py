@@ -4,7 +4,7 @@ import logging
 from settings import Settings
 import functools
 from plugins import *
-from submodules import *
+from datamodel import *
 
 baseDir = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(name="[zug]")

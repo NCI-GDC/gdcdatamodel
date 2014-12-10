@@ -35,7 +35,7 @@ class xml2psqlgraph(object):
         self.psqlgraphDriver = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
 
-    def parse(self, data):
+    def add_to_graph(self, data):
         if not data:
             return None
 
@@ -47,8 +47,12 @@ class xml2psqlgraph(object):
     def add_node_type(self, node_type):
         node_settings = self.node_types[node_type]
         edge_types = node_settings.get('edges', None)
-        xml_nodes = self.xml_root.xpath(
-            node_settings['locate'], namespaces=self.namespaces)
+        try:
+            xml_nodes = self.xml_root.xpath(
+                node_settings['locate'], namespaces=self.namespaces)
+        except Exception, msg:
+            logging.error('Unable to get xml_nodes: '+str(msg))
+            return
 
         for xml_node in xml_nodes:
             try:

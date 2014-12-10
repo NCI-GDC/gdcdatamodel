@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.INFO)
 
 class TestPsqlGraphDriver(unittest.TestCase):
     def setUp(self):
-
         self.logger = logging.getLogger(__name__)
         self.driver = xml2psqlgraph.xml2psqlgraph(
             translate_path=mapping, data_type=datatype, host=host,
@@ -31,18 +30,18 @@ class TestPsqlGraphDriver(unittest.TestCase):
         self.neo4jDriver.cypher.execute(
             """MATCH (n:test)
             OPTIONAL MATCH (n:test)-[r]-()
-            DELETE n,r
+            DELETE n, r
             """
         )
         self.neo4jDriver.cypher.execute(
             """MATCH (n:test)
             OPTIONAL MATCH (n:test2)-[r]-()
-            DELETE n,r
+            DELETE n, r
             """
         )
 
     def _test_xml(self, xml):
-        self.driver.parse(xml)
+        self.driver.add_to_graph(xml)
 
     def test_sample_xml(self):
         with open('sample.xml') as f:

@@ -20,7 +20,7 @@ class ExtractTar(object):
         else:
             self.pattern = None
 
-    def extract(self, url):
+    def __call__(self, url):
         stream = urllib2.urlopen(url)
         tfile = tarfile.open(fileobj=stream, mode=self.mode)
         for entry in tfile:
