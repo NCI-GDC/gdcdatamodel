@@ -155,8 +155,7 @@
       {
         "name": "node_types",
         "type": [
-          "clinical:participant",
-          "cqcf:participant"
+          "clinical:participant"
         ],
         "doc": "The source/destination node types allowed."
       },
@@ -213,6 +212,31 @@
         "type": [
           "aliquot:center",
           "portion:center"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "submitted_by",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates the submitting entity of a file/data.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "file:center"
         ],
         "doc": "The source/destination node types allowed."
       },

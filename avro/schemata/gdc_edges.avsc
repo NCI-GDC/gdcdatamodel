@@ -610,28 +610,6 @@
                 "name": "dest_node_type"
               }
             ]
-          }, 
-          {
-            "type": "record", 
-            "namespace": "edu.uchicago.cdis", 
-            "name": "cqcf:participant", 
-            "fields": [
-              {
-                "type": {
-                  "symbols": [
-                    "cqcf"
-                  ], 
-                  "namespace": "edu.uchicago.cdis", 
-                  "type": "enum", 
-                  "name": "cqcf_enum"
-                }, 
-                "name": "src_node_type"
-              }, 
-              {
-                "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_type"
-              }
-            ]
           }
         ], 
         "name": "node_types"
@@ -800,6 +778,45 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
+                "name": "src_node_type"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.center_enum", 
+                "name": "dest_node_type"
+              }
+            ]
+          }
+        ], 
+        "name": "node_types"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates the submitting entity of a file/data.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "submitted_by", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:center", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
                 "name": "src_node_type"
               }, 
               {

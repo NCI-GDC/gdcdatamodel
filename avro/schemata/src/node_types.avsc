@@ -33,14 +33,6 @@
     "type": "enum"
   },
   {
-    "name": "cqcf_enum",
-    "namespace": "edu.uchicago.cdis",
-    "symbols": [
-      "cqcf"
-    ],
-    "type": "enum"
-  },
-  {
     "name": "participant_enum",
     "namespace": "edu.uchicago.cdis",
     "symbols": [

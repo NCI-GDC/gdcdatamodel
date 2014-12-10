@@ -448,42 +448,6 @@
     "type": "record"
   }, 
   {
-    "doc": "TODO: document, this can represent the QC information included with the sample as biospecimen_cqcf", 
-    "namespace": "edu.uchicago.cdis", 
-    "name": "cqcf", 
-    "fields": [
-      {
-        "type": "string", 
-        "name": "id"
-      }, 
-      {
-        "type": [
-          {
-            "symbols": [
-              "cqcf"
-            ], 
-            "namespace": "edu.uchicago.cdis", 
-            "type": "enum", 
-            "name": "cqcf_enum"
-          }
-        ], 
-        "name": "type"
-      }, 
-      {
-        "type": [
-          {
-            "type": "record", 
-            "namespace": "edu.uchicago.cdis", 
-            "name": "cqcf_properties", 
-            "fields": []
-          }
-        ], 
-        "name": "properties"
-      }
-    ], 
-    "type": "record"
-  }, 
-  {
     "doc": "TODO: document", 
     "namespace": "edu.uchicago.cdis", 
     "name": "participant", 

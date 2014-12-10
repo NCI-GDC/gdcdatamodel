@@ -76,21 +76,6 @@
   },
   {
     "type": "record",
-    "name": "cqcf:participant",
-    "namespace": "edu.uchicago.cdis",
-    "fields": [
-      {
-        "name": "src_node_type",
-        "type": "cqcf_enum"
-      },
-      {
-        "name": "dest_node_type",
-        "type": "sample_enum"
-      }
-    ]
-  },
-  {
-    "type": "record",
     "name": "participant:project",
     "namespace": "edu.uchicago.cdis",
     "fields": [
@@ -506,6 +491,21 @@
       {
         "name": "dest_node_type",
         "type": "slide_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:center",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "center_enum"
       }
     ]
   }

@@ -6,7 +6,6 @@ digraph {
 		analyte [label=analyte]
 		portion [label=portion]
 		sample [label=sample]
-		cqcf [label=cqcf]
 		participant [label=participant]
 		project [label=project]
 		program [label=program]
@@ -44,7 +43,6 @@ digraph {
 			file -> slide [label=data_from]
 			file -> file [label=data_from]
 			clinical -> participant [label=describes]
-			cqcf -> participant [label=describes]
 			annotation -> participant [label=annotates]
 			annotation -> sample [label=annotates]
 			annotation -> portion [label=annotates]
@@ -53,4 +51,5 @@ digraph {
 			annotation -> file [label=annotates]
 			aliquot -> center [label=shipped_to]
 			portion -> center [label=shipped_to]
+			file -> center [label=submitted_by]
 }
