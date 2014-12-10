@@ -1,47 +1,41 @@
 import os
 import imp
 import logging
-from zug import Zug, basePlugin, exceptions
-
 from settings import Settings
+import functools
+from plugins import *
+from submodules import *
 
 baseDir = os.path.dirname(os.path.realpath(__file__))
-
 logger = logging.getLogger(name="[zug]")
 
-# Functions below are used as decorators 
 
-def no_proxy(func):
-    def wrapped(*args, **kwargs):
-        http_proxy = os.environ.get('http_proxy', None)
-        https_proxy = os.environ.get('https_proxy', None)
+class ContextDecorator(object):
+    def __call__(self, f):
+        @functools.wraps(f)
+        def decorated(*args, **kwds):
+            with self:
+                return f(*args, **kwds)
+        return decorated
 
-        logger.info("no_proxy: " + str(func))
 
-        if http_proxy: 
-            logger.debug("Unsetting http_proxy")
-            del os.environ['http_proxy']
+class no_proxy(ContextDecorator):
+    def __enter__(self):
+        PROXY_ENV_VARS = ["http_proxy", "https_proxy"]
+        self.temp_env = {}
+        for key in PROXY_ENV_VARS:
+            if os.environ.get(key):
+                self.temp_env[key] = os.environ.pop(key)
 
-        if https_proxy: 
-            logger.debug("Unsetting https_proxy")
-            del os.environ['https_proxy']
-            
-        ret = func(*args, **kwargs) 
+    def __exit__(self, exc_type, exc_value, traceback):
+        for key, val in self.temp_env.iteritems():
+            os.environ[key] = val
 
-        if http_proxy:
-            logger.debug("Resetting http_proxy: " + http_proxy)
-            os.environ['http_proxy'] = http_proxy
-
-        if https_proxy:
-            logger.debug("Resetting https_proxy: " + https_proxy)
-            os.environ['https_proxy'] = https_proxy
-
-        return ret
-    return wrapped
 
 def process(f):
     f.zug_process = True
     return f
+
 
 def initialize(f):
     f.zug_initialize = True
