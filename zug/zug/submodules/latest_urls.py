@@ -54,24 +54,29 @@ class LatestURLParser(object):
         self.latest_report = latest_report
 
     def get_archives(self):
-        while len(self.latest_report):
-            yield next(self)
+        return self.__iter__()
 
     def __iter__(self):
         while len(self.latest_report):
-            line = self.latest_report.pop(0)
-            sline = line.strip().split('\t')
-            archive = self.parse_archive(*sline)
-            for key, value in self.constraints.iteritems():
-                if archive[key] != value:
-                    raise IgnoreDocumentException()
+            archive = self.next()
+            if archive:
+                yield archive
 
-            if self.url_key:
-                ret = archive[self.url_key]
-            else:
-                ret = archive
+    def next(self):
+        line = self.latest_report.pop(0)
+        sline = line.strip().split('\t')
+        archive = self.parse_archive(*sline)
+        for key, value in self.constraints.iteritems():
+            if archive[key] != value:
+                return None
 
-            yield ret
+        if self.url_key:
+            ret = archive[self.url_key]
+            logging.info('Found url: {}'.format(ret))
+        else:
+            ret = archive
+
+        return ret
 
     def pull_dcc_latest(self):
         r = requests.get(self.latest_url)
