@@ -1,0 +1,114 @@
+[
+  {
+    "name": "shipment_reason_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "TBD"
+    ],
+    "type": "enum",
+    "doc": "Reason for shipping a biospecimen"
+  },
+  {
+    "name": "analyte_type_id_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "D",
+      "G",
+      "H",
+      "R",
+      "T",
+      "W",
+      "X"
+    ],
+    "type": "enum",
+    "doc": "Allowed analyte type IDs"
+  },
+  {
+    "name": "analyte_type_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "DNA",
+      "EBV Immortalized Normal",
+      "GenomePlex (Rubicon) Amplified DNA",
+      "Repli-G (Qiagen) DNA",
+      "Repli-G X (Qiagen) DNA",
+      "RNA",
+      "Total RNA"
+    ],
+    "type": "enum",
+    "doc": "Allowed analyte type IDs"
+  },
+  {
+    "name": "sample_type_id_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "20",
+      "50",
+      "60",
+      "61",
+      "99"
+    ],
+    "type": "enum",
+    "doc": "Allowed analyte type IDs"
+  },
+  {
+    "name": "sample_type_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "Blood Derived Normal",
+      "Buccal Cell Normal",
+      "Control Analyte",
+      "DNA",
+      "EBV Immortalized Normal",
+      "GenomePlex (Rubicon) Amplified DNA",
+      "Granulocytes",
+      "Primary Blood Derived Cancer - Peripheral Blood",
+      "Recurrent Blood Derived Cancer - Peripheral Blood",
+      "Primary Tumor",
+      "Recurrent Blood Derived Cancer - Bone Marrow",
+      "Recurrent Tumor",
+      "Repli-G (Qiagen) DNA",
+      "Repli-G X (Qiagen) DNA",
+      "RNA",
+      "Slides",
+      "Solid Tissue Normal",
+      "Total RNA",
+      "Metastatic",
+      "Additional - New Primary",
+      "Additional Metastatic",
+      "Human Tumor Original Cells",
+      "Primary Blood Derived Cancer - Bone Marrow",
+      "Cell Lines",
+      "Xenograft Tissue",
+      "Bone Marrow Normal"
+    ],
+    "type": "enum",
+    "doc": "Allowed analyte type IDs"
+  },
+  {
+    "name": "freezing_method",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "LIQUID N2 VAPOR",
+      "DRY ICE",
+      "-80 C",
+      "-20 C"
+    ],
+    "type": "enum",
+    "doc": "Allowed analyte type IDs"
+  }
+]

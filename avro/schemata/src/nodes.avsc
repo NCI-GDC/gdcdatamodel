@@ -100,6 +100,30 @@
   },
   {
     "type": "record",
+    "name": "cqcf",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document, this can represent the QC information included with the sample as biospecimen_cqcf",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": [
+          "cqcf_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "cqcf_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "participant",
     "namespace": "edu.uchicago.cdis",
     "doc": "TODO: document",

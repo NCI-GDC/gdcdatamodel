@@ -76,6 +76,21 @@
   },
   {
     "type": "record",
+    "name": "cqcf:participant",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "cqcf_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "sample_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "participant:project",
     "namespace": "edu.uchicago.cdis",
     "fields": [
@@ -241,7 +256,7 @@
   },
   {
     "type": "record",
-    "name": "file:experimental_strategy",
+    "name": "file:data_subtype",
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
@@ -251,6 +266,21 @@
       {
         "name": "dest_node_type",
         "type": "data_subtype_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file:experimental_strategy",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "file_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "experimental_strategy_enum"
       }
     ]
   },

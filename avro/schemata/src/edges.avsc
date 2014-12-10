@@ -47,8 +47,8 @@
           "archive:project",
           "file:archive",
           "file:experimental_strategy",
+          "file:data_subtype",
           "file:data_format",
-          "experimental_strategy:data_subtype",
           "data_subtype:data_type"
         ],
         "doc": "The source/destination node types allowed."
@@ -130,7 +130,33 @@
           "file:sample",
           "file:participant",
           "file:slide",
-          "clinical:participant"
+          "file:file"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "describes",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "clinical:participant",
+          "cqcf:participant"
         ],
         "doc": "The source/destination node types allowed."
       },
@@ -161,31 +187,6 @@
           "annotation:analyte",
           "annotation:aliquot",
           "annotation:file"
-        ],
-        "doc": "The source/destination node types allowed."
-      },
-      {
-        "name": "node_ids",
-        "type": "src_dest_nodes",
-        "doc": "The primary IDs for the source and destination nodes."
-      }
-    ]
-  },
-  {
-    "name": "input_of",
-    "namespace": "edu.uchicago.cdis",
-    "type": "record",
-    "doc": "TODO: document",
-    "fields": [
-      {
-        "name": "id",
-        "type": "string",
-        "doc": "Primary unique edge ID"
-      },
-      {
-        "name": "node_types",
-        "type": [
-          "file:file"
         ],
         "doc": "The source/destination node types allowed."
       },

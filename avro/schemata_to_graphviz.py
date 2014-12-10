@@ -24,4 +24,4 @@ for edge in edge_schema:
 				dot.edge(src_dest_type[0], src_dest_type[1], edge['name'])
 				#print ("node_type: %s" % node_type['name'])
 
-dot.render('gv/gdc_data_model.gv')
+dot.render('viz/gdc_data_model.gv')
