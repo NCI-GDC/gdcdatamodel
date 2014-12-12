@@ -91,20 +91,20 @@ class xml2psqlgraph(object):
         return node_id
 
     def add_edge_types(self, src_id, elem, edge_types):
-        for label, edge_settings in edge_types.iteritems():
+        for edge_label, edge_settings in edge_types.iteritems():
             dst_ids = elem.xpath(
                 edge_settings['locate'],
                 namespaces=self.namespaces
             )
-            self.add_edges(src_id, dst_ids, label)
+            dst_label = edge_settings['type']
+            self.add_edges(src_id, dst_ids, dst_label, edge_label)
 
-    def add_edges(self, src_id, dst_ids, label):
+    def add_edges(self, src_id, dst_ids, dst_label, edge_label):
         for dst_id in dst_ids:
+            self.psqlgraphDriver.node_merge(
+                node_id=src_id, label=dst_label)
             self.psqlgraphDriver.edge_merge(
-                src_id=src_id,
-                dst_id=dst_id,
-                label=label
-            )
+                src_id=src_id, dst_id=dst_id, label=edge_label)
 
     def load_properties(self, elem, node_settings, properties):
 
