@@ -1,0 +1,563 @@
+[
+  {
+    "type": "record",
+    "name": "aliquot_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of an aliquot",
+    "fields": [
+      {
+        "name": "legacy_barcode",
+        "type": "string",
+        "doc": "The legacy barcode used before prior to the use UUIDs. For TCGA this is bcr_aliquot_barcode."
+      },
+      {
+        "name": "source_center",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "shipment_center_id",
+        "type": "string",
+        "doc": "TOREVIEW: The center to which the aliquot was shipped, replaces center_id. Is this needed if relationship is intact?"
+      },
+      {
+        "name": "shipment_datetime",
+        "type": "long",
+        "doc": "TOREVIEW: The datetime of shipment encoded as seconds from epoch. If no time is given, it is set to 00:00:00. Replaces day_of_shipment/month_of_shipment/year_of_shipment."
+      },
+      {
+        "name": "shipment_reason",
+        "type": "shipment_reason_enum",
+        "doc": "TOREVIEW: New property, reason for shipping the aliquot, so can determine if expecting data"
+      },
+      {
+        "name": "amount",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "concentration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "plate_id",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "plate_row",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "plate_column",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "legacy_barcode",
+        "type": "string",
+        "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA this is bcr_analyte_barcode."
+      },
+      {
+        "name": "analyte_type_id",
+        "type": "analyte_type_id_enum",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "analyte_type",
+        "type": "analyte_type_enum",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "concentration",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "amount",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "a260_a280_ratio",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "well_number",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "spectrophotometer_method",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "portion_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "legacy_barcode",
+        "type": "string",
+        "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA this is bcr_portion_barcode."
+      },
+      {
+        "name": "portion_number",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "creation_datetime",
+        "type": "long",
+        "doc": "TOREVIEW: The datetime of portion creation encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_creation/month_of_creation/year_of_creation."
+      },
+      {
+        "name": "weight",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "is_ffpe",
+        "type": "boolean",
+        "doc": "TODO: define"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "sample_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "tissue_source_site",
+        "type": "string",
+        "doc": "The legacy (often semantic) barcode used before prior to the use UUIDs, varies by project."
+      },
+      {
+        "name": "sample_type_id",
+        "type": "sample_type_id_enum",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "sample_type",
+        "type": "sample_type_enum",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "longest_dimension",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "intermediate_dimension",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "shortest_dimension",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "initial_weight",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "current_weight",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "freezing_method",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "oct_embedded",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "time_between_clamping_and_freezing",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "time_between_excision_and_freezing",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "collection_datetime",
+        "type": "long",
+        "doc": "TOREVIEW: The datetime of sample collection encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
+      },
+      {
+        "name": "procurement_datetime",
+        "type": "long",
+        "doc": "TOREVIEW: The datetime of sample procurement encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
+      },
+      {
+        "name": "is_ffep",
+        "type": "boolean",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "pathology_report_uuid",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "diagnostic_slides",
+        "type": "string",
+        "doc": "TODO: define"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "cqcf_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "participant_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "legacy_barcode",
+        "type": "string",
+        "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode."
+      },
+      {
+        "name": "tissue_source_site",
+        "type": "string",
+        "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode."
+      },
+      {
+        "name": "index_datetime",
+        "type": "string",
+        "doc": "TOREVIEW: The datetime of ??? encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_index/month_of_index/year_of_index."
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "project_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "program_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "center_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "center_name",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "full_name",
+        "type": "string",
+        "doc": "TODO: define, from DCC as display_name"
+      },
+      {
+        "name": "short_name",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "center_type",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "platform_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_type_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_subtype_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "experimental_strategy_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_format_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "file_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "archive_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "batch",
+        "type": "long",
+        "doc": "TODO: define, from DCC"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "annotation",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "category",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "classification",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "creator",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "created_datetime",
+        "type": "long",
+        "doc": "TOREVIEW: The datetime of annotation creation encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. "
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "notes",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "item_type",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "clinical_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "prior_dx",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "gender",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "birth_datetime",
+        "type": "long",
+        "doc": "TOREVIEW: The datetime of birth encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_birth/month_of_birth/year_of_birth."
+      },
+      {
+        "name": "days_to_death",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "days_to_last_followup",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "history_of_neoadjuvant_treatment",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "icd_10",
+        "type": "string",
+        "doc": "TODO: define, from BCR, not tier 1"
+      },
+      {
+        "name": "days_to_initial_pathologic_diagnosis",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "age_at_initial_pathologic_diagnosis",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "year_of_initial_pathologic_diagnosis",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "ethnicity",
+        "type": "string",
+        "doc": "TODO: define, from BCR, not tier 1"
+      },
+      {
+        "name": "histological_type",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "histological_type_other",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "stage_system_version",
+        "type": "string",
+        "doc": "TODO: define, from BCR, this is nested"
+      },
+      {
+        "name": "pathologic_stage",
+        "type": "string",
+        "doc": "TODO: define, from BCR, this is nested"
+      },
+      {
+        "name": "postoperative_rx_tx",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "radiation_therapy",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      }
+
+    ]
+  },
+  {
+    "type": "record",
+    "name": "slide_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "legacy_barcode",
+        "type": "string",
+        "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_slide_barcode."
+      },
+      {
+        "name": "section_location",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "number_proliferating_cells",
+        "type": "long",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_tumor_cells",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_tumor_nuclei",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_normal_cells",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_necrosis",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_stromal_cells",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_inflam_infiltration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_lymphocyte_infiltration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_monocyte_infiltration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_granulocyte_infiltration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_neutrophil_infiltration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "percent_eosinophil_infiltration",
+        "type": "float",
+        "doc": "TODO: define, from BCR"
+      }
+    ]
+  }
+]

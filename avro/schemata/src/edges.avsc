@@ -1,0 +1,250 @@
+[
+  {
+    "name": "derived_from",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates that the destination entity is physically derived from the source entity via some process/protocol",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "aliquot:analyte",
+          "analyte:portion",
+          "portion:sample",
+          "sample:participant",
+          "slide:portion"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "member_of",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates that the destination entity is logically part of the group defined by the source entity.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "participant:project",
+          "project:program",
+          "archive:project",
+          "file:archive",
+          "file:experimental_strategy",
+          "file:data_subtype",
+          "file:data_format",
+          "data_subtype:data_type"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "processed_at",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "participant:center"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "generated_from",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates the experimental platform that generated the file.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "file:platform"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "data_from",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "file:aliquot",
+          "file:analyte",
+          "file:portion",
+          "file:sample",
+          "file:participant",
+          "file:slide",
+          "file:file"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "describes",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "clinical:participant"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "annotates",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "annotation:participant",
+          "annotation:sample",
+          "annotation:portion",
+          "annotation:analyte",
+          "annotation:aliquot",
+          "annotation:file"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "shipped_to",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates that the source entity was physically shipped to the destination entity.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "aliquot:center",
+          "portion:center"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  },
+  {
+    "name": "submitted_by",
+    "namespace": "edu.uchicago.cdis",
+    "type": "record",
+    "doc": "Indicates the submitting entity of a file/data.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "node_types",
+        "type": [
+          "file:center"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dest_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
+  }
+]

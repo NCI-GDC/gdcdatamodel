@@ -1,0 +1,147 @@
+[
+  {
+    "name": "aliquot_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "aliquot"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating aliquot"
+  },
+  {
+    "name": "analyte_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "analyte"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "portion_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "portion"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "sample_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "sample"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "participant_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "participant"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "project_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "project"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "program_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "program"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "center_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "center"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "platform_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "platform"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "data_type_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "data_type"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "data_subtype_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "data_subtype"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "experimental_strategy_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "experimental_strategy"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "data_format_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "data_format"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "file_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "file"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "archive_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "archive"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "annotation_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "annotation"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "clinical_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "clinical"
+    ],
+    "type": "enum"
+  },
+  {
+    "name": "slide_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "slide"
+    ],
+    "type": "enum"
+  }
+]
