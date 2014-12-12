@@ -102,7 +102,7 @@ class xml2psqlgraph(object):
     def add_edges(self, src_id, dst_ids, dst_label, edge_label):
         for dst_id in dst_ids:
             self.psqlgraphDriver.node_merge(
-                node_id=src_id, label=dst_label)
+                node_id=dst_id, label=dst_label)
             self.psqlgraphDriver.edge_merge(
                 src_id=src_id, dst_id=dst_id, label=edge_label)
 
