@@ -67,7 +67,8 @@ class Downloader(object):
 
     def __init__(self, neo4j_host, neo4j_port, signpost_host,
                  signpost_port, s3_auth_path, s3_url, s3_bucket,
-                 download_path, access_group, cghub_key, extra_cypher=''):
+                 download_path, access_group, cghub_key,
+                 extra_cypher=''):
 
         self.state = 'IDLE'
         self.work = None
@@ -132,7 +133,7 @@ class Downloader(object):
         r = requests.get(self.signpost_url)
         if r.status_code != 500:
             logging.error('Status: {}'.format(r.status_code))
-            raise Exception('Signpost unreachable at {}'.format(
+            logging.error('Signpost unreachable at {}'.format(
                 self.signpost_url))
 
     def check_neo4j(self):
