@@ -230,12 +230,6 @@
   },
   {
     "type": "record",
-    "name": "cqcf_properties",
-    "namespace": "edu.uchicago.cdis",
-    "fields": []
-  },
-  {
-    "type": "record",
     "name": "participant_properties",
     "namespace": "edu.uchicago.cdis",
     "fields": [
@@ -251,7 +245,7 @@
       },
       {
         "name": "index_datetime",
-        "type": "string",
+        "type": "long",
         "doc": "TOREVIEW: The datetime of ??? encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_index/month_of_index/year_of_index."
       }
     ]
@@ -260,13 +254,25 @@
     "type": "record",
     "name": "project_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "full_name",
+        "type": "string",
+        "doc": "TOREVIEW: display name for the project"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "program_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "full_name",
+        "type": "string",
+        "doc": "TOREVIEW: display name for the project"
+      }
+    ]
   },
   {
     "type": "record",
@@ -329,7 +335,28 @@
     "type": "record",
     "name": "file_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "file_name",
+        "type": "string",
+        "doc": "TOREVIEW: the file (object) name"
+      },
+      {
+        "name": "md5sum",
+        "type": "string",
+        "doc": "The MD5 hash of this file"
+      },
+      {
+        "name": "state",
+        "type": "file_state_enum",
+        "doc": "TOREVIEW: the file (object) name"
+      },
+      {
+        "name": "state_comment",
+        "type": ["null", "string"],
+        "doc": "TOREVIEW: optional comment about why the file is in the current state, mainly for invalid state."
+      }
+    ]
   },
   {
     "type": "record",
@@ -480,7 +507,6 @@
         "type": "string",
         "doc": "TODO: define, from BCR"
       }
-
     ]
   },
   {
