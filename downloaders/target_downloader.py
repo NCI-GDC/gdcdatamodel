@@ -150,7 +150,7 @@ class TCGADownloader(object):
             time.sleep(2)
 
     def verify_claim(self, file_id):
-        time.sleep(random.random()*3 + 1)
+        time.sleep(random.random()*8 + 1)
         result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
             'WHERE n.importer="{id}"',
@@ -165,9 +165,9 @@ class TCGADownloader(object):
         result = self.submit([
             'MATCH (n:file)',
             'WHERE n.import_state="NOT_STARTED"'
-            'AND n.access_group = ["phs000178"]',
+            'AND n.access_group[0] =~ "phs0004(64|65|66|67|68|69|71)"',
             'AND right(n.file_name, 4) <> ".bai"',
-            'AND n.file_size/1000000000 < 150', # GB
+#            'AND n.file_size/1000000000 < 150', # GB
             'WITH n LIMIT 1',
             'RETURN n',
             ])
@@ -224,7 +224,6 @@ class TCGADownloader(object):
             except:
                 logger.error("Unable to delete scratch.  Will likely run out"
                              " of space in the future")
-
         if not self.bai:
             return
 
@@ -232,7 +231,6 @@ class TCGADownloader(object):
             'MATCH (n:file {{id:"{file_id}"}})',
             'SET n.import_state="COMPLETE"',
         ], file_id=self.bai['id'])
-
         self.set_state('IDLE')
 
     def download(self):
@@ -319,8 +317,9 @@ class TCGADownloader(object):
     def post_did(self, data):
         acls = data.get('access_group', [])
         protection = "protected" if len(acls) else "public"
-        base_url = "s3://gyarados.opensciencedatacloud.org/tcga_cghub_{protection}/{aid}/{name}"
-        url = base_url.format(protection=protection, aid=data['analysis_id'],
+        base_url = "s3://{url}/target_cghub_{protection}/{aid}/{name}"
+        url = base_url.format(url=self.s3_url, protection=protection,
+                              aid=data['analysis_id'],
                               name=data['file_name'])
         data = {"acls": acls, "did": data['id'], "urls": [url]}
         r = requests.put(self.signpost, data=json.dumps(data),
@@ -363,7 +362,7 @@ class TCGADownloader(object):
         try:
             block_size = 1073741824  # bytes (1 GiB) must be > 5 MB
             logger.info("Getting bucket")
-            bucket = conn.get_bucket('tcga_cghub_protected')
+            bucket = conn.get_bucket('target_cghub_protected')
 
             logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
@@ -456,7 +455,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     downloader = TCGADownloader(
         cghub_key=home+'authorization/jmiller_cghub_key',
-        download_path=home+'scratch/',
+        download_path='/mnt/rbd/scratch/',
         s3_auth_path=home+'authorization/gdc.yaml',
         signpost='localhost',
         sp_port='8080',
