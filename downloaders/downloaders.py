@@ -18,31 +18,39 @@ from os.path import isfile, join
 logger = logging.getLogger(name="{name}".format(name=__file__))
 
 
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    return None
+
+
 def no_proxy(func):
     def wrapped(*args, **kwargs):
         http_proxy = os.environ.get('http_proxy', None)
         https_proxy = os.environ.get('https_proxy', None)
-
         logger.info("no_proxy: " + str(func))
-
+        logger.debug("Unsetting proxies")
         if http_proxy:
-            logger.debug("Unsetting http_proxy")
             del os.environ['http_proxy']
-
         if https_proxy:
-            logger.debug("Unsetting https_proxy")
             del os.environ['https_proxy']
-
         ret = func(*args, **kwargs)
-
+        logger.debug("Resetting proxies: ")
         if http_proxy:
-            logger.debug("Resetting http_proxy: " + http_proxy)
             os.environ['http_proxy'] = http_proxy
-
         if https_proxy:
-            logger.debug("Resetting https_proxy: " + https_proxy)
             os.environ['https_proxy'] = https_proxy
-
         return ret
     return wrapped
 
@@ -80,12 +88,12 @@ class Downloader(object):
 
     def load_neo4j_settings(self, neo4j_host, neo4j_port):
         logger.info('Loading neo4j settings')
-        self.url = 'http://{host}:{port}/db/data/cypher'.format(
+        self.neo4j_url = 'http://{host}:{port}/db/data/cypher'.format(
             host=neo4j_host, port=neo4j_port)
 
     def load_signpost_settings(self, signpost_host, signpost_port):
         logger.info('Loading signpost settings')
-        self.signpost = 'http://{host}:{port}/v0/'.format(
+        self.signpost_url = 'http://{host}:{port}/v0/'.format(
             host=signpost_host, port=signpost_port)
 
     def load_name(self):
@@ -106,7 +114,46 @@ class Downloader(object):
             self.s3_access_key = s3_auth['access_key']
             self.s3_secret_key = s3_auth['secret_key']
 
+    def check_gtdownload(self):
+        logger.info('Checking that genetorrent is installed')
+        if not which('gtdownload'):
+            raise Exception(
+                'Please make sure that gtdownload is installed/in your PATH.')
+
+    def check_download_path(self):
+        logger.info('Checking that download_path exists')
+        if not os.path.isdir(self.download_path):
+            logging.error('Please make sure that your download path exists '
+                          'and is a directory')
+            raise Exception('{} does not exist'.format(self.download_path))
+
+    def check_signpost(self):
+        logger.info('Checking that signpost is reachable')
+        r = requests.get(self.signpost_url)
+        if r.status_code != 500:
+            logging.error('Status: {}'.format(r.status_code))
+            raise Exception('Signpost unreachable at {}'.format(
+                self.signpost_url))
+
+    def check_neo4j(self):
+        logger.info('Checking that neo4j is reachable')
+        r = requests.get(self.neo4j_url)
+        if r.status_code != 405:
+            logging.error('Status: {}'.format(r.status_code))
+            raise Exception('neo4j unreachable at {}'.format(
+                self.neo4j_url))
+
+    def check_s3(self):
+        logger.info('Checking that s3 is reachable')
+        r = requests.get('http://{}'.format(self.s3_url))
+        if r.status_code != 200:
+            logging.error('Status: {}'.format(r.status_code))
+            raise Exception('s3 unreachable at {}'.format(
+                self.s3_url))
+
     def set_state(self, state):
+        """Used to transition from one state to another"""
+
         self.state = state
         logger.info("Entering state: {0}".format(state))
 
@@ -118,9 +165,17 @@ class Downloader(object):
                 ], file_id=self.work['id'], state=state)
             except:
                 logger.error("Unable to update importer_state in datamodel")
-        logger.info("Entered state: {0}".format(state))
+        logger.info("Entered state: {}".format(state))
+
+    def sanity_checks(self):
+        self.check_gtdownload()
+        self.check_download_path()
+        self.check_signpost()
+        self.check_neo4j()
+        self.check_s3()
 
     def start(self):
+        self.sanity_checks()
         while True:
             if not self.do_carefully(self.get_work):
                 continue
@@ -137,6 +192,8 @@ class Downloader(object):
             self.check_error()
 
     def do_carefully(self, func):
+        """wrapper to handle esceptions and catch interrupts"""
+
         try:
             func()
         except KeyboardInterrupt:
@@ -144,6 +201,8 @@ class Downloader(object):
             raise
         except NoMoreWork:
             self.check_error()
+            time.sleep(900)  # wait 20 minutes
+            return False
         except Exception, msg:
             traceback.print_exc()
             logging.error('Downloader errored while executing {f}'.format(
@@ -153,19 +212,9 @@ class Downloader(object):
             return False
         return True
 
-    def verify_claim(self, file_id):
-        time.sleep(random.random()*3 + 1)
-        result = self.submit([
-            'MATCH (n:file {{id:"{file_id}"}})',
-            'WHERE n.importer="{id}"',
-            'RETURN n',
-        ], file_id=file_id, id=self.id)
-
-        if len(result['data']) == 0:
-            return False
-        return True
-
     def claim_work(self):
+        """query the database for a file to download"""
+
         result = self.submit([
             'MATCH (n:file)',
             'WHERE n.import_state="NOT_STARTED"',
@@ -204,41 +253,23 @@ class Downloader(object):
         logger.info("Claimed: {0}".format(self.work['id']))
         return True
 
-    def delete_scratch(self, path):
-        directory = os.path.dirname(path)
-        cmd = 'sudo rm -rf {directory}'.format(directory=directory)
-        child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output, err = child.communicate()
-        if child.returncode:
-            logger.error(err)
+    def verify_claim(self, file_id):
+        """verify that we're the only ones who claimed the data"""
 
-    def finish_work(self):
-        self.set_state('FINISHING')
-        self.submit([
+        time.sleep(random.random()*3 + 1)
+        result = self.submit([
             'MATCH (n:file {{id:"{file_id}"}})',
-            'SET n.import_state="COMPLETE", ',
-            'n.importer_state="FINISHED",',
-            'n.import_completed = timestamp()',
-        ], file_id=self.work['id'])
+            'WHERE n.importer="{id}"',
+            'RETURN n',
+        ], file_id=file_id, id=self.id)
 
-        for f in self.files:
-            try:
-                self.delete_scratch(f)
-            except:
-                logger.error("Unable to delete scratch.  Will likely run out"
-                             " of space in the future")
-
-        if not self.bai:
-            return
-
-        self.submit([
-            'MATCH (n:file {{id:"{file_id}"}})',
-            'SET n.import_state="COMPLETE"',
-        ], file_id=self.bai['id'])
-
-        self.set_state('IDLE')
+        if len(result['data']) == 0:
+            return False
+        return True
 
     def download(self):
+        """download with genetorrent"""
+
         self.set_state('DOWNLOADING')
         if self.work is None:
             raise Exception('download() was called with no work')
@@ -331,7 +362,7 @@ class Downloader(object):
             name=data['file_name']
         )
         data = {"acls": acls, "did": data['id'], "urls": [url]}
-        r = requests.put(self.signpost, data=json.dumps(data),
+        r = requests.put(self.signpost_url, data=json.dumps(data),
                          headers={'Content-Type': 'application/json'})
         logger.info("Post: " + r.text)
 
@@ -411,13 +442,45 @@ class Downloader(object):
         while not self.claim_work():
             logger.info("Failed to get work, trying again")
 
+    def delete_scratch(self, path):
+        directory = os.path.dirname(path)
+        cmd = 'sudo rm -rf {directory}'.format(directory=directory)
+        child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        output, err = child.communicate()
+        if child.returncode:
+            logger.error(err)
+
+    def finish_work(self):
+        self.set_state('FINISHING')
+        self.submit([
+            'MATCH (n:file {{id:"{file_id}"}})',
+            'SET n.import_state="COMPLETE", ',
+            'n.importer_state="FINISHED",',
+            'n.import_completed = timestamp()',
+        ], file_id=self.work['id'])
+
+        for f in self.files:
+            try:
+                self.delete_scratch(f)
+            except:
+                logger.error("Unable to delete scratch.  Will likely run out"
+                             " of space in the future")
+
+        if self.bai:
+            self.submit([
+                'MATCH (n:file {{id:"{file_id}"}})',
+                'SET n.import_state="COMPLETE"',
+            ], file_id=self.bai['id'])
+
+        self.set_state('IDLE')
+
     @no_proxy
     def submit(self, cypher, **params):
         if isinstance(cypher, list):
             cypher = ' '.join(cypher).format(**params)
         logging.info(cypher)
         data = {"query": cypher}
-        r = requests.post(self.url, data=json.dumps(data))
+        r = requests.post(self.neo4j_url, data=json.dumps(data))
         if r.status_code != 200:
             traceback.print_exc()
             logger.error("FAILURE: cypher query")
@@ -448,6 +511,7 @@ class Downloader(object):
         if self.state in should_be_exiting:
             logger.info("state okay.")
             return
+
         logger.error("EXITING WITH ERRORED STATE.")
         self.post_error(msg)
 
