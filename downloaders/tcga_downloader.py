@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
         # s3 settings
         s3_auth_path=os.path.expanduser('~/authorization/gdc.yaml'),
-        s3_url='192.170.230.172',
+        s3_url='192.170.230.173',
         s3_bucket='tgca_cghub_protected',
     )
     downloader.start()

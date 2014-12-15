@@ -121,9 +121,11 @@ class Downloader(object):
 
     def check_gtdownload(self):
         logger.info('Checking that genetorrent is installed')
-        if not which('gtdownload'):
+        gtdownload = which('gtdownload')
+        if not gtdownload:
             raise Exception(
                 'Please make sure that gtdownload is installed/in your PATH.')
+        logger.info('Using download client {}'.format(gtdownload))
 
     def check_download_path(self):
         logger.info('Checking that download_path exists')
@@ -131,6 +133,7 @@ class Downloader(object):
             logging.error('Please make sure that your download path exists '
                           'and is a directory')
             raise Exception('{} does not exist'.format(self.download_path))
+        logger.info('Downloading to {}'.format(self.download_path))
 
     def check_signpost(self):
         try:
@@ -141,6 +144,8 @@ class Downloader(object):
         except Exception:
             logging.error('Signpost unreachable at {}'.format(
                 self.signpost_url))
+        else:
+            logger.info('Found signpost at {}'.format(self.signpost_url))
 
     def check_neo4j(self):
         logger.info('Checking that neo4j is reachable')
@@ -149,6 +154,7 @@ class Downloader(object):
             logging.error('Status: {}'.format(r.status_code))
             raise Exception('neo4j unreachable at {}'.format(
                 self.neo4j_url))
+        logger.info('Found neo4j at {}'.format(self.neo4j_url))
 
     def check_s3(self):
         logger.info('Checking that s3 is reachable')
@@ -157,6 +163,7 @@ class Downloader(object):
             logging.error('Status: {}'.format(r.status_code))
             raise Exception('s3 unreachable at {}'.format(
                 self.s3_url))
+        logger.info('Found s3 gateway at {}'.format(self.s3_url))
 
     def set_state(self, state):
         """Used to transition from one state to another"""
@@ -290,6 +297,7 @@ class Downloader(object):
             'sudo gtdownload -k 15',
             '-c {cghub_key}',
             '-l {aid}.log',
+            '--max-children 4',
             '-p {download_path}',
             '{aid}',
         ]).format(
