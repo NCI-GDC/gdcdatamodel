@@ -21,6 +21,7 @@ digraph {
 		clinical [label=clinical]
 		slide [label=slide]
 			aliquot -> analyte [label=derived_from]
+			aliquot -> sample [label=derived_from]
 			analyte -> portion [label=derived_from]
 			portion -> sample [label=derived_from]
 			sample -> participant [label=derived_from]

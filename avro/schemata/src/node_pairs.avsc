@@ -31,6 +31,21 @@
   },
   {
     "type": "record",
+    "name": "aliquot:sample",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_type",
+        "type": "aliquot_enum"
+      },
+      {
+        "name": "dest_node_type",
+        "type": "sample_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "analyte:portion",
     "namespace": "edu.uchicago.cdis",
     "fields": [
