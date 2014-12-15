@@ -165,6 +165,7 @@ class Downloader(object):
                 ], file_id=self.work['id'], state=state)
             except:
                 logger.error("Unable to update importer_state in datamodel")
+                logger.error("Attempting to proceed regardless")
         logger.info("Entered state: {}".format(state))
 
     def sanity_checks(self):
@@ -185,10 +186,8 @@ class Downloader(object):
                 continue
             if not self.do_carefully(self.upload):
                 continue
-            if not self.do_carefully(self.post):
-                continue
-            if not self.do_carefully(self.finish_work):
-                continue
+            self.do_carefully(self.post)
+            self.do_carefully(self.finish_work)
             self.check_error()
 
     def do_carefully(self, func):
