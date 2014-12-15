@@ -15,7 +15,11 @@ from os import listdir
 from os.path import isfile, join
 
 
-logger = logging.getLogger(name="{name}".format(name=__file__))
+logger = logging.getLogger(name="downloader")
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s][%(name)10s][%(levelname)7s] %(message)s'
+)
 
 
 def which(program):
@@ -60,7 +64,6 @@ class NoMoreWork(Exception):
 
 
 class Downloader(object):
-
     """
     takes in an xml as a string and compiles a list of nodes and edges
     """
@@ -68,7 +71,7 @@ class Downloader(object):
     def __init__(self, neo4j_host, neo4j_port, signpost_host,
                  signpost_port, s3_auth_path, s3_url, s3_bucket,
                  download_path, access_group, cghub_key,
-                 extra_cypher=''):
+                 extra_cypher='', no_work_delay=900):
 
         self.state = 'IDLE'
         self.work = None
@@ -81,6 +84,7 @@ class Downloader(object):
         self.cghub_key = cghub_key
         self.access_group = access_group
         self.extra_cypher = extra_cypher
+        self.no_work_delay = no_work_delay
 
         self.load_name()
         self.load_s3_settings(s3_auth_path, s3_url, s3_bucket)
@@ -129,10 +133,12 @@ class Downloader(object):
             raise Exception('{} does not exist'.format(self.download_path))
 
     def check_signpost(self):
-        logger.info('Checking that signpost is reachable')
-        r = requests.get(self.signpost_url)
-        if r.status_code != 500:
-            logging.error('Status: {}'.format(r.status_code))
+        try:
+            r = requests.get(self.signpost_url)
+            if r.status_code != 500:
+                logging.error('Signpost unreachable at {}'.format(
+                    self.signpost_url))
+        except Exception, msg:
             logging.error('Signpost unreachable at {}'.format(
                 self.signpost_url))
 
@@ -151,6 +157,7 @@ class Downloader(object):
             logging.error('Status: {}'.format(r.status_code))
             raise Exception('s3 unreachable at {}'.format(
                 self.s3_url))
+
 
     def set_state(self, state):
         """Used to transition from one state to another"""
@@ -201,7 +208,9 @@ class Downloader(object):
             raise
         except NoMoreWork:
             self.check_error()
-            time.sleep(900)  # wait 20 minutes
+            logging.warn('No work found. Waiting {}s'.format(
+                self.no_work_delay))
+            time.sleep(self.no_work_delay)  # wait 20 minutes
             return False
         except Exception, msg:
             traceback.print_exc()

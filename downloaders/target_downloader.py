@@ -1,8 +1,6 @@
-import logging
 import os
 import argparse
 from downloaders import Downloader
-logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
 
