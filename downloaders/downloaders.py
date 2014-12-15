@@ -138,7 +138,7 @@ class Downloader(object):
             if r.status_code != 500:
                 logging.error('Signpost unreachable at {}'.format(
                     self.signpost_url))
-        except Exception, msg:
+        except Exception:
             logging.error('Signpost unreachable at {}'.format(
                 self.signpost_url))
 
@@ -157,7 +157,6 @@ class Downloader(object):
             logging.error('Status: {}'.format(r.status_code))
             raise Exception('s3 unreachable at {}'.format(
                 self.s3_url))
-
 
     def set_state(self, state):
         """Used to transition from one state to another"""
@@ -533,4 +532,4 @@ class Downloader(object):
         self.work = None
 
 if __name__ == '__main__':
-    pass
+    print('module downloaders has no __main__ functionality')
