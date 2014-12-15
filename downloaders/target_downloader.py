@@ -58,13 +58,7 @@ class TCGADownloader(object):
     takes in an xml as a string and compiles a list of nodes and edges
     """
 
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        assert 'cghub_key' in kwargs, \
-            'Please specify path to a cghub downloader key: cghub_key'
-        assert 'download_path' in kwargs, \
-            'Please specify directory to place the file: download_path'
-
+    def __init__(self, cghub_key, ):
         self.state = 'IDLE'
         self.work = None
         self.bai = None
@@ -261,7 +255,7 @@ class TCGADownloader(object):
         if child.returncode:
             raise Exception('Downloader returned with non-zero exit code')
 
-        directory += self.work.get('analysis_id')
+        directory = os.path.join(directory, self.work.get('analysis_id'))
         files = [f for f in listdir(directory) if isfile(join(directory, f))]
         self.files = [
             os.path.join(directory, f) for f in files if f.endswith('.bam') or f.endswith('.bai')
@@ -451,12 +445,13 @@ class TCGADownloader(object):
         self.work = None
 
 if __name__ == '__main__':
-    home=os.path.expanduser('~')+'/'
+
+    home = os.path.expanduser('~')
     logging.basicConfig(level=logging.INFO)
     downloader = TCGADownloader(
-        cghub_key=home+'authorization/jmiller_cghub_key',
+        cghub_key=os.path.join(home, 'authorization/jmiller_cghub_key'),
         download_path='/mnt/rbd/scratch/',
-        s3_auth_path=home+'authorization/gdc.yaml',
+        s3_auth_path=os.path.join(home, 'authorization/gdc.yaml'),
         signpost='localhost',
         sp_port='8080',
         neo4j='localhost',
