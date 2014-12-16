@@ -110,5 +110,28 @@
     ],
     "type": "enum",
     "doc": "Allowed analyte type IDs"
+  },
+  {
+    "name": "file_state_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "submitted",
+      "uploading",
+      "generating",
+      "validating",
+      "invalid",
+      "suppressed",
+      "redacted",
+      "live"
+    ],
+    "type": "enum",
+    "doc": "TOREVIEW: Allowed states for files, inspired but slightly different from CGHub vocab"
+  },
+  {
+    "name": "fixed16",
+    "namespace": "edu.uchicago.cdis",
+    "type": "fixed",
+    "size": 16,
+    "doc": "16 byte fixed field "
   }
 ]

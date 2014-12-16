@@ -45,6 +45,28 @@
           {
             "type": "record", 
             "namespace": "edu.uchicago.cdis", 
+            "name": "aliquot:sample", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.aliquot_enum", 
+                "name": "src_node_type"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "sample"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "sample_enum"
+                }, 
+                "name": "dest_node_type"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
             "name": "analyte:portion", 
             "fields": [
               {
@@ -74,14 +96,7 @@
                 "name": "src_node_type"
               }, 
               {
-                "type": {
-                  "symbols": [
-                    "sample"
-                  ], 
-                  "namespace": "edu.uchicago.cdis", 
-                  "type": "enum", 
-                  "name": "sample_enum"
-                }, 
+                "type": "edu.uchicago.cdis.sample_enum", 
                 "name": "dest_node_type"
               }
             ]

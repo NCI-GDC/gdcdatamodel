@@ -488,7 +488,7 @@
               }, 
               {
                 "doc": "TOREVIEW: The datetime of ??? encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_index/month_of_index/year_of_index.", 
-                "type": "string", 
+                "type": "long", 
                 "name": "index_datetime"
               }
             ]
@@ -527,7 +527,13 @@
             "type": "record", 
             "namespace": "edu.uchicago.cdis", 
             "name": "project_properties", 
-            "fields": []
+            "fields": [
+              {
+                "doc": "TOREVIEW: display name for the project", 
+                "type": "string", 
+                "name": "full_name"
+              }
+            ]
           }
         ], 
         "name": "properties"
@@ -563,7 +569,13 @@
             "type": "record", 
             "namespace": "edu.uchicago.cdis", 
             "name": "program_properties", 
-            "fields": []
+            "fields": [
+              {
+                "doc": "TOREVIEW: display name for the project", 
+                "type": "string", 
+                "name": "full_name"
+              }
+            ]
           }
         ], 
         "name": "properties"
@@ -836,7 +848,46 @@
             "type": "record", 
             "namespace": "edu.uchicago.cdis", 
             "name": "file_properties", 
-            "fields": []
+            "fields": [
+              {
+                "doc": "TOREVIEW: the file (object) name", 
+                "type": "string", 
+                "name": "file_name"
+              }, 
+              {
+                "doc": "The MD5 hash of this file", 
+                "type": "string", 
+                "name": "md5sum"
+              }, 
+              {
+                "doc": "TOREVIEW: the file (object) name", 
+                "type": {
+                  "symbols": [
+                    "submitted", 
+                    "uploading", 
+                    "generating", 
+                    "validating", 
+                    "invalid", 
+                    "suppressed", 
+                    "redacted", 
+                    "live"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "file_state_enum", 
+                  "doc": "TOREVIEW: Allowed states for files, inspired but slightly different from CGHub vocab"
+                }, 
+                "name": "state"
+              }, 
+              {
+                "doc": "TOREVIEW: optional comment about why the file is in the current state, mainly for invalid state.", 
+                "type": [
+                  "null", 
+                  "string"
+                ], 
+                "name": "state_comment"
+              }
+            ]
           }
         ], 
         "name": "properties"
