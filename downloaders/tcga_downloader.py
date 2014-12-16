@@ -21,7 +21,7 @@ if __name__ == '__main__':
         signpost_port='8080',
 
         # neo4j settings
-        neo4j_host='localhost',
+        neo4j_host='10.64.0.141',
         neo4j_port='7474',
         access_group='phs000178',
 
@@ -29,5 +29,6 @@ if __name__ == '__main__':
         s3_auth_path=os.path.expanduser('~/authorization/gdc.yaml'),
         s3_url='192.170.230.173',
         s3_bucket='tgca_cghub_protected',
+
     )
     downloader.start()

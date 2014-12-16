@@ -200,7 +200,6 @@ class Downloader(object):
                 continue
             if not self.do_carefully(self.upload):
                 continue
-            self.do_carefully(self.post)
             self.do_carefully(self.finish_work)
             self.check_error()
 
@@ -223,7 +222,7 @@ class Downloader(object):
             logging.error('Downloader errored while executing {f}'.format(
                 f=func))
             self.check_error(msg)
-            time.sleep(20)
+            time.sleep(3)
             return False
         return True
 
@@ -258,7 +257,8 @@ class Downloader(object):
         try:
             self.work = result['data'][0][0]['data']
         except:
-            raise NoMoreWork('No More Work')
+            # failed to get work
+            return False
 
         for i in range(self.check_count):
             if not self.verify_claim(file_id):
@@ -313,7 +313,7 @@ class Downloader(object):
         if child.returncode:
             raise Exception('Downloader returned with non-zero exit code')
 
-        directory += self.work.get('analysis_id')
+        directory = os.path.join(directory, self.work.get('analysis_id'))
         files = [f for f in listdir(directory) if isfile(join(directory, f))]
         self.files = [
             os.path.join(directory, f) for f in files
@@ -384,7 +384,7 @@ class Downloader(object):
 
     def post(self):
         self.set_state('POSTING')
-
+        return
         for path in self.files:
             if path.endswith('.bai'):
                 self.post_did(self.bai)

@@ -21,7 +21,7 @@ if __name__ == '__main__':
         signpost_port='8080',
 
         # neo4j settings
-        neo4j_host='localhost',
+        neo4j_host='10.64.0.141',
         neo4j_port='7474',
         access_group='phs0004(64|65|66|67|68|69|71)',
 
