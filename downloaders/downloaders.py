@@ -200,7 +200,6 @@ class Downloader(object):
                 continue
             if not self.do_carefully(self.upload):
                 continue
-            self.do_carefully(self.post)
             self.do_carefully(self.finish_work)
             self.check_error()
 
