@@ -22,7 +22,7 @@
             "doc": "Allowed string constants for indicating aliquot"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "doc": "Key-values representing aliquot properties", 
@@ -119,7 +119,7 @@
             "name": "analyte_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -224,7 +224,7 @@
             "name": "portion_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -286,7 +286,7 @@
             "name": "sample_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -467,7 +467,7 @@
             "name": "participant_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -519,7 +519,7 @@
             "name": "project_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -561,7 +561,7 @@
             "name": "program_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -603,7 +603,7 @@
             "name": "center_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -660,7 +660,7 @@
             "name": "platform_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -696,7 +696,7 @@
             "name": "data_type_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -732,7 +732,7 @@
             "name": "data_subtype_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -768,7 +768,7 @@
             "name": "experimental_strategy_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -804,7 +804,7 @@
             "name": "data_format_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -840,7 +840,7 @@
             "name": "file_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -915,7 +915,7 @@
             "name": "archive_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -957,7 +957,7 @@
             "name": "annotation_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -1034,7 +1034,7 @@
             "name": "clinical_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [
@@ -1156,7 +1156,7 @@
             "name": "slide_enum"
           }
         ], 
-        "name": "type"
+        "name": "label"
       }, 
       {
         "type": [

@@ -11,7 +11,7 @@
         "doc": "Aliquot ID"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "aliquot_enum"
         ],
@@ -37,7 +37,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "analyte_enum"
         ]
@@ -61,7 +61,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "portion_enum"
         ]
@@ -85,7 +85,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "sample_enum"
         ]
@@ -109,7 +109,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "participant_enum"
         ]
@@ -133,7 +133,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "project_enum"
         ]
@@ -157,7 +157,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "program_enum"
         ]
@@ -181,7 +181,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "center_enum"
         ]
@@ -205,7 +205,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "platform_enum"
         ]
@@ -229,7 +229,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "data_type_enum"
         ]
@@ -253,7 +253,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "data_subtype_enum"
         ]
@@ -277,7 +277,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "experimental_strategy_enum"
         ]
@@ -301,7 +301,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "data_format_enum"
         ]
@@ -325,7 +325,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "file_enum"
         ]
@@ -349,7 +349,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "archive_enum"
         ]
@@ -373,7 +373,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "annotation_enum"
         ]
@@ -397,7 +397,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "clinical_enum"
         ]
@@ -421,7 +421,7 @@
         "type": "string"
       },
       {
-        "name": "type",
+        "name": "label",
         "type": [
           "slide_enum"
         ]
