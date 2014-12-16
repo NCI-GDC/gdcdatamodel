@@ -384,7 +384,7 @@ class Downloader(object):
 
     def post(self):
         self.set_state('POSTING')
-
+        return
         for path in self.files:
             if path.endswith('.bai'):
                 self.post_did(self.bai)
