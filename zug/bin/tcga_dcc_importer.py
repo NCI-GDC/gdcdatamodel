@@ -21,8 +21,12 @@ def initialize():
         regex=".*(bio).*(Level_1).*\\.xml"
     )
     inserter = xml2psqlgraph.xml2psqlgraph(
-        translate_path=mapping, data_type=datatype, host=host,
-        user=user, password=password, database=database
+        translate_path=mapping,
+        data_type=datatype,
+        host=host,
+        user=user,
+        password=password,
+        database=database
     )
     return parser, extractor, inserter
 
