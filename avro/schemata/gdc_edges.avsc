@@ -10,6 +10,21 @@
         "name": "id"
       }, 
       {
+        "doc": "String constant representing the derived_from label.", 
+        "type": [
+          {
+            "symbols": [
+              "derived_from"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "derived_from_enum", 
+            "doc": "Allowed string constants for indicating derived_from"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
         "doc": "The source/destination node types allowed.", 
         "type": [
           {
@@ -179,6 +194,21 @@
         "doc": "Primary unique edge ID", 
         "type": "string", 
         "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the member_of label.", 
+        "type": [
+          {
+            "symbols": [
+              "member_of"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "member_of_enum", 
+            "doc": "Allowed string constants for indicating member_of"
+          }
+        ], 
+        "name": "label"
       }, 
       {
         "doc": "The source/destination node types allowed.", 
@@ -381,6 +411,21 @@
         "name": "id"
       }, 
       {
+        "doc": "String constant representing the processed_at label.", 
+        "type": [
+          {
+            "symbols": [
+              "processed_at"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "processed_at_enum", 
+            "doc": "Allowed string constants for indicating processed_at"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
         "doc": "The source/destination node types allowed.", 
         "type": [
           {
@@ -427,6 +472,21 @@
         "name": "id"
       }, 
       {
+        "doc": "String constant representing the generated_from label.", 
+        "type": [
+          {
+            "symbols": [
+              "generated_from"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "generated_from_enum", 
+            "doc": "Allowed string constants for indicating generated_from"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
         "doc": "The source/destination node types allowed.", 
         "type": [
           {
@@ -471,6 +531,21 @@
         "doc": "Primary unique edge ID", 
         "type": "string", 
         "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the data_from label.", 
+        "type": [
+          {
+            "symbols": [
+              "data_from"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "data_from_enum", 
+            "doc": "Allowed string constants for indicating data_from"
+          }
+        ], 
+        "name": "label"
       }, 
       {
         "doc": "The source/destination node types allowed.", 
@@ -602,6 +677,21 @@
         "name": "id"
       }, 
       {
+        "doc": "String constant representing the describes label.", 
+        "type": [
+          {
+            "symbols": [
+              "describes"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "describes_enum", 
+            "doc": "Allowed string constants for indicating describes"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
         "doc": "The source/destination node types allowed.", 
         "type": [
           {
@@ -646,6 +736,21 @@
         "doc": "Primary unique edge ID", 
         "type": "string", 
         "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the annotates label.", 
+        "type": [
+          {
+            "symbols": [
+              "annotates"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "annotates_enum", 
+            "doc": "Allowed string constants for indicating annotates"
+          }
+        ], 
+        "name": "label"
       }, 
       {
         "doc": "The source/destination node types allowed.", 
@@ -769,6 +874,21 @@
         "name": "id"
       }, 
       {
+        "doc": "String constant representing the shipped_to label.", 
+        "type": [
+          {
+            "symbols": [
+              "shipped_to"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "shipped_to_enum", 
+            "doc": "Allowed string constants for indicating shipped_to"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
         "doc": "The source/destination node types allowed.", 
         "type": [
           {
@@ -821,6 +941,21 @@
         "doc": "Primary unique edge ID", 
         "type": "string", 
         "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the submitted_by label.", 
+        "type": [
+          {
+            "symbols": [
+              "submitted_by"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "submitted_by_enum", 
+            "doc": "Allowed string constants for indicating submitted_by"
+          }
+        ], 
+        "name": "label"
       }, 
       {
         "doc": "The source/destination node types allowed.", 

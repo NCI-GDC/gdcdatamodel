@@ -30,13 +30,13 @@ def main():
 	For now all hardcoded for initial prototype, should be a config
 	"""
 
-	node_schema_list = ["schemata/src/type_enums.avsc", "schemata/src/node_labels.avsc", "schemata/src/node_properties.avsc", "schemata/src/nodes.avsc"]
+	node_schema_list = ["schemata/src/field_types.avsc", "schemata/src/node_labels.avsc", "schemata/src/node_properties.avsc", "schemata/src/nodes.avsc"]
 	node_schema = load_file_list(node_schema_list)
 	output_file = open("schemata/gdc_nodes.avsc", "w")
 	output_file.write(json.dumps(node_schema.to_json(), indent=2))
 	output_file.close()
 
-	edge_schema_list = ["schemata/src/node_labels.avsc", "schemata/src/node_pairs.avsc", "schemata/src/edges.avsc"]
+	edge_schema_list = ["schemata/src/node_labels.avsc", "schemata/src/edge_labels.avsc", "schemata/src/node_pairs.avsc", "schemata/src/edges.avsc"]
 	edge_schema = load_file_list(edge_schema_list)
 	output_file = open("schemata/gdc_edges.avsc", "w")
 	output_file.write(json.dumps(edge_schema.to_json(), indent=2))
