@@ -223,7 +223,7 @@ class Downloader(object):
             logging.error('Downloader errored while executing {f}'.format(
                 f=func))
             self.check_error(msg)
-            time.sleep(20)
+            time.sleep(3)
             return False
         return True
 
@@ -314,7 +314,7 @@ class Downloader(object):
         if child.returncode:
             raise Exception('Downloader returned with non-zero exit code')
 
-        directory += self.work.get('analysis_id')
+        directory = os.path.join(directory, self.work.get('analysis_id'))
         files = [f for f in listdir(directory) if isfile(join(directory, f))]
         self.files = [
             os.path.join(directory, f) for f in files
