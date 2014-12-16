@@ -21,10 +21,8 @@ def get_exporter():
 
 
 def clear_graph(exporter):
-    # clear neo4j
     exporter.neo4jDriver.cypher.execute(
-        'MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r'
-    )
+        'MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r')
 
 if __name__ == '__main__':
     exporter = get_exporter()

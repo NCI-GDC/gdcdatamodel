@@ -85,7 +85,7 @@ biospecimen:
         type: center
         locate: ".//bio:center_id/text()"
 
-        
+
   #Need to check if the ID is correct here, protocols don't seem to have UUIDs.
   protocol:
     locate: "//bio:protocol"
@@ -106,5 +106,3 @@ biospecimen:
       histology_of:
         type: portion
         locate: "ancestor::bio:portion/bio:bcr_portion_uuid/text()"
-      
-  

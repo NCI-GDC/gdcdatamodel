@@ -5,6 +5,10 @@ from lxml import etree
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
 
+namespace_exceptions = [
+    '{http://tcga.nci/bcr/xml/clinical/laml/2.6}tcga_bcr',
+]
+
 
 class xml2psqlgraph(object):
 
@@ -50,16 +54,22 @@ class xml2psqlgraph(object):
         try:
             xml_nodes = self.xml_root.xpath(
                 node_settings['locate'], namespaces=self.namespaces)
+        except etree.XPathEvalError:
+            if self.xml_root.getroot().tag not in namespace_exceptions:
+                raise
         except Exception, msg:
+            logging.error(etree.tostring(self.xml_root, pretty_print=True))
             logging.error('Unable to get xml_nodes: '+str(msg))
-            return
+            raise
 
         for xml_node in xml_nodes:
             try:
                 node_id = self.add_node(xml_node, node_settings, node_type)
-                self.add_edge_types(node_id, xml_node, edge_types)
+                if node_id:
+                    self.add_edge_types(node_id, xml_node, edge_types)
             except Exception, msg:
                 logging.error('Unable to add node and edges: '+str(msg))
+                raise
 
     def add_node(self, xml_node, node_settings, node_type):
 
@@ -68,11 +78,14 @@ class xml2psqlgraph(object):
             namespaces=self.namespaces
         )
 
-        assert len(node_ids) == 1, \
-            'ID count [{ntype}] != 0: {ids}'.format(
-                ids=node_ids, ntype=node_type)
-        node_id = node_ids[0]
+        if len(node_ids) != 1:
+            if node_type == 'protocol':
+                return None
+            print(etree.tostring(xml_node, pretty_print=True))
+            raise Exception('ID count {} != 0 for {}'.format(
+                node_ids, node_type))
 
+        node_id = node_ids[0]
         properties = {}
         self.load_properties(xml_node, node_settings, properties)
 

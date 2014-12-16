@@ -20,7 +20,7 @@ def initialize():
     extractor = extract_tar.ExtractTar(
         regex=".*(bio).*(Level_1).*\\.xml"
     )
-    inserter = xml2psqlgraph.xml2psqlgraph(
+    converter = xml2psqlgraph.xml2psqlgraph(
         translate_path=mapping,
         data_type=datatype,
         host=host,
@@ -28,14 +28,14 @@ def initialize():
         password=password,
         database=database
     )
-    return parser, extractor, inserter
+    return parser, extractor, converter
 
 
 def start():
-    parser, extractor, inserter = initialize()
+    parser, extractor, converter = initialize()
     for url in parser:
         for xml in extractor(url):
-            inserter.add_to_graph(xml)
+            converter.add_to_graph(xml)
 
 if __name__ == '__main__':
     start()
