@@ -1,0 +1,83 @@
+[
+  {
+    "name": "derived_from_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "derived_from"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating derived_from"
+  },
+  {
+    "name": "member_of_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "member_of"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating member_of"
+  },
+  {
+    "name": "processed_at_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "processed_at"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating processed_at"
+  },
+  {
+    "name": "generated_from_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "generated_from"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating generated_from"
+  },
+  {
+    "name": "data_from_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "data_from"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating data_from"
+  },
+  {
+    "name": "describes_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "describes"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating describes"
+  },
+  {
+    "name": "annotates_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "annotates"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating annotates"
+  },
+  {
+    "name": "shipped_to_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "shipped_to"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating shipped_to"
+  },
+  {
+    "name": "submitted_by_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "submitted_by"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating submitted_by"
+  }
+]
