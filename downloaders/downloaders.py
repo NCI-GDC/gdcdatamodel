@@ -258,7 +258,8 @@ class Downloader(object):
         try:
             self.work = result['data'][0][0]['data']
         except:
-            raise NoMoreWork('No More Work')
+            # failed to get work
+            return False
 
         for i in range(self.check_count):
             if not self.verify_claim(file_id):
