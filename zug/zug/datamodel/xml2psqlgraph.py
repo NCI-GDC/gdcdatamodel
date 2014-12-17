@@ -40,15 +40,24 @@ class xml2psqlgraph(object):
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
 
-    def xpath(self, path, root=None):
+    def xpath(self, path, root=None, single=False):
         if root is None:
             root = self.xml_root
         try:
-            return root.xpath(path, namespaces=self.namespaces)
+            result = root.xpath(path, namespaces=self.namespaces)
         except etree.XPathEvalError:
-            return []
+            result = []
         except:
             raise
+
+        if single and len(result) != 1:
+            logging.error(result)
+            raise Exception('Expected 1 result for {}, found {}'.format(
+                path, result))
+
+        if single:
+            return result[0]
+        return result
 
     def add_to_graph(self, data):
         if not data:
@@ -78,11 +87,8 @@ class xml2psqlgraph(object):
         if not path:
             # logging.warn('No id xpath for {}'.format(node_type))
             return None
-        result = self.xpath(path, root)
-        if len(result) != 1:
-            logging.error(result)
-            raise Exception('Expected 1 id, found {}'.format(len(result)))
-        return result[0]
+        node_id = self.xpath(path, root, single=True)
+        return node_id
 
     def get_node_properties(self, root, node_type, params):
         props = {}
@@ -90,10 +96,20 @@ class xml2psqlgraph(object):
             if not path:
                 # logging.warn('No property xpath for {}'.format(prop))
                 continue
-            result = self.xpath(path+'/text()', root)
+            result = self.xpath(path+'/text()', root, single=True)
             assert len(result) == 1, 'Expected 1 property, found {}'.format(
                 len(result))
-            props[prop] = result[0]
+            props[prop] = result
+        return props
+
+    def get_node_edges(self, root, node_type, params):
+        props = {}
+        for edge, path in params.edges.items():
+            if not path:
+                # logging.warn('No property xpath for {}'.format(prop))
+                continue
+            result = self.xpath(path+'/text()', root, single=True)
+            props[edge] = result
         return props
 
     # def add_node_type(self, node_type):
