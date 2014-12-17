@@ -28,7 +28,7 @@ def initialize(path):
 
 def start():
     xml, converter = initialize('sample.bio.xml')
-    converter.add_to_graph(xml)
+    converter.xml2psqlgraph(xml)
 
 if __name__ == '__main__':
     start()

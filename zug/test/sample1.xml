@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test:test xmlns:test="http://www.w3.org/TR/html4/">
+  <test:level1>
+    <test:id>level1</test:id>
+    <test:text1.1>1a</test:text1.1>
+    <test:level2>
+      <test:id>level2</test:id>
+      <test:text2.2>2a</test:text2.2>
+      <test:text2.3>2b</test:text2.3>
+      <test:level3>
+        <test:id>level3</test:id>
+        <test:text3.1>3a</test:text3.1>
+        <test:text3.2>3b</test:text3.2>
+        <test:text_none/>
+      </test:level3>
+    </test:level2>
+  </test:level1>
+</test:test>

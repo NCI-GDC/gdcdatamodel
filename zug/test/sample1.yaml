@@ -1,0 +1,32 @@
+first:
+  root: .//test:level1
+  id: ./test:id
+  edges:
+    below:
+      second: .//level2/test:id
+      third: .//level1/test:id
+  properties:
+    text1.1: ./test:text1.1
+
+second:
+  root: .//test:level2
+  id: ./test:id
+  edges:
+    above:
+      first: ancestor::test:level1/test:id
+    below:
+      third: ./test:level3/test:id
+  properties:
+    text2.2: ./test:text2.2
+    text2.3: ./test:text2.3
+
+third:
+  root: .//test:level3
+  id: ./test:id
+  edges:
+    above:
+      first: ancestor::test:level1/test:id
+      second: ancestor::test:level2/test:id
+  properties:
+    text3.1: ./test:text3.1
+    text3.2: ./test:text3.2
