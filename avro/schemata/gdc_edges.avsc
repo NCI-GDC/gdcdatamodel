@@ -161,7 +161,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -390,7 +390,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -451,7 +451,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -512,7 +512,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -656,7 +656,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -717,7 +717,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -853,7 +853,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -922,7 +922,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
@@ -976,7 +976,7 @@
             ]
           }
         ], 
-        "name": "node_types"
+        "name": "node_labels"
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
