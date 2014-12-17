@@ -40,7 +40,7 @@ class xml2psqlgraph(object):
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
 
-    def xpath(self, path, root=None, single=False):
+    def xpath(self, path, root=None, single=False, nullable=True):
         if root is None:
             root = self.xml_root
         try:
@@ -50,19 +50,26 @@ class xml2psqlgraph(object):
         except:
             raise
 
-        if single and len(result) != 1:
+        if len(result) < 1:
+            if not nullable:
+                raise Exception('Unable to finde {}'.format(path))
+
+        if single and len(result) > 1:
             logging.error(result)
             raise Exception('Expected 1 result for {}, found {}'.format(
                 path, result))
 
         if single:
-            return result[0]
+            if len(result) > 0:
+                return result[0]
+            else:
+                return None
+
         return result
 
     def add_to_graph(self, data):
         if not data:
             return None
-
         self.xml_root = etree.fromstring(data).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
         for node_type, params in self.translate.items():
@@ -73,7 +80,11 @@ class xml2psqlgraph(object):
         for root in roots:
             props = self.get_node_properties(root, node_type, params)
             node_id = self.get_node_id(root, node_type, params)
-            print node_id, props
+            edges = self.get_node_edges(root, node_type, params)
+
+            print '\n{}: {}'.format(node_type, node_id)
+            print 'props: ', props
+            print 'edges: ', edges
 
     def get_node_roots(self, node_type, params):
         if not params.root:
@@ -85,32 +96,29 @@ class xml2psqlgraph(object):
     def get_node_id(self, root, node_type, params):
         path = params.id
         if not path:
-            # logging.warn('No id xpath for {}'.format(node_type))
             return None
-        node_id = self.xpath(path, root, single=True)
+        node_id = self.xpath(path, root, single=True, nullable=False)
         return node_id
 
     def get_node_properties(self, root, node_type, params):
         props = {}
         for prop, path in params.properties.items():
             if not path:
-                # logging.warn('No property xpath for {}'.format(prop))
                 continue
             result = self.xpath(path+'/text()', root, single=True)
-            assert len(result) == 1, 'Expected 1 property, found {}'.format(
-                len(result))
-            props[prop] = result
+            if result:
+                props[prop] = result
         return props
 
     def get_node_edges(self, root, node_type, params):
-        props = {}
+        edges = {}
         for edge, path in params.edges.items():
             if not path:
-                # logging.warn('No property xpath for {}'.format(prop))
                 continue
-            result = self.xpath(path+'/text()', root, single=True)
-            props[edge] = result
-        return props
+            results = self.xpath(path+'/text()', root)
+            if results:
+                edges[edge] = results
+        return edges
 
     # def add_node_type(self, node_type):
     #     node_settings = self.node_types[node_type]

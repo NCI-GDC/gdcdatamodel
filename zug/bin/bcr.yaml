@@ -2,9 +2,9 @@ aliquot:
   root: //bio:aliquot
   id: .//bio:bcr_aliquot_uuid/text()
   edges:
-    analyte:
-    sample:
-    center:
+    analyte: ancestor::bio:analyte/bio:bcr_analyte_uuid
+    sample: ancestor::bio:sample/bio:bcr_sample_uuid
+    center: .//bio:center_id
   properties:
     legacy_barcode: .//bio:bcr_aliquot_barcode
     source_center:  .//bio:source_center
@@ -17,20 +17,20 @@ aliquot:
     plate_row: .//bio:plate_row
     plate_column: .//bio:plate_column
 
-# analyte:
-#   root:
-#   id:
-#   edges:
-#     portion:
-#   properties:
-#     legacy_barcode:
-#     analyte_type_id:
-#     analyte_type:
-#     concentration:
-#     amount:
-#     a260_a280_ratio:
-#     well_number:
-#     spectrophotometer_method:
+analyte:
+  root: //bio:analyte
+  id: .//bio:bcr_analyte_uuid/text()
+  edges:
+    portion: ancestor::bio:portion/bio:bcr_portion_uuid
+  properties:
+    legacy_barcode: .//bio:bcr_analyte_barcode
+    analyte_type_id: .//bio:analyte_type_id
+    analyte_type: .//bio:analyte_type
+    concentration: .//bio:concentration
+    amount: .//bio:amount
+    a260_a280_ratio: .//bio:a260_a280_ratio
+    well_number: .//bio:well_number
+    spectrophotometer_method: .//spectrophotometer_method
 
 # portion:
 #   root:
