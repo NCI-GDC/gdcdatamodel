@@ -85,8 +85,7 @@ biospecimen:
         type: center
         locate: ".//bio:center_id/text()"
 
-
-  #Need to check if the ID is correct here, protocols don't seem to have UUIDs.
+  # Need to check if the ID is correct here, protocols don't seem to have UUIDs.
   protocol:
     locate: "//bio:protocol"
     _type: protocol
