@@ -42,7 +42,7 @@
                   "name": "aliquot_enum", 
                   "doc": "Allowed string constants for indicating aliquot"
                 }, 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -53,7 +53,7 @@
                   "type": "enum", 
                   "name": "analyte_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -64,7 +64,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.aliquot_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -75,7 +75,7 @@
                   "type": "enum", 
                   "name": "sample_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -86,7 +86,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.analyte_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -97,7 +97,7 @@
                   "type": "enum", 
                   "name": "portion_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -108,11 +108,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -123,7 +123,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -134,7 +134,7 @@
                   "type": "enum", 
                   "name": "participant_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -152,11 +152,11 @@
                   "type": "enum", 
                   "name": "slide_enum"
                 }, 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -220,7 +220,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -231,7 +231,7 @@
                   "type": "enum", 
                   "name": "project_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -242,7 +242,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.project_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -253,7 +253,7 @@
                   "type": "enum", 
                   "name": "program_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -271,11 +271,11 @@
                   "type": "enum", 
                   "name": "archive_enum"
                 }, 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.project_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -293,11 +293,11 @@
                   "type": "enum", 
                   "name": "file_enum"
                 }, 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.archive_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -308,7 +308,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -319,7 +319,7 @@
                   "type": "enum", 
                   "name": "experimental_strategy_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -330,7 +330,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -341,7 +341,7 @@
                   "type": "enum", 
                   "name": "data_subtype_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -352,7 +352,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -363,7 +363,7 @@
                   "type": "enum", 
                   "name": "data_format_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -374,7 +374,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.data_subtype_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -385,7 +385,7 @@
                   "type": "enum", 
                   "name": "data_type_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -435,7 +435,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -446,7 +446,7 @@
                   "type": "enum", 
                   "name": "center_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -496,7 +496,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -507,7 +507,7 @@
                   "type": "enum", 
                   "name": "platform_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -557,11 +557,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.aliquot_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -572,11 +572,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.analyte_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -587,11 +587,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -602,11 +602,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -617,11 +617,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -632,11 +632,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.slide_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -647,11 +647,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -701,7 +701,7 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": {
@@ -712,7 +712,7 @@
                   "type": "enum", 
                   "name": "clinical_enum"
                 }, 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -769,11 +769,11 @@
                   "type": "enum", 
                   "name": "annotation_enum"
                 }, 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -784,11 +784,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.annotation_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -799,11 +799,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.annotation_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -814,11 +814,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.annotation_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.analyte_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -829,11 +829,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.annotation_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.aliquot_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -844,11 +844,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.annotation_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -898,11 +898,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.aliquot_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.center_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }, 
@@ -913,11 +913,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.center_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
@@ -967,11 +967,11 @@
             "fields": [
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "src_node_type"
+                "name": "src_node_label"
               }, 
               {
                 "type": "edu.uchicago.cdis.center_enum", 
-                "name": "dest_node_type"
+                "name": "dest_node_label"
               }
             ]
           }
