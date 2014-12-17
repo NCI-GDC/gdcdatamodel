@@ -40,7 +40,9 @@ class xml2psqlgraph(object):
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
 
-    def xpath(self, path, root=None, single=False, nullable=True):
+    def xpath(self, path, root=None, single=False, nullable=True,
+              expected=True, text=True, label=''):
+
         if root is None:
             root = self.xml_root
         try:
@@ -49,21 +51,23 @@ class xml2psqlgraph(object):
             result = []
         except:
             raise
+        rlen = len(result)
 
-        if len(result) < 1:
-            if not nullable:
-                raise Exception('Unable to finde {}'.format(path))
+        if rlen < 1 and expected:
+            raise Exception('{}: Unable to find {}'.format(label, path))
 
-        if single and len(result) > 1:
+        elif rlen > 1 and single:
             logging.error(result)
-            raise Exception('Expected 1 result for {}, found {}'.format(
-                path, result))
+            raise Exception('{}: Expected 1 result for {}, found {}'.format(
+                label, path, result))
+
+        if text:
+            result = [r.text for r in result]
+            if not nullable and None in result:
+                raise Exception('{}: Null result for {}'.format(label, result))
 
         if single:
-            if len(result) > 0:
-                return result[0]
-            else:
-                return None
+            result = result[0]
 
         return result
 
@@ -78,9 +82,9 @@ class xml2psqlgraph(object):
     def insert_node(self, node_type, params):
         roots = self.get_node_roots(node_type, params)
         for root in roots:
-            props = self.get_node_properties(root, node_type, params)
             node_id = self.get_node_id(root, node_type, params)
-            edges = self.get_node_edges(root, node_type, params)
+            props = self.get_node_properties(root, node_type, params, node_id)
+            edges = self.get_node_edges(root, node_type, params, node_id)
 
             print '\n{}: {}'.format(node_type, node_id)
             print 'props: ', props
@@ -90,32 +94,36 @@ class xml2psqlgraph(object):
         if not params.root:
             logging.warn('No root xpath for {}'.format(node_type))
             return
-        xml_node = self.xpath(params.root)
+        xml_node = self.xpath(params.root, text=False, label='get_node_roots')
         return xml_node
 
     def get_node_id(self, root, node_type, params):
         path = params.id
         if not path:
             return None
-        node_id = self.xpath(path, root, single=True, nullable=False)
+        node_id = self.xpath(path, root, single=True, label=node_type)
         return node_id
 
-    def get_node_properties(self, root, node_type, params):
+    def get_node_properties(self, root, node_type, params, node_id=''):
         props = {}
         for prop, path in params.properties.items():
             if not path:
                 continue
-            result = self.xpath(path+'/text()', root, single=True)
+            result = self.xpath(
+                path, root, single=True, text=True,
+                label='{}: {}'.format(node_type, node_id))
             if result:
                 props[prop] = result
         return props
 
-    def get_node_edges(self, root, node_type, params):
+    def get_node_edges(self, root, node_type, params, node_id=''):
         edges = {}
         for edge, path in params.edges.items():
             if not path:
                 continue
-            results = self.xpath(path+'/text()', root)
+            results = self.xpath(
+                path, root, expected=False, text=True,
+                label='{}: {}'.format(node_type, node_id))
             if results:
                 edges[edge] = results
         return edges
