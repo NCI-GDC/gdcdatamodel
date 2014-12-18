@@ -17,11 +17,9 @@ edge_schema = json.loads(open("schemata/gdc_edges.avsc").read())
 
 for edge in edge_schema:
 	for field in edge['fields']:
-		if field['name'] == 'node_types':
-			for node_type in field['type']:
-				#print node_type
-				src_dest_type = node_type['name'].split(':')
-				dot.edge(src_dest_type[0], src_dest_type[1], edge['name'])
-				#print ("node_type: %s" % node_type['name'])
+		if field['name'] == 'node_labels':
+			for node_label in field['type']:
+				src_label, dst_label = node_label['name'].split(':')
+				dot.edge(src_label, dst_label, edge['name'])
 
 dot.render('viz/gdc_data_model.gv')
