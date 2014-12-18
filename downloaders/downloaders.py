@@ -501,6 +501,7 @@ class Downloader(object):
         return True
 
     def delete_scratch(self, path):
+        self.set_state('DELETING_SCRATCH')
         directory = os.path.dirname(path)
         cmd = 'sudo rm -rf {directory}'.format(directory=directory)
         child = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
@@ -523,7 +524,7 @@ class Downloader(object):
                 self.delete_scratch(f)
             except:
                 self.logger.error("Unable to delete scratch.  Will likely run "
-                             "out of space in the future")
+                                  "out of space in the future")
 
         if self.bai:
             self.submit([
