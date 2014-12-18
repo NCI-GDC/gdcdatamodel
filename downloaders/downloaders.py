@@ -577,14 +577,8 @@ class Downloader(object):
 
         self.logger.error("EXITING WITH ERRORED STATE.")
         self.post_error(msg)
-
-        for f in self.files:
-            try:
-                self.delete_scratch(f)
-            except:
-                self.logger.error("Unable to delete scratch.  Will likely run "
-                                  "out of space in the future.")
         self.work = None
+
         return True
 
 if __name__ == '__main__':
