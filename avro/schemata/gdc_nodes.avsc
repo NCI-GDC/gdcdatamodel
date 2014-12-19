@@ -925,9 +925,14 @@
             "name": "archive_properties", 
             "fields": [
               {
-                "doc": "TODO: define, from DCC", 
+                "doc": "The revision of this archive in the DCC.", 
                 "type": "long", 
-                "name": "batch"
+                "name": "revision"
+              }, 
+              {
+                "doc": "Unique identifier of this archive in the DCC.", 
+                "type": "string", 
+                "name": "legacy_id"
               }
             ]
           }

@@ -364,9 +364,14 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "batch",
+        "name": "revision",
         "type": "long",
-        "doc": "TODO: define, from DCC"
+        "doc": "The revision of this archive in the DCC."
+      },
+      {
+        "name": "legacy_id",
+        "type": "string",
+        "doc": "Unique identifier of this archive in the DCC."
       }
     ]
   },
