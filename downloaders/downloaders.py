@@ -39,6 +39,21 @@ def which(program):
     return None
 
 
+def upload_multipart(s3_info, mpid, chunk, index):
+    conn = boto.connect_s3(
+        aws_access_key_id=s3_info["s3_access_key"],
+        aws_secret_access_key=s3_info["s3_secret_key"],
+        host=s3_info["s3_url"],
+        is_secure=False,
+        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+    )
+    bucket = conn.get_bucket(s3_info["s3_bucket"])
+    for mp in bucket.get_all_multipart_uploads():
+        if mp.id == mpid:
+            mp.upload_part_from_file(StringIO(chunk), index)
+            break
+
+
 def no_proxy(func):
     def wrapped(*args, **kwargs):
         http_proxy = os.environ.get('http_proxy', None)
@@ -468,10 +483,16 @@ class Downloader(object):
             with open(path, 'rb') as f:
                 index = 1
                 self.logger.info("Starting upload")
+                s3_info = {
+                    "s3_access_key": self.s3_access_key,
+                    "s3_secret_key": self.s3_secret_key,
+                    "s3_url": self.s3_url,
+                    "s3_bucket": self.s3_bucket
+                }
                 for chunk in iter(lambda: f.read(block_size), b''):
                     self.logger.info("Posting part {0}".format(index))
-                    pool.apply_async(mp.upload_part_from_file,
-                                     [StringIO(chunk), index])
+                    pool.apply_async(upload_multipart,
+                                     [s3_info, mp.id, chunk, index])
                     self.logger.info("Posted part {0}".format(index))
                     index += 1
                 pool.close()
