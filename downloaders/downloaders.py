@@ -13,6 +13,7 @@ from cStringIO import StringIO
 import boto.s3.connection
 from os import listdir
 from os.path import isfile, join
+from multiprocessing import Pool
 
 logger = logging.getLogger(name="downloader")
 logging.basicConfig(
@@ -462,15 +463,19 @@ class Downloader(object):
             self.logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
 
+            pool = Pool(8)
             self.logger.info("Loading file")
             with open(path, 'rb') as f:
                 index = 1
                 self.logger.info("Starting upload")
                 for chunk in iter(lambda: f.read(block_size), b''):
                     self.logger.info("Posting part {0}".format(index))
-                    mp.upload_part_from_file(StringIO(chunk), index)
+                    pool.apply_async(mp.upload_part_from_file,
+                                     [StringIO(chunk), index])
                     self.logger.info("Posted part {0}".format(index))
                     index += 1
+                pool.close()
+                pool.join()
 
             self.logger.info("Completing multipart upload")
             mp.complete_upload()
