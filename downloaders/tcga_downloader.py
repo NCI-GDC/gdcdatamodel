@@ -11,7 +11,7 @@ if __name__ == '__main__':
                         help='download directory')
     parser.add_argument('-n', '--name', required=True, type=str,
                         help='name of the downloaders')
-    parser.add_argument('-g', '--gateway', default='localhost', type=str,
+    parser.add_argument('-g', '--gateway', default='192.170.230.173', type=str,
                         help='s3 gateway host')
     parser.add_argument('-c', '--cypher', default='', type=str,
                         help='extra condition to append to cypher query')
