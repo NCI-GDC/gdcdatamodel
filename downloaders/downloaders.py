@@ -9,6 +9,7 @@ import random
 import atexit
 import subprocess
 import boto
+import py2neo
 import boto.s3.connection
 from os import listdir
 from os.path import isfile, join
@@ -21,6 +22,11 @@ logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s][%(name)10s][%(levelname)7s] %(message)s'
 )
+
+
+mute = ['py2neo', 'httpstream', 'urllib3']
+for mod in mute:
+    logging.getLogger(mod).setLevel(logging.WARNING)
 
 
 def which(program):
@@ -53,6 +59,7 @@ def upload_multipart(s3_info, mpid, path, offset, bytes, index):
         if mp.id == mpid:
             with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
                 mp.upload_part_from_file(f, index)
+                logging.info("Posted part {}".format(index))
                 return
     raise RuntimeError("Multipart upload {} not found.".format(mpid))
 
@@ -123,8 +130,9 @@ class Downloader(object):
 
     def load_neo4j_settings(self, neo4j_host, neo4j_port):
         self.logger.info('Loading neo4j settings')
-        self.neo4j_url = 'http://{host}:{port}/db/data/cypher'.format(
+        self.neo4j_url = 'http://{host}:{port}/db/data'.format(
             host=neo4j_host, port=neo4j_port)
+        self.graph = py2neo.Graph(self.neo4j_url)
 
     def load_signpost_settings(self, signpost_host, signpost_port):
         self.logger.info('Loading signpost settings')
@@ -174,11 +182,7 @@ class Downloader(object):
 
     def check_neo4j(self):
         self.logger.info('Checking that neo4j is reachable')
-        r = requests.get(self.neo4j_url)
-        if r.status_code != 405:
-            logging.error('Status: {}'.format(r.status_code))
-            raise Exception('neo4j unreachable at {}'.format(
-                self.neo4j_url))
+        self.graph.cypher.execute('return timestamp()')
         self.logger.info('Found neo4j at {}'.format(self.neo4j_url))
 
     def check_s3(self):
@@ -198,10 +202,10 @@ class Downloader(object):
 
         if self.work and 'id' in self.work:
             try:
-                self.submit([
-                    'MATCH (n:file {{id:"{file_id}"}}) ',
-                    'SET n.importer_state="{state}" ',
-                ], file_id=self.work['id'], state=state)
+                self.graph.cypher.execute("""
+                    MATCH (n:file {{id:"{file_id}"}})
+                    SET n.importer_state="{state}"
+                """.format(file_id=self.work['id'], state=state))
             except:
                 self.logger.error("Unable to update importer_state in neo4j")
                 self.logger.error("Attempting to proceed regardless")
@@ -258,23 +262,18 @@ class Downloader(object):
         self.resume = False
         self.resume_forced_id = None
 
-        result = self.submit(["""
+        results = self.graph.cypher.execute("""
         MATCH (n:file) WHERE n.id = "{uuid}"
         WITH n LIMIT 1 RETURN n
-        """.format(
-            uuid=self.force_resume_id,
-            a_group=self.access_group,
-            extra=self.extra_cypher,
-            name=self.id)]
-        )
+        """.format(uuid=self.force_resume_id))
 
-        if not len(result['data']):
+        if not len(results):
             raise Exception('Unable to resume given id!')
 
         try:
-            self.work = result['data'][0][0]['data']
+            self.work = results[0].n.properties
         except:
-            raise Exception('Unable to resume given id!')
+            raise Exception('Unable get id from results!')
 
         self.logger.warn("Per your request, resuming file: {0}".format(
             self.work['id']))
@@ -292,22 +291,22 @@ class Downloader(object):
         self.set_state('RESUMING')
         self.resume = False
 
-        result = self.submit(["""
+        results = self.graph.cypher.execute("""
         MATCH (n:file) WHERE n.import_state =~ "STARTED|ERROR"
         AND n.importer = "{name}"
         AND n.access_group[0] =~ "{a_group}"
         AND right(n.file_name, 4) <> ".bai" {extra}
         WITH n LIMIT 1 RETURN n
         """.format(
-            a_group=self.access_group, extra=self.extra_cypher, name=self.id)]
-        )
+            a_group=self.access_group, extra=self.extra_cypher, name=self.id
+        ))
 
-        if not len(result['data']):
+        if not len(results):
             logging.warn('No file belonging to me found.')
             return False
 
         try:
-            self.work = result['data'][0][0]['data']
+            self.work = results[0].n.properties
         except:
             # failed to get work
             return False
@@ -318,31 +317,29 @@ class Downloader(object):
     def claim_work(self):
         """query the database for a file to download"""
 
-        result = self.submit(["""
-        MATCH (n:file) WHERE n.import_state="NOT_STARTED"
-        AND n.access_group[0] =~ "{a_group}"
-        AND right(n.file_name, 4) = ".bam" {extra}
-        WITH n LIMIT 1 RETURN n
-        """.format(a_group=self.access_group, extra=self.extra_cypher)
-            ])
-
-        if not len(result['data']):
+        results = self.graph.cypher.execute("""
+            MATCH (n:file) WHERE n.import_state="NOT_STARTED"
+            AND n.access_group[0] =~ "{a_group}"
+            AND right(n.file_name, 4) = ".bam" {extra}
+            WITH n LIMIT 1 RETURN n
+        """.format(a_group=self.access_group, extra=self.extra_cypher))
+        if not len(results):
             self.set_state('EXITING')
             raise NoMoreWork('No More Work')
 
-        file_id = result['data'][0][0]['data']['id']
+        file_id = results[0].n.properties['id']
 
-        result = self.submit([
-            'MATCH (n:file {{id:"{file_id}"}})',
-            'WHERE n.import_state="NOT_STARTED"'
-            'SET n.importer="{id}", ',
-            'n.import_state="STARTED", ',
-            'n.import_started = timestamp()',
-            'RETURN n',
-        ], file_id=file_id, id=self.id)
+        results = self.graph.cypher.execute("""
+            MATCH (n:file {{id:"{file_id}"}})
+            WHERE n.import_state="NOT_STARTED"
+            SET n.importer="{id}",
+            n.import_state="STARTED",
+            n.import_started = timestamp()
+            RETURN n
+        """.format(file_id=file_id, id=self.id))
 
         try:
-            self.work = result['data'][0][0]['data']
+            self.work = results[0].n.properties
         except:
             # failed to get work
             return False
@@ -359,13 +356,13 @@ class Downloader(object):
         """verify that we're the only ones who claimed the data"""
 
         time.sleep(random.random()*3 + 1)
-        result = self.submit([
-            'MATCH (n:file {{id:"{file_id}"}})',
-            'WHERE n.importer="{id}"',
-            'RETURN n',
-        ], file_id=file_id, id=self.id)
+        result = self.graph.cypher.execute("""
+            MATCH (n:file {{id:"{file_id}"}})
+            WHERE n.importer="{id}"
+            RETURN n
+        """.format(file_id=file_id, id=self.id))
 
-        if len(result['data']) == 0:
+        if not len(result):
             return False
         return True
 
@@ -419,15 +416,15 @@ class Downloader(object):
     def get_bai(self):
         aid = self.work['analysis_id']
         self.logger.info("Got .bai file: " + aid)
-        result = self.submit([
-            'MATCH (n:file)',
-            'WHERE n.analysis_id="{aid}"',
-            'AND right(n.file_name, 4) = ".bai"',
-            'RETURN n',
-        ], aid=aid)
+        results = self.graph.cypher.execute("""
+            MATCH (n:file)
+            WHERE n.analysis_id="{aid}"
+            AND right(n.file_name, 4) = ".bai"
+            RETURN n
+        """, dict(aid=aid))
 
         try:
-            self.bai = result['data'][0][0]['data']
+            self.bai = results[0].n.properties
             return self.bai
         except:
             return None
@@ -446,10 +443,7 @@ class Downloader(object):
             if not work:
                 continue
 
-            cmd = ' '.join([
-                '/bin/bash -c '
-                '"md5sum -c <(echo {md5} {path})"',
-            ]).format(
+            cmd = '/bin/bash -c "md5sum -c <(echo {md5} {path})"'.format(
                 md5=work['md5'],
                 path=path,
             )
@@ -544,9 +538,10 @@ class Downloader(object):
                 bytes = min([block_size, remaining_bytes])
                 part_num = i + 1
                 self.logger.info("Posting part {}".format(part_num))
-                pool.apply_async(upload_multipart,
-                                 [s3_info, mp.id, path, offset, bytes, part_num])
-                self.logger.info("Posted part {}".format(part_num))
+                pool.apply_async(
+                    upload_multipart,
+                    [s3_info, mp.id, path, offset, bytes, part_num]
+                )
             pool.close()
             pool.join()
             if len(mp.get_all_parts()) == chunk_amount:
@@ -595,12 +590,12 @@ class Downloader(object):
 
     def finish_work(self):
         self.set_state('FINISHING')
-        self.submit([
-            'MATCH (n:file {{id:"{file_id}"}})',
-            'SET n.import_state="COMPLETE", ',
-            'n.importer_state="FINISHED",',
-            'n.import_completed = timestamp()',
-        ], file_id=self.work['id'])
+        self.graph.cypher.execute("""
+            MATCH (n:file {{id:"{file_id}"}})
+            SET n.import_state="COMPLETE",
+            n.importer_state="FINISHED",
+            n.import_completed = timestamp()
+        """.format(file_id=self.work['id']))
 
         if len(self.files) < 1:
             raise Exception('Expected self.files to have files! Found none!')
@@ -613,26 +608,13 @@ class Downloader(object):
                                   "out of space in the future")
 
         if self.bai:
-            self.submit([
-                'MATCH (n:file {{id:"{file_id}"}})',
-                'SET n.import_state="COMPLETE"',
-            ], file_id=self.bai['id'])
+            self.graph.cypher.submit("""
+                MATCH (n:file {{id:"{file_id}"}})
+                SET n.import_state="COMPLETE"
+            """.format(file_id=self.bai['id']))
 
         self.set_state('IDLE')
         return True
-
-    @no_proxy
-    def submit(self, cypher, **params):
-        if isinstance(cypher, list):
-            cypher = ' '.join(cypher).format(**params)
-        logging.info(cypher)
-        data = {"query": cypher}
-        r = requests.post(self.neo4j_url, data=json.dumps(data))
-        if r.status_code != 200:
-            traceback.print_exc()
-            self.logger.error("FAILURE: cypher query")
-            self.logger.error(r.text)
-        return r.json()
 
     def post_error(self, msg="none"):
         msg = str(msg)
@@ -641,10 +623,10 @@ class Downloader(object):
             if not self.work:
                 self.logger.error("No work to set to state ERROR.")
                 return
-            self.submit([
-                'MATCH (n:file {{id:"{file_id}"}})',
-                'SET n.import_state="ERROR", n.error_msg="{msg}"',
-            ], file_id=self.work['id'], msg=msg)
+            self.graph.cypher.execute("""
+                MATCH (n:file {{id:"{file_id}"}})
+                SET n.import_state="ERROR", n.error_msg="{msg}"
+            """.format(file_id=self.work['id'], msg=msg))
             self.logger.warn("Successfully set file state to ERROR.")
         except Exception, msg:
             self.logger.error("UNABLE TO POST ERRORED STATE TO DATAMODEL !!")
