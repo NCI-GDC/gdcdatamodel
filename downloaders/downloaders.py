@@ -9,11 +9,12 @@ import random
 import atexit
 import subprocess
 import boto
-from cStringIO import StringIO
 import boto.s3.connection
 from os import listdir
 from os.path import isfile, join
 from multiprocessing import Pool
+from filechunkio import FileChunkIO
+import math
 
 logger = logging.getLogger(name="downloader")
 logging.basicConfig(
@@ -39,7 +40,7 @@ def which(program):
     return None
 
 
-def upload_multipart(s3_info, mpid, chunk, index):
+def upload_multipart(s3_info, mpid, path, offset, bytes, index):
     conn = boto.connect_s3(
         aws_access_key_id=s3_info["s3_access_key"],
         aws_secret_access_key=s3_info["s3_secret_key"],
@@ -50,8 +51,9 @@ def upload_multipart(s3_info, mpid, chunk, index):
     bucket = conn.get_bucket(s3_info["s3_bucket"])
     for mp in bucket.get_all_multipart_uploads():
         if mp.id == mpid:
-            mp.upload_part_from_file(StringIO(chunk), index)
-            break
+            with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
+                mp.upload_part_from_file(f, index)
+                break
 
 
 def no_proxy(func):
@@ -478,29 +480,34 @@ class Downloader(object):
             self.logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
 
-            pool = Pool(8)
+            pool = Pool(processes=10)
             self.logger.info("Loading file")
-            with open(path, 'rb') as f:
-                index = 1
-                self.logger.info("Starting upload")
-                s3_info = {
-                    "s3_access_key": self.s3_access_key,
-                    "s3_secret_key": self.s3_secret_key,
-                    "s3_url": self.s3_url,
-                    "s3_bucket": self.s3_bucket
-                }
-                for chunk in iter(lambda: f.read(block_size), b''):
-                    self.logger.info("Posting part {0}".format(index))
-                    pool.apply_async(upload_multipart,
-                                     [s3_info, mp.id, chunk, index])
-                    self.logger.info("Posted part {0}".format(index))
-                    index += 1
-                pool.close()
-                pool.join()
-
-            self.logger.info("Completing multipart upload")
-            mp.complete_upload()
-
+            source_size = os.state(path).st_size
+            chunk_amount = int(math.ceil(source_size / float(block_size)))
+            self.logger.info("Starting upload")
+            s3_info = {
+                "s3_access_key": self.s3_access_key,
+                "s3_secret_key": self.s3_secret_key,
+                "s3_url": self.s3_url,
+                "s3_bucket": self.s3_bucket
+            }
+            for i in range(chunk_amount):
+                self.logger.info("Posting part {0}".format(i))
+                # compute offset and bytes
+                offset = i * block_size
+                remaining_bytes = source_size - offset
+                bytes = min([block_size, remaining_bytes])
+                pool.apply_async(upload_multipart,
+                                 [s3_info, mp.id, path, offset, bytes, i])
+                self.logger.info("Posted part {0}".format())
+            pool.close()
+            pool.join()
+            if len(mp.get_all_parts()) == chunk_amount:
+                self.logger.info("Completing multipart upload")
+                mp.complete_upload()
+            else:
+                mp.cancel_upload()
+                raise RuntimeError("Multipart upload failure")
         except Exception, msg:
             self.logger.error(msg)
             raise Exception("Unable to upload to s3")
