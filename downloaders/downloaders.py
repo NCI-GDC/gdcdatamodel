@@ -53,8 +53,8 @@ def upload_multipart(s3_info, mpid, path, offset, bytes, index):
         if mp.id == mpid:
             with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
                 mp.upload_part_from_file(f, index)
-                break
-
+                return
+    raise RuntimeError("Multipart upload {} not found.".format(mpid))
 
 def no_proxy(func):
     def wrapped(*args, **kwargs):
@@ -475,15 +475,17 @@ class Downloader(object):
         try:
             block_size = 1073741824  # bytes (1 GiB) must be > 5 MB
             self.logger.info("Getting bucket")
-            bucket = conn.get_bucket('tcga_cghub_protected')
+            bucket = conn.get_bucket(self.s3_bucket)
 
             self.logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
 
             pool = Pool(processes=10)
             self.logger.info("Loading file")
-            source_size = os.state(path).st_size
+            source_size = os.stat(path).st_size
+            self.logger.info("File size is: {}".format(source_size))
             chunk_amount = int(math.ceil(source_size / float(block_size)))
+            self.logger.info("Number of chunks: {}".format(chunk_amount))
             self.logger.info("Starting upload")
             s3_info = {
                 "s3_access_key": self.s3_access_key,
@@ -492,14 +494,15 @@ class Downloader(object):
                 "s3_bucket": self.s3_bucket
             }
             for i in range(chunk_amount):
-                self.logger.info("Posting part {0}".format(i))
                 # compute offset and bytes
                 offset = i * block_size
                 remaining_bytes = source_size - offset
                 bytes = min([block_size, remaining_bytes])
+                part_num = i + 1
+                self.logger.info("Posting part {}".format(part_num))
                 pool.apply_async(upload_multipart,
-                                 [s3_info, mp.id, path, offset, bytes, i])
-                self.logger.info("Posted part {0}".format())
+                                 [s3_info, mp.id, path, offset, bytes, part_num])
+                self.logger.info("Posted part {}".format(part_num))
             pool.close()
             pool.join()
             if len(mp.get_all_parts()) == chunk_amount:
@@ -508,9 +511,9 @@ class Downloader(object):
             else:
                 mp.cancel_upload()
                 raise RuntimeError("Multipart upload failure")
-        except Exception, msg:
-            self.logger.error(msg)
-            raise Exception("Unable to upload to s3")
+        except Exception as e:
+            self.logger.error(e)
+            raise e
 
         self.logger.info("Upload complete: " + path)
         return True

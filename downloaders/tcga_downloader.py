@@ -40,6 +40,6 @@ if __name__ == '__main__':
         # s3 settings
         s3_auth_path=os.path.expanduser('~/authorization/gdc.yaml'),
         s3_url=args.gateway,
-        s3_bucket='tgca_cghub_protected',
+        s3_bucket='tcga_cghub_protected',
     )
     downloader.start()
