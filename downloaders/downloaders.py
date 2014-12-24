@@ -56,6 +56,7 @@ def upload_multipart(s3_info, mpid, path, offset, bytes, index):
                 return
     raise RuntimeError("Multipart upload {} not found.".format(mpid))
 
+
 def no_proxy(func):
     def wrapped(*args, **kwargs):
         http_proxy = os.environ.get('http_proxy', None)
@@ -88,7 +89,8 @@ class Downloader(object):
     def __init__(self, neo4j_host, neo4j_port, signpost_host,
                  signpost_port, s3_auth_path, s3_url, s3_bucket,
                  download_path, access_group, cghub_key, name,
-                 extra_cypher='', no_work_delay=900, resume=True):
+                 extra_cypher='', no_work_delay=900, resume=True,
+                 force_resume_id=None):
 
         self.state = 'IDLE'
         self.work = None
@@ -103,6 +105,7 @@ class Downloader(object):
         self.extra_cypher = extra_cypher
         self.no_work_delay = no_work_delay
         self.resume = resume
+        self.force_resume_id = force_resume_id
 
         self.load_name(name)
         self.load_logger()
@@ -249,11 +252,42 @@ class Downloader(object):
             return False
         return retval
 
+    def resume_forced_id(self):
+        self.set_state('RESUMING_ID')
+
+        self.resume = False
+        self.resume_forced_id = None
+
+        result = self.submit(["""
+        MATCH (n:file) WHERE n.id = "{uuid}"
+        WITH n LIMIT 1 RETURN n
+        """.format(
+            uuid=self.force_resume_id,
+            a_group=self.access_group,
+            extra=self.extra_cypher,
+            name=self.id)]
+        )
+
+        if not len(result['data']):
+            raise Exception('Unable to resume given id!')
+
+        try:
+            self.work = result['data'][0][0]['data']
+        except:
+            raise Exception('Unable to resume given id!')
+
+        self.logger.warn("Per your request, resuming file: {0}".format(
+            self.work['id']))
+        return True
+
     def resume_work(self):
         """resume an unfinished file"""
 
         if not self.resume:
             return False
+
+        if self.force_resume_id:
+            return self.resume_forced_id()
 
         self.set_state('RESUMING')
         self.resume = False
@@ -287,8 +321,7 @@ class Downloader(object):
         result = self.submit(["""
         MATCH (n:file) WHERE n.import_state="NOT_STARTED"
         AND n.access_group[0] =~ "{a_group}"
-        AND right(n.file_name, 4) <> ".bai"
-        {extra}
+        AND right(n.file_name, 4) = ".bam" {extra}
         WITH n LIMIT 1 RETURN n
         """.format(a_group=self.access_group, extra=self.extra_cypher)
             ])
@@ -373,6 +406,10 @@ class Downloader(object):
             os.path.join(directory, f) for f in files
             if f.endswith('.bam') or f.endswith('.bai')
         ]
+
+        if len(self.files) < 1:
+            raise Exception('Expected self.files to have files! Found none!')
+
         for f in self.files:
             self.logger.info('Successfully downloaded file: ' + f)
 
@@ -397,6 +434,10 @@ class Downloader(object):
 
     def checksum(self):
         self.set_state('CHECK_SUMMING')
+
+        if len(self.files) < 1:
+            raise Exception('Expected self.files to have files! Found none!')
+
         for path in self.files:
 
             self.logger.info("Checksumming file: {0}".format(path))
@@ -440,7 +481,10 @@ class Downloader(object):
 
     def post(self):
         self.set_state('POSTING')
-        return
+
+        if len(self.files) < 1:
+            raise Exception('Expected self.files to have files! Found none!')
+
         for path in self.files:
             if path.endswith('.bai'):
                 self.post_did(self.bai)
@@ -521,6 +565,9 @@ class Downloader(object):
     def upload(self):
         self.set_state('UPLOADING')
 
+        if len(self.files) < 1:
+            raise Exception('Expected self.files to have files! Found none!')
+
         for path in self.files:
             if path.endswith('.bai'):
                 self.upload_file(self.bai, path)
@@ -554,6 +601,9 @@ class Downloader(object):
             'n.importer_state="FINISHED",',
             'n.import_completed = timestamp()',
         ], file_id=self.work['id'])
+
+        if len(self.files) < 1:
+            raise Exception('Expected self.files to have files! Found none!')
 
         for f in self.files:
             try:
