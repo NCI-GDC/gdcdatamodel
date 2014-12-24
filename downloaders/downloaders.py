@@ -132,6 +132,10 @@ class Downloader(object):
         self.logger.info('Loading neo4j settings')
         self.neo4j_url = 'http://{host}:{port}/db/data'.format(
             host=neo4j_host, port=neo4j_port)
+        py2neo.rewrite(
+            ("http", "0.0.0.0", 7474), 
+            ("http", neo4j_host, 7474)
+        )
         self.graph = py2neo.Graph(self.neo4j_url)
 
     def load_signpost_settings(self, signpost_host, signpost_port):
