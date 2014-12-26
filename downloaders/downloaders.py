@@ -526,7 +526,7 @@ class Downloader(object):
             mp = bucket.initiate_multipart_upload(name)
             self.logger.info("Initiated multipart upload: {}".format(mp.id))
 
-            pool = Pool(processes=10)
+            pool = Pool(processes=15)
             self.logger.info("Loading file")
             source_size = os.stat(path).st_size
             self.logger.info("File size is: {}".format(source_size))
@@ -552,7 +552,8 @@ class Downloader(object):
             pool.close()
             pool.join()
 
-            if len(mp.get_all_parts()) == chunk_amount:
+            part_count = len(mp.get_all_parts())
+            if part_count == chunk_amount:
                 self.logger.info("Completing multipart upload")
                 mp.complete_upload()
             else:
