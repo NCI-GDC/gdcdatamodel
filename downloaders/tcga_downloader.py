@@ -17,6 +17,8 @@ if __name__ == '__main__':
                         help='extra condition to append to cypher query')
     parser.add_argument('-i', '--id', default='', type=str,
                         help='the id to try and force the downloader to resume with')
+    parser.add_argument('--resume', default=True, type=str,
+                        help='try and resume a file')
     args = parser.parse_args()
 
     downloader = Downloader(
@@ -39,6 +41,7 @@ if __name__ == '__main__':
         access_group='phs000178',
         force_resume_id=args.id,
         extra_cypher=args.cypher,
+        resume=args.resume,
 
         # s3 settings
         s3_auth_path=os.path.expanduser('~/authorization/gdc.yaml'),
