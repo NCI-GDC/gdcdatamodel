@@ -382,7 +382,7 @@ class Downloader(object):
         directory = self.download_path
 
         self.logger.info("Downloading file: {0} GB".format(
-            self.work.get('file_size', 0)/1000000000.0))
+            self.work.get('file_size', 0)/1e9))
 
         cmd = ' '.join([
             'sudo gtdownload -v -k 15',
@@ -529,7 +529,7 @@ class Downloader(object):
             pool = Pool(processes=15)
             self.logger.info("Loading file")
             source_size = os.stat(path).st_size
-            self.logger.info("File size is: {}".format(source_size))
+            self.logger.info("File size is: {} GB".format(source_size/1e9))
             chunk_amount = int(math.ceil(source_size / float(block_size)))
             self.logger.info("Number of chunks: {}".format(chunk_amount))
             self.logger.info("Starting upload")
