@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         help='extra condition to append to cypher query')
     parser.add_argument('-i', '--id', default='', type=str,
                         help='the id to try and force the downloader to resume with')
-    parser.add_argument('--resume', default=True, type=str,
+    parser.add_argument('--resume', default=True, type=bool,
                         help='try and resume a file')
     args = parser.parse_args()
 
