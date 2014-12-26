@@ -133,7 +133,7 @@ class Downloader(object):
         self.neo4j_url = 'http://{host}:{port}/db/data'.format(
             host=neo4j_host, port=neo4j_port)
         py2neo.rewrite(
-            ("http", "0.0.0.0", 7474), 
+            ("http", "0.0.0.0", 7474),
             ("http", neo4j_host, 7474)
         )
         self.graph = py2neo.Graph(self.neo4j_url)
@@ -378,8 +378,8 @@ class Downloader(object):
             raise Exception('download() was called with no work')
         directory = self.download_path
 
-        self.logger.info("Downloading file: {0} bytes".format(
-            self.work.get('file_size', '?')))
+        self.logger.info("Downloading file: {0} GB".format(
+            self.work.get('file_size', 0)/1000000000.0))
 
         cmd = ' '.join([
             'sudo gtdownload -k 15',
