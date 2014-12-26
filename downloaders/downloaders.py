@@ -55,12 +55,15 @@ def upload_multipart(s3_info, mpid, path, offset, bytes, index):
         calling_format=boto.s3.connection.OrdinaryCallingFormat(),
     )
     bucket = conn.get_bucket(s3_info["s3_bucket"])
-    for mp in bucket.get_all_multipart_uploads():
+    for mp in bucket.list_multipart_uploads():
         if mp.id == mpid:
+            logging.info("Posting part {}".format(index))
             with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
                 mp.upload_part_from_file(f, index)
                 logging.info("Posted part {}".format(index))
                 return
+    logging.error('Unable to find my mp.id [{}] in the mp id list: {}'.format(
+        mpid, index))
     raise RuntimeError("Multipart upload {} not found.".format(mpid))
 
 
@@ -521,6 +524,7 @@ class Downloader(object):
 
             self.logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
+            self.logger.info("Initiated multipart upload: {}".format(mp.id))
 
             pool = Pool(processes=10)
             self.logger.info("Loading file")
@@ -541,19 +545,22 @@ class Downloader(object):
                 remaining_bytes = source_size - offset
                 bytes = min([block_size, remaining_bytes])
                 part_num = i + 1
-                self.logger.info("Posting part {}".format(part_num))
                 pool.apply_async(
                     upload_multipart,
                     [s3_info, mp.id, path, offset, bytes, part_num]
                 )
             pool.close()
             pool.join()
+
             if len(mp.get_all_parts()) == chunk_amount:
                 self.logger.info("Completing multipart upload")
                 mp.complete_upload()
             else:
                 mp.cancel_upload()
-                raise RuntimeError("Multipart upload failure")
+                raise RuntimeError(
+                    "Multipart upload failure. Expected {} parts, found {}".format(
+                        chunk_amount, part_count))
+
         except Exception as e:
             self.logger.error(e)
             raise e
