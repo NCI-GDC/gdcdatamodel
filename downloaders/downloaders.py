@@ -549,6 +549,7 @@ class Downloader(object):
                     upload_multipart,
                     [s3_info, mp.id, path, offset, bytes, part_num]
                 )
+            self.logger.info("Queued upload.")
             pool.close()
             pool.join()
 
