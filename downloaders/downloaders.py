@@ -16,6 +16,7 @@ from os.path import isfile, join
 from multiprocessing import Pool
 from filechunkio import FileChunkIO
 import math
+import calendar
 
 logger = logging.getLogger(name="downloader")
 logging.basicConfig(
@@ -46,7 +47,9 @@ def which(program):
     return None
 
 
-def upload_multipart(s3_info, mpid, path, offset, bytes, index):
+def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
+
+    # Reconnect to s3
     conn = boto.connect_s3(
         aws_access_key_id=s3_info["s3_access_key"],
         aws_secret_access_key=s3_info["s3_secret_key"],
@@ -54,16 +57,24 @@ def upload_multipart(s3_info, mpid, path, offset, bytes, index):
         is_secure=False,
         calling_format=boto.s3.connection.OrdinaryCallingFormat(),
     )
+
+    # Create a matching mp upload instead of looking it up
     bucket = conn.get_bucket(s3_info["s3_bucket"])
-    for mp in bucket.list_multipart_uploads():
-        if mp.id == mpid:
-            logging.info("Posting part {}".format(index))
-            with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
-                mp.upload_part_from_file(f, index)
-                logging.info("Posted part {}".format(index))
-                return
-    logging.error('Unable to find my mp.id [{}] in the mp id list: {}'.format(
-        mpid, index))
+    mp = boto.s3.multipart.MultiPartUpload(bucket)
+    mp.key_name, mp.id = key_name, mpid
+
+    # Upload this segment
+    logging.info("Posting part {}".format(index))
+    with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
+        start = calendar.timegm(time.gmtime())
+        mp.upload_part_from_file(f, index)
+        stop = calendar.timegm(time.gmtime())
+        els = stop - start
+        logging.info("Posted part {} {} Mbps".format(
+            index, bytes/7.63e6/els))
+        return
+
+    # Should not get to here unless error
     raise RuntimeError("Multipart upload {} not found.".format(mpid))
 
 
@@ -232,8 +243,8 @@ class Downloader(object):
                     continue
             if not self.do_carefully(self.download):
                 continue
-            if not self.do_carefully(self.checksum):
-                continue
+            # if not self.do_carefully(self.checksum):
+            #     continue
             if not self.do_carefully(self.upload):
                 continue
             self.do_carefully(self.finish_work)
@@ -519,14 +530,14 @@ class Downloader(object):
 
         try:
             block_size = 1073741824  # bytes (1 GiB) must be > 5 MB
-            self.logger.info("Getting bucket")
+            self.logger.info("Getting bucket {}".format(self.s3_bucket))
             bucket = conn.get_bucket(self.s3_bucket)
 
             self.logger.info("Initiating multipart upload")
             mp = bucket.initiate_multipart_upload(name)
             self.logger.info("Initiated multipart upload: {}".format(mp.id))
 
-            pool = Pool(processes=15)
+            pool = Pool(processes=23)
             self.logger.info("Loading file")
             source_size = os.stat(path).st_size
             self.logger.info("File size is: {} GB".format(source_size/1e9))
@@ -546,8 +557,11 @@ class Downloader(object):
                 bytes = min([block_size, remaining_bytes])
                 part_num = i + 1
                 pool.apply_async(
-                    upload_multipart,
-                    [s3_info, mp.id, path, offset, bytes, part_num]
+                    upload_multipart, [
+                        s3_info, mp.key_name, mp.id,
+                        path, offset, bytes,
+                        part_num
+                    ]
                 )
             self.logger.info("Queued upload.")
             pool.close()
