@@ -537,7 +537,7 @@ class Downloader(object):
             mp = bucket.initiate_multipart_upload(name)
             self.logger.info("Initiated multipart upload: {}".format(mp.id))
 
-            pool = Pool(processes=23)
+            pool = Pool(processes=5)
             self.logger.info("Loading file")
             source_size = os.stat(path).st_size
             self.logger.info("File size is: {} GB".format(source_size/1e9))
