@@ -44,7 +44,7 @@ if __name__ == '__main__':
         resume=args.resume,
 
         # s3 settings
-        s3_auth_path=os.path.expanduser('~/authorization/gdc.yaml'),
+        s3_auth_path=os.path.expanduser('~/authorization/cleversafe.yaml'),
         s3_url=args.gateway,
         s3_bucket='target_cghub_protected',
     )
