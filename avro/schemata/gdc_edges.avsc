@@ -53,7 +53,7 @@
                   "type": "enum", 
                   "name": "analyte_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -75,7 +75,7 @@
                   "type": "enum", 
                   "name": "sample_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -97,7 +97,7 @@
                   "type": "enum", 
                   "name": "portion_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -112,7 +112,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -134,7 +134,7 @@
                   "type": "enum", 
                   "name": "participant_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -156,7 +156,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -168,7 +168,7 @@
         "type": {
           "type": "record", 
           "namespace": "edu.uchicago.cdis", 
-          "name": "src_dest_nodes", 
+          "name": "src_dst_nodes", 
           "fields": [
             {
               "type": "string", 
@@ -176,7 +176,7 @@
             }, 
             {
               "type": "string", 
-              "name": "dest_node_id"
+              "name": "dst_node_id"
             }
           ]
         }, 
@@ -231,7 +231,7 @@
                   "type": "enum", 
                   "name": "project_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -253,7 +253,7 @@
                   "type": "enum", 
                   "name": "program_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -275,7 +275,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.project_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -297,7 +297,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.archive_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -319,7 +319,7 @@
                   "type": "enum", 
                   "name": "experimental_strategy_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -341,7 +341,7 @@
                   "type": "enum", 
                   "name": "data_subtype_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -363,7 +363,7 @@
                   "type": "enum", 
                   "name": "data_format_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -385,7 +385,7 @@
                   "type": "enum", 
                   "name": "data_type_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -394,7 +394,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -426,7 +426,7 @@
         "name": "label"
       }, 
       {
-        "doc": "The source/destination node types allowed.", 
+        "doc": "The source/dstination node types allowed.", 
         "type": [
           {
             "type": "record", 
@@ -446,7 +446,7 @@
                   "type": "enum", 
                   "name": "center_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -455,7 +455,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -507,7 +507,7 @@
                   "type": "enum", 
                   "name": "platform_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -516,7 +516,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -561,7 +561,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.aliquot_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -576,7 +576,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.analyte_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -591,7 +591,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -606,7 +606,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -621,7 +621,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -636,7 +636,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.slide_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -651,7 +651,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -660,7 +660,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -712,7 +712,7 @@
                   "type": "enum", 
                   "name": "clinical_enum"
                 }, 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -721,7 +721,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -773,7 +773,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.participant_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -788,7 +788,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.sample_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -803,7 +803,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.portion_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -818,7 +818,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.analyte_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -833,7 +833,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.aliquot_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -848,7 +848,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.file_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -857,7 +857,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -902,7 +902,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.center_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }, 
@@ -917,7 +917,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.center_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -926,7 +926,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 
@@ -971,7 +971,7 @@
               }, 
               {
                 "type": "edu.uchicago.cdis.center_enum", 
-                "name": "dest_node_label"
+                "name": "dst_node_label"
               }
             ]
           }
@@ -980,7 +980,7 @@
       }, 
       {
         "doc": "The primary IDs for the source and destination nodes.", 
-        "type": "edu.uchicago.cdis.src_dest_nodes", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
         "name": "node_ids"
       }
     ], 

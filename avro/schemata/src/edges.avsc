@@ -31,7 +31,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -70,7 +70,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -98,11 +98,11 @@
         "type": [
           "participant:center"
         ],
-        "doc": "The source/destination node types allowed."
+        "doc": "The source/dstination node types allowed."
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -134,7 +134,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -172,7 +172,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -204,7 +204,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -241,7 +241,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -274,7 +274,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
@@ -306,7 +306,7 @@
       },
       {
         "name": "node_ids",
-        "type": "src_dest_nodes",
+        "type": "src_dst_nodes",
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]

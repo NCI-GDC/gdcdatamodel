@@ -1,7 +1,7 @@
 [
   {
     "type": "record",
-    "name": "src_dest_nodes",
+    "name": "src_dst_nodes",
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
@@ -9,7 +9,7 @@
         "type": "string"
       },
       {
-        "name": "dest_node_id",
+        "name": "dst_node_id",
         "type": "string"
       }
     ]
@@ -24,7 +24,7 @@
         "type": "aliquot_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "analyte_enum"
       }
     ]
@@ -39,7 +39,7 @@
         "type": "aliquot_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "sample_enum"
       }
     ]
@@ -54,7 +54,7 @@
         "type": "analyte_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "portion_enum"
       }
     ]
@@ -69,7 +69,7 @@
         "type": "portion_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "sample_enum"
       }
     ]
@@ -84,7 +84,7 @@
         "type": "sample_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "participant_enum"
       }
     ]
@@ -99,7 +99,7 @@
         "type": "participant_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "project_enum"
       }
     ]
@@ -114,7 +114,7 @@
         "type": "project_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "program_enum"
       }
     ]
@@ -129,7 +129,7 @@
         "type": "participant_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "center_enum"
       }
     ]
@@ -144,7 +144,7 @@
         "type": "archive_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "project_enum"
       }
     ]
@@ -159,7 +159,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "archive_enum"
       }
     ]
@@ -174,7 +174,7 @@
         "type": "annotation_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "aliquot_enum"
       }
     ]
@@ -189,7 +189,7 @@
         "type": "annotation_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "analyte_enum"
       }
     ]
@@ -204,7 +204,7 @@
         "type": "annotation_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "portion_enum"
       }
     ]
@@ -219,7 +219,7 @@
         "type": "annotation_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "sample_enum"
       }
     ]
@@ -234,7 +234,7 @@
         "type": "annotation_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "participant_enum"
       }
     ]
@@ -249,7 +249,7 @@
         "type": "annotation_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "file_enum"
       }
     ]
@@ -264,7 +264,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "data_subtype_enum"
       }
     ]
@@ -279,7 +279,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "experimental_strategy_enum"
       }
     ]
@@ -294,7 +294,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "data_format_enum"
       }
     ]
@@ -309,7 +309,7 @@
         "type": "experimental_strategy_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "data_subtype_enum"
       }
     ]
@@ -324,7 +324,7 @@
         "type": "data_subtype_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "data_type_enum"
       }
     ]
@@ -339,7 +339,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "platform_enum"
       }
     ]
@@ -354,7 +354,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "aliquot_enum"
       }
     ]
@@ -369,7 +369,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "analyte_enum"
       }
     ]
@@ -384,7 +384,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "portion_enum"
       }
     ]
@@ -399,7 +399,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "sample_enum"
       }
     ]
@@ -414,7 +414,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "participant_enum"
       }
     ]
@@ -429,7 +429,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "file_enum"
       }
     ]
@@ -444,7 +444,7 @@
         "type": "participant_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "clinical_enum"
       }
     ]
@@ -459,7 +459,7 @@
         "type": "aliquot_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "center_enum"
       }
     ]
@@ -474,7 +474,7 @@
         "type": "portion_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "center_enum"
       }
     ]
@@ -489,7 +489,7 @@
         "type": "slide_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "portion_enum"
       }
     ]
@@ -504,7 +504,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "slide_enum"
       }
     ]
@@ -519,7 +519,7 @@
         "type": "file_enum"
       },
       {
-        "name": "dest_node_label",
+        "name": "dst_node_label",
         "type": "center_enum"
       }
     ]
