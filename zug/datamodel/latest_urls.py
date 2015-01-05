@@ -2,7 +2,6 @@ import requests
 import logging
 import re
 from datetime import datetime, tzinfo, timedelta
-from zug.exceptions import IgnoreDocumentException
 
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
