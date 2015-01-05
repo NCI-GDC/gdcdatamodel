@@ -25,15 +25,13 @@ class TCGADCCArchiveSyncer(object):
     MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB
     SIGNPOST_VERSION = "v0"
 
-    def __init__(self, signpost_url, pg_driver, storage_client, container_for,
-                 dcc_auth, scratch_dir):
+    def __init__(self, signpost_url, pg_driver, storage_client, dcc_auth, scratch_dir):
         self.signpost_url = signpost_url
         self.storage_client = storage_client
         # TODO probably make object store connection here
         self.pg_driver = pg_driver
         # container_for is a function that takes an archive and
         # returns the name of a container to store it in
-        self.container_for = container_for
         self.dcc_auth = dcc_auth
         self.scratch_dir = scratch_dir
 
@@ -152,6 +150,12 @@ class TCGADCCArchiveSyncer(object):
             self.pg_driver.edge_insert(edge, session)
         return file_node
 
+    def container_for(self, archive):
+        if archive["protected"]:
+            return "tcga_dcc_protected"
+        else:
+            return "tcga_dcc_public"
+
     def upload_to_object_store(self, archive, tarball, tarinfo):
         # put the file in the object store
         container = self.storage_client.get_container(self.container_for(archive))
@@ -159,7 +163,7 @@ class TCGADCCArchiveSyncer(object):
         return container.upload_object_via_stream(tarball.extractfile(tarinfo),
                                                   objname)
 
-    def url_for(obj):
+    def url_for(self, obj):
         """Return a url for a libcloud object."""
         DRIVER_TO_SCHEME = {
             S3StorageDriver: "s3",
