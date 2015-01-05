@@ -18,11 +18,17 @@ logging.basicConfig(level=logging.INFO)
 class TestXML2PsqlGraph(unittest.TestCase):
 
     def test_convert_sample1(self):
-        converter = datamodel.xml2psqlgraph(
+
+        # load sample data
+        converter = datamodel.xml2psqlgraph.xml2psqlgraph(
             translate_path='sample1.yaml', **settings)
         with open('sample1.xml') as f:
             xml = f.read()
+
+        # convert sample data
         converter.xml2psqlgraph(xml)
+
+        # test conversion for accuracy
         first = converter.graph.node_lookup_one(node_id='level1')
         second = converter.graph.node_lookup_one(node_id='level2')
         third = converter.graph.node_lookup_one(node_id='level3')

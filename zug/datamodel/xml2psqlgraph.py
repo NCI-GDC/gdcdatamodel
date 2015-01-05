@@ -2,6 +2,7 @@ import yaml
 import json
 import logging
 import psqlgraph
+from psqlgraph.edge import PsqlEdge
 from lxml import etree
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
@@ -96,12 +97,12 @@ class xml2psqlgraph(object):
     def insert_edge(self, src_id, dst_id, dst_label, edge_label,
                     properties={}):
         self.graph.node_merge(node_id=dst_id, label=dst_label)
-        self.graph.edge_merge(
+        self.graph.edge_insert(PsqlEdge(
             src_id=src_id,
             dst_id=dst_id,
             label=edge_label,
             properties=properties
-        )
+        ))
 
     def get_node_roots(self, node_type, params):
         if not params.root:
