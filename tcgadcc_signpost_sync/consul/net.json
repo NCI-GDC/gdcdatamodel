@@ -1,8 +1,0 @@
-{
-    "check": {
-        "id": "net-util",
-        "name": "Network utilization",
-        "script": "python /home/ubuntu/consul/net.py",
-        "interval": "10s"
-    }
-}

@@ -1,8 +1,0 @@
-{
-    "check": {
-        "id": "cpu-util",
-        "name": "CPU utilization",
-        "script": "python /home/ubuntu/consul/cpu.py",
-        "interval": "10s"
-    }
-}

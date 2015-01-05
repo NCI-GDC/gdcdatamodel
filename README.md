@@ -1,12 +1,87 @@
-Zugs
-===========
 
-A 'zug' is a deployable GDC data processing component. They have a basic shared template, then any custom python script can be written to perform the processing task required.
+## How to make a plugin
 
-Each zug should have a meaningful name that describes the process performed. Examples of zugs include:
-  -  tcgadcc_data_downloader: a zug that queries the Neo4j data model and downloads archives that have not yet been downloaded
-  -  tcgadcc_datamodel_sync: a zug that pulls in the various XML, code tables and other sources of metadata to construct the GDC data model representation in Neo4j
+In order to make a plugin, you need to do three things:
+
+##### 1) copy paste the base and override the following functions
+
+The functions that can be over-ridden are listed below:
+
+* `initialize(self, **kwargs)`: setup the scheduler and pull **kwargs from settings.yaml
+* `process(self, **kwargs)`: make a connection to outside resource and load documents
+
+##### 2) add the name of the file to the settings.yaml file
+
+### OR
+
+##### 1) write a callable 
+
+Write a function that takes a doc and returns a doc:
+`process(doc)`. Decorate it with `@zug.process`.
+
+##### 2) add the name of the file to the settings.yaml file
+
+
+```
+plugins:
+  schedulers:
+    - file
+  conversions:
+    - json_flat
+  exports:
+    - stdout
+    - postgres
+```
+
+##### 3) add kwargs to the settings file per plugin
+
+```
+plugin_kwargs:
+  uri:
+    docs: [/home/ubuntu/workers/data_model/centerCodes.tsv]
   
-Future zugs will include those that perform bioinformatics QC and harmonization tasks.
+  tsv2graph:
+    type: center
+    id_field: Code
+      
+  graph2neo:
+    host: localhost
+    port: 7474
+```
 
-Tungsten is 'zug-aware' and can be configured to deploy multiple VMs hosting zug processes. In this way the system components that the zugs are participating in, such as data download, data import, QC tasks can be distributed and scaled.
+## Plugin Class
+
+**Don't override __init__(), start(), yieldDoc()**.  You can, but
+  don't do it.  The zugflow is based on concurrency.  Each plugin has
+  it's own process, and it's own queue that gets piped into it.  Each
+  plugin then returns finished documents from process(), or calls
+  self.yieldDoc() to pass a finished document to each plugin the next
+  level down.
+
+
+### Things to consider
+
+#### `self.isDaemon = True`
+
+This will prevent the plugin process from closing if its input queue
+is empty.  Possibly useful for root plugins that need to handle large
+amounts of data and can't enqueue it all at once.
+
+### `self.enqueue(doc)`
+
+This is the main way that a document can schedule work for itself
+upfront in initialize().  Keep in mind the default queue len is 10.
+If you try to add more docs to the queue in initialize, the app qill
+block.  See below.
+
+### Setting the max queue_len
+
+You can set the queue length per plugin, or, for a root plugin, you
+can simply replace the imput queue with one of infinite length.
+
+## XML Requirements
+	sudo -E apt-get update
+	sudo -E apt-get install python-dev libxml2-dev libxslt-dev zlib1g-dev
+
+## Install for {dev}/{production}
+        sudo python setup.py {develop}/{install}
