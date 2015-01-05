@@ -7,10 +7,10 @@ setup(
     install_requires=[
         'pyyaml',
         'psqlgraph',
-        'lxml',
-        'requests',
-        'psqlgraph',
         'gdcdatamodel',
+        'lxml==3.4.1',
+        'requests==2.5.0',
+        'apache-libcloud==0.15.1'
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git#egg=psqlgraph',
