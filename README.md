@@ -1,12 +1,36 @@
-Zugs
-===========
+# Installation
 
-A 'zug' is a deployable GDC data processing component. They have a basic shared template, then any custom python script can be written to perform the processing task required.
+## Dependencies
 
-Each zug should have a meaningful name that describes the process performed. Examples of zugs include:
-  -  tcgadcc_data_downloader: a zug that queries the Neo4j data model and downloads archives that have not yet been downloaded
-  -  tcgadcc_datamodel_sync: a zug that pulls in the various XML, code tables and other sources of metadata to construct the GDC data model representation in Neo4j
-  
-Future zugs will include those that perform bioinformatics QC and harmonization tasks.
+Before continuing you must have the following programs installed:
 
-Tungsten is 'zug-aware' and can be configured to deploy multiple VMs hosting zug processes. In this way the system components that the zugs are participating in, such as data download, data import, QC tasks can be distributed and scaled.
+- [Python 2.7+](http://python.org/)
+- [Postgresql 9.4](http://www.postgresql.org/download/)
+
+The zug library requires the following pip dependencies
+
+- [psqlgraph](https://github.com/NCI-GDC/psqlgraph)
+
+### Project Dependencies
+
+Project dependencies are managed using [PIP](https://pip.readthedocs.org/en/latest/)
+
+## Test Setup
+
+Running the setup script will:
+
+1. Setup the test postgres tables for datamodel store
+
+```
+❯ python bin/setup_psql_graph.py
+Setting up test database
+Dropping old test data
+Creating tables in test database
+```
+
+# Tests
+
+Running the setup script will test the library against a local postgres installation
+
+```
+❯  cd test; nosetests -v
