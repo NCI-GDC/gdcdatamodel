@@ -217,8 +217,8 @@ class xml2psqlgraph(object):
 
     def get_node_datetime_properties(
             self, root, node_type, params, node_id=''):
-        """for each parameter in the setting file, try and look it up, and add
-        it to the node properties
+        """for datetime each parameter in the setting file, try and look it
+        up, and add it to the node properties
 
         :param root: the lxml root element to treat as a node
         :param str node_type:
@@ -232,44 +232,26 @@ class xml2psqlgraph(object):
 
         if 'datetime_properties' not in params:
             return {}
-
         props = {}
+
+        # Loop over all given datetime properties
         for name, timespans in params.datetime_properties.items():
-            # Parse the day
-            if 'day' not in timespans:
-                day = 0
-            else:
-                day = self.xpath(
-                    timespans.day, root, single=True, text=True,
-                    label='{}: {}'.format(node_type, node_id))
-                if not day:
-                    day = 0
+            times = {'year': 0, 'month': 0, 'day': 0}
 
-            # Parse the month
-            if 'month' not in timespans:
-                month = 0
-            else:
-                month = self.xpath(
-                    timespans.month, root, single=True, text=True,
-                    label='{}: {}'.format(node_type, node_id))
-                if not month:
-                    month = 0
+            # Parse the year, month, day
+            for span in times:
+                if span in timespans:
+                    times[span] = self.xpath(
+                        timespans[span], root, single=True, text=True,
+                        label='{}: {}'.format(node_type, node_id))
+                    if not times[span]:
+                        times[span] = 0
 
-            # Parse the month
-            if 'year' not in timespans:
-                year = 0
+            if not times['year']:
+                props[name] = 0
             else:
-                year = self.xpath(
-                    timespans.year, root, single=True, text=True,
-                    label='{}: {}'.format(node_type, node_id))
-
-            # Convert to unix time
-            if not year:
-                ts = datetime.datetime.utcfromtimestamp(0)
-            else:
-                ts = datetime.date(year, month, day)
-
-            props[name] = unix_time(ts)
+                props[name] = datetime.date(
+                    times['year'], times['month'], times['day'])
 
         return props
 
