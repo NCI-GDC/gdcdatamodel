@@ -4,7 +4,7 @@ from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mapping = 'translate.yaml'
+mapping = 'bcr.yaml'
 datatype = 'biospecimen'
 host = 'localhost'
 user = 'test'
@@ -35,7 +35,7 @@ def start():
     parser, extractor, converter = initialize()
     for url in parser:
         for xml in extractor(url):
-            converter.add_to_graph(xml)
+            converter.xml2psqlgraph(xml)
 
 if __name__ == '__main__':
     start()

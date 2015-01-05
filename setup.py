@@ -8,6 +8,7 @@ setup(
         'pyyaml',
         'psqlgraph',
         'lxml',
+        'requests',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git#egg=psqlgraph',

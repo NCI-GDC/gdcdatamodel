@@ -47,7 +47,9 @@ class xml2psqlgraph(object):
             Raise exception if the expected result is not singular as
             expected
         :param bool nullable:
-            Raise exception if the expected result is null
+            Raise exception if the result is null
+        :param bool expected:
+            Raise exception if the expected result does not exist
         :param bool text: whether the return value is the .text str value
         :param str label: label for logging
 
@@ -131,12 +133,16 @@ class xml2psqlgraph(object):
 
         """
         self.graph.node_merge(node_id=dst_id, label=dst_label)
-        self.graph.edge_insert(PsqlEdge(
-            src_id=src_id,
-            dst_id=dst_id,
-            label=edge_label,
-            properties=properties
-        ))
+        edge_exists = self.graph.edge_lookup_one(
+            src_id=src_id, dst_id=dst_id, label=edge_label)
+
+        if not edge_exists:
+            self.graph.edge_insert(PsqlEdge(
+                src_id=src_id,
+                dst_id=dst_id,
+                label=edge_label,
+                properties=properties
+            ))
 
     def get_node_roots(self, node_type, params):
         """returns a list of xml node root elements for a given node_type
@@ -151,7 +157,8 @@ class xml2psqlgraph(object):
         if not params.root:
             logging.warn('No root xpath for {}'.format(node_type))
             return
-        xml_node = self.xpath(params.root, text=False, label='get_node_roots')
+        xml_node = self.xpath(
+            params.root, expected=False, text=False, label='get_node_roots')
         return xml_node
 
     def get_node_id(self, root, node_type, params):
