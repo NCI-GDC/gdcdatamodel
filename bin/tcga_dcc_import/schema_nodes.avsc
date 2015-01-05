@@ -1,0 +1,1251 @@
+[
+  {
+    "doc": "Pertaining to a portion of the whole; any one of two or more samples of something, of the same volume or weight.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "aliquot", 
+    "fields": [
+      {
+        "doc": "Aliquot ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the aliquot type", 
+        "type": [
+          {
+            "symbols": [
+              "aliquot"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "aliquot_enum", 
+            "doc": "Allowed string constants for indicating aliquot"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "Key-values representing aliquot properties", 
+        "type": [
+          {
+            "doc": "The properties of an aliquot", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "aliquot_properties", 
+            "fields": [
+              {
+                "doc": "The legacy barcode used before prior to the use UUIDs. For TCGA this is bcr_aliquot_barcode.", 
+                "type": "string", 
+                "name": "legacy_barcode"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "source_center"
+              }, 
+              {
+                "doc": "TOREVIEW: The center to which the aliquot was shipped, replaces center_id. Is this needed if relationship is intact?", 
+                "type": "string", 
+                "name": "shipment_center_id"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of shipment encoded as seconds from epoch. If no time is given, it is set to 00:00:00. Replaces day_of_shipment/month_of_shipment/year_of_shipment.", 
+                "type": "long", 
+                "name": "shipment_datetime"
+              }, 
+              {
+                "doc": "TOREVIEW: New property, reason for shipping the aliquot, so can determine if expecting data", 
+                "type": {
+                  "symbols": [
+                    "TBD"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "shipment_reason_enum", 
+                  "doc": "Reason for shipping a biospecimen"
+                }, 
+                "name": "shipment_reason"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "amount"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "concentration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "plate_id"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "plate_row"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "plate_column"
+              }
+            ], 
+            "type": "record"
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "analyte", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "analyte"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "analyte_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "analyte_properties", 
+            "fields": [
+              {
+                "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA this is bcr_analyte_barcode.", 
+                "type": "string", 
+                "name": "legacy_barcode"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": {
+                  "symbols": [
+                    "D", 
+                    "G", 
+                    "H", 
+                    "R", 
+                    "T", 
+                    "W", 
+                    "X"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "analyte_type_id_enum", 
+                  "doc": "Allowed analyte type IDs"
+                }, 
+                "name": "analyte_type_id"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": {
+                  "symbols": [
+                    "DNA", 
+                    "EBV Immortalized Normal", 
+                    "GenomePlex (Rubicon) Amplified DNA", 
+                    "Repli-G (Qiagen) DNA", 
+                    "Repli-G X (Qiagen) DNA", 
+                    "RNA", 
+                    "Total RNA"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "analyte_type_enum", 
+                  "doc": "Allowed analyte type IDs"
+                }, 
+                "name": "analyte_type"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "concentration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "amount"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "a260_a280_ratio"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "well_number"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "spectrophotometer_method"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "portion", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "portion"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "portion_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "portion_properties", 
+            "fields": [
+              {
+                "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA this is bcr_portion_barcode.", 
+                "type": "string", 
+                "name": "legacy_barcode"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "portion_number"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of portion creation encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_creation/month_of_creation/year_of_creation.", 
+                "type": "long", 
+                "name": "creation_datetime"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "weight"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "boolean", 
+                "name": "is_ffpe"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "sample", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "sample"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "sample_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "sample_properties", 
+            "fields": [
+              {
+                "doc": "The legacy (often semantic) barcode used before prior to the use UUIDs, varies by project.", 
+                "type": "string", 
+                "name": "tissue_source_site"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": {
+                  "symbols": [
+                    "01", 
+                    "02", 
+                    "03", 
+                    "04", 
+                    "05", 
+                    "06", 
+                    "07", 
+                    "08", 
+                    "09", 
+                    "10", 
+                    "11", 
+                    "12", 
+                    "13", 
+                    "14", 
+                    "20", 
+                    "50", 
+                    "60", 
+                    "61", 
+                    "99"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "sample_type_id_enum", 
+                  "doc": "Allowed analyte type IDs"
+                }, 
+                "name": "sample_type_id"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": {
+                  "symbols": [
+                    "Blood Derived Normal", 
+                    "Buccal Cell Normal", 
+                    "Control Analyte", 
+                    "DNA", 
+                    "EBV Immortalized Normal", 
+                    "GenomePlex (Rubicon) Amplified DNA", 
+                    "Granulocytes", 
+                    "Primary Blood Derived Cancer - Peripheral Blood", 
+                    "Recurrent Blood Derived Cancer - Peripheral Blood", 
+                    "Primary Tumor", 
+                    "Recurrent Blood Derived Cancer - Bone Marrow", 
+                    "Recurrent Tumor", 
+                    "Repli-G (Qiagen) DNA", 
+                    "Repli-G X (Qiagen) DNA", 
+                    "RNA", 
+                    "Slides", 
+                    "Solid Tissue Normal", 
+                    "Total RNA", 
+                    "Metastatic", 
+                    "Additional - New Primary", 
+                    "Additional Metastatic", 
+                    "Human Tumor Original Cells", 
+                    "Primary Blood Derived Cancer - Bone Marrow", 
+                    "Cell Lines", 
+                    "Xenograft Tissue", 
+                    "Bone Marrow Normal"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "sample_type_enum", 
+                  "doc": "Allowed analyte type IDs"
+                }, 
+                "name": "sample_type"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "longest_dimension"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "intermediate_dimension"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "shortest_dimension"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "initial_weight"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "current_weight"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "freezing_method"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "oct_embedded"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "time_between_clamping_and_freezing"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "time_between_excision_and_freezing"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of sample collection encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection.", 
+                "type": "long", 
+                "name": "collection_datetime"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of sample procurement encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection.", 
+                "type": "long", 
+                "name": "procurement_datetime"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "boolean", 
+                "name": "is_ffep"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "pathology_report_uuid"
+              }, 
+              {
+                "doc": "TODO: define", 
+                "type": "string", 
+                "name": "diagnostic_slides"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "participant", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "participant"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "participant_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "participant_properties", 
+            "fields": [
+              {
+                "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode.", 
+                "type": "string", 
+                "name": "legacy_barcode"
+              }, 
+              {
+                "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode.", 
+                "type": "string", 
+                "name": "tissue_source_site"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of ??? encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_index/month_of_index/year_of_index.", 
+                "type": "long", 
+                "name": "index_datetime"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "project", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "project"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "project_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "project_properties", 
+            "fields": [
+              {
+                "doc": "TOREVIEW: display name for the project", 
+                "type": "string", 
+                "name": "full_name"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "program", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "program"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "program_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "program_properties", 
+            "fields": [
+              {
+                "doc": "TOREVIEW: display name for the project", 
+                "type": "string", 
+                "name": "full_name"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "center", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "center"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "center_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "center_properties", 
+            "fields": [
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "center_name"
+              }, 
+              {
+                "doc": "TODO: define, from DCC as display_name", 
+                "type": "string", 
+                "name": "full_name"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "short_name"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "center_type"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "platform", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "platform"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "platform_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "platform_properties", 
+            "fields": []
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "data_type", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "data_type"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "data_type_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "data_type_properties", 
+            "fields": []
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "data_subtype", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "data_subtype"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "data_subtype_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "data_subtype_properties", 
+            "fields": []
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "experimental_strategy", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "experimental_strategy"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "experimental_strategy_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "experimental_strategy_properties", 
+            "fields": []
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "data_format", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "data_format"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "data_format_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "data_format_properties", 
+            "fields": []
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "file", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "file"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "file_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file_properties", 
+            "fields": [
+              {
+                "doc": "TOREVIEW: the file (object) name", 
+                "type": "string", 
+                "name": "file_name"
+              }, 
+              {
+                "doc": "The MD5 hash of this file", 
+                "type": "string", 
+                "name": "md5sum"
+              }, 
+              {
+                "doc": "TOREVIEW: the file (object) name", 
+                "type": {
+                  "symbols": [
+                    "submitted", 
+                    "uploading", 
+                    "generating", 
+                    "validating", 
+                    "invalid", 
+                    "suppressed", 
+                    "redacted", 
+                    "live"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "file_state_enum", 
+                  "doc": "TOREVIEW: Allowed states for files, inspired but slightly different from CGHub vocab"
+                }, 
+                "name": "state"
+              }, 
+              {
+                "doc": "TOREVIEW: optional comment about why the file is in the current state, mainly for invalid state.", 
+                "type": [
+                  "null", 
+                  "string"
+                ], 
+                "name": "state_comment"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "archive", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "archive"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "archive_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "archive_properties", 
+            "fields": [
+              {
+                "doc": "The revision of this archive in the DCC.", 
+                "type": "long", 
+                "name": "revision"
+              }, 
+              {
+                "doc": "Unique identifier of this archive in the DCC.", 
+                "type": "string", 
+                "name": "legacy_id"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "annotation", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "annotation"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "annotation_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation_properties", 
+            "fields": [
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "annotation"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "category"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "classification"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "creator"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of annotation creation encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. ", 
+                "type": "long", 
+                "name": "created_datetime"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "status"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "notes"
+              }, 
+              {
+                "doc": "TODO: define, from DCC", 
+                "type": "string", 
+                "name": "item_type"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "clinical", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "clinical"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "clinical_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "clinical_properties", 
+            "fields": [
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "prior_dx"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "gender"
+              }, 
+              {
+                "doc": "TOREVIEW: The datetime of birth encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_birth/month_of_birth/year_of_birth.", 
+                "type": "long", 
+                "name": "birth_datetime"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "days_to_death"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "days_to_last_followup"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "history_of_neoadjuvant_treatment"
+              }, 
+              {
+                "doc": "TODO: define, from BCR, not tier 1", 
+                "type": "string", 
+                "name": "icd_10"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "days_to_initial_pathologic_diagnosis"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "age_at_initial_pathologic_diagnosis"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "year_of_initial_pathologic_diagnosis"
+              }, 
+              {
+                "doc": "TODO: define, from BCR, not tier 1", 
+                "type": "string", 
+                "name": "ethnicity"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "histological_type"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "histological_type_other"
+              }, 
+              {
+                "doc": "TODO: define, from BCR, this is nested", 
+                "type": "string", 
+                "name": "stage_system_version"
+              }, 
+              {
+                "doc": "TODO: define, from BCR, this is nested", 
+                "type": "string", 
+                "name": "pathologic_stage"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "postoperative_rx_tx"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "radiation_therapy"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "slide", 
+    "fields": [
+      {
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "type": [
+          {
+            "symbols": [
+              "slide"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "slide_enum"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "slide_properties", 
+            "fields": [
+              {
+                "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_slide_barcode.", 
+                "type": "string", 
+                "name": "legacy_barcode"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "string", 
+                "name": "section_location"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "long", 
+                "name": "number_proliferating_cells"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_tumor_cells"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_tumor_nuclei"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_normal_cells"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_necrosis"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_stromal_cells"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_inflam_infiltration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_lymphocyte_infiltration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_monocyte_infiltration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_granulocyte_infiltration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_neutrophil_infiltration"
+              }, 
+              {
+                "doc": "TODO: define, from BCR", 
+                "type": "float", 
+                "name": "percent_eosinophil_infiltration"
+              }
+            ]
+          }
+        ], 
+        "name": "properties"
+      }
+    ], 
+    "type": "record"
+  }
+]

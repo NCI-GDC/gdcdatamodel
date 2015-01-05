@@ -36,6 +36,10 @@ class xml2psqlgraph(object):
                                         object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
+        if node_validator:
+            self.graph.node_validator = node_validator
+        if edge_validator:
+            self.graph.edge_validator = edge_validator
 
     def xpath(self, path, root=None, single=False, nullable=True,
               expected=True, text=True, label=''):
