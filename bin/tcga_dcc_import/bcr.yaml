@@ -11,13 +11,17 @@ aliquot:
     legacy_barcode: ./bio:bcr_aliquot_barcode
     source_center:  ./bio:source_center
     shipment_center_id: ./bio:center_id
-    shipment_datetime:
-    shipment_reason:
+    # shipment_reason: ./bio:shipment_reason
     amount: ./bio:amount
     concentration: ./bio:concentration
     plate_id: ./bio:plate_id
     plate_row: ./bio:plate_row
     plate_column: ./bio:plate_column
+  datetime_properties:
+    shipment_datetime:
+      day: ./bio:day_of_shipment
+      month: ./bio:month_of_shipment
+      year: ./bio:year_of_shipment
 
 analyte:
   root: //bio:analyte
