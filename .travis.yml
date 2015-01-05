@@ -17,4 +17,4 @@ before_script:
   - yes | python zugs/setup.py install
   - python zugs/bin/setup_psqlgraph.py
   - python zugs/bin/setup_neo4j.py
-script: "cd zug/test; nosetests -v"
+script: "cd zugs/test; nosetests -v"
