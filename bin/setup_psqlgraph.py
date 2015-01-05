@@ -1,12 +1,15 @@
-import argparse
-from psqlgraph import Base, PsqlGraphDriver
-from sqlalchemy import create_engine
-import logging
-
 """
 This is a one-time use script to set up a fresh install of Postgres 9.4
 Needs to be run as the postgres user.
 """
+
+import argparse
+from sqlalchemy import create_engine
+import logging
+
+from sqlalchemy import UniqueConstraint
+from psqlgraph import Base, PsqlGraphDriver
+from psqlgraph.edge import PsqlEdge, add_edge_constraint
 
 
 def try_drop_test_data(user, database, root_user='postgres', host=''):
@@ -69,17 +72,10 @@ def create_tables(host, user, password, database):
     print('Creating tables in test database')
 
     driver = PsqlGraphDriver(host, user, password, database)
+    add_edge_constraint(UniqueConstraint(
+        PsqlEdge.src_id, PsqlEdge.dst_id, PsqlEdge.label))
     Base.metadata.create_all(driver.engine)
 
-    # conn = driver.engine.connect()
-
-    # null_stmt = """
-    # CREATE UNIQUE INDEX constraint_voided_null
-    # ON nodes (node_id)
-    # WHERE voided IS NULL;
-    # """
-    # conn.execute(null_stmt)
-    # conn.close()
 
 if __name__ == '__main__':
 

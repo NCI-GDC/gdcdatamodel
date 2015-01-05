@@ -14,7 +14,7 @@ before_script:
   - sudo sed -i s/5433/5432/g /etc/postgresql/9.4/main/postgresql.conf
   - sudo service postgresql restart
   - sudo apt-get install libxml2-dev libxslt-dev python-dev
-  - yes | python zug/setup.py install
-  - python zug/bin/setup_psqlgraph.py
-  - python zug/bin/setup_neo4j.py
-script: "cd zug/test; nosetests -v"
+  - yes | python setup.py install
+  - python bin/setup_psqlgraph.py
+  - python bin/setup_neo4j.py
+script: "cd test; nosetests -v"
