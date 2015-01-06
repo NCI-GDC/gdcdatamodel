@@ -99,40 +99,86 @@ portion:
       month: ./bio:month_of_creation
       year: ./bio:year_of_creation
 
-# sample:
-#   root:
-#   id:
-#   edges:
-#     participant:
-#   properties:
-#     tissue_source_site:
-#     sample_type_id:
-#     sample_type:
-#     longest_dimension:
-#     intermediate_dimension:
-#     shortest_dimension:
-#     initial_weight:
-#     current_weight:
-#     freezing_method:
-#     oct_embedded:
-#     time_between_clamping_and_freezing:
-#     time_between_excision_and_freezing:
-#     collection_datetime:
-#     procurement_datetime:
-#     is_ffpe:
-#     pathology_report_uuid:
-#     diagnostic_slides:
+sample:
+  root: //bio:sample
+  id: .//bio:bcr_sample_uuid
+  edges:
+    derived_from:
+      participant: ancestor::bio:patient/bio:bcr_patient_uuid
+  properties:
+    tissue_source_site:
+      path: ancestor::bio:patient/shared:tissue_source_site
+      type: str
+    sample_type_id:
+      path: ./bio:sample_type_id
+      type: str
+    sample_type:
+      path: ./bio:sample_type
+      type: str
+    longest_dimension:
+      path: ./bio:longest_dimension
+      type: str
+    intermediate_dimension:
+      path: ./bio:intermediate_dimension
+      type: str
+    shortest_dimension:
+      path: ./bio:shortest_dimension
+      type: str
+    initial_weight:
+      path: ./bio:initial_weight
+      type: str
+    current_weight:
+      path: ./bio:current_weight
+      type: str
+    freezing_method:
+      path: ./bio:freezing_method
+      type: str
+    oct_embedded:
+      path: ./bio:oct_embedded
+      type: str
+    time_between_clamping_and_freezing:
+      path: ./bio:time_between_clamping_and_freezing
+      type: str
+    time_between_excision_and_freezing:
+      path: ./bio:time_between_excision_and_freezing
+      type: str
+    is_ffpe:
+      path: ./bio:is_ffpe
+      type: bool
+    pathology_report_uuid:
+      path: ./bio:pathology_report_uuid
+      type: str
+  #   diagnostic_slides:
+  #     path:
+  #     type: str
+  # datetime_properties:
+  #   collection_datetime:
+  #     day: ./bio:day_of_creation
+  #     month: ./bio:month_of_creation
+  #     year: ./bio:year_of_creation
+  #   procurement_datetime:
+  #     day: ./bio:day_of_creation
+  #     month: ./bio:month_of_creation
+  #     year: ./bio:year_of_creation
 
-# participant:
-#   root:
-#   id:
-#   edges:
-#     project:
-#     center:
-#   properties:
-#     legacy_barcode:
-#     tissue_source_site:
-#     index_datetime:
+participant:
+  root: //bio:patient
+  id: .//shared:bcr_patient_uuid
+  # edges:
+    # member_of:
+    #   project:
+    # processed_at:
+    #   center:
+  properties:
+    legacy_barcode:
+      path: ./shared:bcr_patient_barcode
+      type: str
+    tissue_source_site:
+      path: ./shared:tissue_source_site
+      type: str
+    # index_datetime:
+    #   path:
+    #   type:
 
 # project:
 #   root:
@@ -265,23 +311,52 @@ portion:
 #     postoperative_rx_tx:
 #     radiation_therapy:
 
-# slide:
-#   root:
-#   id:
-#   edges:
-#     portion:
-#   properties:
-#     legacy_barcode:
-#     section_location:
-#     number_proliferating_cells:
-#     percent_tumor_cells:
-#     percent_tumor_nuclei:
-#     percent_normal_cells:
-#     percent_necrosis:
-#     percent_stromal_cells:
-#     percent_inflam_infiltration:
-#     percent_lymphocyte_infiltration:
-#     percent_monocyte_infiltration:
-#     percent_granulocyte_infiltration:
-#     percent_neutrophil_infiltration:
-#     percent_eosinophil_infiltration:
+slide:
+  root: //bio:slide
+  id: .//bio:bcr_slide_uuid
+  edges:
+    derived_from:
+      portion: ancestor::bio:portion/bio:bcr_portion_uuid
+  properties:
+    legacy_barcode:
+      path: ./bio:legacy_barcode
+      type: str
+    section_location:
+      path: ./bio:section_location
+      type: str
+    number_proliferating_cells:
+      path: ./bio:number_proliferating_cells
+      type: str
+    percent_tumor_cells:
+      path: ./bio:percent_tumor_cells
+      type: str
+    percent_tumor_nuclei:
+      path: ./bio:percent_tumor_nuclei
+      type: str
+    percent_normal_cells:
+      path: ./bio:percent_normal_cells
+      type: str
+    percent_necrosis:
+      path: ./bio:percent_necrosis
+      type: str
+    percent_stromal_cells:
+      path: ./bio:percent_stromal_cells
+      type: str
+    percent_inflam_infiltration:
+      path: ./bio:percent_inflam_infiltration
+      type: str
+    percent_lymphocyte_infiltration:
+      path: ./bio:percent_lymphocyte_infiltration
+      type: str
+    percent_monocyte_infiltration:
+      path: ./bio:percent_monocyte_infiltration
+      type: str
+    percent_granulocyte_infiltration:
+      path: ./bio:percent_granulocyte_infiltration
+      type: str
+    percent_neutrophil_infiltration:
+      path: ./bio:percent_neutrophil_infiltration
+      type: str
+    percent_eosinophil_infiltration:
+      path: ./bio:percent_eosinophil_infiltration
+      type: str

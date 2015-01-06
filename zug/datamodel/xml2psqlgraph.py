@@ -111,7 +111,7 @@ class xml2psqlgraph(object):
         for edge_id, e in self.edges.iteritems():
             existing = self.graph.edge_lookup(
                 src_id=e.src_id, dst_id=e.dst_id, label=e.label)
-            if existing:
+            if len(existing.all()):
                 pass
             else:
                 self.graph.edge_insert(e)
@@ -248,7 +248,8 @@ class xml2psqlgraph(object):
             if _type == 'bool':
                 result = result.lower() in ['true', 'yes']
             else:
-                props[prop] = types[_type](result) if result else result
+                result = types[_type](result) if result else result
+            props[prop] = result
         return props
 
     def get_node_datetime_properties(
@@ -304,6 +305,10 @@ class xml2psqlgraph(object):
 
         :returns: a list of edges
         """
+
+        if 'edges' not in params:
+            return {}
+
         edges = {}
         for edge_type, paths in params.edges.items():
             for dst_label, path in paths.items():
