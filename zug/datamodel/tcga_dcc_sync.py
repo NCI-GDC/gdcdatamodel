@@ -3,6 +3,7 @@ import tempfile
 import tarfile
 import re
 import hashlib
+import uuid
 from contextlib import contextmanager
 
 import requests
@@ -40,8 +41,8 @@ class TCGADCCArchiveSyncer(object):
         # this will be identical between different versions of an archive as new
         # versions are submitted
         legacy_id = re.sub("\.(\d+?)\.(\d+)$", "", archive["archive_name"])
-        old_versions = self.driver.node_lookup(label="archive",
-                                               property_matches={"legacy_id": legacy_id})
+        old_versions = list(self.pg_driver.node_lookup(label="archive",
+                                                       property_matches={"legacy_id": legacy_id}))
         if len(old_versions) > 1:
             # since we void all old versions of an archive when we add a new one,
             # there should never be more than one old version in the database
@@ -49,15 +50,16 @@ class TCGADCCArchiveSyncer(object):
         if old_versions:
             old_archive = old_versions[0]
             # first get all the files related to this archive and void them
-            with self.driver.session_scope() as session:
-                for file in self.driver.node_lookup(label="file")\
+            with self.pg_driver.session_scope() as session:
+                for file in self.pg_driver.node_lookup(label="file")\
                                        .with_edge_to_node("member_of", old_archive):
-                    self.driver.node_delete(file, session=session)
-                self.driver.node_delete(node=file, session=session)
-        new_archive_node = PsqlNode(label="archive",
-                                    properties={"legacy_id": legacy_id,
-                                                "revision": archive["revision"]})
-        with self.driver.session_scope() as session:
+                    self.pg_driver.node_delete(node=file, session=session)
+        new_archive_node = PsqlNode(
+            node_id=str(uuid.uuid4()),
+            label="archive",
+            properties={"legacy_id": legacy_id,
+                        "revision": archive["revision"]})
+        with self.pg_driver.session_scope() as session:
             session.add(new_archive_node)
         return new_archive_node
 
@@ -78,16 +80,17 @@ class TCGADCCArchiveSyncer(object):
             temp_file = StringIO()
         for chunk in resp.iter_content():
             temp_file.write(chunk)
+        temp_file.seek(0)
         with temp_file as f:
-            yield tarfile.open(f, "r|gz")
+            yield tarfile.open(fileobj=f, mode="r|gz")
 
     def sync_archives(self, archives):
         for archive in archives:
             self.sync_archive(archive)
 
     def lookup_file_in_pg(self, archive_node, filename):
-        q = self.driver.node_lookup(label="file",
-                                    property_matches={"file_name": filename})\
+        q = self.pg_driver.node_lookup(label="file",
+                                       property_matches={"file_name": filename})\
                        .with_edge_to_node("member_of", archive_node)
         file_nodes = q.all()
         if not file_nodes:
@@ -183,14 +186,14 @@ class TCGADCCArchiveSyncer(object):
         return url
 
     def set_file_state(self, file_node, state):
-        self.driver.node_update(file_node, properties={"state": state})
+        self.pg_driver.node_update(file_node, properties={"state": state})
 
     def verify_sum(self, file_node, obj, expected_sum):
         actual_sum = md5sum(obj.as_stream())
         if actual_sum != expected_sum:
-            self.driver.node_update(file_node,
-                                    properties={"state": "invalid",
-                                                "state_comment": "bad md5sum"})
+            self.pg_driver.node_update(file_node,
+                                       properties={"state": "invalid",
+                                                   "state_comment": "bad md5sum"})
         else:
             # TODO it shouldn't actually be live yet since it hasn't
             # been classified, might need another state
