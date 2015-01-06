@@ -1,0 +1,989 @@
+[
+  {
+    "doc": "Indicates that the destination entity is physically derived from the source entity via some process/protocol", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "derived_from", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the derived_from label.", 
+        "type": [
+          {
+            "symbols": [
+              "derived_from"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "derived_from_enum", 
+            "doc": "Allowed string constants for indicating derived_from"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "aliquot:analyte", 
+            "fields": [
+              {
+                "type": {
+                  "symbols": [
+                    "aliquot"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "aliquot_enum", 
+                  "doc": "Allowed string constants for indicating aliquot"
+                }, 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "analyte"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "analyte_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "aliquot:sample", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.aliquot_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "sample"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "sample_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "analyte:portion", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.analyte_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "portion"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "portion_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "portion:sample", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.portion_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.sample_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "sample:participant", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.sample_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "participant"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "participant_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "slide:portion", 
+            "fields": [
+              {
+                "type": {
+                  "symbols": [
+                    "slide"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "slide_enum"
+                }, 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.portion_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": {
+          "type": "record", 
+          "namespace": "edu.uchicago.cdis", 
+          "name": "src_dst_nodes", 
+          "fields": [
+            {
+              "type": "string", 
+              "name": "src_node_id"
+            }, 
+            {
+              "type": "string", 
+              "name": "dst_node_id"
+            }
+          ]
+        }, 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates that the destination entity is logically part of the group defined by the source entity.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "member_of", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the member_of label.", 
+        "type": [
+          {
+            "symbols": [
+              "member_of"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "member_of_enum", 
+            "doc": "Allowed string constants for indicating member_of"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "participant:project", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.participant_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "project"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "project_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "project:program", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.project_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "program"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "program_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "archive:project", 
+            "fields": [
+              {
+                "type": {
+                  "symbols": [
+                    "archive"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "archive_enum"
+                }, 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.project_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:archive", 
+            "fields": [
+              {
+                "type": {
+                  "symbols": [
+                    "file"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "file_enum"
+                }, 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.archive_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:experimental_strategy", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "experimental_strategy"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "experimental_strategy_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:data_subtype", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "data_subtype"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "data_subtype_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:data_format", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "data_format"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "data_format_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "data_subtype:data_type", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.data_subtype_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "data_type"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "data_type_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "processed_at", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the processed_at label.", 
+        "type": [
+          {
+            "symbols": [
+              "processed_at"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "processed_at_enum", 
+            "doc": "Allowed string constants for indicating processed_at"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/dstination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "participant:center", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.participant_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "center"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "center_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates the experimental platform that generated the file.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "generated_from", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the generated_from label.", 
+        "type": [
+          {
+            "symbols": [
+              "generated_from"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "generated_from_enum", 
+            "doc": "Allowed string constants for indicating generated_from"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:platform", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "platform"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "platform_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "data_from", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the data_from label.", 
+        "type": [
+          {
+            "symbols": [
+              "data_from"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "data_from_enum", 
+            "doc": "Allowed string constants for indicating data_from"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:aliquot", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.aliquot_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:analyte", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.analyte_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:portion", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.portion_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:sample", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.sample_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:participant", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.participant_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:slide", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.slide_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:file", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "describes", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the describes label.", 
+        "type": [
+          {
+            "symbols": [
+              "describes"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "describes_enum", 
+            "doc": "Allowed string constants for indicating describes"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "clinical:participant", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.participant_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": {
+                  "symbols": [
+                    "clinical"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "clinical_enum"
+                }, 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "TODO: document", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "annotates", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the annotates label.", 
+        "type": [
+          {
+            "symbols": [
+              "annotates"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "annotates_enum", 
+            "doc": "Allowed string constants for indicating annotates"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation:participant", 
+            "fields": [
+              {
+                "type": {
+                  "symbols": [
+                    "annotation"
+                  ], 
+                  "namespace": "edu.uchicago.cdis", 
+                  "type": "enum", 
+                  "name": "annotation_enum"
+                }, 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.participant_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation:sample", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.annotation_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.sample_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation:portion", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.annotation_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.portion_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation:analyte", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.annotation_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.analyte_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation:aliquot", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.annotation_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.aliquot_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "annotation:file", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.annotation_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates that the source entity was physically shipped to the destination entity.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "shipped_to", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the shipped_to label.", 
+        "type": [
+          {
+            "symbols": [
+              "shipped_to"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "shipped_to_enum", 
+            "doc": "Allowed string constants for indicating shipped_to"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "aliquot:center", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.aliquot_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.center_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }, 
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "portion:center", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.portion_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.center_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }, 
+  {
+    "doc": "Indicates the submitting entity of a file/data.", 
+    "namespace": "edu.uchicago.cdis", 
+    "name": "submitted_by", 
+    "fields": [
+      {
+        "doc": "Primary unique edge ID", 
+        "type": "string", 
+        "name": "id"
+      }, 
+      {
+        "doc": "String constant representing the submitted_by label.", 
+        "type": [
+          {
+            "symbols": [
+              "submitted_by"
+            ], 
+            "namespace": "edu.uchicago.cdis", 
+            "type": "enum", 
+            "name": "submitted_by_enum", 
+            "doc": "Allowed string constants for indicating submitted_by"
+          }
+        ], 
+        "name": "label"
+      }, 
+      {
+        "doc": "The source/destination node types allowed.", 
+        "type": [
+          {
+            "type": "record", 
+            "namespace": "edu.uchicago.cdis", 
+            "name": "file:center", 
+            "fields": [
+              {
+                "type": "edu.uchicago.cdis.file_enum", 
+                "name": "src_node_label"
+              }, 
+              {
+                "type": "edu.uchicago.cdis.center_enum", 
+                "name": "dst_node_label"
+              }
+            ]
+          }
+        ], 
+        "name": "node_labels"
+      }, 
+      {
+        "doc": "The primary IDs for the source and destination nodes.", 
+        "type": "edu.uchicago.cdis.src_dst_nodes", 
+        "name": "node_ids"
+      }
+    ], 
+    "type": "record"
+  }
+]

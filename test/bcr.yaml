@@ -8,16 +8,38 @@ aliquot:
     processed_at:
       center: .//bio:center_id
   properties:
-    legacy_barcode: ./bio:bcr_aliquot_barcode
-    source_center:  ./bio:source_center
-    shipment_center_id: ./bio:center_id
-    shipment_datetime:
+    legacy_barcode:
+      path: ./bio:bcr_aliquot_barcode
+      type: str
+    source_center:
+      path: ./bio:source_center
+      type: str
+    shipment_center_id:
+      path: ./bio:center_id
+      type: str
     shipment_reason:
-    amount: ./bio:amount
-    concentration: ./bio:concentration
-    plate_id: ./bio:plate_id
-    plate_row: ./bio:plate_row
-    plate_column: ./bio:plate_column
+      path: ./bio:shipment_reason
+      type: str
+    amount:
+      path: ./bio:amount
+      type: float
+    concentration:
+      path: ./bio:concentration
+      type: float
+    plate_id:
+      path: ./bio:plate_id
+      type: str
+    plate_row:
+      path: ./bio:plate_row
+      type: str
+    plate_column:
+      path: ./bio:plate_column
+      type: str
+  datetime_properties:
+    shipment_datetime:
+      day: ./bio:day_of_shipment
+      month: ./bio:month_of_shipment
+      year: ./bio:year_of_shipment
 
 analyte:
   root: //bio:analyte
@@ -26,27 +48,56 @@ analyte:
     derived_from:
       portion: ancestor::bio:portion/bio:bcr_portion_uuid
   properties:
-    legacy_barcode: ./bio:bcr_analyte_barcode
-    analyte_type_id: ./bio:analyte_type_id
-    analyte_type: ./bio:analyte_type
-    concentration: ./bio:concentration
-    amount: ./bio:amount
-    a260_a280_ratio: ./bio:a260_a280_ratio
-    well_number: ./bio:well_number
-    spectrophotometer_method: ./bio:spectrophotometer_method
+    legacy_barcode:
+      path: ./bio:bcr_analyte_barcode
+      type: str
+    analyte_type_id:
+      path: ./bio:analyte_type_id
+      type: str
+    analyte_type:
+      path: ./bio:analyte_type
+      type: str
+    concentration:
+      path: ./bio:concentration
+      type: float
+    amount:
+      path: ./bio:amount
+      type: float
+    a260_a280_ratio:
+      path: ./bio:a260_a280_ratio
+      type: float
+    well_number:
+      path: ./bio:well_number
+      type: str
+    spectrophotometer_method:
+      path: ./bio:spectrophotometer_method
+      type: str
 
-# portion:
-#   root:
-#   id:
-#   edges:
-#     sample:
-#     center:
-#   properties:
-#     legacy_barcode:
-#     portion_number:
-#     creation_datetime:
-#     weight:
-#     is_ffpe:
+portion:
+  root: //bio:portion
+  id: .//bio:bcr_portion_uuid
+  edges:
+    derived_from:
+      sample: ancestor::bio:sample/bio:bcr_sample_uuid
+      center: ./bio:analytes/bio:analyte/bio:center_id
+  properties:
+    legacy_barcode:
+      path: ./bio:legacy_barcode
+      type: str
+    portion_number:
+      path: ./bio:portion_number
+      type: str
+    weight:
+      path: ./bio:weight
+      type: float
+    is_ffpe:
+      path: ./bio:is_ffpe
+      type: bool
+  datetime_properties:
+    creation_datetime:
+      day: ./bio:day_of_creation
+      month: ./bio:month_of_creation
+      year: ./bio:year_of_creation
 
 # sample:
 #   root:

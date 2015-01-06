@@ -6,7 +6,9 @@ first:
       second: .//level2/test:id
       third: .//level1/test:id
   properties:
-    text1.1: ./test:text1.1
+    text1.1:
+      path: ./test:text1.1
+      type: str
 
 second:
   root: .//test:level2
@@ -17,8 +19,12 @@ second:
     below:
       third: ./test:level3/test:id
   properties:
-    text2.2: ./test:text2.2
-    text2.3: ./test:text2.3
+    text2.2:
+      path: ./test:text2.2
+      type: str
+    text2.3:
+      path: ./test:text2.3
+      type: str
 
 third:
   root: .//test:level3
@@ -28,5 +34,9 @@ third:
       first: ancestor::test:level1/test:id
       second: ancestor::test:level2/test:id
   properties:
-    text3.1: ./test:text3.1
-    text3.2: ./test:text3.2
+    text3.1:
+      path: ./test:text3.1
+      type: str
+    text3.2:
+      path: ./test:text3.2
+      type: str

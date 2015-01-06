@@ -4,6 +4,7 @@ import datetime
 import logging
 import psqlgraph
 from psqlgraph.edge import PsqlEdge
+from psqlgraph.node import PsqlNode
 from lxml import etree
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
@@ -28,7 +29,8 @@ class xml2psqlgraph(object):
 
     def __init__(self, translate_path, host, user,
                  password, database, node_validator=None,
-                 edge_validator=None, **kwargs):
+                 edge_validator=None, ignore_missing_properties=False,
+                 **kwargs):
         """
 
         :param str translate_path:
@@ -38,6 +40,7 @@ class xml2psqlgraph(object):
 
         self.graph = []
         self.namespaces = None
+        self.ignore_missing_properties = ignore_missing_properties
         with open(translate_path) as f:
             self.translate = json.loads(json.dumps(yaml.load(f)),
                                         object_hook=AttrDict)
@@ -47,6 +50,7 @@ class xml2psqlgraph(object):
             self.graph.node_validator = node_validator
         if edge_validator:
             self.graph.edge_validator = edge_validator
+        self.nodes, self.edges = {}, {}
 
     def xpath(self, path, root=None, single=False, nullable=True,
               expected=True, text=True, label=''):
@@ -79,6 +83,12 @@ class xml2psqlgraph(object):
         if rlen < 1 and expected:
             raise Exception('{}: Unable to find {}'.format(label, path))
 
+        if rlen < 1 and not expected and single:
+            return None
+
+        if rlen < 1 and not expected and not single:
+            return []
+
         elif rlen > 1 and single:
             logging.error(result)
             raise Exception('{}: Expected 1 result for {}, found {}'.format(
@@ -93,6 +103,18 @@ class xml2psqlgraph(object):
             result = result[0]
 
         return result
+
+    def export(self):
+        for node_id, n in self.nodes.iteritems():
+            self.graph.node_merge(
+                node_id=n.node_id, properties=n.properties, label=n.label)
+        for edge_id, e in self.edges.iteritems():
+            existing = self.graph.edge_lookup(
+                src_id=e.src_id, dst_id=e.dst_id, label=e.label)
+            if existing:
+                pass
+            else:
+                self.graph.edge_insert(e)
 
     def xml2psqlgraph(self, data):
         """Main function that takes xml string and converts it to a graph to
@@ -121,7 +143,8 @@ class xml2psqlgraph(object):
         roots = self.get_node_roots(node_type, params)
         for root in roots:
             node_id = self.get_node_id(root, node_type, params)
-            nprops = self.get_node_properties(root, node_type, params, node_id)
+            nprops = self.get_node_properties(
+                root, node_type, params, node_id)
             n_date_props = self.get_node_datetime_properties(
                 root, node_type, params, node_id)
             nprops.update(n_date_props)
@@ -135,30 +158,32 @@ class xml2psqlgraph(object):
         """Adds a node to the graph
 
         """
-        print node_id, label
-        print properties
-        self.graph.node_merge(
-            node_id=node_id,
-            label=label,
-            properties=properties
-        )
+        if node_id in self.nodes:
+            self.nodes[node_id].merge(properties=properties)
+        else:
+            self.nodes[node_id] = PsqlNode(
+                node_id=node_id,
+                label=label,
+                properties=properties
+            )
 
     def insert_edge(self, src_id, dst_id, dst_label, edge_label,
                     properties={}):
         """Adds an edge to the graph
 
         """
-        self.graph.node_merge(node_id=dst_id, label=dst_label)
-        edge_exists = self.graph.edge_lookup_one(
-            src_id=src_id, dst_id=dst_id, label=edge_label)
 
-        if not edge_exists:
-            self.graph.edge_insert(PsqlEdge(
+        edge_id = "{}:{}:{}".format(src_id, dst_id, edge_label)
+        self.insert_node(dst_id, dst_label, {})
+        if edge_id in self.edges:
+            self.edges[edge_id].merge(properties=properties)
+        else:
+            self.edges[edge_id] = PsqlEdge(
                 src_id=src_id,
                 dst_id=dst_id,
                 label=edge_label,
                 properties=properties
-            ))
+            )
 
     def get_node_roots(self, node_type, params):
         """returns a list of xml node root elements for a given node_type
@@ -207,12 +232,23 @@ class xml2psqlgraph(object):
 
         """
 
+        if 'properties' not in params:
+            return {}
+
+        types = {'int': int, 'float': float, 'str': str, 'long': long}
         props = {}
-        for prop, path in params.properties.items():
+        for prop, args in params.properties.items():
+            path, _type = args['path'], args['type']
+            if not path:
+                continue
             result = self.xpath(
                 path, root, single=True, text=True,
+                expected=(not self.ignore_missing_properties),
                 label='{}: {}'.format(node_type, node_id))
-            props[prop] = result
+            if _type == 'bool':
+                result = result.lower() in ['true', 'yes']
+            else:
+                props[prop] = types[_type](result) if result else result
         return props
 
     def get_node_datetime_properties(
@@ -241,17 +277,17 @@ class xml2psqlgraph(object):
             # Parse the year, month, day
             for span in times:
                 if span in timespans:
-                    times[span] = self.xpath(
+                    times[span] = int(self.xpath(
                         timespans[span], root, single=True, text=True,
-                        label='{}: {}'.format(node_type, node_id))
+                        label='{}: {}'.format(node_type, node_id)))
                     if not times[span]:
                         times[span] = 0
 
             if not times['year']:
                 props[name] = 0
             else:
-                props[name] = datetime.date(
-                    times['year'], times['month'], times['day'])
+                props[name] = unix_time(datetime.datetime(
+                    times['year'], times['month'], times['day']))
 
         return props
 
