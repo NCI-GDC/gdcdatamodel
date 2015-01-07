@@ -1,0 +1,1 @@
+include gdcdatamodel/gdcdatamodel/avro/schemata/*.avsc
