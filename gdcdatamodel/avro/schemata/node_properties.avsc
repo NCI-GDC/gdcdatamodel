@@ -220,11 +220,6 @@
         "name": "pathology_report_uuid",
         "type": "string",
         "doc": "TODO: define"
-      },
-      {
-        "name": "diagnostic_slides",
-        "type": "string",
-        "doc": "TODO: define"
       }
     ]
   },
