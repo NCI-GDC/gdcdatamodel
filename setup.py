@@ -10,7 +10,7 @@ setup(
     package_data={
         "gdcdatamodel": [
             "*.avsc",
-            "gdcdatamodel/avro/schemata/*.avsc",
+            "avro/schemata/*.avsc",
         ]
     },
 )
