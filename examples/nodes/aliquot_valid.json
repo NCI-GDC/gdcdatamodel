@@ -1,0 +1,16 @@
+{
+  "id": "05c45162-6c94-4a15-accc-b6239451064c",
+  "label": "aliquot",
+  "properties": {
+      "legacy_barcode": "TCGA-AR-A1AR-01A-31D-A133-02",
+      "source_center": "23",
+      "shipment_center_id": "01",
+      "shipment_datetime": 1420661120,
+      "shipment_reason": "TBD",
+      "amount": 13.00,
+      "concentration": 0.16,
+      "plate_id": "A133",
+      "plate_row": "8",
+      "plate_column": "5"
+  }
+}
