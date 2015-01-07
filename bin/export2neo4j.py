@@ -27,4 +27,4 @@ def clear_graph(exporter):
 if __name__ == '__main__':
     exporter = get_exporter()
     clear_graph(exporter)
-    exporter.export(batch_size=20)
+    exporter.export(batch_size=1000)

@@ -200,10 +200,6 @@ participant:
 #   id:
 #   edges:
 #   properties:
-#     center_name:
-#     full_name:
-#     short_name:
-#     center_type:
 
 # platform:
 #   root:

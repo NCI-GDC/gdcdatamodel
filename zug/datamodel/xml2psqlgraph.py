@@ -5,6 +5,7 @@ import logging
 import psqlgraph
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
+from psqlgraph.util import session_scope
 from lxml import etree
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
@@ -105,16 +106,22 @@ class xml2psqlgraph(object):
         return result
 
     def export(self):
+        self.export_nodes()
+        self.export_edges()
+
+    def export_nodes(self):
         for node_id, n in self.nodes.iteritems():
             self.graph.node_merge(
                 node_id=n.node_id, properties=n.properties, label=n.label)
+
+    def export_edges(self):
         for edge_id, e in self.edges.iteritems():
-            existing = self.graph.edge_lookup(
-                src_id=e.src_id, dst_id=e.dst_id, label=e.label)
-            if len(existing.all()):
-                pass
-            else:
-                self.graph.edge_insert(e)
+            with self.graph.session_scope() as session:
+                existing = list(self.graph.edge_lookup(
+                    src_id=e.src_id, dst_id=e.dst_id, label=e.label,
+                    session=session).all())
+                if not len(existing):
+                    self.graph.edge_insert(e, session=session)
 
     def xml2psqlgraph(self, data):
         """Main function that takes xml string and converts it to a graph to
@@ -278,11 +285,10 @@ class xml2psqlgraph(object):
             # Parse the year, month, day
             for span in times:
                 if span in timespans:
-                    times[span] = int(self.xpath(
+                    temp = self.xpath(
                         timespans[span], root, single=True, text=True,
-                        label='{}: {}'.format(node_type, node_id)))
-                    if not times[span]:
-                        times[span] = 0
+                        label='{}: {}'.format(node_type, node_id))
+                    times[span] = 0 if temp is None else int(temp)
 
             if not times['year']:
                 props[name] = 0

@@ -2,11 +2,8 @@ import requests
 import logging
 import re
 from datetime import datetime, tzinfo, timedelta
-from zug.exceptions import IgnoreDocumentException
-
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
-
 
 default_latest_firstline = 'ARCHIVE_NAME DATE_ADDED ARCHIVE_URL'.split()
 default_latest_url = "http://tcga-data.nci.nih.gov/datareports/resources/latestarchive"
@@ -89,13 +86,13 @@ class LatestURLParser(object):
 
         pattern = re.compile(r"""
         ^
-        (.+?)_ # center
-        (\w+)\. # disease code
-        (.+?)\. # platform
+        (.+?)_   # center
+        (\w+)\.  # disease code
+        (.+?)\.  # platform
         (.+?\.)? # data level, ABI archives do not have data level part
         (\d+?)\. # batch
         (\d+?)\. # revision
-        (\d+) # series
+        (\d+)    # series
         $
         """, re.X)
 
@@ -146,23 +143,6 @@ class LatestURLParser(object):
     def parse_archive(self, archive_name, date_added, archive_url):
         archive = {}
         archive['_type'] = 'tcga_dcc_archive'
-        archive['signpost_added'] = datetime.utcnow().replace(
-            tzinfo=SimpleUTC()).replace(microsecond=0).isoformat()
-        archive['import'] = {}
-        archive['import']['state'] = 'not_started'
-        archive['import']['host'] = None
-        archive['import']['start_time'] = None
-        archive['import']['finish_time'] = None
-        archive['import']['download'] = {}
-        archive['import']['download']['start_time'] = None
-        archive['import']['download']['finish_time'] = None
-        archive['import']['upload'] = {}
-        archive['import']['upload']['start_time'] = None
-        archive['import']['upload']['finish_time'] = None
-        archive['import']['process'] = {}
-        archive['import']['process']['start_time'] = None
-        archive['import']['process']['finish_time'] = None
-
         archive['archive_name'] = archive_name
         archive['date_added'] = date_added
         archive['dcc_archive_url'] = archive_url

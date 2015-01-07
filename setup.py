@@ -9,8 +9,11 @@ setup(
         'psqlgraph',
         'lxml',
         'requests',
+        'psqlgraph',
+        'gdcdatamodel',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git#egg=gdcdatamodel',
     ]
 )
