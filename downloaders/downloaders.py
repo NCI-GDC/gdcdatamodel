@@ -595,6 +595,7 @@ class Downloader(object):
                 remaining_bytes = source_size - offset
                 bytes = min([block_size, remaining_bytes])
                 part_num = i + 1
+                time.sleep(3)
                 pool.apply_async(
                     upload_multipart, [
                         s3_info, mp.key_name, mp.id,
@@ -602,7 +603,7 @@ class Downloader(object):
                         part_num
                     ]
                 )
-            self.logger.info("Queued upload.")
+                self.logger.info("Queued part {}.".format(part_num))
             pool.close()
             pool.join()
 
