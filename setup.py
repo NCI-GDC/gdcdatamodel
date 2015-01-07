@@ -7,4 +7,10 @@ setup(
         'avro==1.7.7',
         'graphviz',
     ],
+    package_data={
+        "gdcdatamodel": [
+            "*.avsc",
+            "gdcdatamodel/avro/schemata/*.avsc",
+        ]
+    },
 )
