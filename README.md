@@ -28,6 +28,18 @@ The gdcdatamodel library requires the following pip dependencies
 
 Project dependencies are managed using [PIP](https://pip.readthedocs.org/en/latest/)
 
+# Example usage
+```
+from gdcdatamodel import node_avsc_object
+from avro.io import validate
+import json
+
+
+with open('examples/nodes/aliquot_valid.json', 'r') as f:
+    node = json.loads(f.read())
+print validate(node_avsc_object, node)  # if valid, prints True
+```
+
 # Tests
 
 ```
