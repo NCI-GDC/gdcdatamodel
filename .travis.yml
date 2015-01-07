@@ -1,6 +1,6 @@
 language: python
 python:
   - "2.7"
-  before_script:
+before_script:
     - yes | python setup.py install
-  script: "nosetests -v"
+script: "nosetests -v"
