@@ -89,7 +89,7 @@
       },
       {
         "name": "a260_a280_ratio",
-        "type": "long",
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
