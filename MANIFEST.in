@@ -1,1 +1,1 @@
-include gdcdatamodel/gdcdatamodel/avro/schemata/*.avsc
+include gdcdatamodel/avro/schemata/*.avsc
