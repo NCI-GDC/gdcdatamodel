@@ -202,13 +202,13 @@
         "doc": "TODO: define"
       },
       {
-        "name": "collection_datetime",
-        "type": "long",
+        "name": "days_to_collection",
+        "type": "int",
         "doc": "TOREVIEW: The datetime of sample collection encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
       },
       {
-        "name": "procurement_datetime",
-        "type": "long",
+        "name": "days_to_procurement",
+        "type": "int",
         "doc": "TOREVIEW: The datetime of sample procurement encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
       },
       {
