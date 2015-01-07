@@ -1,1 +1,2 @@
-recursive-include gdcdatamodel *.avsc
+global-include *.avsc
+graft gdcdatamodel
