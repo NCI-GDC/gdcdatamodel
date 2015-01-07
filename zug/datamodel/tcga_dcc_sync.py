@@ -82,7 +82,7 @@ class TCGADCCArchiveSyncer(object):
             temp_file.write(chunk)
         temp_file.seek(0)
         with temp_file as f:
-            yield tarfile.open(fileobj=f, mode="r|gz")
+            yield tarfile.open(fileobj=f, mode="r:gz")
 
     def sync_archives(self, archives):
         for archive in archives:
