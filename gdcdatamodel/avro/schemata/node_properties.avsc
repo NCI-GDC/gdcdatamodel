@@ -27,7 +27,7 @@
       },
       {
         "name": "shipment_reason",
-        "type": "shipment_reason_enum",
+        "type": ["null", "shipment_reason_enum"],
         "doc": "TOREVIEW: New property, reason for shipping the aliquot, so can determine if expecting data"
       },
       {
@@ -79,27 +79,27 @@
       },
       {
         "name": "concentration",
-        "type": "long",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "amount",
-        "type": "long",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "a260_a280_ratio",
-        "type": "float",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "well_number",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "spectrophotometer_method",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define, from BCR"
       }
     ]
@@ -126,7 +126,7 @@
       },
       {
         "name": "weight",
-        "type": "long",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       },
       {
@@ -142,11 +142,6 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "tissue_source_site",
-        "type": "string",
-        "doc": "The legacy (often semantic) barcode used before prior to the use UUIDs, varies by project."
-      },
-      {
         "name": "sample_type_id",
         "type": "sample_type_id_enum",
         "doc": "TODO: define"
@@ -158,32 +153,32 @@
       },
       {
         "name": "longest_dimension",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
         "name": "intermediate_dimension",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
         "name": "shortest_dimension",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
         "name": "initial_weight",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
         "name": "current_weight",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
         "name": "freezing_method",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
@@ -193,12 +188,12 @@
       },
       {
         "name": "time_between_clamping_and_freezing",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
         "name": "time_between_excision_and_freezing",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define"
       },
       {
@@ -207,22 +202,17 @@
         "doc": "TOREVIEW: The datetime of sample collection encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
       },
       {
-        "name": "days_to_procurement",
-        "type": "int",
+        "name": "days_to_sample_procurement",
+        "type": ["null", "int"],
         "doc": "TOREVIEW: The datetime of sample procurement encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
       },
       {
-        "name": "is_ffep",
+        "name": "is_ffpe",
         "type": "boolean",
         "doc": "TODO: define"
       },
       {
         "name": "pathology_report_uuid",
-        "type": "string",
-        "doc": "TODO: define"
-      },
-      {
-        "name": "diagnostic_slides",
         "type": "string",
         "doc": "TODO: define"
       }
@@ -244,9 +234,9 @@
         "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode."
       },
       {
-        "name": "index_datetime",
-        "type": "long",
-        "doc": "TOREVIEW: The datetime of ??? encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_index/month_of_index/year_of_index."
+        "name": "days_to_index",
+        "type": ["null", "int"],
+        "doc": "TODO: define"
       }
     ]
   },
@@ -531,7 +521,7 @@
       },
       {
         "name": "number_proliferating_cells",
-        "type": "long",
+        "type": ["null", "long"],
         "doc": "TODO: define, from BCR"
       },
       {
@@ -561,7 +551,7 @@
       },
       {
         "name": "percent_inflam_infiltration",
-        "type": "float",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       },
       {
@@ -576,7 +566,7 @@
       },
       {
         "name": "percent_granulocyte_infiltration",
-        "type": "float",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       },
       {
@@ -586,7 +576,7 @@
       },
       {
         "name": "percent_eosinophil_infiltration",
-        "type": "float",
+        "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
       }
     ]
