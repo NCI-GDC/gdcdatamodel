@@ -1,17 +1,22 @@
-from cStringIO import StringIO
+From cStringIO import StringIO
 import tempfile
 import tarfile
 import re
 import hashlib
 import uuid
 from contextlib import contextmanager
+from urlparse import urlparse
+from functools import partial
 
 import requests
 
 from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
+from libcloud.storage.drivers.local import LocalStorageDriver
 
 from psqlgraph import PsqlNode, PsqlEdge, session_scope
+
+from cdisutils.log import get_logger
 
 
 def md5sum(iterable):
@@ -35,12 +40,21 @@ class TCGADCCArchiveSyncer(object):
         # returns the name of a container to store it in
         self.dcc_auth = dcc_auth
         self.scratch_dir = scratch_dir
+        self.log = get_logger("tcga_dcc_sync")
 
     def put_archive_in_pg(self, archive):
         # legacy_id is just the name without the revision or series
         # this will be identical between different versions of an archive as new
         # versions are submitted
         legacy_id = re.sub("\.(\d+?)\.(\d+)$", "", archive["archive_name"])
+        self.log.info("looking for archive %s in postgres", archive["archive_name"])
+        maybe_this_archive = self.pg_driver.node_lookup_one(label="archive",
+                                                            property_matches={"legacy_id": legacy_id,
+                                                                              "revision": archive["revision"]})
+        if maybe_this_archive:
+            self.log.info("found archive %s in postgres, not inserting", archive["archive_name"])
+            return maybe_this_archive
+        self.log.info("looking up old versions of archive %s in postgres", legacy_id)
         old_versions = list(self.pg_driver.node_lookup(label="archive",
                                                        property_matches={"legacy_id": legacy_id}))
         if len(old_versions) > 1:
@@ -49,16 +63,21 @@ class TCGADCCArchiveSyncer(object):
             raise ValueError("multiple old versions of an archive found")
         if old_versions:
             old_archive = old_versions[0]
+            self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
+                          old_archive.properties["revision"],
+                          legacy_id)
             # first get all the files related to this archive and void them
             with self.pg_driver.session_scope() as session:
                 for file in self.pg_driver.node_lookup(label="file")\
-                                       .with_edge_to_node("member_of", old_archive):
+                                          .with_edge_to_node("member_of", old_archive):
+                    self.log.debug("voiding file %s", str(file))
                     self.pg_driver.node_delete(node=file, session=session)
         new_archive_node = PsqlNode(
             node_id=str(uuid.uuid4()),
             label="archive",
             properties={"legacy_id": legacy_id,
                         "revision": archive["revision"]})
+        self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
         with self.pg_driver.session_scope() as session:
             session.add(new_archive_node)
         return new_archive_node
@@ -73,16 +92,17 @@ class TCGADCCArchiveSyncer(object):
 
     @contextmanager
     def untar_archive(self, archive):
+        self.log.info("untaring archive %s", archive["archive_name"])
         resp = self.get_archive_stream(archive["dcc_archive_url"])
-        if resp.headers["content-length"] > self.MAX_BYTES_IN_MEMORY:
+        if int(resp.headers["content-length"]) > self.MAX_BYTES_IN_MEMORY:
+            self.log.info("archive size is % bytes, storing in temp file on disk", resp.headers["content-length"])
             temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
         else:
             temp_file = StringIO()
         for chunk in resp.iter_content():
             temp_file.write(chunk)
         temp_file.seek(0)
-        with temp_file as f:
-            yield tarfile.open(fileobj=f, mode="r:gz")
+        yield tarfile.open(fileobj=temp_file, mode="r:gz")
 
     def sync_archives(self, archives):
         for archive in archives:
@@ -91,7 +111,7 @@ class TCGADCCArchiveSyncer(object):
     def lookup_file_in_pg(self, archive_node, filename):
         q = self.pg_driver.node_lookup(label="file",
                                        property_matches={"file_name": filename})\
-                       .with_edge_to_node("member_of", archive_node)
+                          .with_edge_to_node("member_of", archive_node)
         file_nodes = q.all()
         if not file_nodes:
             return None
@@ -147,10 +167,12 @@ class TCGADCCArchiveSyncer(object):
                                          "state": "submitted"})
         edge = PsqlEdge(label="member_of",
                         src_id=file_node.node_id,
-                        dst_id=archive_node.node_id)
+                        dst_id=archive_node.node_id,
+                        properties={})
         with session_scope(self.pg_driver.engine) as session:
-            self.pg_driver.node_insert(file_node, session)
-            self.pg_driver.edge_insert(edge, session)
+            self.log.info("inserting file %s as node %s", filename, file_node)
+            self.pg_driver.node_insert(file_node, session=session)
+            self.pg_driver.edge_insert(edge, session=session)
         return file_node
 
     def container_for(self, archive):
@@ -159,20 +181,25 @@ class TCGADCCArchiveSyncer(object):
         else:
             return "tcga_dcc_public"
 
-    def upload_to_object_store(self, archive, tarball, tarinfo):
+    def upload_to_object_store(self, archive, tarball, tarinfo, filename):
         # put the file in the object store
         container = self.storage_client.get_container(self.container_for(archive))
-        objname = "/".join([archive["archive_name"], tarinfo.name])
-        return container.upload_object_via_stream(tarball.extractfile(tarinfo),
-                                                  objname)
+        objname = "/".join([archive["archive_name"], filename])
+        fileobj = tarball.extractfile(tarinfo)
+        CHUNK_SIZE = 8124
+        obj = container.upload_object_via_stream(iter(partial(fileobj.read, CHUNK_SIZE), ''),
+                                                 objname)
+        return obj
+
 
     def url_for(self, obj):
         """Return a url for a libcloud object."""
         DRIVER_TO_SCHEME = {
             S3StorageDriver: "s3",
-            OpenStackSwiftStorageDriver: "swift"
+            OpenStackSwiftStorageDriver: "swift",
+            LocalStorageDriver: "file"
         }
-        scheme = DRIVER_TO_SCHEME[obj.driver]
+        scheme = DRIVER_TO_SCHEME[obj.driver.__class__]
         host = obj.driver.connection.host
         container = obj.container.name
         name = obj.name
@@ -185,6 +212,11 @@ class TCGADCCArchiveSyncer(object):
         # reconstruct the object from the url when validating
         return url
 
+    def obj_for(self, url):
+        # for now this assumes that the object can be found by self.storage_client
+        parsed = urlparse(url)
+        return self.storage_client.get_object(*parsed.path.split("/", 2)[1:])
+
     def set_file_state(self, file_node, state):
         self.pg_driver.node_update(file_node, properties={"state": state})
 
@@ -194,43 +226,57 @@ class TCGADCCArchiveSyncer(object):
             self.pg_driver.node_update(file_node,
                                        properties={"state": "invalid",
                                                    "state_comment": "bad md5sum"})
-        else:
-            # TODO it shouldn't actually be live yet since it hasn't
-            # been classified, might need another state
-            self.set_file_state(file_node, {"state": "live"})
+            self.log.warning("file %s has invalid checksum", file_node.properties["file_name"])
 
     def sync_file(self, archive, archive_node, tarball, tarinfo, dcc_md5):
         # 1) look up file in database, if not present, insert it, getting
         # id from signpost
         # 2) put file in object store if not already there
-        filename = tarinfo.name
+        filename = tarinfo.name.split("/")[-1]
         file_node = self.lookup_file_in_pg(archive_node, filename)
         if not file_node:
             file_node = self.store_file_in_pg(archive_node, filename, dcc_md5)
-        # does signpost already know about it?
+        else:
+            self.log.info("file %s in archive %s already in postgres, not inserting",
+                          filename,
+                          archive_node.properties["legacy_id"])
+        # does signpost already know about it?  TODO think about what
+        # to do if we 404 here. that would mean that we inserted this
+        # thing into signpost once before and it has since
+        # disappeared. There's no good way to recover from this since
+        # signpost is the id authority and we can't tell it to just
+        # insert a specific id
         urls = self.get_urls_from_signpost(file_node.node_id)
         if not urls:
             self.set_file_state(file_node, "uploading")
-            obj = self.upload_to_object_store(archive, tarball, tarinfo)
+            obj = self.upload_to_object_store(archive, tarball, tarinfo, filename)
             new_url = self.url_for(obj)
             self.store_url_in_signpost(file_node.node_id, new_url)
         self.set_file_state(file_node, "validating")
-        self.verify_sum(file_node, dcc_md5)
-        # TODO classify based on Junjun/Zhenyu's regexes?
+        # no reconstruct the object from signpost and validate
+        urls = self.get_urls_from_signpost(file_node.node_id)
+        if not urls:
+            raise RuntimeError("no urls in signpost for file {}, node:{}".format(file_node.file_name, file_node))
+        obj = self.obj_for(urls[0])
+        self.verify_sum(file_node, obj, dcc_md5)
+        # classify based on Junjun/Zhenyu's regexes?
+        self.set_file_state(file_node, "live")
 
-    def extract_manifest(self, tarball):
-        manifest_tarinfo = tarball.getmember("MANIFEST.txt")
+    def extract_manifest(self, archive, tarball):
+        manifest_tarinfo = tarball.getmember("{}/MANIFEST.txt".format(archive["archive_name"]))
         manifest_data = tarball.extractfile(manifest_tarinfo)
         res = {}
-        for line in manifest_data.splitlines():
+        for line in manifest_data.readlines():
             md5, filename = line.split()
             res[filename] = md5
         return res
 
     def sync_archive(self, archive):
+        self.log.info("syncing archive %s", archive["archive_name"])
         archive_node = self.put_archive_in_pg(archive)
         with self.untar_archive(archive) as tarball:
-            manifest = self.extract_manifest(tarball)
+            manifest = self.extract_manifest(archive, tarball)
             for tarinfo in tarball:
-                if tarinfo.name != "MANIFEST.txt":
-                    self.sync_file(archive, archive_node, tarball, tarinfo, manifest[tarinfo.name])
+                if tarinfo.name != "{}/MANIFEST.txt".format(archive["archive_name"]):
+                    self.sync_file(archive, archive_node, tarball,
+                                   tarinfo, manifest[tarinfo.name.split("/")[-1]])
