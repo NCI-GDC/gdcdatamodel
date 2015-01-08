@@ -1,7 +1,9 @@
 import os
 import json
+import logging
 from avro.schema import make_avsc_object, Names
 
+logging.debug('loading gdcdatamodel avro schema...')
 package_dir = os.path.dirname(os.path.realpath(__file__))
 schema_src_dir = os.path.join(package_dir, 'avro', 'schemata')
 
@@ -9,14 +11,15 @@ node_schema_file_list = [os.path.join(schema_src_dir, f) for f in [
     "field_types.avsc",
     "node_labels.avsc",
     "node_properties.avsc",
-    "nodes.avsc"
+    "nodes.avsc",
 ]]
 
 edge_schema_file_list = [os.path.join(schema_src_dir, f) for f in [
-    "schemata/src/node_labels.avsc",
-    "schemata/src/edge_labels.avsc",
-    "schemata/src/node_pairs.avsc",
-    "schemata/src/edges.avsc"
+    "node_labels.avsc",
+    "edge_labels.avsc",
+    "node_pairs.avsc",
+    "edge_properties.avsc",
+    "edges.avsc",
 ]]
 
 
@@ -28,6 +31,7 @@ def make_avsc_object_from_file(path, names=None):
     :returns: avsc_object
     """
 
+    logging.debug('Loading avsc from file {}'.format(path))
     with open(path, 'r') as f:
         schema = json.loads(f.read())
     avsc_object = make_avsc_object(schema, names)
@@ -50,4 +54,5 @@ def make_avsc_object_from_file_list(file_list):
 
 # Create avsc objects
 node_avsc_object = make_avsc_object_from_file_list(node_schema_file_list)
-edge_avsc_object = make_avsc_object_from_file_list(node_schema_file_list)
+edge_avsc_object = make_avsc_object_from_file_list(edge_schema_file_list)
+logging.debug('gdcdatamodel avro schema loaded.')
