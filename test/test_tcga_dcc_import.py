@@ -2,12 +2,16 @@ import logging
 import unittest
 import os
 from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar
+from zug.datamodel.import_tcga_code_tables import \
+    import_center_codes, import_tissue_source_site_codes
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 test_dir = os.path.dirname(os.path.realpath(__file__))
+data_dir = os.path.join(
+    os.path.abspath(os.path.join(test_dir, os.path.pardir)), 'data')
 
 mapping = os.path.join(test_dir, 'bcr.yaml')
 datatype = 'biospecimen'
@@ -15,6 +19,8 @@ host = 'localhost'
 user = 'test'
 password = 'test'
 database = 'automated_test'
+center_csv_path = os.path.join(data_dir, 'centerCode.csv')
+tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 
 def initialize(validated=False):
@@ -55,11 +61,26 @@ class TestTCGAImport(unittest.TestCase):
         converter.xml2psqlgraph(xml)
         converter.export()
 
-    def test_convert_validate_sample(self):
+    def test_convert_validate_nodes_sample(self):
         parser, extractor, converter = initialize(validated=True)
         converter.graph.engine.execute('delete from edges')
         converter.graph.engine.execute('delete from nodes')
+        import_center_codes(converter.graph, center_csv_path)
+        import_tissue_source_site_codes(converter.graph, center_csv_path)
+        converter.export_nodes()
         with open(os.path.join(test_dir, 'sample.xml')) as f:
             xml = f.read()
         converter.xml2psqlgraph(xml)
-        converter.export()
+        converter.export_nodes()
+
+    def test_convert_validate_edges_sample(self):
+        parser, extractor, converter = initialize(validated=True)
+        converter.graph.engine.execute('delete from edges')
+        converter.graph.engine.execute('delete from nodes')
+        import_center_codes(converter.graph, center_csv_path)
+        converter.export_nodes()
+        with open(os.path.join(test_dir, 'sample.xml')) as f:
+            xml = f.read()
+        converter.xml2psqlgraph(xml)
+        converter.export_nodes()
+        converter.export_edges()

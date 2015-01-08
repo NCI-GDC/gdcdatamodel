@@ -1,6 +1,6 @@
 import logging
-import csv
-from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar
+from zug.datamodel import xml2psqlgraph, latest_urls, \
+    extract_tar, import_tcga_code_tables
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -40,25 +40,10 @@ def initialize():
     return parser, extractor, converter
 
 
-def import_table_csv(graph, path):
-    with open(path, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            graph.node_merge(
-                node_id=row[0],
-                label='center',
-                properties={
-                    'center_name': row[1],
-                    'full_name': row[3],
-                    'short_name': row[4],
-                    'center_type': row[2],
-                })
-
-
 def start():
     parser, extractor, converter = initialize()
     graph = converter.graph
-    import_table_csv(graph, 'centerCode.csv')
+    import_tcga_code_tables(graph, 'centerCode.csv')
 
     for url in parser:
         for xml in extractor(url):

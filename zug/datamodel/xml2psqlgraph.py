@@ -5,22 +5,40 @@ import logging
 import psqlgraph
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
-from psqlgraph.util import session_scope
 from lxml import etree
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
+
+possible_true_values = [
+    'true',
+    'yes',
+]
+
+possible_false_values = [
+    'false',
+    'no',
+]
 
 
 def unix_time(dt):
     epoch = datetime.datetime.utcfromtimestamp(0)
     delta = dt - epoch
-    return delta.total_seconds()
+    return int(delta.total_seconds())
 
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
+
+
+def to_bool(val):
+    if val.lower() in possible_true_values:
+        return True
+    elif val.lower() in possible_false_values:
+        return False
+    else:
+        raise ValueError("Cannot convert {} to boolean".format(val))
 
 
 class xml2psqlgraph(object):
@@ -110,13 +128,22 @@ class xml2psqlgraph(object):
         self.export_edges()
 
     def export_nodes(self):
-        for node_id, n in self.nodes.iteritems():
-            self.graph.node_merge(
-                node_id=n.node_id, properties=n.properties, label=n.label)
+        with self.graph.session_scope() as session:
+            for node_id, n in self.nodes.iteritems():
+                try:
+                    self.graph.node_merge(
+                        node_id=n.node_id, properties=n.properties, label=n.label,
+                        session=session)
+                except:
+                    logging.error('Unable to add node')
+                    import pprint
+                    print n
+                    pprint.pprint(n.properties)
+                    raise
 
     def export_edges(self):
-        for edge_id, e in self.edges.iteritems():
-            with self.graph.session_scope() as session:
+        with self.graph.session_scope() as session:
+            for edge_id, e in self.edges.iteritems():
                 existing = list(self.graph.edge_lookup(
                     src_id=e.src_id, dst_id=e.dst_id, label=e.label,
                     session=session).all())
@@ -239,7 +266,7 @@ class xml2psqlgraph(object):
 
         """
 
-        if 'properties' not in params:
+        if 'properties' not in params or not params.properties:
             return {}
 
         types = {'int': int, 'float': float, 'str': str, 'long': long}
@@ -253,7 +280,7 @@ class xml2psqlgraph(object):
                 expected=(not self.ignore_missing_properties),
                 label='{}: {}'.format(node_type, node_id))
             if _type == 'bool':
-                result = result.lower() in ['true', 'yes']
+                result = to_bool(result)
             else:
                 result = types[_type](result) if result else result
             props[prop] = result
@@ -274,7 +301,8 @@ class xml2psqlgraph(object):
 
         """
 
-        if 'datetime_properties' not in params:
+        if 'datetime_properties' not in params or \
+           not params.datetime_properties:
             return {}
         props = {}
 
@@ -312,7 +340,7 @@ class xml2psqlgraph(object):
         :returns: a list of edges
         """
 
-        if 'edges' not in params:
+        if 'edges' not in params or not params.edges:
             return {}
 
         edges = {}
