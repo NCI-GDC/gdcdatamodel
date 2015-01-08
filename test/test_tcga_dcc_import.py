@@ -7,18 +7,19 @@ from zug.datamodel.import_tcga_code_tables import \
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 test_dir = os.path.dirname(os.path.realpath(__file__))
-data_dir = os.path.join(
-    os.path.abspath(os.path.join(test_dir, os.path.pardir)), 'data')
+data_dir = os.path.join(os.path.abspath(
+    os.path.join(test_dir, os.path.pardir)), 'data')
 
-mapping = os.path.join(test_dir, 'bcr.yaml')
 datatype = 'biospecimen'
 host = 'localhost'
 user = 'test'
 password = 'test'
 database = 'automated_test'
+
+mapping = os.path.join(data_dir, 'bcr.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
@@ -54,9 +55,14 @@ def initialize(validated=False):
 
 class TestTCGAImport(unittest.TestCase):
 
+    def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
+
     def test_convert_sample(self):
         parser, extractor, converter = initialize()
-        with open(os.path.join(test_dir, 'sample.xml')) as f:
+        converter.graph.engine.execute('delete from edges')
+        converter.graph.engine.execute('delete from nodes')
+        with open(os.path.join(data_dir, 'sample.xml')) as f:
             xml = f.read()
         converter.xml2psqlgraph(xml)
         converter.export()
@@ -66,9 +72,9 @@ class TestTCGAImport(unittest.TestCase):
         converter.graph.engine.execute('delete from edges')
         converter.graph.engine.execute('delete from nodes')
         import_center_codes(converter.graph, center_csv_path)
-        import_tissue_source_site_codes(converter.graph, center_csv_path)
+        import_tissue_source_site_codes(converter.graph, tss_csv_path)
         converter.export_nodes()
-        with open(os.path.join(test_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample.xml')) as f:
             xml = f.read()
         converter.xml2psqlgraph(xml)
         converter.export_nodes()
@@ -78,8 +84,9 @@ class TestTCGAImport(unittest.TestCase):
         converter.graph.engine.execute('delete from edges')
         converter.graph.engine.execute('delete from nodes')
         import_center_codes(converter.graph, center_csv_path)
+        import_tissue_source_site_codes(converter.graph, tss_csv_path)
         converter.export_nodes()
-        with open(os.path.join(test_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample.xml')) as f:
             xml = f.read()
         converter.xml2psqlgraph(xml)
         converter.export_nodes()

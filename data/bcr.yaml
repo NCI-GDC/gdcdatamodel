@@ -5,8 +5,10 @@ aliquot:
     derived_from:
       analyte: ancestor::bio:analyte/bio:bcr_analyte_uuid
       sample: ancestor::bio:sample/bio:bcr_sample_uuid
-    processed_at:
-      center: .//bio:center_id
+  edges_by_property:
+    shipped_to:
+      center:
+        legacy_id: .//bio:center_id
   properties:
     legacy_barcode:
       path: ./bio:bcr_aliquot_barcode
@@ -104,7 +106,7 @@ sample:
   id: .//bio:bcr_sample_uuid
   edges:
     derived_from:
-      participant: ancestor::bio:patient/bio:bcr_patient_uuid
+      participant: ancestor::bio:patient/shared:bcr_patient_uuid
   properties:
     sample_type_id:
       path: ./bio:sample_type_id
@@ -155,17 +157,13 @@ sample:
 participant:
   root: //bio:patient
   id: .//shared:bcr_patient_uuid
-  # edges:
-    # member_of:
-    #   project:
-    # processed_at:
-    #   center: ./shared:tissue_source_site
+  edges_by_property:
+    processed_at:
+      tissue_source_site:
+        legacy_id: ./shared:tissue_source_site
   properties:
     legacy_barcode:
       path: ./shared:bcr_patient_barcode
-      type: str
-    tissue_source_site:
-      path: ./shared:tissue_source_site
       type: str
     days_to_index:
       path: ./bio:days_to_index

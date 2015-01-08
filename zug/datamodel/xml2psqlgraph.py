@@ -3,6 +3,7 @@ import json
 import datetime
 import logging
 import psqlgraph
+import pprint
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
@@ -132,11 +133,10 @@ class xml2psqlgraph(object):
             for node_id, n in self.nodes.iteritems():
                 try:
                     self.graph.node_merge(
-                        node_id=n.node_id, properties=n.properties, label=n.label,
-                        session=session)
+                        node_id=n.node_id, properties=n.properties,
+                        label=n.label, session=session)
                 except:
                     logging.error('Unable to add node')
-                    import pprint
                     print n
                     pprint.pprint(n.properties)
                     raise
@@ -148,7 +148,12 @@ class xml2psqlgraph(object):
                     src_id=e.src_id, dst_id=e.dst_id, label=e.label,
                     session=session).all())
                 if not len(existing):
-                    self.graph.edge_insert(e, session=session)
+                    try:
+                        self.graph.edge_insert(e, session=session)
+                    except:
+                        logging.error('Unable to add edge')
+                        print e
+                        raise
 
     def xml2psqlgraph(self, data):
         """Main function that takes xml string and converts it to a graph to
@@ -326,7 +331,26 @@ class xml2psqlgraph(object):
 
         return props
 
-    def get_node_edges(self, root, node_type, params, node_id=''):
+    def get_node_edges(self, *args, **kwargs):
+        """for each edge type in the settings file, lookup the possible edges
+
+        :param root: the lxml root element to treat as a node
+        :param str node_type:
+            the node type to be used as a label in psqlgraph
+        :param dict params:
+            the parameters that govern xpath queries and translation
+            from the translation yaml file
+        :param str node_id: used for logging
+
+        :returns: a dict of edges
+        """
+
+        edges = {}
+        edges.update(self.get_node_edges_by_properties(*args, **kwargs))
+        edges.update(self.get_node_edges_by_id(*args, **kwargs))
+        return edges
+
+    def get_node_edges_by_id(self, root, node_type, params, node_id=''):
         """for each edge type in the settings file, lookup the possible edges
 
         :param root: the lxml root element to treat as a node
@@ -340,10 +364,9 @@ class xml2psqlgraph(object):
         :returns: a list of edges
         """
 
-        if 'edges' not in params or not params.edges:
-            return {}
-
         edges = {}
+        if 'edges' not in params or not params.edges:
+            return edges
         for edge_type, paths in params.edges.items():
             for dst_label, path in paths.items():
                 results = self.xpath(
@@ -351,4 +374,36 @@ class xml2psqlgraph(object):
                     label='{}: {}'.format(node_type, node_id))
                 for result in results:
                     edges[result] = (dst_label, edge_type)
+        return edges
+
+    def get_node_edges_by_properties(self, root, node_type, params,
+                                     node_id=''):
+        """for each edge type in the settings file, lookup the possible edges
+
+        :param root: the lxml root element to treat as a node
+        :param str node_type:
+            the node type to be used as a label in psqlgraph
+        :param dict params:
+            the parameters that govern xpath queries and translation
+            from the translation yaml file
+        :param str node_id: used for logging
+
+        :returns: a list of edges
+        """
+
+        edges = {}
+        if 'edges_by_property' not in params or not params.edges_by_property:
+            return edges
+
+        for edge_type, dst_params in params.edges_by_property.items():
+            for dst_label, dst_kv in dst_params.items():
+                dst_matches = {
+                    key: self.xpath(
+                        val, root, expected=False, text=True, single=True,
+                        label='{}: {}'.format(node_type, node_id))
+                    for key, val in dst_kv.items()}
+                dsts = list(self.graph.node_lookup(
+                    label=dst_label, property_matches=dst_matches).all())
+                for dst in dsts:
+                    edges[dst.node_id] = (dst.label, edge_type)
         return edges

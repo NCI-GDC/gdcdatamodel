@@ -1,7 +1,6 @@
 import unittest
 import logging
 import os
-import csv
 from zug import datamodel
 
 logging.basicConfig(level=logging.INFO)
