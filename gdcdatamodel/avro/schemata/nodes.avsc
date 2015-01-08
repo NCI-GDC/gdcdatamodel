@@ -433,5 +433,29 @@
         ]
       }
     ]
+  },
+  {
+    "type": "record",
+    "name": "tissue_source_site",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "tissue_source_site_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "tissue_source_site_properties"
+        ]
+      }
+    ]
   }
 ]

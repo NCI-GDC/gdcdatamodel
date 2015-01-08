@@ -229,13 +229,35 @@
         "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode."
       },
       {
-        "name": "tissue_source_site",
-        "type": "string",
-        "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode."
-      },
-      {
         "name": "days_to_index",
         "type": ["null", "int"],
+        "doc": "TODO: define"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "tissue_source_site_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "legacy_id",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "project",
+        "type": "string",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "bcr_id",
+        "type": "string",
         "doc": "TODO: define"
       }
     ]
@@ -270,12 +292,17 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "center_name",
+        "name": "legacy_id",
         "type": "string",
         "doc": "TODO: define, from DCC"
       },
       {
-        "name": "full_name",
+        "name": "namespace",
+        "type": "string",
+        "doc": "TODO: define, from DCC"
+      },
+      {
+        "name": "name",
         "type": "string",
         "doc": "TODO: define, from DCC as display_name"
       },

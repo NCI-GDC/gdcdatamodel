@@ -1,0 +1,72 @@
+[
+  {
+    "type": "record",
+    "name": "derived_from_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of derived_from edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "member_of_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of member_of edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "processed_at_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of processed_at edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "generated_from_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of generated_from edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "data_from_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of data_from edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "describes_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of describes edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "annotates_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of annotates edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "shipped_to_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of shipped_to edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "submitted_by_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of submitted_by edge",
+    "fields": []
+  },
+  {
+    "type": "record",
+    "name": "tissue_source_site_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of tissue_source_site edge",
+    "fields": []
+  }
+]
