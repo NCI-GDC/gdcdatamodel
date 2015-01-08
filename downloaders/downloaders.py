@@ -17,6 +17,8 @@ from multiprocessing import Pool
 from filechunkio import FileChunkIO
 import math
 import calendar
+import signal
+from contextlib import contextmanager
 
 logger = logging.getLogger(name="downloader")
 logging.basicConfig(
@@ -47,35 +49,72 @@ def which(program):
     return None
 
 
+@contextmanager
+def retries(n, exn):
+    i = 0
+    while i < n:
+        try:
+            i += 1
+            logging.info("try number {}".format(i))
+            yield
+        except exn as e:
+            logging.exception(e)
+    # try one last time and then give up
+
+
+class TimeoutError(Exception):
+    pass
+
+
+class timeout:
+    def __init__(self, seconds=1, msg="Timed out!"):
+        self.seconds = seconds
+        self.error_message = msg
+
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
+
 def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
+    tries = 0
+    while tries < 30:
+        try:
+            tries += 1
+            logging.info("try number {} to upload part {}".format(tries, index))
+            with timeout(seconds=5*60, msg="Timed out uploading part {}, retrying".format(index)):
+                # Reconnect to s3
+                conn = boto.connect_s3(
+                    aws_access_key_id=s3_info["s3_access_key"],
+                    aws_secret_access_key=s3_info["s3_secret_key"],
+                    host=s3_info["s3_url"],
+                    is_secure=False,
+                    calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+                )
 
-    # Reconnect to s3
-    conn = boto.connect_s3(
-        aws_access_key_id=s3_info["s3_access_key"],
-        aws_secret_access_key=s3_info["s3_secret_key"],
-        host=s3_info["s3_url"],
-        is_secure=False,
-        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
-    )
+                # Create a matching mp upload instead of looking it up
+                bucket = conn.get_bucket(s3_info["s3_bucket"])
+                mp = boto.s3.multipart.MultiPartUpload(bucket)
+                mp.key_name, mp.id = key_name, mpid
 
-    # Create a matching mp upload instead of looking it up
-    bucket = conn.get_bucket(s3_info["s3_bucket"])
-    mp = boto.s3.multipart.MultiPartUpload(bucket)
-    mp.key_name, mp.id = key_name, mpid
-
-    # Upload this segment
-    logging.info("Posting part {}".format(index))
-    with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
-        start = calendar.timegm(time.gmtime())
-        mp.upload_part_from_file(f, index)
-        stop = calendar.timegm(time.gmtime())
-        els = stop - start
-        logging.info("Posted part {} {} Mbps".format(
-            index, bytes/7.63e6/els))
-        return
-
-    # Should not get to here unless error
-    raise RuntimeError("Multipart upload {} not found.".format(mpid))
+                # Upload this segment
+                logging.info("Posting part {}".format(index))
+                with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
+                    start = calendar.timegm(time.gmtime())
+                    mp.upload_part_from_file(f, index)
+                    stop = calendar.timegm(time.gmtime())
+                    els = stop - start
+                    logging.info("Posted part {} {} Mbps".format(
+                        index, bytes/7.63e6/els))
+                    return
+        except TimeoutError as e:
+            logging.exception(e)
 
 
 def no_proxy(func):
@@ -556,6 +595,7 @@ class Downloader(object):
                 remaining_bytes = source_size - offset
                 bytes = min([block_size, remaining_bytes])
                 part_num = i + 1
+                time.sleep(3)
                 pool.apply_async(
                     upload_multipart, [
                         s3_info, mp.key_name, mp.id,
@@ -563,7 +603,7 @@ class Downloader(object):
                         part_num
                     ]
                 )
-            self.logger.info("Queued upload.")
+                self.logger.info("Queued part {}.".format(part_num))
             pool.close()
             pool.join()
 
