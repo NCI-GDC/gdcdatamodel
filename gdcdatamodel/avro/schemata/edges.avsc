@@ -6,6 +6,13 @@
     "doc": "Indicates that the destination entity is physically derived from the source entity via some process/protocol",
     "fields": [
       {
+        "name": "properties",
+        "type": [
+            "derived_from_properties"
+        ],
+        "doc": "Key-values representing derived_from properties"
+      },
+      {
         "name": "id",
         "type": "string",
         "doc": "Primary unique edge ID"
@@ -42,6 +49,13 @@
     "type": "record",
     "doc": "Indicates that the destination entity is logically part of the group defined by the source entity.",
     "fields": [
+      {
+        "name": "properties",
+        "type": [
+            "member_of_properties"
+        ],
+        "doc": "Key-values representing member_of properties"
+      },
       {
         "name": "id",
         "type": "string",
@@ -82,6 +96,13 @@
     "doc": "TODO: document",
     "fields": [
       {
+        "name": "properties",
+        "type": [
+            "processed_at_properties"
+        ],
+        "doc": "Key-values representing processed_at properties"
+      },
+      {
         "name": "id",
         "type": "string",
         "doc": "Primary unique edge ID"
@@ -96,7 +117,7 @@
       {
         "name": "node_labels",
         "type": [
-          "participant:center"
+          "participant:tissue_source_site"
         ],
         "doc": "The source/dstination node types allowed."
       },
@@ -146,6 +167,13 @@
     "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.",
     "fields": [
       {
+        "name": "properties",
+        "type": [
+            "generated_from_properties"
+        ],
+        "doc": "Key-values representing generated_from properties"
+      },
+      {
         "name": "id",
         "type": "string",
         "doc": "Primary unique edge ID"
@@ -184,6 +212,13 @@
     "doc": "Indicates that the data contained in the destination entity is represents information obtained from the source entity.",
     "fields": [
       {
+        "name": "properties",
+        "type": [
+            "describes_properties"
+        ],
+        "doc": "Key-values representing describes properties"
+      },
+      {
         "name": "id",
         "type": "string",
         "doc": "Primary unique edge ID"
@@ -215,6 +250,13 @@
     "type": "record",
     "doc": "TODO: document",
     "fields": [
+      {
+        "name": "properties",
+        "type": [
+            "annotates_properties"
+        ],
+        "doc": "Key-values representing annotates properties"
+      },
       {
         "name": "id",
         "type": "string",
@@ -253,6 +295,13 @@
     "doc": "Indicates that the source entity was physically shipped to the destination entity.",
     "fields": [
       {
+        "name": "properties",
+        "type": [
+            "shipped_to_properties"
+        ],
+        "doc": "Key-values representing shipped_to properties"
+      },
+      {
         "name": "id",
         "type": "string",
         "doc": "Primary unique edge ID"
@@ -285,6 +334,13 @@
     "type": "record",
     "doc": "Indicates the submitting entity of a file/data.",
     "fields": [
+      {
+        "name": "properties",
+        "type": [
+            "submitted_by_properties"
+        ],
+        "doc": "Key-values representing submitted_by properties"
+      },
       {
         "name": "id",
         "type": "string",

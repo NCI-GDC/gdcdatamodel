@@ -31,6 +31,21 @@
   },
   {
     "type": "record",
+    "name": "participant:tissue_source_site",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "participant_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "tissue_source_site_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "aliquot:sample",
     "namespace": "edu.uchicago.cdis",
     "fields": [
@@ -116,21 +131,6 @@
       {
         "name": "dst_node_label",
         "type": "program_enum"
-      }
-    ]
-  },
-  {
-    "type": "record",
-    "name": "participant:center",
-    "namespace": "edu.uchicago.cdis",
-    "fields": [
-      {
-        "name": "src_node_label",
-        "type": "participant_enum"
-      },
-      {
-        "name": "dst_node_label",
-        "type": "center_enum"
       }
     ]
   },

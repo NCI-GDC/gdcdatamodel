@@ -9,6 +9,15 @@
     "doc":"Allowed string constants for indicating aliquot"
   },
   {
+    "name": "tissue_source_site_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "tissue_source_site"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating tissue_source_site"
+  },
+  {
     "name": "analyte_enum",
     "namespace": "edu.uchicago.cdis",
     "symbols": [
