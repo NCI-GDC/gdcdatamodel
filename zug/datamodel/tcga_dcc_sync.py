@@ -63,6 +63,8 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive.properties["revision"],
                           legacy_id)
+            # TODO it would be awesome to verify that the changes we make actually match what's in
+            # CHANGES_DCC.txt
             # first get all the files related to this archive and void them
             with self.pg_driver.session_scope() as session:
                 for file in self.pg_driver.node_lookup(label="file")\
