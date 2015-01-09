@@ -1,4 +1,4 @@
-From cStringIO import StringIO
+from cStringIO import StringIO
 import tempfile
 import tarfile
 import re
