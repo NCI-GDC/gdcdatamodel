@@ -34,10 +34,7 @@ class TCGADCCArchiveSyncer(object):
     def __init__(self, signpost_url, pg_driver, storage_client, dcc_auth, scratch_dir):
         self.signpost_url = signpost_url
         self.storage_client = storage_client
-        # TODO probably make object store connection here
         self.pg_driver = pg_driver
-        # container_for is a function that takes an archive and
-        # returns the name of a container to store it in
         self.dcc_auth = dcc_auth
         self.scratch_dir = scratch_dir
         self.log = get_logger("tcga_dcc_sync")
@@ -207,9 +204,6 @@ class TCGADCCArchiveSyncer(object):
                                                             host=host,
                                                             container=container,
                                                             name=name)
-        # TODO I'm quite scared that this url could end up being not
-        # useful, need to do some sort of validation -- maybe
-        # reconstruct the object from the url when validating
         return url
 
     def obj_for(self, url):
