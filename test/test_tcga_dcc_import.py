@@ -9,19 +9,19 @@ from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 test_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(os.path.abspath(
     os.path.join(test_dir, os.path.pardir)), 'data')
+mapping = os.path.join(data_dir, 'bcr.yaml')
+center_csv_path = os.path.join(data_dir, 'centerCode.csv')
+tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 datatype = 'biospecimen'
 host = 'localhost'
 user = 'test'
 password = 'test'
 database = 'automated_test'
-
-mapping = os.path.join(data_dir, 'bcr.yaml')
-center_csv_path = os.path.join(data_dir, 'centerCode.csv')
-tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 
 def initialize(validated=False):

@@ -1,7 +1,7 @@
 import requests
 import logging
 import re
-from datetime import datetime, tzinfo, timedelta
+from datetime import tzinfo, timedelta
 
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
 

@@ -1,13 +1,21 @@
 import logging
-from zug.datamodel import xml2psqlgraph, latest_urls, \
-    extract_tar, import_tcga_code_tables
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+import os
 from gdcdatamodel import node_avsc_object, edge_avsc_object
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from zug.datamodel import xml2psqlgraph, latest_urls,\
+    extract_tar
+from zug.datamodel.import_tcga_code_tables import \
+    import_center_codes, import_tissue_source_site_codes
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-mapping = 'bcr.yaml'
+current_dir = os.path.dirname(os.path.realpath(__file__))
+data_dir = os.path.join(os.path.abspath(
+    os.path.join(current_dir, os.path.pardir)), 'data')
+mapping = os.path.join(data_dir, 'bcr.yaml')
+center_csv_path = os.path.join(data_dir, 'centerCode.csv')
+tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
+
 datatype = 'biospecimen'
 host = 'localhost'
 user = 'test'
@@ -42,13 +50,17 @@ def initialize():
 
 def start():
     parser, extractor, converter = initialize()
-    graph = converter.graph
-    import_tcga_code_tables(graph, 'centerCode.csv')
 
+    logging.info("Importing table codes")
+    import_center_codes(converter.graph, center_csv_path)
+    import_tissue_source_site_codes(converter.graph, tss_csv_path)
+    converter.export()
+
+    logging.info("Importing latest xml archives")
     for url in parser:
         for xml in extractor(url):
             converter.xml2psqlgraph(xml)
-    converter.export()
+            converter.export()
 
 if __name__ == '__main__':
     start()

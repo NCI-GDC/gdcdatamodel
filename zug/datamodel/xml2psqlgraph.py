@@ -34,6 +34,8 @@ class AttrDict(dict):
 
 
 def to_bool(val):
+    if val is None:
+        return None
     if val.lower() in possible_true_values:
         return True
     elif val.lower() in possible_false_values:
@@ -60,6 +62,8 @@ class xml2psqlgraph(object):
 
         self.graph = []
         self.namespaces = None
+        self.exported_nodes = 0
+        self.export_count = 0
         self.ignore_missing_properties = ignore_missing_properties
         with open(translate_path) as f:
             self.translate = json.loads(json.dumps(yaml.load(f)),
@@ -125,8 +129,12 @@ class xml2psqlgraph(object):
         return result
 
     def export(self):
+        self.export_count += 1
         self.export_nodes()
         self.export_edges()
+        self.nodes, self.edges = {}, {}
+        print 'Exports: {}. Nodes: {}. \r'.format(
+            self.export_count, self.exported_nodes),
 
     def export_nodes(self):
         with self.graph.session_scope() as session:
@@ -136,10 +144,12 @@ class xml2psqlgraph(object):
                         node_id=n.node_id, properties=n.properties,
                         label=n.label, session=session)
                 except:
-                    logging.error('Unable to add node')
+                    logging.error('Unable to add node {}'.format(n.label))
                     print n
                     pprint.pprint(n.properties)
                     raise
+                else:
+                    self.exported_nodes += 1
 
     def export_edges(self):
         with self.graph.session_scope() as session:
@@ -151,8 +161,7 @@ class xml2psqlgraph(object):
                     try:
                         self.graph.edge_insert(e, session=session)
                     except:
-                        logging.error('Unable to add edge')
-                        print e
+                        logging.error('Unable to add edge {}'.format(e.label))
                         raise
 
     def xml2psqlgraph(self, data):
@@ -402,8 +411,11 @@ class xml2psqlgraph(object):
                         val, root, expected=False, text=True, single=True,
                         label='{}: {}'.format(node_type, node_id))
                     for key, val in dst_kv.items()}
-                dsts = list(self.graph.node_lookup(
-                    label=dst_label, property_matches=dst_matches).all())
+                with self.graph.session_scope() as session:
+                    dsts = list(self.graph.node_lookup(
+                        label=dst_label, property_matches=dst_matches,
+                        session=session))
+                    session.expunge_all()
                 for dst in dsts:
                     edges[dst.node_id] = (dst.label, edge_type)
         return edges
