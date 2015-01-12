@@ -30,11 +30,10 @@ class TestXML2PsqlGraph(unittest.TestCase):
             self.xml = f.read()
 
     def tearDown(self):
-        with self.converter.graph.session_scope() as session:
-            for node in self.converter.graph.get_nodes(session):
-                self.converter.graph.node_delete(node=node, session=session)
-            for edge in self.converter.graph.get_edges(session):
-                self.pg_driver.edge_delete(edge=edge, session=session)
+        self.converter.graph.engine.execute('delete from edges')
+        self.converter.graph.engine.execute('delete from nodes')
+        self.converter.graph.engine.execute('delete from voided_edges')
+        self.converter.graph.engine.execute('delete from voided_nodes')
 
     def test_convert_sample1(self):
         # convert sample data

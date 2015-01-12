@@ -57,37 +57,35 @@ class TestTCGABiospeceminImport(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
+        self.parser, self.extrator, self.converter = initialize()
+
+    def tearDown(self):
+        self.converter.graph.engine.execute('delete from edges')
+        self.converter.graph.engine.execute('delete from nodes')
+        self.converter.graph.engine.execute('delete from voided_edges')
+        self.converter.graph.engine.execute('delete from voided_nodes')
 
     def test_convert_sample(self):
-        parser, extractor, converter = initialize()
-        converter.graph.engine.execute('delete from edges')
-        converter.graph.engine.execute('delete from nodes')
         with open(os.path.join(data_dir, 'sample.xml')) as f:
             xml = f.read()
-        converter.xml2psqlgraph(xml)
-        converter.export()
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export()
 
     def test_convert_validate_nodes_sample(self):
-        parser, extractor, converter = initialize(validated=True)
-        converter.graph.engine.execute('delete from edges')
-        converter.graph.engine.execute('delete from nodes')
-        import_center_codes(converter.graph, center_csv_path)
-        import_tissue_source_site_codes(converter.graph, tss_csv_path)
-        converter.export_nodes()
+        import_center_codes(self.converter.graph, center_csv_path)
+        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
+        self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample.xml')) as f:
             xml = f.read()
-        converter.xml2psqlgraph(xml)
-        converter.export_nodes()
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export_nodes()
 
     def test_convert_validate_edges_sample(self):
-        parser, extractor, converter = initialize(validated=True)
-        converter.graph.engine.execute('delete from edges')
-        converter.graph.engine.execute('delete from nodes')
-        import_center_codes(converter.graph, center_csv_path)
-        import_tissue_source_site_codes(converter.graph, tss_csv_path)
-        converter.export_nodes()
+        import_center_codes(self.converter.graph, center_csv_path)
+        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
+        self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample.xml')) as f:
             xml = f.read()
-        converter.xml2psqlgraph(xml)
-        converter.export_nodes()
-        converter.export_edges()
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export_nodes()
+        self.converter.export_edges()
