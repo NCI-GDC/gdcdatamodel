@@ -39,6 +39,7 @@ class TestXML2PsqlGraph(unittest.TestCase):
     def test_convert_sample1(self):
         # convert sample data
         self.converter.xml2psqlgraph(self.xml)
+        self.converter.export()
 
         # test conversion for accuracy
         first = self.converter.graph.node_lookup_one(node_id='level1')
