@@ -72,6 +72,7 @@ class TCGADCCArchiveSyncer(object):
                                           .all():
                     self.log.info("voiding file %s", str(file))
                     self.pg_driver.node_delete(node=file, session=session)
+                self.pg_driver.node_delete(old_archive, session=session)
         new_archive_node = PsqlNode(
             node_id=str(uuid.uuid4()),
             label="archive",
