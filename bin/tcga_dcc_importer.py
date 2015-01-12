@@ -1,5 +1,6 @@
 import logging
 import os
+import argparse
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import xml2psqlgraph, latest_urls,\
@@ -16,14 +17,8 @@ mapping = os.path.join(data_dir, 'bcr.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
-datatype = 'biospecimen'
-host = 'localhost'
-user = 'test'
-password = 'test'
-database = 'automated_test'
 
-
-def initialize():
+def initialize(datatype, host, user, password, database):
     parser = latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'},
         url_key='dcc_archive_url',
@@ -48,8 +43,8 @@ def initialize():
     return parser, extractor, converter
 
 
-def start():
-    parser, extractor, converter = initialize()
+def start(*args):
+    parser, extractor, converter = initialize(*args)
 
     logging.info("Importing table codes")
     import_center_codes(converter.graph, center_csv_path)
@@ -63,4 +58,14 @@ def start():
             converter.export()
 
 if __name__ == '__main__':
-    start()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--datatype', default='biospecimen', type=str,
+                        help='the datatype to filter')
+    parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
+                        help='to odatabase to import to')
+    parser.add_argument('-u', '--user', default='postgres', type=str,
+                        help='the user to import as')
+    parser.add_argument('-p', '--password', default='test', type=str,
+                        help='the password for import user')
+    args = parser.parse_args()
+    start(args.datatype, args.host, args.user, args.password, args.database)

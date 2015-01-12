@@ -1,5 +1,6 @@
 import yaml
 import json
+import uuid
 import datetime
 import logging
 import psqlgraph
@@ -195,7 +196,10 @@ class xml2psqlgraph(object):
                 root, node_type, params, node_id)
             n_date_props = self.get_node_datetime_properties(
                 root, node_type, params, node_id)
+            n_const_props = self.get_node_const_properties(
+                root, node_type, params, node_id)
             nprops.update(n_date_props)
+            nprops.update(n_const_props)
             edges = self.get_node_edges(root, node_type, params, node_id)
             self.insert_node(node_id, node_type, nprops)
             for dst_id, edge in edges.items():
@@ -206,6 +210,7 @@ class xml2psqlgraph(object):
         """Adds a node to the graph
 
         """
+
         if node_id in self.nodes:
             self.nodes[node_id].merge(properties=properties)
         else:
@@ -222,7 +227,6 @@ class xml2psqlgraph(object):
         """
 
         edge_id = "{}:{}:{}".format(src_id, dst_id, edge_label)
-        self.insert_node(dst_id, dst_label, {})
         if edge_id in self.edges:
             self.edges[edge_id].merge(properties=properties)
         else:
@@ -261,10 +265,22 @@ class xml2psqlgraph(object):
             from the translation yaml file
 
         """
-        if not params.id:
+
+        if node_type == 'file':
+            return str(uuid.uuid4())
+
+        if 'id' not in params or not params.id:
             return None
         node_id = self.xpath(params.id, root, single=True, label=node_type)
-        return node_id
+        return node_id.lower()
+
+    def munge_property(self, prop, _type):
+        types = {'int': int, 'float': float, 'str': str, 'long': long}
+        if _type == 'bool':
+            prop = to_bool(prop)
+        else:
+            prop = types[_type](prop) if prop else prop
+        return prop
 
     def get_node_properties(self, root, node_type, params, node_id=''):
         """for each parameter in the setting file, try and look it up, and add
@@ -283,7 +299,6 @@ class xml2psqlgraph(object):
         if 'properties' not in params or not params.properties:
             return {}
 
-        types = {'int': int, 'float': float, 'str': str, 'long': long}
         props = {}
         for prop, args in params.properties.items():
             path, _type = args['path'], args['type']
@@ -293,11 +308,29 @@ class xml2psqlgraph(object):
                 path, root, single=True, text=True,
                 expected=(not self.ignore_missing_properties),
                 label='{}: {}'.format(node_type, node_id))
-            if _type == 'bool':
-                result = to_bool(result)
-            else:
-                result = types[_type](result) if result else result
-            props[prop] = result
+            props[prop] = self.munge_property(result, _type)
+        return props
+
+    def get_node_const_properties(self, root, node_type, params, node_id=''):
+        """for each parameter in the setting file that is a constant value,
+        add it to the properties dict
+
+        :param root: the lxml root element to treat as a node
+        :param str node_type:
+            the node type to be used as a label in psqlgraph
+        :param dict params:
+            the parameters that govern xpath queries and translation
+            from the translation yaml file
+        :param str node_id: used for logging
+
+        """
+
+        if 'const_properties' not in params or not params.const_properties:
+            return {}
+
+        props = {}
+        for prop, args in params.const_properties.items():
+            props[prop] = self.munge_property(args['value'], args['type'])
         return props
 
     def get_node_datetime_properties(

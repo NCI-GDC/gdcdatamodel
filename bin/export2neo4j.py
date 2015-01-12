@@ -1,5 +1,5 @@
 import logging
-from psqlgraph import psqlgraph2neo4j
+from psqlgraph import psqlgraph2geoff
 
 logging.basicConfig(level=logging.WARN)
 logging.basicConfig(level=logging.INFO)
@@ -12,19 +12,17 @@ user = 'test'
 password = 'test'
 database = 'automated_test'
 
+"""
+MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
+"""
+
 
 def get_exporter():
-    exporter = psqlgraph2neo4j.PsqlGraph2Neo4j()
-    exporter.connect_to_psql(host, user, password, database)
-    exporter.connect_to_neo4j(host)
-    return exporter
+    return psqlgraph2geoff.PsqlGraph2Geoff(
+        host, user, password, database)
 
-
-def clear_graph(exporter):
-    exporter.neo4jDriver.cypher.execute(
-        'MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r')
 
 if __name__ == '__main__':
     exporter = get_exporter()
-    clear_graph(exporter)
-    exporter.export(batch_size=1000)
+    with open('test.geoff', 'w') as output_file:
+        exporter.export(output_file)
