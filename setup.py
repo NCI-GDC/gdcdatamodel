@@ -14,7 +14,7 @@ setup(
         'apache-libcloud==0.15.1'
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@221b81f6f5b1bf25add237636c834c8e4510f5c9#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@e2aabc16619bad0acbd4e754856990c27114a8e2#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
     ]
 )
