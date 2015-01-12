@@ -23,5 +23,5 @@ before_script:
   - git clone git@github.com:NCI-GDC/signpost.git
   - pip install -r signpost/requirements.pip
   - python signpost/signpostserver/plugins/postgres/postgres_setup.py test/signpost_settings.yaml
-  - python signpost/signpost.py -s test/signpost_settings.yaml &
+  - python signpost/signpost.py -s test/signpost_settings.yaml 2>/dev/null 1>/dev/null &
 script: "nosetests -v"
