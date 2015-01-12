@@ -53,7 +53,7 @@ def initialize(validated=False):
     return parser, extractor, converter
 
 
-class TestTCGAImport(unittest.TestCase):
+class TestTCGABiospeceminImport(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
