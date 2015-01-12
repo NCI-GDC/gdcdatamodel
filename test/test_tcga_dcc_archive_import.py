@@ -6,6 +6,7 @@ from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
+from zug.datamodel.latest_urls import LatestURLParser
 
 from psqlgraph import PsqlGraphDriver
 
@@ -25,6 +26,7 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.syncer = TCGADCCArchiveSyncer(self.signpost_url, self.pg_driver,
                                            self.storage_client, self.dcc_auth,
                                            self.scratch_dir)
+        self.parser = LatestURLParser()
 
     def tearDown(self):
         with self.pg_driver.session_scope() as session:
@@ -37,30 +39,11 @@ class TCGADCCArchiveSyncTest(TestCase):
                 obj.delete()
 
     def test_syncing_an_archive_works(self):
-        archive = {
-            '_type': 'tcga_dcc_archive',
-            'archive_name': u'bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.Level_3.1.1.0',
-            'batch': 1,
-            'center_name': u'bcgsc.ca',
-            'center_type': u'cgcc',
-            'data_level': u'Level_3',
-            'data_type_in_url': u'mirnaseq',
-            'date_added': u'10/03/2013 17:06',
-            'dcc_archive_url': u'https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/acc/cgcc/bcgsc.ca/illuminahiseq_mirnaseq/mirnaseq/bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.Level_3.1.1.0.tar.gz',
-            'disease_code': u'ACC',
-            'import': {'download': {'finish_time': None, 'start_time': None},
-                       'finish_time': None,
-                       'host': None,
-                       'process': {'finish_time': None, 'start_time': None},
-                       'start_time': None,
-                       'state': 'not_started',
-                       'upload': {'finish_time': None, 'start_time': None}},
-            'platform': u'IlluminaHiSeq_miRNASeq',
-            'platform_in_url': u'illuminahiseq_mirnaseq',
-            'protected': False,
-            'revision': 1,
-            'signpost_added': '2015-01-05T23:32:06+00:00'
-        }
+        archive = self.parser.parse_archive(
+            "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
+            "11/12/2014",
+            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
+        )
         self.syncer.sync_archive(archive)
-        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 163)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
