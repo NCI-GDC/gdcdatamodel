@@ -67,9 +67,10 @@ class TCGADCCArchiveSyncer(object):
             # CHANGES_DCC.txt
             # first get all the files related to this archive and void them
             with self.pg_driver.session_scope() as session:
-                for file in self.pg_driver.node_lookup(label="file")\
-                                          .with_edge_to_node("member_of", old_archive):
-                    self.log.debug("voiding file %s", str(file))
+                for file in self.pg_driver.node_lookup(label="file", session=session)\
+                                          .with_edge_to_node("member_of", old_archive)\
+                                          .all():
+                    self.log.info("voiding file %s", str(file))
                     self.pg_driver.node_delete(node=file, session=session)
         new_archive_node = PsqlNode(
             node_id=str(uuid.uuid4()),
