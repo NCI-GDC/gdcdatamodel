@@ -35,31 +35,20 @@ def make_validators():
 def initialize():
     parser = latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'},
-        url_key='dcc_archive_url',
     )
     extractor = extract_tar.ExtractTar(
         regex=".*(bio).*(Level_1).*\\.xml"
     )
     node_validator, edge_validator = make_validators()
 
-    converter = xml2psqlgraph.xml2psqlgraph(
-        translate_path=mapping,
-        data_type=datatype,
-        host=host,
-        user=user,
-        password=password,
-        database=database,
-        edge_validator=edge_validator,
-        node_validator=node_validator,
-    )
-    return parser, extractor, converter
+    return parser, extractor
 
 
 def start():
-    parser, extractor, converter = initialize()
-    for url in parser:
-        for xml in extractor(url):
-            converter.xml2psqlgraph(xml)
+    parser, extractor = initialize()
+    for archive in parser:
+        print archive
+
 
 if __name__ == '__main__':
     start()

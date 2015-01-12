@@ -1,0 +1,220 @@
+aliquot:
+  root: //bio:aliquot
+  id: .//bio:bcr_aliquot_uuid
+  edges:
+    derived_from:
+      analyte: ancestor::bio:analyte/bio:bcr_analyte_uuid
+      sample: ancestor::bio:sample/bio:bcr_sample_uuid
+  edges_by_property:
+    shipped_to:
+      center:
+        legacy_id: .//bio:center_id
+  properties:
+    legacy_barcode:
+      path: ./bio:bcr_aliquot_barcode
+      type: str
+    source_center:
+      path: ./bio:source_center
+      type: str
+    shipment_center_id:
+      path: ./bio:center_id
+      type: str
+    shipment_reason:
+      path: ./bio:shipment_reason
+      type: str
+    amount:
+      path: ./bio:amount
+      type: float
+    concentration:
+      path: ./bio:concentration
+      type: float
+    plate_id:
+      path: ./bio:plate_id
+      type: str
+    plate_row:
+      path: ./bio:plate_row
+      type: str
+    plate_column:
+      path: ./bio:plate_column
+      type: str
+  datetime_properties:
+    shipment_datetime:
+      day: ./bio:day_of_shipment
+      month: ./bio:month_of_shipment
+      year: ./bio:year_of_shipment
+
+analyte:
+  root: //bio:analyte
+  id: .//bio:bcr_analyte_uuid
+  edges:
+    derived_from:
+      portion: ancestor::bio:portion/bio:bcr_portion_uuid
+  properties:
+    legacy_barcode:
+      path: ./bio:bcr_analyte_barcode
+      type: str
+    analyte_type_id:
+      path: ./bio:analyte_type_id
+      type: str
+    analyte_type:
+      path: ./bio:analyte_type
+      type: str
+    concentration:
+      path: ./bio:concentration
+      type: float
+    amount:
+      path: ./bio:amount
+      type: float
+    a260_a280_ratio:
+      path: ./bio:a260_a280_ratio
+      type: float
+    well_number:
+      path: ./bio:well_number
+      type: str
+    spectrophotometer_method:
+      path: ./bio:spectrophotometer_method
+      type: str
+
+portion:
+  root: //bio:portion
+  id: .//bio:bcr_portion_uuid
+  edges:
+    derived_from:
+      sample: ancestor::bio:sample/bio:bcr_sample_uuid
+      center: ./bio:analytes/bio:analyte/bio:center_id
+  properties:
+    legacy_barcode:
+      path: ./bio:bcr_portion_barcode
+      type: str
+    portion_number:
+      path: ./bio:portion_number
+      type: str
+    weight:
+      path: ./bio:weight
+      type: float
+    is_ffpe:
+      path: ./bio:is_ffpe
+      type: bool
+  datetime_properties:
+    creation_datetime:
+      day: ./bio:day_of_creation
+      month: ./bio:month_of_creation
+      year: ./bio:year_of_creation
+
+sample:
+  root: //bio:sample
+  id: .//bio:bcr_sample_uuid
+  edges:
+    derived_from:
+      participant: ancestor::bio:patient/shared:bcr_patient_uuid
+  properties:
+    sample_type_id:
+      path: ./bio:sample_type_id
+      type: str
+    sample_type:
+      path: ./bio:sample_type
+      type: str
+    longest_dimension:
+      path: ./bio:longest_dimension
+      type: str
+    intermediate_dimension:
+      path: ./bio:intermediate_dimension
+      type: str
+    shortest_dimension:
+      path: ./bio:shortest_dimension
+      type: str
+    initial_weight:
+      path: ./bio:initial_weight
+      type: str
+    current_weight:
+      path: ./bio:current_weight
+      type: str
+    freezing_method:
+      path: ./bio:freezing_method
+      type: str
+    oct_embedded:
+      path: ./bio:oct_embedded
+      type: str
+    time_between_clamping_and_freezing:
+      path: ./bio:time_between_clamping_and_freezing
+      type: str
+    time_between_excision_and_freezing:
+      path: ./bio:time_between_excision_and_freezing
+      type: str
+    is_ffpe:
+      path: ./bio:is_ffpe
+      type: bool
+    pathology_report_uuid:
+      path: ./bio:pathology_report_uuid
+      type: str
+    days_to_collection:
+      path: ./bio:days_to_collection
+      type: int
+    days_to_sample_procurement:
+      path: ./bio:days_to_procurement
+      type: int
+
+participant:
+  root: //bio:patient
+  id: .//shared:bcr_patient_uuid
+  edges_by_property:
+    processed_at:
+      tissue_source_site:
+        legacy_id: ./shared:tissue_source_site
+  properties:
+    legacy_barcode:
+      path: ./shared:bcr_patient_barcode
+      type: str
+    days_to_index:
+      path: ./bio:days_to_index
+      type: int
+
+slide:
+  root: //bio:slide
+  id: .//bio:bcr_slide_uuid
+  edges:
+    derived_from:
+      portion: ancestor::bio:portion/bio:bcr_portion_uuid
+  properties:
+    legacy_barcode:
+      path: ./bio:bcr_slide_barcode
+      type: str
+    section_location:
+      path: ./bio:section_location
+      type: str
+    number_proliferating_cells:
+      path: ./bio:number_proliferating_cells
+      type: str
+    percent_tumor_cells:
+      path: ./bio:percent_tumor_cells
+      type: float
+    percent_tumor_nuclei:
+      path: ./bio:percent_tumor_nuclei
+      type: float
+    percent_normal_cells:
+      path: ./bio:percent_normal_cells
+      type: float
+    percent_necrosis:
+      path: ./bio:percent_necrosis
+      type: float
+    percent_stromal_cells:
+      path: ./bio:percent_stromal_cells
+      type: float
+    percent_inflam_infiltration:
+      path: ./bio:percent_inflam_infiltration
+      type: float
+    percent_lymphocyte_infiltration:
+      path: ./bio:percent_lymphocyte_infiltration
+      type: float
+    percent_monocyte_infiltration:
+      path: ./bio:percent_monocyte_infiltration
+      type: float
+    percent_granulocyte_infiltration:
+      path: ./bio:percent_granulocyte_infiltration
+      type: float
+    percent_neutrophil_infiltration:
+      path: ./bio:percent_neutrophil_infiltration
+      type: float
+    percent_eosinophil_infiltration:
+      path: ./bio:percent_eosinophil_infiltration
+      type: float

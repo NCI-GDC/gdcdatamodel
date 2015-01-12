@@ -1,9 +1,11 @@
 import unittest
 import logging
+import os
 from zug import datamodel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+test_dir = os.path.dirname(os.path.realpath(__file__))
 
 settings = dict(
     host='localhost',
@@ -21,12 +23,14 @@ class TestXML2PsqlGraph(unittest.TestCase):
 
         # load sample data
         converter = datamodel.xml2psqlgraph.xml2psqlgraph(
-            translate_path='sample1.yaml', **settings)
-        with open('sample1.xml') as f:
+            translate_path=os.path.join(test_dir, 'sample1.yaml'),
+            **settings)
+        with open(os.path.join(test_dir, 'sample1.xml')) as f:
             xml = f.read()
 
         # convert sample data
         converter.xml2psqlgraph(xml)
+        converter.export()
 
         # test conversion for accuracy
         first = converter.graph.node_lookup_one(node_id='level1')
