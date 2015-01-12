@@ -1,0 +1,20 @@
+---
+# List middleware in order of execution.
+midware:
+ - validator
+# - keystone
+
+# Selected backend driver.
+driver: postgres
+
+#Postgres Settings
+postgres:
+  table:
+    docs
+
+  conn:
+    host: localhost
+    port: 5432
+    username: signpost
+    password: super_sekrit
+    database: digital_ids
