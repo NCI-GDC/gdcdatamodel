@@ -3,6 +3,7 @@ import logging
 import re
 from datetime import tzinfo, timedelta
 
+
 logger = logging.getLogger(name="[{name}]".format(name=__name__))
 
 default_latest_firstline = 'ARCHIVE_NAME DATE_ADDED ARCHIVE_URL'.split()

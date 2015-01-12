@@ -1,0 +1,6 @@
+PyYAML==3.11
+argparse==1.2.1
+boto==2.34.0
+filechunkio==1.6
+py2neo==2.0.2
+requests==2.2.1
