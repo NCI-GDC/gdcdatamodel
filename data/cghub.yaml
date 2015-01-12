@@ -1,0 +1,26 @@
+file:
+  root: //file
+  edges:
+    data_from:
+      aliquot: ancestor::Result/aliquot_id
+  edges_by_property:
+    shipped_to:
+      center:
+        legacy_id: ancestor::Result/center_name
+  properties:
+    file_name:
+      path: ./filename
+      type: str
+    file_size:
+      path: ./filesize
+      type: int
+    md5sum:
+      path: ./checksum
+      type: str
+  const_properties:
+    state:
+      value: 'submitted'
+      type: str
+    state_comment:
+      value: null
+      type: str
