@@ -15,6 +15,9 @@ from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
 from libcloud.storage.drivers.local import LocalStorageDriver
 
 from psqlgraph import PsqlNode, PsqlEdge, session_scope
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+
+from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from cdisutils.log import get_logger
 
@@ -35,6 +38,8 @@ class TCGADCCArchiveSyncer(object):
         self.signpost_url = signpost_url
         self.storage_client = storage_client
         self.pg_driver = pg_driver
+        self.pg_driver.node_validator = AvroNodeValidator(node_avsc_object)
+        self.pg_driver.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.dcc_auth = dcc_auth
         self.scratch_dir = scratch_dir
         self.log = get_logger("tcga_dcc_sync")
@@ -168,7 +173,8 @@ class TCGADCCArchiveSyncer(object):
         file_node = PsqlNode(node_id=did, label="file",
                              properties={"file_name": filename,
                                          "md5sum": md5,
-                                         "state": "submitted"})
+                                         "state": "submitted",
+                                         "state_comment": None})
         edge = PsqlEdge(label="member_of",
                         src_id=file_node.node_id,
                         dst_id=archive_node.node_id,
