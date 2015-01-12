@@ -22,22 +22,28 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class TestXML2PsqlGraph(unittest.TestCase):
 
-    def test_convert_sample1(self):
-
+    def setUp(self):
         # load sample data
-        converter = datamodel.xml2psqlgraph.xml2psqlgraph(
+        self.converter = datamodel.xml2psqlgraph.xml2psqlgraph(
             translate_path=os.path.join(TEST_DIR, 'sample1.yaml'), **settings)
         with open(os.path.join(TEST_DIR, 'sample1.xml')) as f:
-            xml = f.read()
+            self.xml = f.read()
 
+    def tearDown(self):
+        with self.converter.graph.session_scope() as session:
+            for node in self.converter.graph.get_nodes(session):
+                self.converter.graph.node_delete(node=node, session=session)
+            for edge in self.converter.graph.get_edges(session):
+                self.pg_driver.edge_delete(edge=edge, session=session)
+
+    def test_convert_sample1(self):
         # convert sample data
-        converter.xml2psqlgraph(xml)
-        converter.export()
+        self.converter.xml2psqlgraph(self.xml)
 
         # test conversion for accuracy
-        first = converter.graph.node_lookup_one(node_id='level1')
-        second = converter.graph.node_lookup_one(node_id='level2')
-        third = converter.graph.node_lookup_one(node_id='level3')
+        first = self.converter.graph.node_lookup_one(node_id='level1')
+        second = self.converter.graph.node_lookup_one(node_id='level2')
+        third = self.converter.graph.node_lookup_one(node_id='level3')
         self.assertEqual(first.properties['text1.1'], '1a')
         self.assertEqual(second.properties['text2.2'], '2a')
         self.assertEqual(second.properties['text2.3'], '2b')
