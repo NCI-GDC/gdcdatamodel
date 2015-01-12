@@ -52,34 +52,34 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("found archive %s in postgres, not inserting", archive["archive_name"])
             return maybe_this_archive
         self.log.info("looking up old versions of archive %s in postgres", legacy_id)
-        old_versions = list(self.pg_driver.node_lookup(label="archive",
-                                                       property_matches={"legacy_id": legacy_id}))
-        if len(old_versions) > 1:
-            # since we void all old versions of an archive when we add a new one,
-            # there should never be more than one old version in the database
-            raise ValueError("multiple old versions of an archive found")
-        if old_versions:
-            old_archive = old_versions[0]
-            self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
-                          old_archive.properties["revision"],
-                          legacy_id)
-            # TODO it would be awesome to verify that the changes we make actually match what's in
-            # CHANGES_DCC.txt
-            # first get all the files related to this archive and void them
-            with self.pg_driver.session_scope() as session:
+        with self.pg_driver.session_scope() as session:
+            old_versions = self.pg_driver.node_lookup(label="archive",
+                                                      property_matches={"legacy_id": legacy_id},
+                                                      session=session).all()
+            if len(old_versions) > 1:
+                # since we void all old versions of an archive when we add a new one,
+                # there should never be more than one old version in the database
+                raise ValueError("multiple old versions of an archive found")
+            if old_versions:
+                old_archive = old_versions[0]
+                self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
+                              old_archive.properties["revision"],
+                              legacy_id)
+                # TODO it would be awesome to verify that the changes we make actually match what's in
+                # CHANGES_DCC.txt,
+                # first get all the files related to this archive and void them
                 for file in self.pg_driver.node_lookup(label="file", session=session)\
                                           .with_edge_to_node("member_of", old_archive)\
                                           .all():
                     self.log.info("voiding file %s", str(file))
                     self.pg_driver.node_delete(node=file, session=session)
-                self.pg_driver.node_delete(old_archive, session=session)
-        new_archive_node = PsqlNode(
-            node_id=str(uuid.uuid4()),
-            label="archive",
-            properties={"legacy_id": legacy_id,
-                        "revision": archive["revision"]})
-        self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
-        with self.pg_driver.session_scope() as session:
+                self.pg_driver.node_delete(node=old_archive, session=session)
+            new_archive_node = PsqlNode(
+                node_id=str(uuid.uuid4()),
+                label="archive",
+                properties={"legacy_id": legacy_id,
+                            "revision": archive["revision"]})
+            self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
             session.add(new_archive_node)
         return new_archive_node
 
