@@ -250,9 +250,9 @@ class xml2psqlgraph(object):
         if not params.root:
             logging.warn('No root xpath for {}'.format(node_type))
             return
-        xml_node = self.xpath(
+        xml_nodes = self.xpath(
             params.root, expected=False, text=False, label='get_node_roots')
-        return xml_node
+        return xml_nodes
 
     def get_node_id(self, root, node_type, params):
         """lookup the id for the node
@@ -415,7 +415,7 @@ class xml2psqlgraph(object):
                     path, root, expected=False, text=True,
                     label='{}: {}'.format(node_type, node_id))
                 for result in results:
-                    edges[result] = (dst_label, edge_type)
+                    edges[result.lower()] = (dst_label, edge_type)
         return edges
 
     def get_node_edges_by_properties(self, root, node_type, params,
