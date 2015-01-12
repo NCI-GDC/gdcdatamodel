@@ -47,3 +47,18 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.syncer.sync_archive(archive)
         self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
+
+    def test_replacing_old_archive_works(self):
+        old_archive = self.parser.parse_archive(
+            "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.1.0",
+            "somedate",
+            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.1.0.tar.gz")
+        new_archive = self.parser.parse_archive(
+            "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
+            "11/12/2014",
+            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz")
+
+        self.syncer.sync_archive(old_archive)
+        self.syncer.sync_archive(new_archive)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
