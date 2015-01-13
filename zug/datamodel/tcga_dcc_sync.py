@@ -7,6 +7,7 @@ import uuid
 from contextlib import contextmanager
 from urlparse import urlparse
 from functools import partial
+import copy
 
 import requests
 
@@ -21,6 +22,8 @@ from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from cdisutils.log import get_logger
 
+from zug.datamodel import classification
+
 
 def md5sum(iterable):
     md5 = hashlib.md5()
@@ -31,6 +34,42 @@ def md5sum(iterable):
 
 def iterable_from_file(fileobj, chunk_size=8192):
     return iter(partial(fileobj.read, chunk_size), '')
+
+
+def fix_barcode(s):
+    """Munge barcodes matched from filenames into correct format"""
+    return s.replace("_", "-").upper()
+
+
+def fix_uuid(s):
+    """Munge uuids matched from filenames into correct format"""
+    return s.replace("_", "-").lower()
+
+
+def classify(archive, filename):
+    """Given a filename and an archive that it came from, attempt to
+    classify it. Return a dictionary representing the
+    classification.
+    """
+    data_type = archive["data_type_in_url"]
+    data_level = str(archive["data_level"])
+    potential_classifications = classification[data_level][data_type]
+    for possibility in potential_classifications:
+        match = re.match(possibility["patten"], filename)
+        if match:
+            result = copy.deepcopy(possibility["category"])
+            result["data_format"] = possibility["data_format"]
+            if possibility["captured_fields"]:
+                for i, field in enumerate(possibility["captured_fields"]):
+                    if field not in ['_', '-']:
+                        if field.endswith("barcode"):
+                            result[field] = fix_barcode(match.groups(i))
+                        elif field.endswith("uuid"):
+                            result[field] = fix_uuid(match.groups(i))
+                        else:
+                            result[field] = match.groups(i)
+            return result
+    raise RuntimeError("file {}/{}failed to classify".format(archive["archive_name"], filename))
 
 
 class TCGADCCArchiveSyncer(object):
@@ -189,6 +228,9 @@ class TCGADCCArchiveSyncer(object):
             self.pg_driver.node_insert(file_node, session=session)
             self.pg_driver.edge_insert(edge, session=session)
         return file_node
+
+    def classify_file_node(self, archive, file_node):
+
 
     def container_for(self, archive):
         if archive["protected"]:
