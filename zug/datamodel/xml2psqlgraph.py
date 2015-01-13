@@ -150,9 +150,11 @@ class xml2psqlgraph(object):
             if old_node:
                 if not version or not group_id or \
                    old_node.system_annotations.get('version', -1) < version:
-                    self.graph.node_update(
-                        node, system_annotations=system_annotations,
-                        properties=node.properties, session=session)
+                    node.merge(system_annotations=system_annotations)
+                    self.graph.node_clobber(
+                        node_id=node.node_id, properties=node.properties,
+                        system_annotations=system_annotations, session=session)
+
             else:
                 node.merge(system_annotations=system_annotations)
                 self.graph.node_insert(node)

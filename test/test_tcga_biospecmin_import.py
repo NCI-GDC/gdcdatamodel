@@ -89,3 +89,73 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes()
         self.converter.export_edges()
+
+    def test_versioned_idempotency(self):
+        import_center_codes(self.converter.graph, center_csv_path)
+        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
+        g = self.converter.graph
+
+        ignored_labels = ['center', 'tissue_source_site']
+        self.converter.export_nodes()
+        with open(os.path.join(data_dir, 'sample.xml')) as f:
+            xml = f.read()
+
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export(group_id='group1', version=1)
+        v1 = {n.node_id: n for n in g.get_nodes().all()
+              if n.label not in ignored_labels}
+
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export(group_id='group1', version=2.5)
+        v2 = {n.node_id: n for n in g.get_nodes().all()
+              if n.label not in ignored_labels}
+
+        for node_id, node in v1.iteritems():
+            self.assertTrue(node_id in v2)
+            self.assertTrue(v1[node_id].system_annotations == {
+                'group_id': 'group1', 'version': 1})
+            self.assertEqual(v1[node_id].properties, v2[node_id].properties)
+
+        for node_id, node in v2.iteritems():
+            self.assertTrue(node_id in v1)
+            self.assertTrue(v2[node_id].system_annotations == {
+                'group_id': 'group1', 'version': 2.5})
+            self.assertEqual(v2[node_id].properties, v1[node_id].properties)
+
+    def test_versioned_import(self):
+        import_center_codes(self.converter.graph, center_csv_path)
+        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
+        self.converter.export_nodes()
+
+        ignored_labels = ['center', 'tissue_source_site']
+        g = self.converter.graph
+
+        with open(os.path.join(data_dir, 'sample.xml')) as f:
+            xml = f.read()
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export(group_id='group1', version=1)
+        v1 = {n.node_id: n for n in g.get_nodes().all()
+              if n.label not in ignored_labels}
+
+        with open(os.path.join(data_dir, 'sample_v2.xml')) as f:
+            xml = f.read()
+        self.converter.xml2psqlgraph(xml)
+        self.converter.export(group_id='group1', version=2.5)
+        v2 = {n.node_id: n for n in g.get_nodes().all()
+              if n.label not in ignored_labels}
+
+        for node_id, node in v1.iteritems():
+            self.assertTrue(node_id in v2)
+            self.assertTrue(v1[node_id].system_annotations == {
+                'group_id': 'group1', 'version': 1})
+
+        for node_id, node in v2.iteritems():
+            self.assertTrue(node_id in v1)
+            self.assertTrue(v2[node_id].system_annotations == {
+                'group_id': 'group1', 'version': 2.5})
+            if v1[node_id].node_id != '5fa9998b-deff-493e-8a8e-dc2422192a48':
+                self.assertEqual(
+                    v1[node_id].properties, v2[node_id].properties)
+            else:
+                self.assertFalse(v1[node_id]['is_ffpe'])
+                self.assertTrue(v2[node_id]['is_ffpe'])
