@@ -274,7 +274,7 @@ class TCGADCCArchiveSyncer(object):
         if not urls:
             raise RuntimeError("no urls in signpost for file {}, node:{}".format(file_node.file_name, file_node))
         obj = self.obj_for(urls[0])
-        self.verify_sum(file_node, obj, dcc_md5)
+        self.verify_sum(file_node, obj, md5)
         # classify based on Junjun/Zhenyu's regexes?
         self.set_file_state(file_node, "live")
 
