@@ -68,7 +68,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.graph.engine.dispose()
 
     def test_convert_sample(self):
-        with open(os.path.join(data_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export()
@@ -77,7 +77,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         import_center_codes(self.converter.graph, center_csv_path)
         import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
-        with open(os.path.join(data_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes()
@@ -86,7 +86,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         import_center_codes(self.converter.graph, center_csv_path)
         import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
-        with open(os.path.join(data_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes()
@@ -99,7 +99,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
 
         ignored_labels = ['center', 'tissue_source_site']
         self.converter.export_nodes()
-        with open(os.path.join(data_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
 
         self.converter.xml2psqlgraph(xml)
@@ -132,14 +132,14 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         ignored_labels = ['center', 'tissue_source_site']
         g = self.converter.graph
 
-        with open(os.path.join(data_dir, 'sample.xml')) as f:
+        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=1)
         v1 = {n.node_id: n for n in g.get_nodes().all()
               if n.label not in ignored_labels}
 
-        with open(os.path.join(data_dir, 'sample_v2.xml')) as f:
+        with open(os.path.join(data_dir, 'sample_biospecimen_v2.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=2.5)

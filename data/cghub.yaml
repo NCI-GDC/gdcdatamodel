@@ -1,5 +1,6 @@
 file:
   root: //file
+  acl: ancestor::Result/study
   edges:
     data_from:
       aliquot: ancestor::Result/aliquot_id

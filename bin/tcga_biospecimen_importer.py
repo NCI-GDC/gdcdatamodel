@@ -40,17 +40,6 @@ def initialize(datatype, host, user, password, database):
     return parser, extractor, converter
 
 
-def purge_old_nodes(graph, group_id, version):
-    with graph.session_scope() as s:
-        group = graph.node_lookup(
-            session=s, system_annotation_matches={'group_id': group_id})
-        for node in group:
-            if node.system_annotations['version'] < version:
-                print('Found outdated node {}'.format(node))
-                graph.edge_delete_by_node_id(node.node_id, session=s)
-                graph.node_delete(node=node, session=s)
-
-
 def start(*args):
     parser, extractor, converter = initialize(*args)
 
@@ -68,7 +57,7 @@ def start(*args):
                 study=archive['disease_code'], batch=archive['batch'])
             version = archive['revision']
             converter.export(group_id=group_id, version=version)
-            purge_old_nodes(converter.graph, group_id, version)
+            converter.purge_old_nodes(group_id, version)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

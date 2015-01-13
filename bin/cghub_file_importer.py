@@ -35,13 +35,20 @@ def initialize(host, user, password, database):
 
 def start(*args, **kwargs):
     converter = initialize(*args)
-
+    g = converter.graph
     logging.info("Reading import xml file")
     with open(kwargs['path'], 'r') as f:
         xml = f.read()
 
+    print('Pulling old file list')
+    sa_matches = {'source': 'cghub_tcga'}
+    files = list(g.node_lookup_by_matches(
+        system_annotation_matches=sa_matches, label='file').yield_per(1000))
+    print('Found {} exising files'.format(len(files)))
+
     logging.info("Converting import xml file")
-    converter.xml2psqlgraph(xml, batch_size=10)
+    converter.xml2psqlgraph(xml)
+
     converter.export()
 
 if __name__ == '__main__':
