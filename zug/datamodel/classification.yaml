@@ -61,10 +61,10 @@ clin:
         captured_fields:
           - _participant_barcode
         category:
-          data_type: Clinical
-          data_subtype: Clinical data
-          experimental_strategy: null
-          platform: Hospital Record
+          data_type: Other
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
+          platform: Mixed platforms
           data_level: Level_1
           data_access: open
           tag: auxiliary
@@ -76,10 +76,10 @@ clin:
         data_format: HTML
         pattern: BCR_auxiliary_description_.+\.html$
         category:
-          data_type: Clinical
-          data_subtype: Biospecimen data
-          experimental_strategy: null
-          platform: BCR Record
+          data_type: Other
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
+          platform: Mixed platforms
           data_level: Level_1
           data_access: open
           tag: [ "auxiliary", "description" ]
@@ -161,23 +161,23 @@ clin:
         pattern: .+_(auxiliary)_\w+\.txt$
         category:
           data_type: Other
-          data_subtype: HPV Test
-          experimental_strategy: null
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
           data_level: Level_2
           data_access: open
-          platform: BCR Record
-          tag: ["auxiliary", "hpv"]
+          platform: Mixed platforms
+          tag: ["auxiliary"]
       -
         data_format: HTML
         pattern: .+_(auxiliary)_\w+\.html$
         category:
           data_type: Other
-          data_subtype: Test description
-          experimental_strategy: null
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
           data_level: Level_2
           data_access: open
-          platform: BCR Record
-          tag: ["auxiliary", "MSI"]
+          platform: Mixed platforms
+          tag: ["auxiliary"]
       - <<: *archive_manifest_files
       - <<: *clinical_to_be_determined
 slide_images:
@@ -494,7 +494,7 @@ snp:
     Human1MDuo:
       -
         data_format: TXT
-        pattern: .+\.(B_Allele_Freq|Delta_B_Allele_Freq|Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
+        pattern: .+\.(Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
         captured_fields:
           - tag
         category:
@@ -504,16 +504,40 @@ snp:
           data_level: Level_2
           data_access: protected
           platform: Illumina Human 1M Duo
+      -
+        data_format: TXT
+        pattern: .+\.(B_Allele_Freq|Delta_B_Allele_Freq).txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Genotypes
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina Human 1M Duo
       - <<: *archive_manifest_files
     HumanHap550:
       -
         data_format: TXT
-        pattern: .+\.(B_Allele_Freq|Delta_B_Allele_Freq|Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
+        pattern: .+\.(Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
         captured_fields:
           - tag
         category:
           data_type: Copy number variation
           data_subtype: Copy number estimate
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HumanHap550
+      -
+        data_format: TXT
+        pattern: .+\.(B_Allele_Freq|Delta_B_Allele_Freq).txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Genotypes
           experimental_strategy: Genotyping array
           data_level: Level_2
           data_access: protected
@@ -608,7 +632,7 @@ snp:
         pattern: ^.+sif\.data\.txt$
         category:
           data_type: Copy number variation
-          data_subtype: null
+          data_subtype: Copy number QC metrics
           experimental_strategy: Genotyping array
           data_level: Level_2
           data_access: protected
@@ -1958,7 +1982,7 @@ cna:
         category:
           data_type: Copy number variation
           data_subtype: Copy number germline variation
-          experimental_strategy: WXS
+          experimental_strategy: WGS
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
@@ -2022,7 +2046,7 @@ cna:
         category:
           data_type: Copy number variation
           data_subtype: Copy number segmentation
-          experimental_strategy: WXS
+          experimental_strategy: WGS
           data_level: Level_3
           data_access: protected
           platform: Illumina HiSeq
@@ -2233,8 +2257,8 @@ methylation:
         captured_fields:
           - _aliquot_barcode
         category:
-          data_type: Raw microarray data
-          data_subtype: Normalized intensities
+          data_type: DNA methylation
+          data_subtype: Methylation beta value
           experimental_strategy: Methylation array
           data_level: Level_2
           data_access: open
@@ -2248,8 +2272,8 @@ methylation:
         captured_fields:
           - _aliquot_barcode
         category:
-          data_type: Raw microarray data
-          data_subtype: Normalized intensities
+          data_type: DNA methylation
+          data_subtype: Methylation beta value
           experimental_strategy: Methylation array
           data_level: Level_2
           data_access: open
@@ -2412,7 +2436,7 @@ protein_exp:
         pattern: .+\.SuperCurve\.Level_2\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.txt$
         category: &protein_exp_lvl2
           data_type: Raw microarray data
-          data_subtype: Normalized intensities
+          data_subtype: Intensities
           experimental_strategy: Protein expression array
           data_level: Level_2
           data_access: open
