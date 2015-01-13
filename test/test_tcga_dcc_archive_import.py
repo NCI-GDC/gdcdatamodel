@@ -30,10 +30,11 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.parser = LatestURLParser()
 
     def tearDown(self):
-        self.pg_driver.engine.execute('delete from edges')
-        self.pg_driver.engine.execute('delete from nodes')
-        self.pg_driver.engine.execute('delete from voided_edges')
-        self.pg_driver.engine.execute('delete from voided_nodes')
+        with self.pg_driver.engine.begin() as conn:
+            conn.execute('delete from edges')
+            conn.execute('delete from nodes')
+            conn.execute('delete from voided_edges')
+            conn.execute('delete from voided_nodes')
         self.pg_driver.engine.dispose()
         for container in self.storage_client.list_containers():
             for obj in container.list_objects():
