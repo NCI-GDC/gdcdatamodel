@@ -129,28 +129,45 @@ class xml2psqlgraph(object):
 
         return result
 
-    def export(self):
+    def export(self, **kwargs):
         self.export_count += 1
-        self.export_nodes()
+        self.export_nodes(**kwargs)
         self.export_edges()
-        self.nodes, self.edges = {}, {}
         print 'Exports: {}. Nodes: {}. \r'.format(
             self.export_count, self.exported_nodes),
 
-    def export_nodes(self):
+    def export_node(self, node, group_id=None, version=None):
         with self.graph.session_scope() as session:
-            for node_id, n in self.nodes.iteritems():
-                try:
-                    self.graph.node_merge(
-                        node_id=n.node_id, properties=n.properties,
-                        label=n.label, session=session)
-                except:
-                    logging.error('Unable to add node {}'.format(n.label))
-                    print n
-                    pprint.pprint(n.properties)
-                    raise
-                else:
-                    self.exported_nodes += 1
+
+            system_annotations = {'group_id': group_id, 'version': version}
+            old_node = self.graph.node_lookup_one(
+                node_id=node.node_id, session=session)
+
+            if group_id and old_node and \
+               old_node.system_annotations.get('group_id', None) != group_id:
+                raise Exception('Group id does not match for {}'.format(node))
+
+            if old_node:
+                if not version or not group_id or \
+                   old_node.system_annotations.get('version', -1) < version:
+                    self.graph.node_update(
+                        node, system_annotations=system_annotations,
+                        properties=node.properties, session=session)
+            else:
+                node.merge(system_annotations=system_annotations)
+                self.graph.node_insert(node)
+
+    def export_nodes(self, **kwargs):
+        for node_id, node in self.nodes.iteritems():
+            try:
+                self.export_node(node, **kwargs)
+            except:
+                logging.error('Unable to add node {}'.format(node))
+                pprint.pprint(node.properties)
+                raise
+            else:
+                self.exported_nodes += 1
+        self.nodes = {}
 
     def export_edges(self):
         with self.graph.session_scope() as session:
@@ -164,6 +181,7 @@ class xml2psqlgraph(object):
                     except:
                         logging.error('Unable to add edge {}'.format(e.label))
                         raise
+        self.edges = {}
 
     def xml2psqlgraph(self, data):
         """Main function that takes xml string and converts it to a graph to

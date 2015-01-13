@@ -41,7 +41,7 @@ def start(*args, **kwargs):
         xml = f.read()
 
     logging.info("Converting import xml file")
-    converter.xml2psqlgraph(xml)
+    converter.xml2psqlgraph(xml, batch_size=10)
     converter.export()
 
 if __name__ == '__main__':
