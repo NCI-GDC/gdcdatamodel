@@ -145,7 +145,50 @@ class xml2psqlgraph(object):
         print 'Exports: {}. Nodes: {}. \r'.format(
             self.export_count, self.exported_nodes),
 
-    def export_node(self, node, group_id=None, version=None, sys_an={}):
+    def purge_files(self, source):
+        with self.graph.session_scope() as s:
+            print('Purging old files')
+            sa_matches = {'source': source}
+            files = {
+                f['file_name']: f for f in self.graph.node_lookup_by_matches(
+                    system_annotation_matches=sa_matches,
+                    label='file', session=s).yield_per(1000)
+            }
+            print('Found {} exising files'.format(len(files)))
+            for f_name, f in files.iteritems():
+                if f_name not in self.nodes:
+                    print('Deleting {}'.format(f['file_name']))
+                    self.graph.node_delete(node=f, session=s)
+
+    def export_file_node(self, node, session, system_annotations):
+        with self.graph.session_scope() as session:
+            properties = {'file_name': node['file_name']}
+            old_node = self.graph.node_lookup_one(
+                property_matches=properties, session=session)
+            if old_node:
+                if old_node.properties != node.properties:
+                    raise Exception(
+                        "File properties did not match those in the "
+                        "graph, you should look into this.")
+            else:
+                node.node_id = str(uuid.uuid4())
+                node.merge(system_annotations=system_annotations)
+                self.graph.node_insert(node)
+
+    def export_file_nodes(self, system_annotations={}):
+        with self.graph.session_scope() as session:
+            for node in self.nodes.values():
+                if node.label == 'file':
+                    self.export_file_node(
+                        node, session, system_annotations)
+
+    def export_node(self, node, group_id=None, version=None):
+
+        if node.label == 'file':
+            raise Exception(
+                "Function export_nodes() is not the right function "
+                "to export files from.  Try calling export_file_nodes() first")
+
         with self.graph.session_scope() as session:
 
             old_node = self.graph.node_lookup_one(
@@ -156,20 +199,20 @@ class xml2psqlgraph(object):
                 raise Exception('Group id does not match for {}'.format(node))
 
             if group_id and version:
-                sys_an.update({
-                    'group_id': group_id, 'version': version})
+                system_annotations = {
+                    'group_id': group_id, 'version': version}
 
             if old_node:
                 if not version or not group_id or \
                    old_node.system_annotations.get('version', -1) < version:
-                    node.system_annotations.update(sys_an)
+                    node.system_annotations.update(system_annotations)
                     self.graph.node_clobber(
                         node_id=node.node_id, properties=node.properties,
                         system_annotations=node.system_annotations,
                         session=session)
 
             else:
-                node.merge(system_annotations=sys_an)
+                node.merge(system_annotations=system_annotations)
                 self.graph.node_insert(node)
 
     def export_nodes(self, **kwargs):
@@ -318,7 +361,9 @@ class xml2psqlgraph(object):
         """
 
         if node_type == 'file':
-            return str(uuid.uuid4())
+            return self.xpath(
+                params.properties['file_name']['path'],
+                root, single=True, label=node_type)
 
         if 'id' not in params or not params.id:
             return None

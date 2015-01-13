@@ -33,27 +33,22 @@ def initialize(host, user, password, database):
     return converter
 
 
-def start(*args, **kwargs):
+def start(source, path, *args, **kwargs):
     converter = initialize(*args)
-    g = converter.graph
+
     logging.info("Reading import xml file")
-    with open(kwargs['path'], 'r') as f:
+    with open(path, 'r') as f:
         xml = f.read()
 
-    print('Pulling old file list')
-    sa_matches = {'source': 'cghub_tcga'}
-    files = list(g.node_lookup_by_matches(
-        system_annotation_matches=sa_matches, label='file').yield_per(1000))
-    print('Found {} exising files'.format(len(files)))
-
     logging.info("Converting import xml file")
+    sa = {'source': source}
     converter.xml2psqlgraph(xml)
-
-    converter.export()
+    converter.purge_files(source)
+    converter.export_file_nodes(system_annotations=sa)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--file', type=str, help='xml file to parse')
+    parser.add_argument('--tcga', type=str, help='tcga xml file to parse')
     parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
                         help='to odatabase to import to')
     parser.add_argument('-i', '--host', default='localhost', type=str,
@@ -63,5 +58,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--password', default='test', type=str,
                         help='the password for import user')
     args = parser.parse_args()
-    start(args.host, args.user, args.password,
-          args.database, path=args.file)
+
+    print('Importing TCGA...')
+    start('cghub_tcga', args.tcga, args.host, args.user,
+          args.password, args.database)
