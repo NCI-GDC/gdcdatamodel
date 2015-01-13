@@ -42,8 +42,8 @@ def initialize(datatype, host, user, password, database):
 
 def purge_old_nodes(graph, group_id, version):
     with graph.session_scope() as s:
-        old_nodes = graph.node_lookup_by_matches(
-            session=s, system_annotations={'group_id': group_id})
+        old_nodes = graph.node_lookup(
+            session=s, system_annotation_matches={'group_id': group_id})
         for n in old_nodes:
             if n.system_annotations['version'] < version:
                 graph.edge_delete_by_node_id(n.node_id, session=s)
@@ -67,7 +67,7 @@ def start(*args):
                 study=archive['disease_code'], batch=archive['batch'])
             version = archive['revision']
             converter.export(group_id=group_id, version=version)
-        purge_old_nodes(converter.graph, group_id, version)
+            purge_old_nodes(converter.graph, group_id, version)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
