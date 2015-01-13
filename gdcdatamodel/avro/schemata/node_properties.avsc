@@ -356,6 +356,18 @@
   },
   {
     "type": "record",
+    "name": "tag_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this tag"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "experimental_strategy_properties",
     "namespace": "edu.uchicago.cdis",
     "fields": [
