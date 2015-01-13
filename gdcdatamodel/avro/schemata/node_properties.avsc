@@ -283,6 +283,11 @@
         "name": "full_name",
         "type": "string",
         "doc": "TOREVIEW: display name for the project"
+      },
+      {
+        "name": "short_name",
+        "type": "string",
+        "doc": "TOREVIEW: name for the project"
       }
     ]
   },
@@ -357,6 +362,11 @@
         "name": "file_name",
         "type": "string",
         "doc": "TOREVIEW: the file (object) name"
+      },
+      {
+        "name": "file_size",
+        "type": "long",
+        "doc": "TOREVIEW: the size of the file (object)"
       },
       {
         "name": "md5sum",
