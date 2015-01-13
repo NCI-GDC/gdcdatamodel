@@ -271,6 +271,21 @@
   },
   {
     "type": "record",
+    "name": "file:tag",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "file_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "tag_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "file:experimental_strategy",
     "namespace": "edu.uchicago.cdis",
     "fields": [

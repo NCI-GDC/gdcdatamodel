@@ -1,4 +1,3 @@
-import json
 import os
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from graphviz import Digraph
@@ -7,7 +6,8 @@ print('Building schema documentation...')
 
 # Load directory tree info
 bin_dir = os.path.dirname(os.path.realpath(__file__))
-root_dir = os.path.join(os.path.abspath(os.path.join(bin_dir, os.pardir)))
+root_dir = os.path.join(os.path.abspath(
+    os.path.join(bin_dir, os.pardir, os.pardir)))
 schema_dir = os.path.join(bin_dir, 'gdcdatamodel', 'avro', 'schemata')
 
 # Create graph
@@ -18,8 +18,8 @@ dot.node_attr['fillcolor'] = 'lightblue'
 dot.node_attr['style'] = 'filled'
 
 # Load schema
-node_schema = json.loads(str(node_avsc_object))
-edge_schema = json.loads(str(edge_avsc_object))
+node_schema = node_avsc_object.to_json()
+edge_schema = edge_avsc_object.to_json()
 
 # Add nodes
 for node in node_schema:

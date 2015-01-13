@@ -32,12 +32,12 @@
       },
       {
         "name": "amount",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "concentration",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
@@ -47,12 +47,12 @@
       },
       {
         "name": "plate_row",
-        "type": ["null", "string"],
+        "type": "string",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "plate_column",
-        "type": ["null", "string"],
+        "type": "string",
         "doc": "TODO: define, from BCR"
       }
     ]
@@ -131,7 +131,7 @@
       },
       {
         "name": "is_ffpe",
-        "type": ["null", "boolean"],
+        "type": "boolean",
         "doc": "TODO: define"
       }
     ]
@@ -183,7 +183,7 @@
       },
       {
         "name": "oct_embedded",
-        "type": ["null", "string"],
+        "type": "string",
         "doc": "TODO: define"
       },
       {
@@ -198,7 +198,7 @@
       },
       {
         "name": "days_to_collection",
-        "type": ["null", "int"],
+        "type": "int",
         "doc": "TOREVIEW: The datetime of sample collection encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_collection/month_of_collection/year_of_collection."
       },
       {
@@ -208,12 +208,12 @@
       },
       {
         "name": "is_ffpe",
-        "type": ["null", "boolean"],
+        "type": "boolean",
         "doc": "TODO: define"
       },
       {
         "name": "pathology_report_uuid",
-        "type": ["null", "string"],
+        "type": "string",
         "doc": "TODO: define"
       }
     ]
@@ -283,11 +283,6 @@
         "name": "full_name",
         "type": "string",
         "doc": "TOREVIEW: display name for the project"
-      },
-      {
-        "name": "short_name",
-        "type": "string",
-        "doc": "TOREVIEW: name for the project"
       }
     ]
   },
@@ -327,31 +322,73 @@
     "type": "record",
     "name": "platform_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this platform"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "data_type_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this data type"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "data_subtype_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this data subtype"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "tag_properties",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this tag"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "experimental_strategy_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this record"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "data_format_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this data format"
+      }
+    ]
   },
   {
     "type": "record",
@@ -366,7 +403,7 @@
       {
         "name": "file_size",
         "type": "long",
-        "doc": "TOREVIEW: the size of the file (object)"
+        "doc": "TOREVIEW: the file (object) name"
       },
       {
         "name": "md5sum",
@@ -563,27 +600,27 @@
       },
       {
         "name": "percent_tumor_cells",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "percent_tumor_nuclei",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "percent_normal_cells",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "percent_necrosis",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "percent_stromal_cells",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
@@ -593,12 +630,12 @@
       },
       {
         "name": "percent_lymphocyte_infiltration",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
         "name": "percent_monocyte_infiltration",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {
@@ -608,7 +645,7 @@
       },
       {
         "name": "percent_neutrophil_infiltration",
-        "type": ["null", "float"],
+        "type": "float",
         "doc": "TODO: define, from BCR"
       },
       {

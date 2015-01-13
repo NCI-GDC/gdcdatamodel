@@ -98,6 +98,14 @@
     "type": "enum"
   },
   {
+    "name": "tag_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "tag"
+    ],
+    "type": "enum"
+  },
+  {
     "name": "experimental_strategy_enum",
     "namespace": "edu.uchicago.cdis",
     "symbols": [
