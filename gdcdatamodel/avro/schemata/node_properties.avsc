@@ -403,7 +403,7 @@
       {
         "name": "file_size",
         "type": "long",
-        "doc": "TOREVIEW: the file (object) name"
+        "doc": "the size file (object) in bytes"
       },
       {
         "name": "md5sum",
