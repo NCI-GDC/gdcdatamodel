@@ -47,10 +47,15 @@ class TCGADCCArchiveSyncTest(TestCase):
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
         )
         self.syncer.sync_archive(archive)
-        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 106)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
         # make sure we uploaded the archive
         assert self.storage_client.get_object("tcga_dcc_public", "archives/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0")
+        file = self.pg_driver.node_lookup(label="file").first()
+        # make sure the files get tied to classification stuff
+        assert self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
+        # make sure we uploaded the file
+        assert self.storage_client.get_object("tcga_dcc_public", "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0/{}".format(file["file_name"]))
 
     def test_syncing_is_idempotent(self):
         archive = self.parser.parse_archive(
@@ -60,7 +65,7 @@ class TCGADCCArchiveSyncTest(TestCase):
         )
         self.syncer.sync_archive(archive)
         self.syncer.sync_archive(archive)
-        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 106)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
 
     @patch.object(TCGADCCArchiveSyncer, 'extract_manifest',
@@ -72,7 +77,7 @@ class TCGADCCArchiveSyncTest(TestCase):
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
         )
         self.syncer.sync_archive(archive)
-        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 106)
         self.assertEqual(self.pg_driver.node_lookup(label="file").first().system_annotations["md5_source"],
                          "gdc_import_process")
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
@@ -89,5 +94,5 @@ class TCGADCCArchiveSyncTest(TestCase):
 
         self.syncer.sync_archive(old_archive)
         self.syncer.sync_archive(new_archive)
-        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 106)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)

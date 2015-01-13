@@ -45,6 +45,9 @@ def fix_uuid(s):
     """Munge uuids matched from filenames into correct format"""
     return s.replace("_", "-").lower()
 
+CLASSIFICATION_ATTRS = ["data_subtype", "data_format", "platform",
+                        "experimental_strategy", "tag"]
+
 
 def classify(archive, filename):
     """Given a filename and an archive that it came from, attempt to
@@ -53,13 +56,14 @@ def classify(archive, filename):
     """
     data_type = archive["data_type_in_url"]
     data_level = str(archive["data_level"])
-    potential_classifications = classification[data_level][data_type]
+    platform = archive["platform"]
+    potential_classifications = classification[data_type][data_level][platform]
     for possibility in potential_classifications:
-        match = re.match(possibility["patten"], filename)
+        match = re.match(possibility["pattern"], filename)
         if match:
             result = copy.deepcopy(possibility["category"])
             result["data_format"] = possibility["data_format"]
-            if possibility["captured_fields"]:
+            if possibility.get("captured_fields"):
                 for i, field in enumerate(possibility["captured_fields"]):
                     if field not in ['_', '-']:
                         if field.endswith("barcode"):
@@ -210,27 +214,60 @@ class TCGADCCArchiveSyncer(object):
                                    json={"urls": [url], "rev": rev})
         patchresp.raise_for_status()
 
-    def store_file_in_pg(self, archive_node, filename, md5, md5_source):
+    def tie_file_to_atribute(self, file_node, attr, value, session):
+        LABEL_MAP = {
+            "platform": "generated_from",
+            "data_subtype": "member_of",
+            "data_format": "member_of",
+            "tag": "member_of",
+            "experimental_strategy": "member_of"
+        }
+        with session_scope(self.pg_driver.engine, session) as session:
+            attr_node = self.pg_driver.node_lookup_one(label=attr,
+                                                       property_matches={"name": value},
+                                                       session=session)
+            if not attr_node:
+                attr_node = PsqlNode(node_id=str(uuid.uuid4()),
+                                     label=attr, properties={"name": value})
+                self.pg_driver.node_insert(attr_node, session=session)
+            edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
+                                         src_id=file_node.node_id,
+                                         dst_id=attr_node.node_id)
+            self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+
+    def store_file_in_pg(self, archive_node, filename, md5, md5_source,
+                         file_classification):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
-        file_node = PsqlNode(node_id=did, label="file",
+        acl = ["phs000178"] if file_classification["data_access"] else []
+        file_node = PsqlNode(node_id=did, label="file", acl=acl,
                              properties={"file_name": filename,
                                          "md5sum": md5,
                                          "state": "submitted",
                                          "state_comment": None},
-                             system_annotations={"md5_source": md5_source})
-        edge = PsqlEdge(label="member_of",
-                        src_id=file_node.node_id,
-                        dst_id=archive_node.node_id,
-                        properties={})
+                             system_annotations={"md5_source": md5_source,
+                                                 "file_source": "tcga_dcc"})
+        edge_to_archive = PsqlEdge(label="member_of",
+                                   src_id=file_node.node_id,
+                                   dst_id=archive_node.node_id,
+                                   properties={})
+
         with session_scope(self.pg_driver.engine) as session:
             self.log.info("inserting file %s as node %s", filename, file_node)
             self.pg_driver.node_insert(file_node, session=session)
-            self.pg_driver.edge_insert(edge, session=session)
+            self.pg_driver.edge_insert(edge_to_archive, session=session)
+            # ok, classification
+            #
+            # we need to create edges to: data_subtype, data_format,
+            # platform, experimental_strategy, tag.
+            for attribute in CLASSIFICATION_ATTRS:
+                if file_classification.get(attribute):
+                    self.tie_file_to_atribute(file_node, attribute,
+                                              file_classification[attribute],
+                                              session)
+                else:
+                    self.log.warning("not tieing %s (node %s) to a %s", filename, file_node, attribute)
         return file_node
-
-    def classify_file_node(self, archive, file_node):
-
 
     def container_for(self, archive):
         if archive["protected"]:
@@ -293,6 +330,15 @@ class TCGADCCArchiveSyncer(object):
         # id from signpost
         # 2) put file in object store if not already there
         filename = tarinfo.name.split("/")[-1]
+        file_classification = classify(archive, filename)
+        if ("to_be_determined" in file_classification.values() or
+            "data_access" not in file_classification.keys()):
+            # we shouldn't insert this file
+            self.log.info("file %s/%s classified as %s, not inserting",
+                          archive["archive_name"],
+                          filename,
+                          file_classification)
+            return
         file_node = self.lookup_file_in_pg(archive_node, filename)
         if not file_node:
             if dcc_md5 is None:
@@ -302,7 +348,7 @@ class TCGADCCArchiveSyncer(object):
                 md5 = dcc_md5
                 md5_source = "tcga_dcc"
             file_node = self.store_file_in_pg(archive_node, filename,
-                                              md5, md5_source)
+                                              md5, md5_source, file_classification)
         else:
             self.log.info("file %s in archive %s already in postgres, not inserting",
                           filename,
