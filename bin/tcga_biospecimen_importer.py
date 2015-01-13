@@ -20,12 +20,9 @@ tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 def initialize(datatype, host, user, password, database):
     parser = latest_urls.LatestURLParser(
-        constraints={'data_level': 'Level_1', 'platform': 'bio'},
-        # url_key='dcc_archive_url',
-    )
+        constraints={'data_level': 'Level_1', 'platform': 'bio'})
     extractor = extract_tar.ExtractTar(
-        regex=".*(bio).*(Level_1).*\\.xml"
-    )
+        regex=".*(bio).*(Level_1).*\\.xml")
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
 
@@ -46,11 +43,11 @@ def initialize(datatype, host, user, password, database):
 def purge_old_nodes(graph, group_id, version):
     with graph.session_scope() as s:
         old_nodes = graph.node_lookup(
-            session=s, system_annotations={
-                'group_id': group_id, 'version': version})
+            session=s, system_annotations={'group_id': group_id})
         for n in old_nodes:
-            graph.edge_delete_by_node_id(n.node_id, session=s)
-            graph.edge_delete(node=n, session=s)
+            if n.system_annotations['version'] < version:
+                graph.edge_delete_by_node_id(n.node_id, session=s)
+                graph.edge_delete(node=n, session=s)
 
 
 def start(*args):
