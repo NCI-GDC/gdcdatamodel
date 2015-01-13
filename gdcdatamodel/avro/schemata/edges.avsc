@@ -78,6 +78,7 @@
           "file:experimental_strategy",
           "file:data_subtype",
           "file:data_format",
+          "file:tag",
           "data_subtype:data_type"
         ],
         "doc": "The source/destination node types allowed."
