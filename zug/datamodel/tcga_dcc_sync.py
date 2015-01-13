@@ -29,6 +29,10 @@ def md5sum(iterable):
     return md5.hexdigest()
 
 
+def iterable_from_file(fileobj, chunk_size=8192):
+    return iter(partial(fileobj.read, chunk_size), '')
+
+
 class TCGADCCArchiveSyncer(object):
 
     MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB
@@ -167,14 +171,15 @@ class TCGADCCArchiveSyncer(object):
                                    json={"urls": [url], "rev": rev})
         patchresp.raise_for_status()
 
-    def store_file_in_pg(self, archive_node, filename, md5):
+    def store_file_in_pg(self, archive_node, filename, md5, md5_source):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
         file_node = PsqlNode(node_id=did, label="file",
                              properties={"file_name": filename,
                                          "md5sum": md5,
                                          "state": "submitted",
-                                         "state_comment": None})
+                                         "state_comment": None},
+                             system_annotations={"md5_source": md5_source})
         edge = PsqlEdge(label="member_of",
                         src_id=file_node.node_id,
                         dst_id=archive_node.node_id,
@@ -196,11 +201,8 @@ class TCGADCCArchiveSyncer(object):
         container = self.storage_client.get_container(self.container_for(archive))
         objname = "/".join([archive["archive_name"], filename])
         fileobj = tarball.extractfile(tarinfo)
-        CHUNK_SIZE = 8124
-        obj = container.upload_object_via_stream(iter(partial(fileobj.read, CHUNK_SIZE), ''),
-                                                 objname)
+        obj = container.upload_object_via_stream(iterable_from_file(fileobj), objname)
         return obj
-
 
     def url_for(self, obj):
         """Return a url for a libcloud object."""
@@ -242,7 +244,14 @@ class TCGADCCArchiveSyncer(object):
         filename = tarinfo.name.split("/")[-1]
         file_node = self.lookup_file_in_pg(archive_node, filename)
         if not file_node:
-            file_node = self.store_file_in_pg(archive_node, filename, dcc_md5)
+            if dcc_md5 is None:
+                md5 = md5sum(iterable_from_file(tarball.extractfile(tarinfo)))
+                md5_source = "gdc_import_process"
+            else:
+                md5 = dcc_md5
+                md5_source = "tcga_dcc"
+            file_node = self.store_file_in_pg(archive_node, filename,
+                                              md5, md5_source)
         else:
             self.log.info("file %s in archive %s already in postgres, not inserting",
                           filename,
@@ -270,13 +279,17 @@ class TCGADCCArchiveSyncer(object):
         self.set_file_state(file_node, "live")
 
     def extract_manifest(self, archive, tarball):
-        manifest_tarinfo = tarball.getmember("{}/MANIFEST.txt".format(archive["archive_name"]))
-        manifest_data = tarball.extractfile(manifest_tarinfo)
-        res = {}
-        for line in manifest_data.readlines():
-            md5, filename = line.split()
-            res[filename] = md5
-        return res
+        try:
+            manifest_tarinfo = tarball.getmember("{}/MANIFEST.txt".format(archive["archive_name"]))
+            manifest_data = tarball.extractfile(manifest_tarinfo)
+            res = {}
+            for line in manifest_data.readlines():
+                md5, filename = line.split()
+                res[filename] = md5
+            return res
+        except:
+            self.log.exception("failed to load manifest from %s", archive["archive_name"])
+            return None
 
     def sync_archive(self, archive):
         self.log.info("syncing archive %s", archive["archive_name"])
@@ -285,5 +298,9 @@ class TCGADCCArchiveSyncer(object):
             manifest = self.extract_manifest(archive, tarball)
             for tarinfo in tarball:
                 if tarinfo.name != "{}/MANIFEST.txt".format(archive["archive_name"]):
+                    if manifest is None:
+                        this_md5 = None
+                    else:
+                        this_md5 = manifest[tarinfo.name.split("/")[-1]]
                     self.sync_file(archive, archive_node, tarball,
-                                   tarinfo, manifest[tarinfo.name.split("/")[-1]])
+                                   tarinfo, this_md5)
