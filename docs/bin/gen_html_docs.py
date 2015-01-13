@@ -7,7 +7,7 @@ import os
 
 # Load directory tree info
 bin_dir = os.path.dirname(os.path.realpath(__file__))
-doc_path = os.path.join(bin_dir, os.pardir, 'gdc_docs.html')
+doc_path = os.path.join(bin_dir, os.pardir, 'html', 'gdc_docs.html')
 
 
 def main():
@@ -25,4 +25,5 @@ def main():
             stderr=sys.stderr)
 
 if __name__ == "__main__":
+    print('Building html documentation')
     main()
