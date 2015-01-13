@@ -3,8 +3,9 @@ import logging
 import re
 from datetime import tzinfo, timedelta
 
+from cdisutils.log import get_logger
 
-logger = logging.getLogger(name="[{name}]".format(name=__name__))
+logger = get_logger(__name__)
 
 default_latest_firstline = 'ARCHIVE_NAME DATE_ADDED ARCHIVE_URL'.split()
 default_latest_url = "http://tcga-data.nci.nih.gov/datareports/resources/latestarchive"

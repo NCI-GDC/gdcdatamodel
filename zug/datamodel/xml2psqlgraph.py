@@ -8,8 +8,9 @@ import pprint
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
+from cdisutils.log import get_logger
 
-logger = logging.getLogger(name="[{name}]".format(name=__name__))
+logger = get_logger(__name__)
 
 possible_true_values = [
     'true',
