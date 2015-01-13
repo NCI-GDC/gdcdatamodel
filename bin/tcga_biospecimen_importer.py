@@ -42,7 +42,7 @@ def initialize(datatype, host, user, password, database):
 
 def purge_old_nodes(graph, group_id, version):
     with graph.session_scope() as s:
-        old_nodes = graph.node_lookup(
+        old_nodes = graph.node_lookup_by_matches(
             session=s, system_annotations={'group_id': group_id})
         for n in old_nodes:
             if n.system_annotations['version'] < version:
