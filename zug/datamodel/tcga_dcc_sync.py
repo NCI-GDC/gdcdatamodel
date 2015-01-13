@@ -222,13 +222,17 @@ class TCGADCCArchiveSyncer(object):
             "tag": "member_of",
             "experimental_strategy": "member_of"
         }
-        with session_scope(self.pg_driver.engine, session) as session:
+        if not isinstance(value, list):
+            # this is to handle the thing where tag is
+            # sometimes a list and sometimes a string
+            value = [value]
+        for val in value:
             attr_node = self.pg_driver.node_lookup_one(label=attr,
-                                                       property_matches={"name": value},
+                                                       property_matches={"name": val},
                                                        session=session)
             if not attr_node:
                 attr_node = PsqlNode(node_id=str(uuid.uuid4()),
-                                     label=attr, properties={"name": value})
+                                     label=attr, properties={"name": val})
                 self.pg_driver.node_insert(attr_node, session=session)
             edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
                                          src_id=file_node.node_id,
@@ -239,7 +243,7 @@ class TCGADCCArchiveSyncer(object):
                          file_classification):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
-        acl = ["phs000178"] if file_classification["data_access"] else []
+        acl = ["phs000178"] if file_classification["data_access"] == "protected" else []
         file_node = PsqlNode(node_id=did, label="file", acl=acl,
                              properties={"file_name": filename,
                                          "md5sum": md5,
