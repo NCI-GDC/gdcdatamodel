@@ -229,7 +229,8 @@ class TCGADCCArchiveSyncer(object):
     def set_file_state(self, file_node, state):
         self.pg_driver.node_update(file_node, properties={"state": state})
 
-    def verify_sum(self, file_node, obj, expected_sum):
+    def verify_sum(self, file_node, obj):
+        expected_sum = file_node["md5sum"]
         actual_sum = md5sum(obj.as_stream())
         if actual_sum != expected_sum:
             self.pg_driver.node_update(file_node,
@@ -274,7 +275,7 @@ class TCGADCCArchiveSyncer(object):
         if not urls:
             raise RuntimeError("no urls in signpost for file {}, node:{}".format(file_node.file_name, file_node))
         obj = self.obj_for(urls[0])
-        self.verify_sum(file_node, obj, md5)
+        self.verify_sum(file_node, obj)
         # classify based on Junjun/Zhenyu's regexes?
         self.set_file_state(file_node, "live")
 
