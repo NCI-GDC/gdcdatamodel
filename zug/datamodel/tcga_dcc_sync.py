@@ -304,9 +304,11 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("syncing archive %s", archive["archive_name"])
         archive_node = self.put_archive_in_pg(archive)
         with self.download_archive(archive) as archive_data:
-            archive_obj = self.upload_archive_to_object_store(archive, archive_data)
-            archive_url = self.url_for(archive_obj)
-            self.store_url_in_signpost(archive_node.node_id, archive_url)
+            urls = self.get_urls_from_signpost(archive_node.node_id)
+            if not urls:
+                archive_obj = self.upload_archive_to_object_store(archive, archive_data)
+                archive_url = self.url_for(archive_obj)
+                self.store_url_in_signpost(archive_node.node_id, archive_url)
             tarball = tarfile.open(fileobj=archive_data, mode="r:gz")
             manifest = self.extract_manifest(archive, tarball)
             for tarinfo in tarball:
