@@ -401,6 +401,11 @@
         "doc": "TOREVIEW: the file (object) name"
       },
       {
+        "name": "file_size",
+        "type": "long",
+        "doc": "the size file (object) in bytes"
+      },
+      {
         "name": "md5sum",
         "type": "string",
         "doc": "The MD5 hash of this file"
