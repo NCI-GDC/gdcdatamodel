@@ -42,12 +42,13 @@ def initialize(datatype, host, user, password, database):
 
 def purge_old_nodes(graph, group_id, version):
     with graph.session_scope() as s:
-        old_nodes = graph.node_lookup(
+        group = graph.node_lookup(
             session=s, system_annotation_matches={'group_id': group_id})
-        for n in old_nodes:
-            if n.system_annotations['version'] < version:
-                graph.edge_delete_by_node_id(n.node_id, session=s)
-                graph.edge_delete(node=n, session=s)
+        for node in group:
+            if node.system_annotations['version'] < version:
+                print('Found outdated node {}'.format(node))
+                graph.edge_delete_by_node_id(node.node_id, session=s)
+                graph.node_delete(node=node, session=s)
 
 
 def start(*args):
