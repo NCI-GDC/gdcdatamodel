@@ -20,12 +20,9 @@ tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 def initialize(datatype, host, user, password, database):
     parser = latest_urls.LatestURLParser(
-        constraints={'data_level': 'Level_1', 'platform': 'bio'},
-        url_key='dcc_archive_url',
-    )
+        constraints={'data_level': 'Level_1', 'platform': 'bio'})
     extractor = extract_tar.ExtractTar(
-        regex=".*(bio).*(Level_1).*\\.xml"
-    )
+        regex=".*(bio).*(Level_1).*\\.xml")
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
 
@@ -52,10 +49,15 @@ def start(*args):
     converter.export()
 
     logging.info("Importing latest xml archives")
-    for url in parser:
+    for archive in parser:
+        url = archive['dcc_archive_url']
         for xml in extractor(url):
             converter.xml2psqlgraph(xml)
-            converter.export()
+            group_id = "{study}_{batch}".format(
+                study=archive['disease_code'], batch=archive['batch'])
+            version = archive['revision']
+            converter.export(group_id=group_id, version=version)
+            converter.purge_old_nodes(group_id, version)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -63,9 +65,11 @@ if __name__ == '__main__':
                         help='the datatype to filter')
     parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
                         help='to odatabase to import to')
-    parser.add_argument('-u', '--user', default='postgres', type=str,
+    parser.add_argument('-u', '--user', default='test', type=str,
                         help='the user to import as')
     parser.add_argument('-p', '--password', default='test', type=str,
                         help='the password for import user')
+    parser.add_argument('-i', '--host', default='localhost', type=str,
+                        help='the postgres server host')
     args = parser.parse_args()
     start(args.datatype, args.host, args.user, args.password, args.database)
