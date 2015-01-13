@@ -34,6 +34,7 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.pg_driver.engine.execute('delete from nodes')
         self.pg_driver.engine.execute('delete from voided_edges')
         self.pg_driver.engine.execute('delete from voided_nodes')
+        self.pg_driver.engine.dispose()
         for container in self.storage_client.list_containers():
             for obj in container.list_objects():
                 obj.delete()
