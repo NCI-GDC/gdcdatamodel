@@ -322,31 +322,61 @@
     "type": "record",
     "name": "platform_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this platform"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "data_type_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this data type"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "data_subtype_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this data subtype"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "experimental_strategy_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this record"
+      }
+    ]
   },
   {
     "type": "record",
     "name": "data_format_properties",
     "namespace": "edu.uchicago.cdis",
-    "fields": []
+    "fields": [
+      {
+        "name": "name",
+        "type": "string",
+        "doc": "name of this data format"
+      }
+    ]
   },
   {
     "type": "record",
