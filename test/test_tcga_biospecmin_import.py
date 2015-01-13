@@ -60,10 +60,12 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.parser, self.extrator, self.converter = initialize()
 
     def tearDown(self):
-        self.converter.graph.engine.execute('delete from edges')
-        self.converter.graph.engine.execute('delete from nodes')
-        self.converter.graph.engine.execute('delete from voided_edges')
-        self.converter.graph.engine.execute('delete from voided_nodes')
+        with self.converter.graph.engine.begin() as conn:
+            conn.execute('delete from edges')
+            conn.execute('delete from nodes')
+            conn.execute('delete from voided_edges')
+            conn.execute('delete from voided_nodes')
+        self.converter.graph.engine.dispose()
 
     def test_convert_sample(self):
         with open(os.path.join(data_dir, 'sample.xml')) as f:
