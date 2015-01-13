@@ -35,7 +35,7 @@ def iterable_from_file(fileobj, chunk_size=8192):
 
 class TCGADCCArchiveSyncer(object):
 
-    MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB
+    MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB TODO make this configurable
     SIGNPOST_VERSION = "v0"
 
     def __init__(self, signpost_url, pg_driver, storage_client, dcc_auth, scratch_dir):
@@ -84,7 +84,7 @@ class TCGADCCArchiveSyncer(object):
                     self.pg_driver.node_delete(node=file, session=session)
                 self.pg_driver.node_delete(node=old_archive, session=session)
             new_archive_node = PsqlNode(
-                node_id=str(uuid.uuid4()),
+                node_id=self.allocate_id_from_signpost(),
                 label="archive",
                 properties={"legacy_id": legacy_id,
                             "revision": archive["revision"]})
@@ -101,19 +101,19 @@ class TCGADCCArchiveSyncer(object):
         return resp
 
     @contextmanager
-    def untar_archive(self, archive):
-        self.log.info("untaring archive %s", archive["archive_name"])
+    def download_archive(self, archive):
+        self.log.info("downloading archive %s", archive["archive_name"])
         resp = self.get_archive_stream(archive["dcc_archive_url"])
         if int(resp.headers["content-length"]) > self.MAX_BYTES_IN_MEMORY:
             self.log.info("archive size is % bytes, storing in temp file on disk", resp.headers["content-length"])
             temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
         else:
             temp_file = StringIO()
-        for chunk in resp.iter_content():
+        for chunk in resp.iter_content(16000):
             temp_file.write(chunk)
         temp_file.seek(0)
         try:
-            yield tarfile.open(fileobj=temp_file, mode="r:gz")
+            yield temp_file
         finally:
             temp_file.close()
 
@@ -196,8 +196,16 @@ class TCGADCCArchiveSyncer(object):
         else:
             return "tcga_dcc_public"
 
-    def upload_to_object_store(self, archive, tarball, tarinfo, filename):
-        # put the file in the object store
+    # TODO make these idepmotent
+
+    def upload_archive_to_object_store(self, archive, data):
+        container = self.storage_client.get_container(self.container_for(archive))
+        objname = "/".join(["archives", archive["archive_name"]])
+        obj = container.upload_object_via_stream(iterable_from_file(data), objname)
+        data.seek(0)
+        return obj
+
+    def upload_file_to_object_store(self, archive, tarball, tarinfo, filename):
         container = self.storage_client.get_container(self.container_for(archive))
         objname = "/".join([archive["archive_name"], filename])
         fileobj = tarball.extractfile(tarinfo)
@@ -266,7 +274,7 @@ class TCGADCCArchiveSyncer(object):
         urls = self.get_urls_from_signpost(file_node.node_id)
         if not urls:
             self.set_file_state(file_node, "uploading")
-            obj = self.upload_to_object_store(archive, tarball, tarinfo, filename)
+            obj = self.upload_file_to_object_store(archive, tarball, tarinfo, filename)
             new_url = self.url_for(obj)
             self.store_url_in_signpost(file_node.node_id, new_url)
         self.set_file_state(file_node, "validating")
@@ -295,7 +303,13 @@ class TCGADCCArchiveSyncer(object):
     def sync_archive(self, archive):
         self.log.info("syncing archive %s", archive["archive_name"])
         archive_node = self.put_archive_in_pg(archive)
-        with self.untar_archive(archive) as tarball:
+        with self.download_archive(archive) as archive_data:
+            urls = self.get_urls_from_signpost(archive_node.node_id)
+            if not urls:
+                archive_obj = self.upload_archive_to_object_store(archive, archive_data)
+                archive_url = self.url_for(archive_obj)
+                self.store_url_in_signpost(archive_node.node_id, archive_url)
+            tarball = tarfile.open(fileobj=archive_data, mode="r:gz")
             manifest = self.extract_manifest(archive, tarball)
             for tarinfo in tarball:
                 if tarinfo.name != "{}/MANIFEST.txt".format(archive["archive_name"]):

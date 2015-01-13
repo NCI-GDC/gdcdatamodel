@@ -49,6 +49,8 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.syncer.sync_archive(archive)
         self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
+        # make sure we uploaded the archive
+        assert self.storage_client.get_object("tcga_dcc_public", "archives/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0")
 
     def test_syncing_is_idempotent(self):
         archive = self.parser.parse_archive(
