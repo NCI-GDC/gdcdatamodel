@@ -1,4 +1,5 @@
 from unittest import TestCase
+from mock import patch
 
 import tempfile
 
@@ -29,10 +30,12 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.parser = LatestURLParser()
 
     def tearDown(self):
-        self.pg_driver.engine.execute('delete from edges')
-        self.pg_driver.engine.execute('delete from nodes')
-        self.pg_driver.engine.execute('delete from voided_edges')
-        self.pg_driver.engine.execute('delete from voided_nodes')
+        with self.pg_driver.engine.begin() as conn:
+            conn.execute('delete from edges')
+            conn.execute('delete from nodes')
+            conn.execute('delete from voided_edges')
+            conn.execute('delete from voided_nodes')
+        self.pg_driver.engine.dispose()
         for container in self.storage_client.list_containers():
             for obj in container.list_objects():
                 obj.delete()
@@ -56,6 +59,20 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.syncer.sync_archive(archive)
         self.syncer.sync_archive(archive)
         self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
+
+    @patch.object(TCGADCCArchiveSyncer, 'extract_manifest',
+                  lambda _, __, ___: None)
+    def test_syncing_handles_errors_parsing_manifest(self):
+        archive = self.parser.parse_archive(
+            "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
+            "11/12/2014",
+            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
+        )
+        self.syncer.sync_archive(archive)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
+        self.assertEqual(self.pg_driver.node_lookup(label="file").first().system_annotations["md5_source"],
+                         "gdc_import_process")
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
 
     def test_replacing_old_archive_works(self):
