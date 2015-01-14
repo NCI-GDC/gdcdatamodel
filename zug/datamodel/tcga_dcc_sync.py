@@ -324,8 +324,7 @@ class TCGADCCArchiveSyncer(object):
                                          "md5sum": md5,
                                          "state": "submitted",
                                          "state_comment": None},
-                             system_annotations={"md5_source": md5_source,
-                                                 "file_source": "tcga_dcc"})
+                             system_annotations=system_annotations)
         edge_to_archive = PsqlEdge(label="member_of",
                                    src_id=file_node.node_id,
                                    dst_id=archive_node.node_id,
