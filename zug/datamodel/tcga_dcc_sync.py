@@ -299,22 +299,9 @@ class TCGADCCArchiveSyncer(object):
             # sometimes a list and sometimes a string
             value = [value]
         for val in value:
-            try:
-                attr_node = self.pg_driver.node_lookup_one(label=attr,
-                                                           property_matches={"name": val},
-                                                           session=session)
-            except:
-                nodes = self.pg_driver.node_lookup(label=attr,
-                                                   property_matches={"name": val},
-                                                   session=session).all()
-                self.log.error(nodes)
-                self.log.error([n.properties for n in nodes])
-                self.log.error("%s: %s", attr, val)
-                raise
-            if not attr_node:
-                attr_node = PsqlNode(node_id=str(uuid.uuid4()),
-                                     label=attr, properties={"name": val})
-                self.pg_driver.node_insert(attr_node, session=session)
+            attr_node = self.pg_driver.node_lookup_one(label=attr,
+                                                       property_matches={"name": val},
+                                                       session=session)
             edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
                                          src_id=file_node.node_id,
                                          dst_id=attr_node.node_id)
