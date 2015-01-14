@@ -302,6 +302,8 @@ class TCGADCCArchiveSyncer(object):
             attr_node = self.pg_driver.node_lookup_one(label=attr,
                                                        property_matches={"name": val},
                                                        session=session)
+            if not attr_node:
+                self.log.error("attr_node with label %s and name %s not found (trying to tie for file) ", attr, val, file_node["file_name"])
             edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
                                          src_id=file_node.node_id,
                                          dst_id=attr_node.node_id)
