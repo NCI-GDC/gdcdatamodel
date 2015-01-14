@@ -136,31 +136,10 @@ class cghub2psqlgraph(object):
 
     def rebase(self, source):
         self.export_count += 1
-        self.rebase_file_nodes(system_annotations={'source': source})
+        self.rebase_file_nodes(source)
         self.export_edges()
         print 'Exports: {}. Nodes: {}. \r'.format(
             self.export_count, self.exported_nodes),
-
-    def export_full_import(self, source):
-        self.export_count += 1
-        self.purge_files(source)
-        self.export_file_nodes_full_import(
-            system_annotations={'source': source})
-        self.export_edges()
-        print 'Exports: {}. Nodes: {}. \r'.format(
-            self.export_count, self.exported_nodes),
-
-    def export_file_nodes_full_import(self, system_annotations):
-        with self.graph.session_scope() as session:
-            for file_name, node in self.files_to_add.iteritems():
-                self.exported_nodes += 1
-                node.node_id = str(uuid.uuid4())
-                node.merge(system_annotations=system_annotations)
-                self.graph.node_insert(node, session)
-
-                # Add the correct src_id to this file's edges
-                for edge in self.edges[file_name]:
-                    edge.src_id = node.node_id
 
     def get_existing_files(self, source, session):
         sa_matches = {'source': source}
@@ -170,19 +149,8 @@ class cghub2psqlgraph(object):
                 label='file', session=session).yield_per(1000)
         }
 
-    def purge_files(self, source):
-        with self.graph.session_scope() as s:
-            old_files = self.get_existing_files(source, s)
-            print('Found {} exising files'.format(len(old_files)))
-            purge_count = 0
-            for file_name, f in old_files.iteritems():
-                if file_name not in self.files_to_add:
-                    purge_count += 1
-                    print('Deleting {}'.format(f['file_name']))
-                    self.graph.node_delete(node=f, session=s)
-            print('Purged {} files.'.format(purge_count))
-
-    def merge_file_node(self, file_name, node, session, system_annotations):
+    def merge_file_node(self, existing_files, file_name, node,
+                        session, system_annotations):
         """either create or update file record
 
         1. does this file_name already exist
@@ -191,9 +159,8 @@ class cghub2psqlgraph(object):
 
         """
 
-        existing = self.graph.node_lookup_one(
-            property_matches={'file_name': file_name}, session=session)
-        if existing:
+        existing = existing_files.get(file_name, None)
+        if existing is not None:
             print('Updating {}'.format(file_name))
             node_id = existing.node_id
             self.graph.node_update(
@@ -205,13 +172,16 @@ class cghub2psqlgraph(object):
             print('Adding {}'.format(file_name))
             node_id = str(uuid.uuid4())
             node.node_id = node_id
+            node.system_annotations.update(system_annotations)
             self.graph.node_insert(node=node, session=session)
 
         # Add the correct src_id to this file's edges now that we know it
         for edge in self.edges[file_name]:
             edge.src_id = node_id
 
-    def rebase_file_nodes(self, system_annotations):
+        self.exported_nodes += 1
+
+    def rebase_file_nodes(self, source):
         """update file records in graph
 
         1. for each valid file, merge it in to the graph
@@ -219,15 +189,16 @@ class cghub2psqlgraph(object):
 
         """
 
+        system_annotations = {'source': source}
         with self.graph.session_scope() as session:
+            existing_files = self.get_existing_files(
+                source, session)
+            print('Found {} existing files'.format(len(existing_files)))
             for file_name, node in self.files_to_add.iteritems():
-                self.exported_nodes += 1
-                self.merge_file_node(
-                    file_name, node, session, system_annotations)
+                self.merge_file_node(existing_files, file_name, node,
+                                     session, system_annotations)
             for file_name in self.files_to_delete:
-                node = self.graph.node_lookup_one(
-                    property_matches=dict(filename=file_name),
-                    session=session)
+                node = existing_files.get(file_name, None)
                 if node:
                     print('Redacting {}'.format(file_name))
                     self.graph.node_delete(node=node, session=session)

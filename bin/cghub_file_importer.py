@@ -33,30 +33,18 @@ def initialize(host, user, password, database):
     return converter
 
 
-def full_import(source, path, converter):
-    logging.info("Reading import {} xml file".format(source))
-    with open(path, 'r') as f:
-        xml = f.read()
-
-    logging.info("Converting import xml file")
-    sa = {'source': source}
+def incremental_import(source, phsid, days, converter):
+    if not days:
+        print('Importing all files from TCGA...'.format(days))
+        xml = cgquery.get_all(phsid)
+    else:
+        print('Rebasing past {} days from TCGA...'.format(days))
+        xml = cgquery.get_changes_last_x_days(days, phsid)
     converter.parse(xml)
-    converter.purge_files(source)
-    converter.export_file_nodes(system_annotations=sa)
-
-
-def incremental_import(source, path, converter):
-    days = 3
-    print('Rebasing past {} days from TCGA...'.format(days))
-    xml = cgquery.get_changes_last_x_days(days, 'phs000178')
-    converter.parse(xml)
-    # converter.rebase(source)
-    converter.export_full_import(source)
+    converter.rebase(source)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tcga', type=str, default=None,
-                        help='tcga xml file to parse')
     parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
                         help='to odatabase to import to')
     parser.add_argument('-i', '--host', default='localhost', type=str,
@@ -66,25 +54,13 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--password', default='test', type=str,
                         help='the password for import user')
     parser.add_argument('--full_import', action='store_true',
-                        help='import all the files, purge those absent. This '
-                        'functionality requires that you have already '
-                        'downloaded the full xml for all files in a single '
-                        'cghub study. Any nodes not in your file will be '
-                        'deleted.')
+                        help='import all the files')
+    parser.add_argument('-t', '--days', default=1, type=int,
+                        help='number of days for incremental import')
     args = parser.parse_args()
-
     converter = initialize(args.host, args.user, args.password, args.database)
 
     if args.full_import:
-
-        if not args.tcga:
-            raise Exception('No import files were specified (--tcga=path)')
-
-        if args.tcga:
-            full_import('cghub_tcga', args.tcga, args.host, args.user,
-                        args.password, args.database)
+        incremental_import('cghub_tcga', 'phs000178', None, converter)
     else:
-        if args.tcga:
-            raise Exception('Incremental update: no file paths (--tcga=)')
-
-        incremental_import('cghub_tcga', args.tcga, converter)
+        incremental_import('cghub_tcga', 'phs000178', args.days, converter)
