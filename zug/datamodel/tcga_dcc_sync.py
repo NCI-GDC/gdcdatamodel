@@ -312,6 +312,11 @@ class TCGADCCArchiveSyncer(object):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
         acl = ["phs000178"] if file_classification["data_access"] == "protected" else []
+        system_annotations = {"md5_source": md5_source,
+                              "file_source": "tcga_dcc"}
+        for k, v in file_classification.iteritems():
+            if k.startswith("_"):
+                system_annotations[k] = v
         file_node = PsqlNode(node_id=did, label="file", acl=acl,
                              properties={"file_name": filename,
                                          "md5sum": md5,
