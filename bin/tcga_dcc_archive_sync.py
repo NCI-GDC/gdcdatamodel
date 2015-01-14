@@ -1,4 +1,4 @@
-from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
+from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer, insert_classification_nodes
 from zug.datamodel.latest_urls import LatestURLParser
 from argparse import ArgumentParser
 from tempfile import mkdtemp
@@ -46,14 +46,23 @@ def main():
     archives = list(LatestURLParser())
     shuffle(archives)
     pool = Pool(args.processes)
-    # this splits the archives list into evenly size chunks
-    segments = split(archives, args.processes)
-    result = pool.map_async(partial(sync_list, args), segments)
-    try:
-        result.get(999999)
-    except KeyboardInterrupt:
-        print "killed"
-        return
+
+    # insert the classification nodes
+    driver = PsqlGraphDriver(args.pg_host, args.pg_user,
+                             args.pg_pass, args.pg_database)
+    insert_classification_nodes(driver)
+
+    if args.processes == 1:
+        sync_list(args, archives)
+    else:
+        # this splits the archives list into evenly size chunks
+        segments = split(archives, args.processes)
+        result = pool.map_async(partial(sync_list, args), segments)
+        try:
+            result.get(999999)
+        except KeyboardInterrupt:
+            print "killed"
+            return
 
 
 if __name__ == "__main__":
