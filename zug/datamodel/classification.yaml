@@ -692,12 +692,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: germline
+          tag: snv
       - &mutations_vcf_2
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -705,12 +705,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: germline
+          tag: snv
       - &mutations_vcf_3
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -718,12 +718,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: germline
+          tag: snv
       -
         data_format: VCF
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\..+\.vcf$
@@ -731,12 +731,12 @@ mutations:
           - _aliquot_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: germline
+          tag: snv
       -
         data_format: VCF
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.vcf(\.gz)?$
@@ -750,7 +750,7 @@ mutations:
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: germline
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq:
@@ -786,12 +786,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -799,12 +799,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -812,12 +812,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq_curated:
@@ -853,12 +853,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -866,12 +866,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -879,12 +879,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     SOLiD_DNASeq:
@@ -920,12 +920,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -933,12 +933,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -946,12 +946,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_curated:
@@ -987,12 +987,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1000,12 +1000,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1013,12 +1013,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_automated:
@@ -1054,12 +1054,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1067,12 +1067,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1080,12 +1080,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq:
@@ -1121,12 +1121,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1134,12 +1134,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1147,12 +1147,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     SOLiD_DNASeq_curated:
@@ -1188,12 +1188,12 @@ mutations:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1201,12 +1201,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1214,12 +1214,12 @@ mutations:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
   aux:
@@ -1243,7 +1243,11 @@ mutations:
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_automated:
       - <<: *mutations_mage-tab
+      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     IlluminaGA_DNASeq_curated:
+      - <<: *archive_manifest_files
+      - <<: *to_be_determined
       - <<: *mutations_mage-tab
 mutations_protected:
   Level_2:
@@ -1279,12 +1283,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1292,12 +1296,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1305,12 +1309,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\..+\.vcf$
@@ -1318,12 +1322,12 @@ mutations_protected:
           - _aliquot_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.vcf(\.gz)?$
@@ -1332,12 +1336,12 @@ mutations_protected:
           - _tumor_aliquot_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *should_be_ignored
       - <<: *archive_manifest_files
       - <<: *to_be_determined
@@ -1374,12 +1378,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1387,12 +1391,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1400,12 +1404,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq_Cont_curated:
@@ -1441,12 +1445,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1454,12 +1458,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1467,12 +1471,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_Cont_automated:
@@ -1507,12 +1511,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1520,12 +1524,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1533,12 +1537,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_Cont:
@@ -1573,12 +1577,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1586,12 +1590,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1599,12 +1603,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     SOLiD_DNASeq_Cont:
@@ -1639,12 +1643,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1652,12 +1656,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1665,12 +1669,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: ABI SOLiD
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_Cont_curated:
@@ -1705,12 +1709,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1718,12 +1722,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1731,12 +1735,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_Cont_automated:
@@ -1771,12 +1775,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1784,12 +1788,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1797,12 +1801,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_Cont:
@@ -1837,12 +1841,12 @@ mutations_protected:
           - _control_aliquot_uuid
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
@@ -1850,12 +1854,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
@@ -1863,12 +1867,12 @@ mutations_protected:
           - _participant_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: DNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Mixed platforms
-          tag: ["germline", "snv"]
+          tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
   mage-tab:
@@ -1887,6 +1891,8 @@ mutations_protected:
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_Cont_automated:
       - <<: *mutations_protected_mage-tab
+      - <<: *archive_manifest_files
+      - <<: *to_be_determined
 cna:
   Level_1:
     HG-CGH-415K_G4124A:
@@ -1981,7 +1987,7 @@ cna:
           - _control_aliquot_barcode
         category:
           data_type: Copy number variation
-          data_subtype: Copy number germline variation
+          data_subtype: Copy number variation
           experimental_strategy: WGS
           data_level: Level_2
           data_access: protected
@@ -2695,12 +2701,12 @@ rnaseq:
           - _aliquot_barcode
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: RNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "snv"]
+          tag: snv
       -
         data_format: VCF
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.vcf$
@@ -2708,12 +2714,12 @@ rnaseq:
           - _aliquot_barcode
         category:
           data_type: Structural rearrangement
-          data_subtype: Structural germline variation
+          data_subtype: Structural variation
           experimental_strategy: RNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "sv"]
+          tag: sv
       -
         data_format: FA
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.fa$
@@ -2721,12 +2727,12 @@ rnaseq:
           - _aliquot_barcode
         category:
           data_type: Structural rearrangement
-          data_subtype: Structural germline variation
+          data_subtype: Structural variation
           experimental_strategy: RNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina HiSeq
-          tag: ["germline", "sv"]
+          tag: sv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_RNASeq:
@@ -2738,7 +2744,7 @@ rnaseq:
           - tag
         category:
           data_type: Simple nucleotide variation
-          data_subtype: Simple germline variation
+          data_subtype: Simple nucleotide variation
           experimental_strategy: RNA-Seq
           data_level: Level_2
           data_access: protected
@@ -2750,12 +2756,12 @@ rnaseq:
           - _aliquot_barcode
         category:
           data_type: Structural rearrangement
-          data_subtype: Structural germline variation
+          data_subtype: Structural variation
           experimental_strategy: RNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "sv"]
+          tag: sv
       -
         data_format: FA
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.fa$
@@ -2763,12 +2769,12 @@ rnaseq:
           - _aliquot_barcode
         category:
           data_type: Structural rearrangement
-          data_subtype: Structural germline variation
+          data_subtype: Structural variation
           experimental_strategy: RNA-Seq
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
-          tag: ["germline", "sv"]
+          tag: sv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
   Level_3:
