@@ -142,7 +142,11 @@ class cghub2psqlgraph(object):
             node_id = str(uuid.uuid4())
             node.node_id = node_id
             node.system_annotations.update(system_annotations)
-            self.graph.node_insert(node=node, session=session)
+            try:
+                self.graph.node_insert(node=node, session=session)
+            except:
+                print node, node.properties
+                raise
 
         # Add the correct src_id to this file's edges now that we know it
         for edge in self.edges[file_name]:
@@ -236,7 +240,7 @@ class cghub2psqlgraph(object):
 
         """
         # Get node and node properties
-        file_name = self.xml.get_file_name(root, node_type, params)
+        file_name = self.get_file_name(root, node_type, params)
         args = (root, node_type, params, file_name)
         props = self.xml.get_node_properties(*args)
         props.update(self.xml.get_node_datetime_properties(*args))

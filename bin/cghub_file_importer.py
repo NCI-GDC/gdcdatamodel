@@ -4,7 +4,7 @@ import argparse
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import cghub2psqlgraph, cgquery
-
+from multiprocessing import Pool
 
 logging.basicConfig(level=logging.DEBUG)
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -13,7 +13,7 @@ data_dir = os.path.join(os.path.abspath(
 mapping = os.path.join(data_dir, 'cghub.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
-args = None
+args, source, phsid = None, None, None
 
 
 def setup():
@@ -32,7 +32,14 @@ def setup():
     return converter
 
 
-def import_files(source, phsid):
+def process(roots):
+    converter = setup()
+    for root in roots:
+        converter.parse('file', root)
+    converter.rebase(source)
+
+
+def import_files():
     converter = setup()
 
     if not args.days:
@@ -41,10 +48,13 @@ def import_files(source, phsid):
     else:
         print('Rebasing past {} days from TCGA...'.format(args.days))
         xml = cgquery.get_changes_last_x_days(args.days, phsid)
-    # converter.parse(xml)
-    # converter.rebase(source)
+
     converter.initialize(xml)
-    print converter.node_roots['file'][0]
+    roots = converter.node_roots['file']
+    poolsize = 10
+    chunksize = len(roots)/poolsize
+    chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
+    process(chunks[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -62,7 +72,5 @@ if __name__ == '__main__':
                         help='number of days for incremental import')
     args = parser.parse_args()
 
-    if args.full_import:
-        import_files('cghub_tcga', 'phs000178')
-    else:
-        import_files('cghub_tcga', 'phs000178')
+    source, phsid = 'cghub_tcga', 'phs000178'
+    import_files()
