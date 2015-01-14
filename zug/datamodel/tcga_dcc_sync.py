@@ -55,7 +55,7 @@ DATA_TYPES = {
     "Copy number variation": [
         "Copy number segmentation", "Copy number estimate",
         "Normalized intensities", "Copy number germline variation",
-        "LOH", "Copy number QC metrics"
+        "LOH", "Copy number QC metrics", "Copy number variation"
     ],
     "Simple nucleotide variation": [
         "Simple germline variation", "Genotypes", "Simple somatic mutation",
