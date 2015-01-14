@@ -413,7 +413,7 @@ class TCGADCCArchiveSyncer(object):
                 if elem.text not in NOT_PART_OF_ARCHIVE]
 
     def sync_archive(self, archive):
-        if archive["disease_code"] = "FPPP":
+        if archive["disease_code"] == "FPPP":
             self.log.info("%s is an FPPP archive, skipping", archive["archive_name"])
         self.log.info("syncing archive %s", archive["archive_name"])
         archive["non_tar_url"] = re.sub("\.tar\.gz$", "", archive["dcc_archive_url"])
