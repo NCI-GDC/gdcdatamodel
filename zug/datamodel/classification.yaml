@@ -1238,7 +1238,7 @@ mutations:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaGA
+          platform: Illumina GA
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_automated:
@@ -1886,7 +1886,7 @@ mutations_protected:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaGA
+          platform: Illumina GA
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_Cont_automated:
