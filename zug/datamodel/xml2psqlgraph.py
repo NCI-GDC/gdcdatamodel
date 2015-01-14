@@ -165,7 +165,10 @@ class xml2psqlgraph(object):
 
             if group_id and old_node and \
                old_node.system_annotations.get('group_id', None) != group_id:
-                raise Exception('Group id does not match for {}'.format(node))
+                raise Exception(
+                    'Group id {} does not match old {} for {}'.format(
+                        group_id, old_node.system_annotations.get(
+                            'group_id', None), node))
 
             if group_id and version:
                 system_annotations = {
@@ -248,7 +251,7 @@ class xml2psqlgraph(object):
             # Get edges to and from this node
             edges = self.get_node_edges(root, node_type, params, node_id)
             for dst_id, edge in edges.iteritems():
-                edge_label, dst_label = edge
+                dst_label, edge_label = edge
                 self.save_edge(node_id, dst_id, dst_label, edge_label)
 
     def save_node(self, node_id, label, properties, acl=[]):
