@@ -84,8 +84,8 @@ class cghub2psqlgraph(object):
         self.edges, self.files_to_add, self.files_to_delete = {}, {}, []
         self.xml = xml2psqlgraph.xml2psqlgraph(
             translate_path, host, user, password, database,
-            node_validator=self.node_validator,
-            edge_validator=self.edge_validator)
+            node_validator=node_validator,
+            edge_validator=edge_validator)
 
     def rebase(self, source):
         """Similar to export in xml2psqlgraph, but re-writes changes onto the
@@ -197,7 +197,22 @@ class cghub2psqlgraph(object):
                         self.graph.edge_insert(e, session=session)
         self.edges = {}
 
-    def parse(self, data):
+    def initialize(self, data):
+        if not data:
+            return None
+        self.xml_root = etree.fromstring(str(data)).getroottree()
+        self.namespaces = self.xml_root.getroot().nsmap
+        self.node_roots = {}
+        for node_type, params in self.translate.items():
+            self.node_roots[node_type] = self.xml.get_node_roots(
+                node_type, params, root=self.xml_root)
+
+    def parse_all(self):
+        for node_type, params in self.translate.items():
+            for root in self.node_roots[node_type]:
+                self.parse_file_node(node_type, root, params)
+
+    def parse(self, node_type, root):
         """Main function that takes xml string and converts it to a graph to
         insert into psqlgraph.
 
@@ -208,16 +223,10 @@ class cghub2psqlgraph(object):
 
         """
 
-        if not data:
-            return None
-        self.xml_root = etree.fromstring(str(data)).getroottree()
-        self.namespaces = self.xml_root.getroot().nsmap
-        for node_type, params in self.translate.items():
-            self.parse_file_node(node_type, params)
-        print('Files to insert: {}. Files to redact {}'.format(
-            len(self.files_to_add), len(self.files_to_delete)))
+        params = self.translate[node_type]
+        self.parse_file_node(root, node_type, params)
 
-    def parse_file_node(self, node_type, params):
+    def parse_file_node(self, root, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
 
         :param str node_type: the type of node to be used as a label
@@ -226,30 +235,28 @@ class cghub2psqlgraph(object):
             from the translation yaml file
 
         """
-        roots = self.get_node_roots(node_type, params)
-        for root in roots:
-            # Get node and node properties
-            file_name = self.xml.get_file_name(root, node_type, params)
-            args = (root, node_type, params, file_name)
-            props = self.xml.get_node_properties(*args)
-            props.update(self.xml.get_node_datetime_properties(*args))
-            props.update(self.xml.get_node_const_properties(*args))
-            acl = self.xml.get_node_acl(root, node_type, params)
+        # Get node and node properties
+        file_name = self.xml.get_file_name(root, node_type, params)
+        args = (root, node_type, params, file_name)
+        props = self.xml.get_node_properties(*args)
+        props.update(self.xml.get_node_datetime_properties(*args))
+        props.update(self.xml.get_node_const_properties(*args))
+        acl = self.xml.get_node_acl(root, node_type, params)
 
-            # Save the node for deletion or insertion
-            state = self.get_file_node_state(*args)
+        # Save the node for deletion or insertion
+        state = self.get_file_node_state(*args)
 
-            if state in deletion_states:
-                self.files_to_delete.append(file_name)
-            else:
-                self.save_file_node(file_name, node_type, props, acl)
+        if state in deletion_states:
+            self.files_to_delete.append(file_name)
+        else:
+            self.save_file_node(file_name, node_type, props, acl)
 
-                # Get edges to and from this node
-                edges = self.xml.get_node_edges(
-                    root, node_type, params, file_name)
-                for dst_id, edge in edges.iteritems():
-                    dst_label, edge_label = edge
-                    self.save_edge(file_name, dst_id, dst_label, edge_label)
+            # Get edges to and from this node
+            edges = self.xml.get_node_edges(
+                root, node_type, params, file_name)
+            for dst_id, edge in edges.iteritems():
+                dst_label, edge_label = edge
+                self.save_edge(file_name, dst_id, dst_label, edge_label)
 
     def save_file_node(self, file_name, label, properties, acl=[]):
         """Adds an node to self.nodes_to_add

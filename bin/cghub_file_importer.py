@@ -13,19 +13,18 @@ data_dir = os.path.join(os.path.abspath(
 mapping = os.path.join(data_dir, 'cghub.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
+args = None
 
 
-def initialize(host, user, password, database):
-
+def setup():
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
-
     converter = cghub2psqlgraph.cghub2psqlgraph(
         translate_path=mapping,
-        host=host,
-        user=user,
-        password=password,
-        database=database,
+        host=args.host,
+        user=args.user,
+        password=args.password,
+        database=args.database,
         edge_validator=edge_validator,
         node_validator=node_validator,
         ignore_missing_properties=True,
@@ -33,15 +32,19 @@ def initialize(host, user, password, database):
     return converter
 
 
-def incremental_import(source, phsid, days, converter):
-    if not days:
-        print('Importing all files from TCGA...'.format(days))
+def import_files(source, phsid):
+    converter = setup()
+
+    if not args.days:
+        print('Importing all files from TCGA...'.format(args.days))
         xml = cgquery.get_all(phsid)
     else:
-        print('Rebasing past {} days from TCGA...'.format(days))
-        xml = cgquery.get_changes_last_x_days(days, phsid)
-    converter.parse(xml)
-    converter.rebase(source)
+        print('Rebasing past {} days from TCGA...'.format(args.days))
+        xml = cgquery.get_changes_last_x_days(args.days, phsid)
+    # converter.parse(xml)
+    # converter.rebase(source)
+    converter.initialize(xml)
+    print converter.node_roots['file'][0]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -58,9 +61,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--days', default=1, type=int,
                         help='number of days for incremental import')
     args = parser.parse_args()
-    converter = initialize(args.host, args.user, args.password, args.database)
 
     if args.full_import:
-        incremental_import('cghub_tcga', 'phs000178', None, converter)
+        import_files('cghub_tcga', 'phs000178')
     else:
-        incremental_import('cghub_tcga', 'phs000178', args.days, converter)
+        import_files('cghub_tcga', 'phs000178')

@@ -143,12 +143,13 @@ class xml2psqlgraph(object):
 
         return result
 
-    def export(self, **kwargs):
+    def export(self, silent=True, **kwargs):
         self.export_count += 1
         self.export_nodes(**kwargs)
         self.export_edges()
-        print 'Exports: {}. Nodes: {}. \r'.format(
-            self.export_count, self.exported_nodes),
+        if not silent:
+            print 'Exports: {}. Nodes: {}. \r'.format(
+                self.export_count, self.exported_nodes),
 
     def export_node(self, node, group_id=None, version=None,
                     system_annotations={}):
@@ -289,7 +290,7 @@ class xml2psqlgraph(object):
                 properties=properties
             )
 
-    def get_node_roots(self, node_type, params):
+    def get_node_roots(self, node_type, params, root=None):
         """returns a list of xml node root elements for a given node_type
 
         :param str node_type:
@@ -303,7 +304,8 @@ class xml2psqlgraph(object):
             logging.warn('No root xpath for {}'.format(node_type))
             return
         xml_nodes = self.xpath(
-            params.root, expected=False, text=False, label='get_node_roots')
+            params.root, root=root, expected=False,
+            text=False, label='get_node_roots')
         return xml_nodes
 
     def get_node_acl(self, root, node_type, params):
