@@ -46,11 +46,12 @@ def full_import(source, path, converter):
 
 
 def incremental_import(source, path, converter):
-    days = 10
+    days = 3
     print('Rebasing past {} days from TCGA...'.format(days))
     xml = cgquery.get_changes_last_x_days(days, 'phs000178')
     converter.parse(xml)
-    converter.export(source)
+    # converter.rebase(source)
+    converter.export_full_import(source)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
