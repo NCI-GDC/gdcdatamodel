@@ -50,7 +50,7 @@ def to_bool(val):
         raise ValueError("Cannot convert {} to boolean".format(val))
 
 
-class xml2psqlgraph(object):
+class cghub2psqlgraph(object):
 
     """
     """
@@ -80,16 +80,7 @@ class xml2psqlgraph(object):
             self.graph.node_validator = node_validator
         if edge_validator:
             self.graph.edge_validator = edge_validator
-        self.nodes, self.edges = {}, {}
-
-    def purge_old_nodes(self, group_id, version):
-        with self.graph.session_scope() as s:
-            group = self.graph.node_lookup(
-                session=s, system_annotation_matches={'group_id': group_id})
-            for node in group:
-                if node.system_annotations['version'] < version:
-                    print('Found outdated node {}'.format(node))
-                    self.graph.node_delete(node=node, session=s)
+        self.edges, self.files_to_add, self.files_to_delete = {}, {}, []
 
     def xpath(self, path, root=None, single=False, nullable=True,
               expected=True, text=True, label=''):
@@ -143,74 +134,79 @@ class xml2psqlgraph(object):
 
         return result
 
-    def export(self, **kwargs):
+    def export(self, source):
         self.export_count += 1
-        self.export_nodes(**kwargs)
+        self.export_file_nodes(system_annotations={'source': source})
         self.export_edges()
         print 'Exports: {}. Nodes: {}. \r'.format(
             self.export_count, self.exported_nodes),
 
-    def export_node(self, node, group_id=None, version=None,
-                    system_annotations={}):
+    def purge_files(self, source):
+        with self.graph.session_scope() as s:
+            print('Purging old files')
+            sa_matches = {'source': source}
+            files = {
+                f['file_name']: f for f in self.graph.node_lookup_by_matches(
+                    system_annotation_matches=sa_matches,
+                    label='file', session=s).yield_per(1000)
+            }
+            print('Found {} exising files'.format(len(files)))
+            for f_name, f in files.iteritems():
+                if f_name not in self.nodes:
+                    print('Deleting {}'.format(f['file_name']))
+                    self.graph.node_delete(node=f, session=s)
 
-        if node.label == 'file':
-            raise Exception(
-                "Class xml2psqlgraph is not the right function "
-                "to export files from. Try calling cghub2psqlgraph().")
+    def export_file_node(self, file_name, node, session, system_annotations):
+        existing = self.graph.node_lookup_one(
+            property_matches={'file_name': file_name}, session=session)
+        if existing:
+            node_id = existing.node_id
+            self.graph.node_update(
+                node=existing,
+                properties=node.properties,
+                system_annotations=system_annotations,
+                session=session)
+        else:
+            node_id = str(uuid.uuid4())
+            node.node_id = node_id
+            self.graph.node_insert(node=node, session=session)
 
+        # Add the correct src_id to this file's edges now that we know it
+        for edge in self.edges[file_name]:
+            edge.src_id = node_id
+
+    def export_file_nodes(self, system_annotations):
         with self.graph.session_scope() as session:
-
-            old_node = self.graph.node_lookup_one(
-                node_id=node.node_id, session=session)
-
-            if group_id and old_node and \
-               old_node.system_annotations.get('group_id', None) != group_id:
-                raise Exception('Group id does not match for {}'.format(node))
-
-            if group_id and version:
-                system_annotations = {
-                    'group_id': group_id, 'version': version}
-
-            if old_node:
-                if not version or not group_id or \
-                   old_node.system_annotations.get('version', -1) < version:
-                    node.system_annotations.update(system_annotations)
-                    self.graph.node_clobber(
-                        node_id=node.node_id, properties=node.properties,
-                        system_annotations=node.system_annotations,
-                        session=session)
-
-            else:
-                node.merge(system_annotations=system_annotations)
-                self.graph.node_insert(node)
-
-    def export_nodes(self, **kwargs):
-        for node_id, node in self.nodes.iteritems():
-            try:
-                self.export_node(node, **kwargs)
-            except:
-                logging.error('Unable to add node {}'.format(node))
-                pprint.pprint(node.properties)
-                raise
-            else:
+            for file_name, node in self.files_to_add.iteritems():
                 self.exported_nodes += 1
-        self.nodes = {}
+                print('Adding {}'.format(file_name))
+                self.export_file_node(
+                    file_name, node, session, system_annotations)
+            for file_name in self.files_to_delete:
+                print('Redacting {}'.format(file_name))
+                node = self.graph.node_lookup_one(
+                    property_matches=dict(filename=file_name),
+                    session=session)
+                if node:
+                    self.graph.node_delete(node=node, session=session)
 
     def export_edges(self):
         with self.graph.session_scope() as session:
-            for edge_id, e in self.edges.iteritems():
-                existing = list(self.graph.edge_lookup(
-                    src_id=e.src_id, dst_id=e.dst_id, label=e.label,
-                    session=session).all())
-                if not len(existing):
-                    try:
-                        self.graph.edge_insert(e, session=session)
-                    except:
-                        logging.error('Unable to add edge {}'.format(e.label))
-                        raise
+            for src_f_name, edges in self.edges.iteritems():
+                for e in edges:
+                    existing = self.graph.edge_lookup(
+                        src_id=e.src_id, dst_id=e.dst_id, label=e.label,
+                        session=session).count()
+                    if not existing:
+                        try:
+                            self.graph.edge_insert(e, session=session)
+                        except:
+                            logging.error('Unable to add edge {}'.format(
+                                e.label))
+                            raise
         self.edges = {}
 
-    def xml2psqlgraph(self, data):
+    def parse(self, data):
         """Main function that takes xml string and converts it to a graph to
         insert into psqlgraph
 
@@ -223,9 +219,11 @@ class xml2psqlgraph(object):
         self.xml_root = etree.fromstring(str(data)).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
         for node_type, params in self.translate.items():
-            self.parse_node(node_type, params)
+            self.parse_file_node(node_type, params)
+        print('Files to insert: {}. Files to redact {}'.format(
+            len(self.files_to_add), len(self.files_to_delete)))
 
-    def parse_node(self, node_type, params):
+    def parse_file_node(self, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
 
         :param str node_type: the type of node to be used as a label
@@ -237,54 +235,74 @@ class xml2psqlgraph(object):
         roots = self.get_node_roots(node_type, params)
         for root in roots:
             # Get node and node properties
-            node_id = self.get_node_id(root, node_type, params)
-            args = (root, node_type, params, node_id)
+            file_name = self.get_file_name(root, node_type, params)
+            args = (root, node_type, params, file_name)
             props = self.get_node_properties(*args)
             props.update(self.get_node_datetime_properties(*args))
             props.update(self.get_node_const_properties(*args))
             acl = self.get_node_acl(root, node_type, params)
-            self.save_node(node_id, node_type, props, acl)
 
-            # Get edges to and from this node
-            edges = self.get_node_edges(root, node_type, params, node_id)
-            for dst_id, edge in edges.iteritems():
-                edge_label, dst_label = edge
-                self.save_edge(node_id, dst_id, dst_label, edge_label)
+            # Save the node for deletion or insertion
+            state = self.get_file_node_state(*args)
 
-    def save_node(self, node_id, label, properties, acl=[]):
+            if state in deletion_states:
+                self.files_to_delete.append(file_name)
+            else:
+                self.save_file_node(file_name, node_type, props, acl)
+
+                # Get edges to and from this node
+                edges = self.get_node_edges(root, node_type, params, file_name)
+                for dst_id, edge in edges.iteritems():
+                    dst_label, edge_label = edge
+                    self.save_edge(file_name, dst_id, dst_label, edge_label)
+
+    def save_file_node(self, file_name, label, properties, acl=[]):
         """Adds a node to the graph
 
         """
 
-        if label == 'file':
-            raise Exception('xml2psqlgraph is not built to handle file nodes')
-
-        if node_id in self.nodes:
-            self.nodes[node_id].merge(properties=properties)
+        properties.update({'file_name': file_name})
+        if file_name in self.files_to_add:
+            self.files_to_add[file_name].merge(properties=properties)
         else:
-            self.nodes[node_id] = PsqlNode(
-                node_id=node_id,
+            self.files_to_add[file_name] = PsqlNode(
+                node_id=None,
                 acl=acl,
                 label=label,
                 properties=properties
             )
 
-    def save_edge(self, src_id, dst_id, dst_label, edge_label,
+    def save_edge(self, file_name, dst_id, dst_label, edge_label,
                   properties={}):
         """Adds an edge to the graph
 
         """
 
-        edge_id = "{}:{}:{}".format(src_id, dst_id, edge_label)
-        if edge_id in self.edges:
-            self.edges[edge_id].merge(properties=properties)
+        edge = PsqlEdge(
+            src_id=None,
+            dst_id=dst_id,
+            label=edge_label,
+            properties=properties
+        )
+
+        if file_name in self.edges:
+            self.edges[file_name].append(edge)
         else:
-            self.edges[edge_id] = PsqlEdge(
-                src_id=src_id,
-                dst_id=dst_id,
-                label=edge_label,
-                properties=properties
-            )
+            self.edges[file_name] = [edge]
+
+    def get_file_node_state(self, root, node_type, params, node_id):
+        """returns a filenode's state
+
+        :param str node_type:
+            the node type to be used as a label in psqlgraph
+        :param dict params:
+            the parameters that govern xpath queries and translation
+            from the translation yaml file
+
+        """
+        if not params.state:
+            raise Exception('No state xpath for {}'.format(node_type))
+        return self.xpath(params.state, root, single=True, label=node_type)
 
     def get_node_roots(self, node_type, params):
         """returns a list of xml node root elements for a given node_type
@@ -319,7 +337,7 @@ class xml2psqlgraph(object):
             return []
         return self.xpath(params.acl, root, label=node_type)
 
-    def get_node_id(self, root, node_type, params):
+    def get_file_name(self, root, node_type, params):
         """lookup the id for the node
 
         :param root: the lxml root element to treat as a node
@@ -331,11 +349,12 @@ class xml2psqlgraph(object):
 
         """
 
-        # All other nodes
-        if 'id' not in params or not params.id:
-            return None
-        node_id = self.xpath(params.id, root, single=True, label=node_type)
-        return node_id.lower()
+        # File nodes
+        file_name = self.xpath(
+            params.file_name, root, single=True, label=node_type)
+        analysis_id = self.xpath(
+            params.analysis_id, root, single=True, label=node_type)
+        return '{}/{}'.format(analysis_id, file_name)
 
     def munge_property(self, prop, _type):
         types = {'int': int, 'float': float, 'str': str, 'long': long}
