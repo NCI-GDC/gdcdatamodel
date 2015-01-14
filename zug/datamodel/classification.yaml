@@ -2166,7 +2166,7 @@ cna:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaHiSeq
+          platform: Illumina HiSeq
       - <<: *archive_manifest_files
 methylation:
   Level_1:
@@ -2684,7 +2684,7 @@ rnaseqv2:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaHiSeq
+          platform: Illumina HiSeq
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_RNASeqV2:
@@ -2871,7 +2871,7 @@ rnaseq:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaHiSeq
+          platform: Illumina HiSeq
       - &rnaseq_gene_model_mage-tab
         data_format: GAF
         pattern: ^[\.\w]+.gaf$
@@ -2881,7 +2881,7 @@ rnaseq:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaHiSeq
+          platform: Illumina HiSeq
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_RNASeq:
@@ -3140,7 +3140,7 @@ mirnaseq:
           experimental_strategy: null
           data_level: MAGE-Tab
           data_access: open
-          platform: IlluminaHiSeq
+          platform: Illumina HiSeq
       - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_miRNASeq:
