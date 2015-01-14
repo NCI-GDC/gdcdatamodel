@@ -71,7 +71,7 @@ DATA_TYPES = {
     ],
     "Raw microarray data": [
         "Raw intensities", "Normalized intensities", "CGH Array QC",
-        "Intensities Log2Ratio", "Expression control"
+        "Intensities Log2Ratio", "Expression control", "Intensities"
     ],
     "DNA methylation": [
         "Methylation beta value", "Bisulfite sequence alignment",
