@@ -247,17 +247,12 @@ class TCGADCCArchiveSyncer(object):
                                          dst_id=attr_node.node_id)
             self.pg_driver.edge_insert(edge_to_attr_node, session=session)
 
-    def store_file_in_pg(self, filename, md5, md5_source,
-                         file_classification, session):
+    def store_file_in_pg(self, filename, md5, md5_source, session):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
-        acl = ["phs000178"] if file_classification["data_access"] == "protected" else []
         system_annotations = {"md5_source": md5_source,
                               "source": "tcga_dcc"}
-        for k, v in file_classification.iteritems():
-            if k.startswith("_"):
-                system_annotations[k] = v
-        file_node = PsqlNode(node_id=did, label="file", acl=acl,
+        file_node = PsqlNode(node_id=did, label="file",
                              properties={"file_name": filename,
                                          "md5sum": md5,
                                          "state": "submitted",
@@ -271,20 +266,36 @@ class TCGADCCArchiveSyncer(object):
         # skipping this for now because it's some work to find the
         # correct center for an archive
         self.log.info("inserting file %s as node %s", filename, file_node)
-        self.pg_driver.node_insert(file_node, session=session)
-        self.pg_driver.edge_insert(edge_to_archive, session=session)
-        # classification
-        #
+        session.add(file_node)
+        session.add(edge_to_archive)
+        return file_node
+
+    def classify(self, file_node, session):
+        classification = classify(self.archive, file_node["file_name"])
+        if not classification or "to_be_determined" in classification.values():
+            raise RuntimeError("file {} classified as {}".format(
+                file_node["file_name"], classification))
+        if classification["data_format"] == "to_be_ignored":
+            self.log.info("ignoring %s for classification",
+                          file_node["file_name"])
+            return file_node
+        # TODO check that this matches what we know about the archive
+        file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
+        for k, v in classification.iteritems():
+            if k.startswith("_"):
+                file_node.system_annotations[k] = v
         # we need to create edges to: data_subtype, data_format,
         # platform, experimental_strategy, tag.
+        #
+        # TODO drop any existing classification?
         for attribute in CLASSIFICATION_ATTRS:
-            if file_classification.get(attribute):
+            if classification.get(attribute):
                 self.tie_file_to_atribute(file_node, attribute,
-                                          file_classification[attribute],
+                                          classification[attribute],
                                           session)
             else:
                 self.log.warning("not tieing %s (node %s) to a %s",
-                                 filename, file_node, attribute)
+                                 file_node["file_name"], file_node, attribute)
         return file_node
 
     def set_file_state(self, file_node, state):
@@ -294,18 +305,9 @@ class TCGADCCArchiveSyncer(object):
         return self.tarball.getmember(self.name)
 
     def sync_file(self, filename, dcc_md5, session):
-        """Sync this file in the database, classifying it and"""
+        """Sync this file in the database."""
         # TODO handle the fact that we need to insert mage-tab files,
         # but not classify them
-        file_classification = classify(self.archive, filename)
-        if ("to_be_determined" in file_classification.values() or
-            "data_access" not in file_classification.keys()):
-            # we shouldn't insert this file
-            self.log.info("file %s/%s classified as %s, not inserting",
-                          self.name,
-                          filename,
-                          file_classification)
-            return
         file_node = self.lookup_file_in_pg(self.archive_node,
                                            filename, session)
         if file_node:
@@ -319,9 +321,9 @@ class TCGADCCArchiveSyncer(object):
             md5 = md5sum(iterable_from_file(
                 self.extract_file_data(filename)))
             md5_source = "gdc_import_process"
-        return self.store_file_in_pg(filename, md5, md5_source,
-                                     file_classification, session)
-
+        file_node = self.store_file_in_pg(filename, md5, md5_source, session)
+        self.classify(file_node, session)
+        return file_node
 
     def get_manifest(self):
         if not self.download:

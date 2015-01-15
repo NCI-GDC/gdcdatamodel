@@ -69,7 +69,7 @@ clin:
           data_access: open
           tag: auxiliary
       - &archive_manifest_files
-        data_format: TXT
+        data_format: to_be_ignored
         pattern: ^(MANIFEST|README_DCC|CHANGES_DCC|README|DESCRIPTION|CHANGES|DATA_USE_DISCLAIMER|DCC_ALTERED_FILES|ADDITIONS|UUID_CHANGES|BCRBiotabREADME)\.(txt|html)$
         category: {} # TODO: need a solution for how to assign proper category to them, it's not easy because these are archive manifest files, containing files in a single archive can be assigned to different new categories
       -
