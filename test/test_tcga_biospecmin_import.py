@@ -2,8 +2,7 @@ import logging
 import unittest
 import os
 from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar
-from zug.datamodel.import_tcga_code_tables import \
-    import_center_codes, import_tissue_source_site_codes
+from zug.datamodel.prelude import create_prelude_nodes
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -14,8 +13,6 @@ test_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(os.path.abspath(
     os.path.join(test_dir, os.path.pardir)), 'data')
 mapping = os.path.join(data_dir, 'bcr.yaml')
-center_csv_path = os.path.join(data_dir, 'centerCode.csv')
-tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 datatype = 'biospecimen'
 host = 'localhost'
@@ -58,6 +55,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
         self.parser, self.extrator, self.converter = initialize()
+        create_prelude_nodes(self.converter.graph)
 
     def tearDown(self):
         with self.converter.graph.engine.begin() as conn:
@@ -74,8 +72,6 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.export()
 
     def test_convert_validate_nodes_sample(self):
-        import_center_codes(self.converter.graph, center_csv_path)
-        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
@@ -83,8 +79,6 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.export_nodes()
 
     def test_convert_validate_edges_sample(self):
-        import_center_codes(self.converter.graph, center_csv_path)
-        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
