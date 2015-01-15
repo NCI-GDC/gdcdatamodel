@@ -287,23 +287,6 @@ fragment_analysis:
         pattern: .+
         category:
           <<: *microsat_i_lvl1
-  mage-tab:
-    microsat_i:
-      -
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category: &microsat_i_mage-tab
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-      -
-        data_format: to_be_determined
-        pattern: .+
-        category:
-          <<: *microsat_i_mage-tab
 tracerel:
   None:
     ABI:
@@ -638,24 +621,6 @@ snp:
           data_access: protected
           platform: Affymetrix SNP Array 6.0
           tag: sif
-      - <<: *archive_manifest_files
-  mage-tab:
-    Genome_Wide_SNP_6:
-      - &snp_array_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null # should we go with original data (raw data)
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-    Human1MDuo:
-      - <<: *snp_array_mage-tab
-      - <<: *archive_manifest_files
-    HumanHap550:
-      - <<: *snp_array_mage-tab
       - <<: *archive_manifest_files
 mutations:
   Level_2:
@@ -1227,28 +1192,6 @@ mutations:
       - <<: *should_be_ignored
       - <<: *archive_manifest_files
       - <<: *to_be_determined
-  mage-tab:
-    IlluminaGA_DNASeq_automated:
-      - &mutations_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null # should we go with original data (raw data)
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina GA
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaHiSeq_DNASeq_automated:
-      - <<: *mutations_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaGA_DNASeq_curated:
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-      - <<: *mutations_mage-tab
 mutations_protected:
   Level_2:
     IlluminaGA_DNASeq_Cont_automated:
@@ -1875,24 +1818,6 @@ mutations_protected:
           tag: snv
       - <<: *archive_manifest_files
       - <<: *to_be_determined
-  mage-tab:
-    IlluminaGA_DNASeq_Cont_automated:
-      - &mutations_protected_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null # should we go with original data (raw data)
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina GA
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaHiSeq_DNASeq_Cont_automated:
-      - <<: *mutations_protected_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
 cna:
   Level_1:
     HG-CGH-415K_G4124A:
@@ -2135,39 +2060,6 @@ cna:
       - <<: *cna_cgh_aux_3
       - <<: *archive_manifest_files
       - <<: *cgh_to_be_determined
-  mage-tab:
-    HG-CGH-415K_G4124A:
-      - &cna_cgh_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
-    HG-CGH-244A:
-      - <<: *cna_cgh_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
-    CGH-1x1M_G4447A:
-      - <<: *cna_cgh_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
-    IlluminaHiSeq_DNASeqC:
-      -
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina HiSeq
-      - <<: *archive_manifest_files
 methylation:
   Level_1:
     HumanMethylation450:
@@ -2344,27 +2236,6 @@ methylation:
       - <<: *meth_aux_mapping
       - <<: *meth_aux_processing_log
       - <<: *archive_manifest_files
-  mage-tab:
-    HumanMethylation450:
-      - &meth_array_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null # should we go with original data (raw data)
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-    HumanMethylation27:
-      - <<: *meth_array_mage-tab
-      - <<: *archive_manifest_files
-    IlluminaDNAMethylation_OMA003_CPI:
-      - <<: *meth_array_mage-tab
-      - <<: *archive_manifest_files
-    IlluminaDNAMethylation_OMA002_CPI:
-      - <<: *meth_array_mage-tab
-      - <<: *archive_manifest_files
 bisulfiteseq:
   Level_2:
     IlluminaHiSeq_WGBS:
@@ -2395,19 +2266,6 @@ bisulfiteseq:
           data_access: open
           platform: Illumina HiSeq
           tag: ["bisulfite", "meth"]
-      - <<: *to_be_determined
-  mage-tab:
-    IlluminaHiSeq_WGBS:
-      - <<: *archive_manifest_files
-      -
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null # should we go with original data (raw data)
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
       - <<: *to_be_determined
 protein_exp:
   Level_1:
@@ -2481,19 +2339,6 @@ protein_exp:
           tag: control
       - <<: *archive_manifest_files
       - <<: *to_be_determined_protein_exp
-  mage-tab:
-    MDA_RPPA_Core:
-      -
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf|array_design|antibody_annotation)(\.1|\.2)?\.txt$
-        category:
-          data_type: MAGE-Tab
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined_protein_exp
 totalrnaseqv2:
   Level_3:
     IlluminaHiSeq_TotalRNASeqV2:
@@ -2549,19 +2394,6 @@ totalrnaseqv2:
           platform: Illumina HiSeq
           tag: exon
       - <<: *archive_manifest_files
-      - <<: *to_be_determined
-  mage-tab:
-    IlluminaHiSeq_TotalRNASeqV2:
-      - <<: *archive_manifest_files
-      -
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
       - <<: *to_be_determined
 rnaseqv2:
   Level_3:
@@ -2671,24 +2503,6 @@ rnaseqv2:
           data_access: open
           platform: Illumina GA
           tag: exon
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-  mage-tab:
-    IlluminaHiSeq_RNASeqV2:
-      - &rnaseqv2_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina HiSeq
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaGA_RNASeqV2:
-      - <<: *rnaseqv2_mage-tab
       - <<: *archive_manifest_files
       - <<: *to_be_determined
 rnaseq:
@@ -2858,35 +2672,6 @@ rnaseq:
           data_level: Level_3
           data_access: open
           platform: Illumina GA
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-  mage-tab:
-    IlluminaHiSeq_RNASeq:
-      - &rnaseq_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina HiSeq
-      - &rnaseq_gene_model_mage-tab
-        data_format: GAF
-        pattern: ^[\.\w]+.gaf$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina HiSeq
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaGA_RNASeq:
-      - <<: *rnaseq_mage-tab
-      - <<: *rnaseq_gene_model_mage-tab
       - <<: *archive_manifest_files
       - <<: *to_be_determined
 transcriptome:
@@ -3061,40 +2846,6 @@ transcriptome:
           tag: ["DGE", "Tag"]
       - <<: *archive_manifest_files
       - <<: *to_be_determined
-  mage-tab:
-    AgilentG4502A_07_3:
-      - &expression_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-      - <<: *should_be_ignored
-      - <<: *to_be_determined
-    HT_HG-U133A:
-      - <<: *expression_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    AgilentG4502A_07_2:
-      - <<: *expression_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    HG-U133_Plus_2:
-      - <<: *expression_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    AgilentG4502A_07_1:
-      - <<: *expression_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaGA_mRNA_DGE:
-      - <<: *expression_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
 mirnaseq:
   Level_3:
     IlluminaHiSeq_miRNASeq:
@@ -3127,24 +2878,6 @@ mirnaseq:
           data_access: open
           platform: Illumina GA
           tag: miRNA
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-  mage-tab:
-    IlluminaHiSeq_miRNASeq:
-      - &mirnaseq_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-          platform: Illumina HiSeq
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    IlluminaGA_miRNASeq:
-      - <<: *mirnaseq_mage-tab
       - <<: *archive_manifest_files
       - <<: *to_be_determined
 mirna:
@@ -3206,23 +2939,6 @@ mirna:
       - <<: *archive_manifest_files
       - <<: *mirna_array_lvl3
       - <<: *to_be_determined
-  mage-tab:
-    H-miRNA_8x15Kv2:
-      - &mirna_array_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null # should we go with original data (raw data)
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
-    H-miRNA_8x15K:
-      - <<: *mirna_array_mage-tab
-      - <<: *archive_manifest_files
-      - <<: *to_be_determined
 exon:
   Level_1:
     HuEx-1_0-st-v2: # Affy exon array
@@ -3268,17 +2984,4 @@ exon:
   aux:
     HuEx-1_0-st-v2:
       - <<: *archive_manifest_files
-      - <<: *to_be_determined
-  mage-tab:
-    HuEx-1_0-st-v2:
-      - <<: *archive_manifest_files
-      - &exon_array_mage-tab
-        data_format: MAGE-Tab
-        pattern: ^.+\.(adf|idf|sdrf)\.txt$
-        category:
-          data_type: MAGE-Tab # what should this be
-          data_subtype: null
-          experimental_strategy: null
-          data_level: MAGE-Tab
-          data_access: open
       - <<: *to_be_determined
