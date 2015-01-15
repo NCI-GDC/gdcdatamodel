@@ -221,9 +221,9 @@ class TCGADCCArchiveSyncer(object):
                                    src_id=file_node.node_id,
                                    dst_id=self.archive_node.node_id,
                                    properties={})
-        # edge_to_center = PsqlEdge(label="submitted_by",
-        #                           src_id=file_node.node_id,
-        #                           dst_id=)
+        # TODO tie files to the center they were submitted by.
+        # skipping this for now because it's some work to find the
+        # correct center for an archive
         self.log.info("inserting file %s as node %s", filename, file_node)
         self.pg_driver.node_insert(file_node, session=session)
         self.pg_driver.edge_insert(edge_to_archive, session=session)
