@@ -4,7 +4,8 @@ import argparse
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import cghub2psqlgraph, cgquery
-from multiprocessing import Pool
+from multiprocessing import Pool, Value
+from lxml import etree
 
 logging.basicConfig(level=logging.DEBUG)
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -13,7 +14,9 @@ data_dir = os.path.join(os.path.abspath(
 mapping = os.path.join(data_dir, 'cghub.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
-args, source, phsid = None, None, None
+args, source, phsid, xml = [None]*4
+
+poolsize = 10
 
 
 def setup():
@@ -35,13 +38,12 @@ def setup():
 def process(roots):
     converter = setup()
     for root in roots:
+        root = etree.fromstring(root)
         converter.parse('file', root)
     converter.rebase(source)
 
 
 def import_files():
-    converter = setup()
-
     if not args.days:
         print('Importing all files from TCGA...'.format(args.days))
         xml = cgquery.get_all(phsid)
@@ -49,12 +51,16 @@ def import_files():
         print('Rebasing past {} days from TCGA...'.format(args.days))
         xml = cgquery.get_changes_last_x_days(args.days, phsid)
 
-    converter.initialize(xml)
-    roots = converter.node_roots['file']
-    poolsize = 10
+    if not xml:
+        raise Exception('No xml found')
+
+    root = etree.fromstring(str(xml)).getroottree()
+    roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
+    p = Pool(poolsize)
     chunksize = len(roots)/poolsize
     chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
-    process(chunks[0])
+    assert sum([len(c) for c in chunks]) == len(roots)
+    p.map(process, chunks)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

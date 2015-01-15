@@ -99,8 +99,8 @@ class cghub2psqlgraph(object):
         self.export_count += 1
         self.rebase_file_nodes(source)
         self.export_edges()
-        print 'Exports: {}. Nodes: {}. \r'.format(
-            self.export_count, self.exported_nodes),
+        print 'Exports: {}. Nodes: {}.'.format(
+            self.export_count, self.exported_nodes)
 
     def get_existing_files(self, source, session):
         """dumps a list of files from a source to memory
@@ -130,7 +130,7 @@ class cghub2psqlgraph(object):
 
         existing = existing_files.get(file_name, None)
         if existing is not None:
-            print('Updating {}'.format(file_name))
+            print('Merging {}'.format(file_name))
             node_id = existing.node_id
             self.graph.node_update(
                 node=existing,
@@ -145,7 +145,8 @@ class cghub2psqlgraph(object):
             try:
                 self.graph.node_insert(node=node, session=session)
             except:
-                print node, node.properties
+                print node
+                pprint.pprint(node.properties)
                 raise
 
         # Add the correct src_id to this file's edges now that we know it
@@ -228,7 +229,9 @@ class cghub2psqlgraph(object):
         """
 
         params = self.translate[node_type]
-        self.parse_file_node(root, node_type, params)
+        files = self.xml.get_node_roots(node_type, params, root=root)
+        for f in files:
+            self.parse_file_node(f, node_type, params)
 
     def parse_file_node(self, root, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
@@ -270,7 +273,7 @@ class cghub2psqlgraph(object):
 
         """
 
-        properties.update({'file_name': file_name})
+        properties.update({u'file_name': file_name})
         if file_name in self.files_to_add:
             self.files_to_add[file_name].merge(properties=properties)
         else:
