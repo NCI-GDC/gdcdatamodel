@@ -59,9 +59,13 @@ class TCGADCCArchiveSyncTest(TestCase):
         syncer.sync()
         self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 106)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
+        archive = self.pg_driver.node_lookup(label="archive").one()
         file = self.pg_driver.node_lookup(label="file").first()
+        # make sure archive gets tied to project
+        self.pg_driver.node_lookup(label="project", property_matches={"name": "PAAD"})\
+                      .with_edge_from_node("member_of", archive).one()
         # make sure the files get tied to classification stuff
-        assert self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
+        self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
 
     def test_syncing_is_idempotent(self):
         archive = self.parser.parse_archive(
