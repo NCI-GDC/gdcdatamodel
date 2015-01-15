@@ -48,6 +48,24 @@ def fix_uuid(s):
     """Munge uuids matched from filenames into correct format"""
     return s.replace("_", "-").lower()
 
+
+def url_for(obj):
+    """Return a url for a libcloud object."""
+    DRIVER_TO_SCHEME = {
+        S3StorageDriver: "s3",
+        OpenStackSwiftStorageDriver: "swift",
+        LocalStorageDriver: "file"
+    }
+    scheme = DRIVER_TO_SCHEME[obj.driver.__class__]
+    host = obj.driver.connection.host
+    container = obj.container.name
+    name = obj.name
+    url = "{scheme}://{host}/{container}/{name}".format(scheme=scheme,
+                                                        host=host,
+                                                        container=container,
+                                                        name=name)
+    return url
+
 CLASSIFICATION_ATTRS = ["data_subtype", "data_format", "platform",
                         "experimental_strategy", "tag"]
 
@@ -96,6 +114,7 @@ class TCGADCCArchiveSyncer(object):
         self.pg_driver.node_validator = AvroNodeValidator(node_avsc_object)
         self.pg_driver.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.dcc_auth = dcc_auth
+        self.storage_client = storage_client
         self.scratch_dir = scratch_dir
         self.download = download
         self.log = get_logger("tcga_dcc_sync_" +
@@ -177,6 +196,35 @@ class TCGADCCArchiveSyncer(object):
                              json={"urls": []})
         resp.raise_for_status()
         return resp.json()["did"]
+
+    def get_urls_from_signpost(self, did):
+        """Retrieve all the urls associated with a did in signpost."""
+        resp = requests.get("/".join([self.signpost_url,
+                                      self.SIGNPOST_VERSION,
+                                      "did",
+                                      did]))
+        resp.raise_for_status()
+        return resp.json()["urls"]
+
+    def store_url_in_signpost(self, did, url):
+        # replace whatever urls are in there with the one passed in
+        # going to have to go a GET first to get the rev
+        getresp = requests.get("/".join([self.signpost_url,
+                                         self.SIGNPOST_VERSION,
+                                         "did",
+                                         did]))
+        getresp.raise_for_status()
+        getjson = getresp.json()
+        rev = getjson["rev"]
+        old_urls = getjson["urls"]
+        if old_urls:
+            raise RuntimeError("attempt to replace existing urls on did {}".format(did))
+        patchresp = requests.patch("/".join([self.signpost_url,
+                                             self.SIGNPOST_VERSION,
+                                             "did",
+                                             did]),
+                                   json={"urls": [url], "rev": rev})
+        patchresp.raise_for_status()
 
     def tie_file_to_atribute(self, file_node, attr, value, session):
         LABEL_MAP = {
@@ -262,20 +310,20 @@ class TCGADCCArchiveSyncer(object):
             return
         file_node = self.lookup_file_in_pg(self.archive_node,
                                            filename, session)
-        if not file_node:
-            if dcc_md5:
-                md5 = dcc_md5
-                md5_source = "tcga_dcc"
-            else:
-                md5 = md5sum(iterable_from_file(
-                    self.extract_file_data(filename)))
-                md5_source = "gdc_import_process"
-            file_node = self.store_file_in_pg(filename, md5, md5_source,
-                                              file_classification, session)
-
-        else:
+        if file_node:
             self.log.info("file %s in already in postgres, not inserting",
                           filename)
+            return file_node
+        if dcc_md5:
+            md5 = dcc_md5
+            md5_source = "tcga_dcc"
+        else:
+            md5 = md5sum(iterable_from_file(
+                self.extract_file_data(filename)))
+            md5_source = "gdc_import_process"
+        return self.store_file_in_pg(filename, md5, md5_source,
+                                     file_classification, session)
+
 
     def get_manifest(self):
         if not self.download:
@@ -332,15 +380,6 @@ class TCGADCCArchiveSyncer(object):
         # EXITING GROSS HACK ZONE
         return resp
 
-    def get_urls_from_signpost(self, did):
-        """Retrieve all the urls associated with a did in signpost."""
-        resp = requests.get("/".join([self.signpost_url,
-                                      self.SIGNPOST_VERSION,
-                                      "did",
-                                      did]))
-        resp.raise_for_status()
-        return resp.json()["urls"]
-
     def download_archive(self):
         self.log.info("downloading archive %s", self.name)
         resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
@@ -361,9 +400,52 @@ class TCGADCCArchiveSyncer(object):
         return all((name in manifest for name in filenames
                     if name != "MANIFEST.txt"))
 
-    def upload(self):
-        # upload everything to object store, archive last
-        pass
+    @property
+    def container(self):
+        if self.archive["protected"]:
+            return self.storage_client.get_container("tcga_dcc_protected")
+        else:
+            return self.storage_client.get_container("tcga_dcc_public")
+
+    def obj_for(self, url):
+        # for now this assumes that the object can be found by self.storage_client
+        parsed = urlparse(url)
+        return self.storage_client.get_object(*parsed.path.split("/", 2)[1:])
+
+    def upload_data(self, fileobj, key):
+        obj = self.container.upload_object_via_stream(iterable_from_file(fileobj),
+                                                      key)
+        return obj
+
+    def full_name(self, filename):
+        return "/".join([self.name, filename])
+
+    def verify(self, node):
+        urls = self.get_urls_from_signpost(node.node_id)
+        if not urls:
+            raise RuntimeError("no urls in signpost for file {}, node: {}".format(node.file_name, node))
+        obj = self.obj_for(urls[0])
+        expected_sum = node["md5sum"]
+        actual_sum = md5sum(obj.as_stream())
+        if actual_sum != expected_sum:
+            self.pg_driver.node_update(node,
+                                       properties={"state": "invalid",
+                                                   "state_comment": "bad md5sum"})
+            self.log.warning("file %s has invalid checksum", node["file_name"])
+        self.set_file_state(node, "live")
+
+    def upload(self, node):
+        urls = self.get_urls_from_signpost(node.node_id)
+        if urls:
+            self.log.info("file %s already in signpost, skipping",
+                          node["file_name"])
+            return
+        self.set_file_state(node, "uploading")
+        name = self.full_name(node["file_name"])
+        obj = self.upload_data(self.tarball.extractfile(name), name)
+        new_url = url_for(obj)
+        self.store_url_in_signpost(node.node_id, new_url)
+        self.set_file_state(node, "validating")
 
     def sync(self):
         if self.archive["disease_code"] == "FPPP":
@@ -387,8 +469,16 @@ class TCGADCCArchiveSyncer(object):
                                  "tarball downloading is off,"
                                  " skipping file sync", self.name)
                 return
+            file_nodes = []
             for filename in filenames:
                 if filename != "MANIFEST.txt":
-                    self.sync_file(filename, manifest.get(filename), session)
+                    file_node = self.sync_file(filename, manifest.get(filename), session)
+                    if file_node:
+                        file_nodes.append(file_node)
         if self.download:
-            self.upload()
+            for node in file_nodes:
+                self.upload(node)
+                self.verify(node)
+            # finally, upload the archive itself
+            self.temp_file.seek(0)
+            self.upload_data(self.temp_file, "/".join(["archives", self.name]))

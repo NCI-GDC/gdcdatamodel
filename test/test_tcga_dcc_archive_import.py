@@ -55,17 +55,22 @@ class TCGADCCArchiveSyncTest(TestCase):
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
         )
-        syncer = self.syncer_for(archive, download=False)
+        syncer = self.syncer_for(archive, download=True)
         syncer.sync()
         self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 106)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
-        archive = self.pg_driver.node_lookup(label="archive").one()
+        archive_node = self.pg_driver.node_lookup(label="archive").one()
         file = self.pg_driver.node_lookup(label="file").first()
+        assert file["state"] == "live"
         # make sure archive gets tied to project
         self.pg_driver.node_lookup(label="project", property_matches={"name": "PAAD"})\
-                      .with_edge_from_node("member_of", archive).one()
+                      .with_edge_from_node("member_of", archive_node).one()
         # make sure the files get tied to classification stuff
         self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
+        # make sure file and archive are in storage
+        self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
+        self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
+
 
     def test_syncing_is_idempotent(self):
         archive = self.parser.parse_archive(
