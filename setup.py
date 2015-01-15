@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     package_data={
         "zug": [
-            "classification.yaml",
+            "tcga_classification.yaml",
         ]
     },
     install_requires=[
