@@ -420,7 +420,7 @@ class TCGADCCArchiveSyncer(object):
             archive_node = self.put_archive_in_pg(archive, session)
             try:
                 manifest = self.get_manifest(archive)
-            except:
+            except ValueError:
                 self.log.exception("error while parsing manifest on archive %s, marking as such and moving on", archive["archive_name"])
                 self.pg_driver.node_update(archive_node,
                                            system_annotations={"manifest_problems": True},
