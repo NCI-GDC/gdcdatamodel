@@ -21,7 +21,7 @@ def sync_list(args, archives):
             pg_driver=driver,
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
-            download=not args.no_download
+            dryrun=args.dryrun
         )
         try:
             syncer.sync()  # ugh
@@ -47,7 +47,7 @@ def main():
     parser.add_argument("--signpost-url", type=str, help="signpost url to use")
     parser.add_argument("--dcc-user", type=str, help="username for dcc auth")
     parser.add_argument("--dcc-pass", type=str, help="password for dcc auth")
-    parser.add_argument("--no-download", action="store_true",
+    parser.add_argument("--dryrun", action="store_true",
                         help="if passed, skip downlading / uploading tarballs")
     parser.add_argument("--scratch-dir", type=str,
                         help="directory to use as scratch space",

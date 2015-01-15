@@ -105,7 +105,7 @@ class TCGADCCArchiveSyncer(object):
     def __init__(self, archive, signpost_url=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 download=True):
+                 dryrun=False):
         self.archive = archive
         self.signpost_url = signpost_url
         self.pg_driver = pg_driver
@@ -114,7 +114,7 @@ class TCGADCCArchiveSyncer(object):
         self.dcc_auth = dcc_auth
         self.storage_client = storage_client
         self.scratch_dir = scratch_dir
-        self.download = download
+        self.dryrun = dryrun
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -168,9 +168,12 @@ class TCGADCCArchiveSyncer(object):
         edge_to_project = PsqlEdge(src_id=new_archive_node.node_id,
                                    dst_id=project_node.node_id,
                                    label="member_of")
+        if self.dryrun:
+            self.log.info("dryrun mode, inserting new archive node in postgres: %s", str(new_archive_node))
+            return new_archive_node
         self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
-        session.add(new_archive_node)
-        session.add(edge_to_project)
+        self.pg_driver.node_insert(new_archive_node, session)
+        self.pg_driver.edge_insert(edge_to_project, session)
         return new_archive_node
 
     def lookup_file_in_pg(self, archive_node, filename, session):
@@ -245,17 +248,24 @@ class TCGADCCArchiveSyncer(object):
             edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
                                          src_id=file_node.node_id,
                                          dst_id=attr_node.node_id)
-            self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+            if not self.dryrun:
+                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
 
     def store_file_in_pg(self, filename, md5, md5_source, session):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
         system_annotations = {"md5_source": md5_source,
                               "source": "tcga_dcc"}
+        if not self.dryrun:
+            tarinfo = self.tarball.getmember(self.full_name(filename))
+            file_size = tarinfo.size
+        else:
+            file_size = 0
         file_node = PsqlNode(node_id=did, label="file",
                              properties={"file_name": filename,
                                          "md5sum": md5,
                                          "state": "submitted",
+                                         "file_size": file_size,
                                          "state_comment": None},
                              system_annotations=system_annotations)
         edge_to_archive = PsqlEdge(label="member_of",
@@ -265,20 +275,23 @@ class TCGADCCArchiveSyncer(object):
         # TODO tie files to the center they were submitted by.
         # skipping this for now because it's some work to find the
         # correct center for an archive
+        if self.dryrun:
+            self.log.info("dryrun mode, not inserting file %s as node %s", filename, file_node)
+            return file_node
         self.log.info("inserting file %s as node %s", filename, file_node)
-        session.add(file_node)
-        session.add(edge_to_archive)
+        self.pg_driver.node_insert(file_node, session=session)
+        self.pg_driver.edge_insert(edge_to_archive, session=session)
         return file_node
 
     def classify(self, file_node, session):
         classification = classify(self.archive, file_node["file_name"])
-        if not classification or "to_be_determined" in classification.values():
-            raise RuntimeError("file {} classified as {}".format(
-                file_node["file_name"], classification))
         if classification["data_format"] == "to_be_ignored":
             self.log.info("ignoring %s for classification",
                           file_node["file_name"])
             return file_node
+        if not classification or "to_be_determined" in classification.values():
+            raise RuntimeError("file {} classified as {}".format(
+                file_node["file_name"], classification))
         # TODO check that this matches what we know about the archive
         file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
         for k, v in classification.iteritems():
@@ -326,7 +339,7 @@ class TCGADCCArchiveSyncer(object):
         return file_node
 
     def get_manifest(self):
-        if not self.download:
+        if self.dryrun:
             resp = self.get_with_auth("/".join([self.archive["non_tar_url"],
                                                 "MANIFEST.txt"]))
             manifest_data = resp.content
@@ -345,7 +358,7 @@ class TCGADCCArchiveSyncer(object):
         return res
 
     def get_files(self):
-        if not self.download:
+        if self.dryrun:
             NOT_PART_OF_ARCHIVE = ["Name", "Last modified",
                                    "Size", "Parent Directory"]
             resp = self.get_with_auth(self.archive["non_tar_url"])
@@ -459,14 +472,14 @@ class TCGADCCArchiveSyncer(object):
                 self.log.info("archive %s already has urls in signpost, "
                               "assuming it's complete", self.archive)
                 return
-            if self.download:
+            if not self.dryrun:
                 self.download_archive()
             manifest = self.get_manifest()
             filenames = self.get_files()
             if (not self.manifest_is_complete(manifest, filenames)
-                and not self.download):
+                and self.dryrun):
                 self.log.warning("manifest for %s incomplete and "
-                                 "tarball downloading is off,"
+                                 "we are in dryrun,"
                                  " skipping file sync", self.name)
                 return
             file_nodes = []
@@ -475,7 +488,7 @@ class TCGADCCArchiveSyncer(object):
                     file_node = self.sync_file(filename, manifest.get(filename), session)
                     if file_node:
                         file_nodes.append(file_node)
-        if self.download:
+        if not self.dryrun:
             for node in file_nodes:
                 self.upload(node)
                 self.verify(node)
