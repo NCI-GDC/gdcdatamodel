@@ -2,7 +2,7 @@ clin:
   Level_1:
     bio:
       - &should_be_ignored
-        data_format: to_be_determined
+        data_format: to_be_ignored
         pattern: ^((.*)?\.lsf.out|(.*_)?stderr.txt|(.*_)?stdout.txt|(.*_)?gp_execution_log.txt|rename.sh|DESCRIPTIO)$
         category: {}
       -
