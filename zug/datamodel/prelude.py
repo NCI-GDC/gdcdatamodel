@@ -172,8 +172,20 @@ def insert_classification_nodes(driver):
             idempotent_insert(driver, "experimental_strategy", strat, session)
         for format in DATA_FORMATS:
             idempotent_insert(driver, "data_format", format, session)
+
+        tcga_program_node = idempotent_insert(driver, "program", "TCGA",
+                                              session)
         for project in PROJECTS:
-            idempotent_insert(driver, "project", project, session)
+            project_node = idempotent_insert(driver, "project", project,
+                                             session)
+            edge = driver.edge_lookup_one(src_id=project_node.node_id,
+                                          dst_id=tcga_program_node.node_id,
+                                          label="member_of")
+            if not edge:
+                edge = PsqlEdge(src_id=project_node.node_id,
+                                dst_id=tcga_program_node.node_id,
+                                label="member_of")
+                driver.edge_insert(edge, session=session)
 
 
 def create_prelude_nodes(driver):
