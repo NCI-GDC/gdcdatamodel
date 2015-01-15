@@ -17,7 +17,8 @@ setup(
         'gdcdatamodel',
         'lxml==3.4.1',
         'requests==2.5.0',
-        'apache-libcloud==0.15.1'
+        'apache-libcloud==0.15.1',
+        'cssselect==0.9.1'
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@0b54ee8fc244a3306d91c80031db1ec131b9ddcb#egg=psqlgraph',
