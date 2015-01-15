@@ -294,6 +294,7 @@ class TCGADCCArchiveSyncer(object):
             self.log.error("file %s classified as %s, marking",
                            file_node["file_name"], classification)
             file_node.system_annotations["unclassified"] = True
+            return file_node
         # TODO check that this matches what we know about the archive
         file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
         for k, v in classification.iteritems():
