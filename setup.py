@@ -23,6 +23,6 @@ setup(
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@0b54ee8fc244a3306d91c80031db1ec131b9ddcb#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@44d6a91c88135c04e3900827013bb7e98aab7e28#egg=gdcdatamodel',
+        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@38531ec389f5b05ec0a055abfff2b3845eca6a3a#egg=gdcdatamodel',
     ]
 )
