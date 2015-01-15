@@ -3,8 +3,6 @@ import tempfile
 import tarfile
 import re
 import hashlib
-import uuid
-from contextlib import contextmanager
 from urlparse import urlparse
 from functools import partial
 import copy
@@ -18,14 +16,14 @@ from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
 from libcloud.storage.drivers.local import LocalStorageDriver
 
-from psqlgraph import PsqlNode, PsqlEdge, session_scope
+from psqlgraph import PsqlNode, PsqlEdge
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from cdisutils.log import get_logger
 
-from zug.datamodel import classification
+from zug.datamodel import tcga_classification
 
 
 def md5sum(iterable):
@@ -80,7 +78,7 @@ def classify(archive, filename):
     data_type = archive["data_type_in_url"]
     data_level = str(archive["data_level"])
     platform = archive["platform"]
-    potential_classifications = classification[data_type][data_level][platform]
+    potential_classifications = tcga_classification[data_type][data_level][platform]
     for possibility in potential_classifications:
         match = re.match(possibility["pattern"], filename)
         if match:
