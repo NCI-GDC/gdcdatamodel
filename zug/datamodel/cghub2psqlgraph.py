@@ -186,6 +186,22 @@ class cghub2psqlgraph(object):
                         file_name))
         self.files_to_add, self.files_to_delete = {}, []
 
+    def export_edge(self, edge, session):
+        existing = self.graph.edge_lookup(
+            src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label,
+            session=session).count()
+        if not existing:
+            src = self.graph.node_lookup_one(
+                node_id=edge.dst_id, session=session)
+            if src:
+                self.graph.edge_insert(edge, session=session)
+            else:
+                logging.warn('Missing destination {}'.format(edge.dst_id))
+                src = self.graph.node_lookup_one(
+                    node_id=edge.src_id, session=session)
+                src.system_annotations.update(
+                    {'missing_aliquot': edge.dst_id})
+
     def export_edges(self):
         """Adds edges to psqlgraph from self.edges
 
@@ -195,12 +211,8 @@ class cghub2psqlgraph(object):
 
         with self.graph.session_scope() as session:
             for src_f_name, edges in self.edges.iteritems():
-                for e in edges:
-                    existing = self.graph.edge_lookup(
-                        src_id=e.src_id, dst_id=e.dst_id, label=e.label,
-                        session=session).count()
-                    if not existing:
-                        self.graph.edge_insert(e, session=session)
+                for edge in edges:
+                    self.export_edge(edge, session)
         self.edges = {}
 
     def initialize(self, data):

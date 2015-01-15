@@ -7,8 +7,8 @@ from zug.datamodel import cghub2psqlgraph, cgquery
 from multiprocessing import Pool
 from lxml import etree
 
-logging.root.setLevel(level=logging.INFO)
 log = logging.getLogger(name="cghub_file_importer")
+logging.root.setLevel(level=logging.INFO)
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(os.path.abspath(
@@ -16,7 +16,7 @@ data_dir = os.path.join(os.path.abspath(
 mapping = os.path.join(data_dir, 'cghub.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
-args, source, phsid, xml = [None]*4
+args, source, phsid = None, None, None
 
 poolsize = 10
 
@@ -47,7 +47,14 @@ def process(roots):
     converter.rebase(source)
 
 
-def import_files():
+def open_xml():
+    log.info('Loading xml from {}...'.format(args.file))
+    with open(args.file, 'r') as f:
+        xml = f.read()
+    return xml
+
+
+def download_xml():
     # Download the file list
     if args.all:
         log.info('Importing all files from TCGA...'.format(args.days))
@@ -61,6 +68,10 @@ def import_files():
     else:
         log.info('File list downloaded.')
 
+    return xml
+
+
+def import_files(xml):
     # Split the file into results
     root = etree.fromstring(str(xml)).getroottree()
     roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
@@ -86,7 +97,13 @@ if __name__ == '__main__':
                         help='import all the files')
     parser.add_argument('-d', '--days', default=1, type=int,
                         help='time in days days for incremental import')
+    parser.add_argument('-f', '--file', default=None, type=str,
+                        help='file to load from')
     args = parser.parse_args()
 
-    source, phsid = 'cghub_tcga', 'phs000178'
-    import_files()
+    source, phsid = 'tcga_cghub', 'phs000178'
+    if args.file:
+        xml = open_xml()
+    else:
+        xml = download_xml()
+    import_files(xml)
