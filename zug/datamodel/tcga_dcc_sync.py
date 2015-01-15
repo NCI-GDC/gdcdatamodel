@@ -164,7 +164,8 @@ class TCGADCCArchiveSyncer(object):
             properties={"legacy_id": legacy_id,
                         "revision": self.archive["revision"]})
         project_node = self.pg_driver.node_lookup_one(label="project",
-                                                      property_matches={"name": self.archive["disease_code"]})
+                                                      property_matches={"name": self.archive["disease_code"]},
+                                                      session=session)
         edge_to_project = PsqlEdge(src_id=new_archive_node.node_id,
                                    dst_id=project_node.node_id,
                                    label="member_of")
@@ -172,8 +173,8 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("dryrun mode, inserting new archive node in postgres: %s", str(new_archive_node))
             return new_archive_node
         self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
-        self.pg_driver.node_insert(new_archive_node, session)
-        self.pg_driver.edge_insert(edge_to_project, session)
+        self.pg_driver.node_insert(new_archive_node, session=session)
+        self.pg_driver.edge_insert(edge_to_project, session=session)
         return new_archive_node
 
     def lookup_file_in_pg(self, archive_node, filename, session):
