@@ -29,7 +29,7 @@ def setup():
         host=args.host,
         user=args.user,
         password=args.password,
-        database=args.database,
+        database=args.db,
         edge_validator=edge_validator,
         node_validator=node_validator,
         ignore_missing_properties=True,
@@ -49,7 +49,7 @@ def process(roots):
 
 def import_files():
     # Download the file list
-    if args.full_import:
+    if args.all:
         log.info('Importing all files from TCGA...'.format(args.days))
         xml = cgquery.get_all(phsid)
     else:
@@ -74,7 +74,7 @@ def import_files():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
+    parser.add_argument('--db', default='gdc_datamodel', type=str,
                         help='to odatabase to import to')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='host of the postgres server')
@@ -82,9 +82,9 @@ if __name__ == '__main__':
                         help='the user to import as')
     parser.add_argument('-p', '--password', default='test', type=str,
                         help='the password for import user')
-    parser.add_argument('--full_import', action='store_true',
+    parser.add_argument('--all', action='store_true',
                         help='import all the files')
-    parser.add_argument('-t', '--days', default=1, type=int,
+    parser.add_argument('-d', '--days', default=1, type=int,
                         help='time in days days for incremental import')
     args = parser.parse_args()
 
