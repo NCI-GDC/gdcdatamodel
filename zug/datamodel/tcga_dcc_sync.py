@@ -180,6 +180,8 @@ def classify(archive, filename):
     classify it. Return a dictionary representing the
     classification.
     """
+    if archive["data_level"] == "mage-tab":
+        return {}  # no classification for mage-tabs
     data_type = archive["data_type_in_url"]
     data_level = str(archive["data_level"])
     platform = archive["platform"]
@@ -207,26 +209,38 @@ class TCGADCCArchiveSyncer(object):
     MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB TODO make this configurable
     SIGNPOST_VERSION = "v0"
 
-    def __init__(self, signpost_url, pg_driver, dcc_auth, scratch_dir):
+    def __init__(self, archive, signpost_url=None,
+                 pg_driver=None, dcc_auth=None,
+                 scratch_dir=None, storage_client=None,
+                 download=True):
+        self.archive = archive
         self.signpost_url = signpost_url
         self.pg_driver = pg_driver
         self.pg_driver.node_validator = AvroNodeValidator(node_avsc_object)
         self.pg_driver.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.dcc_auth = dcc_auth
         self.scratch_dir = scratch_dir
-        self.log = get_logger("tcga_dcc_sync_" + str(os.getpid()))
+        self.download = download
+        self.log = get_logger("tcga_dcc_sync_" +
+                              str(os.getpid()) +
+                              "_" + self.name)
 
-    def put_archive_in_pg(self, archive, session):
+    @property
+    def name(self):
+        return self.archive["archive_name"]
+
+    def store_archive_in_pg(self, session):
         # legacy_id is just the name without the revision or series
         # this will be identical between different versions of an archive as new
         # versions are submitted
-        legacy_id = re.sub("\.(\d+?)\.(\d+)$", "", archive["archive_name"])
-        self.log.info("looking for archive %s in postgres", archive["archive_name"])
+        legacy_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
+        self.log.info("looking for archive %s in postgres", self.name)
         maybe_this_archive = self.pg_driver.node_lookup_one(label="archive",
                                                             property_matches={"legacy_id": legacy_id,
-                                                                              "revision": archive["revision"]})
+                                                                              "revision": self.archive["revision"]},
+                                                            session=session)
         if maybe_this_archive:
-            self.log.info("found archive %s in postgres, not inserting", archive["archive_name"])
+            self.log.info("found archive %s in postgres, not inserting", self.name)
             return maybe_this_archive
         self.log.info("looking up old versions of archive %s in postgres", legacy_id)
         old_versions = self.pg_driver.node_lookup(label="archive",
@@ -235,7 +249,7 @@ class TCGADCCArchiveSyncer(object):
         if len(old_versions) > 1:
             # since we void all old versions of an archive when we add a new one,
             # there should never be more than one old version in the database
-            raise ValueError("multiple old versions of an archive found")
+            raise ValueError("multiple old versions of archive {} found".format(legacy_id))
         if old_versions:
             old_archive = old_versions[0]
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
@@ -254,15 +268,10 @@ class TCGADCCArchiveSyncer(object):
             node_id=self.allocate_id_from_signpost(),
             label="archive",
             properties={"legacy_id": legacy_id,
-                        "revision": archive["revision"]})
+                        "revision": self.archive["revision"]})
         self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
         session.add(new_archive_node)
         return new_archive_node
-
-    def sync_archives(self, archives):
-        for i, archive in enumerate(archives):
-            self.log.info("syncing archive %s of %s", i+1, len(archives))
-            self.sync_archive(archive)
 
     def lookup_file_in_pg(self, archive_node, filename, session):
         q = self.pg_driver.node_lookup(label="file",
@@ -309,13 +318,13 @@ class TCGADCCArchiveSyncer(object):
                                          dst_id=attr_node.node_id)
             self.pg_driver.edge_insert(edge_to_attr_node, session=session)
 
-    def store_file_in_pg(self, archive_node, filename, md5, md5_source,
+    def store_file_in_pg(self, filename, md5, md5_source,
                          file_classification, session):
         # not there, need to get id from signpost and store it.
         did = self.allocate_id_from_signpost()
         acl = ["phs000178"] if file_classification["data_access"] == "protected" else []
         system_annotations = {"md5_source": md5_source,
-                              "file_source": "tcga_dcc"}
+                              "source": "tcga_dcc"}
         for k, v in file_classification.iteritems():
             if k.startswith("_"):
                 system_annotations[k] = v
@@ -327,12 +336,12 @@ class TCGADCCArchiveSyncer(object):
                              system_annotations=system_annotations)
         edge_to_archive = PsqlEdge(label="member_of",
                                    src_id=file_node.node_id,
-                                   dst_id=archive_node.node_id,
+                                   dst_id=self.archive_node.node_id,
                                    properties={})
         self.log.info("inserting file %s as node %s", filename, file_node)
         self.pg_driver.node_insert(file_node, session=session)
         self.pg_driver.edge_insert(edge_to_archive, session=session)
-        # ok, classification
+        # classification
         #
         # we need to create edges to: data_subtype, data_format,
         # platform, experimental_strategy, tag.
@@ -342,43 +351,74 @@ class TCGADCCArchiveSyncer(object):
                                           file_classification[attribute],
                                           session)
             else:
-                self.log.warning("not tieing %s (node %s) to a %s", filename, file_node, attribute)
+                self.log.warning("not tieing %s (node %s) to a %s",
+                                 filename, file_node, attribute)
         return file_node
 
     def set_file_state(self, file_node, state):
         self.pg_driver.node_update(file_node, properties={"state": state})
 
-    def sync_file(self, archive, archive_node, filename, dcc_md5, session):
+    def extract_file_data(self, filename):
+        return self.tarball.getmember(self.name)
+
+    def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database, classifying it and"""
-        file_classification = classify(archive, filename)
+        file_classification = classify(self.archive, filename)
         if ("to_be_determined" in file_classification.values() or
             "data_access" not in file_classification.keys()):
             # we shouldn't insert this file
             self.log.info("file %s/%s classified as %s, not inserting",
-                          archive["archive_name"],
+                          self.name,
                           filename,
                           file_classification)
             return
-        file_node = self.lookup_file_in_pg(archive_node, filename, session)
+        file_node = self.lookup_file_in_pg(self.archive_node,
+                                           filename, session)
         if not file_node:
-            md5_source = "tcga_dcc"
-            file_node = self.store_file_in_pg(archive_node, filename,
-                                              dcc_md5, md5_source,
-                                              file_classification,
-                                              session)
-        else:
-            self.log.info("file %s in archive %s already in postgres, not inserting",
-                          filename,
-                          archive_node.properties["legacy_id"])
+            if dcc_md5:
+                md5 = dcc_md5
+                md5_source = "tcga_dcc"
+            else:
+                md5 = md5sum(iterable_from_file(
+                    self.extract_file_data(filename)))
+                md5_source = "gdc_import_process"
+            file_node = self.store_file_in_pg(filename, md5, md5_source,
+                                              file_classification, session)
 
-    def get_manifest(self, archive):
-        resp = self.get_with_auth("/".join([archive["non_tar_url"], "MANIFEST.txt"]))
-        manifest_data = resp.content
+        else:
+            self.log.info("file %s in already in postgres, not inserting",
+                          filename)
+
+    def get_manifest(self):
+        if not self.download:
+            resp = self.get_with_auth("/".join([self.archive["non_tar_url"],
+                                                "MANIFEST.txt"]))
+            manifest_data = resp.content
+        else:
+            manifest_tarinfo = self.tarball.getmember(
+                "{}/MANIFEST.txt".format(self.name))
+            manifest_data = self.tarball.extractfile(manifest_tarinfo).read()
         res = {}
-        for line in manifest_data.splitlines():
-            md5, filename = line.split()
-            res[filename] = md5
+        try:
+            for line in manifest_data.splitlines():
+                md5, filename = line.split()
+                res[filename] = md5
+        except ValueError:
+            self.log.warning("manifest does not have checksums")
+            return {}
         return res
+
+    def get_files(self):
+        if not self.download:
+            NOT_PART_OF_ARCHIVE = ["Name", "Last modified",
+                                   "Size", "Parent Directory"]
+            resp = self.get_with_auth(self.archive["non_tar_url"])
+            archives_html = html.fromstring(resp.content)
+            return [elem.text for elem in archives_html.cssselect('a')
+                    if elem.text not in NOT_PART_OF_ARCHIVE]
+        else:
+            return [name.replace(self.name + "/", "")
+                    for name in self.tarball.getnames()]
 
     def get_with_auth(self, url, **kwargs):
         resp = requests.get(url, auth=self.dcc_auth,
@@ -404,36 +444,64 @@ class TCGADCCArchiveSyncer(object):
         # EXITING GROSS HACK ZONE
         return resp
 
-    def fetch_files(self, archive):
-        NOT_PART_OF_ARCHIVE = ["Name", "Last modified", "Size", "Parent Directory"]
-        resp = self.get_with_auth(archive["non_tar_url"])
-        archives_html = html.fromstring(resp.content)
-        return [elem.text for elem in archives_html.cssselect('a')
-                if elem.text not in NOT_PART_OF_ARCHIVE]
+    def get_urls_from_signpost(self, did):
+        """Retrieve all the urls associated with a did in signpost."""
+        resp = requests.get("/".join([self.signpost_url,
+                                      self.SIGNPOST_VERSION,
+                                      "did",
+                                      did]))
+        resp.raise_for_status()
+        return resp.json()["urls"]
 
-    def sync_archive(self, archive):
-        if archive["disease_code"] == "FPPP":
-            self.log.info("%s is an FPPP archive, skipping", archive["archive_name"])
-        self.log.info("syncing archive %s", archive["archive_name"])
-        archive["non_tar_url"] = re.sub("\.tar\.gz$", "", archive["dcc_archive_url"])
+    def download_archive(self):
+        self.log.info("downloading archive %s", self.name)
+        resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
+        if int(resp.headers["content-length"]) > self.MAX_BYTES_IN_MEMORY:
+            self.log.info("archive size is %s bytes, storing in "
+                          "temp file on disk", resp.headers["content-length"])
+            self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
+        else:
+            self.temp_file = StringIO()
+        for chunk in resp.iter_content(chunk_size=16000):
+            self.temp_file.write(chunk)
+        self.temp_file.seek(0)
+        self.temp_file
+        self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
+
+    def manifest_is_complete(self, manifest, filenames):
+        """Verify that the manifest is complete."""
+        return all((name in manifest for name in filenames
+                    if name != "MANIFEST.txt"))
+
+    def upload(self):
+        # upload everything to object store, archive last
+        pass
+
+    def sync(self):
+        if self.archive["disease_code"] == "FPPP":
+            self.log.info("%s is an FPPP archive, skipping", self.name)
+            return
+        self.log.info("syncing archive %s", self.name)
+        self.archive["non_tar_url"] = re.sub("\.tar\.gz$", "",
+                                             self.archive["dcc_archive_url"])
         with self.pg_driver.session_scope() as session:
-            archive_node = self.put_archive_in_pg(archive, session)
-            try:
-                manifest = self.get_manifest(archive)
-            except ValueError:
-                self.log.exception("error while parsing manifest on archive %s, marking as such and moving on", archive["archive_name"])
-                self.pg_driver.node_update(archive_node,
-                                           system_annotations={"manifest_problems": True},
-                                           session=session)
+            self.archive_node = self.store_archive_in_pg(session)
+            if self.get_urls_from_signpost(self.archive_node.node_id):
+                self.log.info("archive %s already has urls in signpost, "
+                              "assuming it's complete", self.archive)
                 return
-            filenames = self.fetch_files(archive)
+            if self.download:
+                self.download_archive()
+            manifest = self.get_manifest()
+            filenames = self.get_files()
+            if (not self.manifest_is_complete(manifest, filenames)
+                and not self.download):
+                self.log.warning("manifest for %s incomplete and "
+                                 "tarball downloading is off,"
+                                 " skipping file sync", self.name)
+                return
             for filename in filenames:
                 if filename != "MANIFEST.txt":
-                    if manifest.get(filename):
-                        self.sync_file(archive, archive_node, filename, manifest[filename], session)
-                    else:
-                        self.log.warning("manifest in archive %s does not have md5 for file %s, marking archive has having problems",
-                                         archive["archive_name"], filename)
-                        self.pg_driver.node_update(archive_node,
-                                                   system_annotations={"manifest_problems": True},
-                                                   session=session)
+                    self.sync_file(filename, manifest.get(filename), session)
+        if self.download:
+            self.upload()

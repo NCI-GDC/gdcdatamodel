@@ -13,20 +13,27 @@ from multiprocessing.pool import Pool
 def sync_list(args, archives):
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
                              args.pg_pass, args.pg_database)
-    syncer = TCGADCCArchiveSyncer(args.signpost_url, driver,
-                                  (args.dcc_user, args.dcc_pass),
-                                  args.scratch_dir)
-    try:
-        syncer.sync_archives(archives)
-    except:
-        syncer.log.exception("caught exception while syncing")
-        raise
+    for archive in archives:
+        syncer = TCGADCCArchiveSyncer(
+            archive,
+            signpost_url=args.signpost_url,
+            pg_driver=driver,
+            dcc_auth=(args.dcc_user, args.dcc_pass),
+            scratch_dir=args.scratch_dir,
+            download=not args.no_download
+        )
+        try:
+            syncer.sync()  # ugh
+        except:
+            syncer.log.exception("caught exception while syncing")
+            raise
 
 
 def split(a, n):
     """Split a into n evenly sized chunks"""
     k, m = len(a) / n, len(a) % n
-    return [a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in xrange(n)]
+    return [a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)]
+            for i in xrange(n)]
 
 
 def main():
@@ -34,11 +41,15 @@ def main():
     parser.add_argument("--pg-host", type=str, help="postgres database host")
     parser.add_argument("--pg-user", type=str, help="postgres database user")
     parser.add_argument("--pg-pass", type=str, help="postgres database password")
-    parser.add_argument("--pg-database", type=str, help="the postgre database to connect to")
+    parser.add_argument("--pg-database", type=str,
+                        help="the postgres database to connect to")
     parser.add_argument("--signpost-url", type=str, help="signpost url to use")
     parser.add_argument("--dcc-user", type=str, help="username for dcc auth")
     parser.add_argument("--dcc-pass", type=str, help="password for dcc auth")
-    parser.add_argument("--scratch-dir", type=str, help="directory to use as scratch space",
+    parser.add_argument("--no-download", action="store_true",
+                        help="if passed, skip downlading / uploading tarballs")
+    parser.add_argument("--scratch-dir", type=str,
+                        help="directory to use as scratch space",
                         default=mkdtemp())
     parser.add_argument("-p", "--processes", type=int, help="process pool size to use")
 
