@@ -1,6 +1,5 @@
 import yaml
 import json
-import uuid
 import datetime
 import logging
 import psqlgraph
@@ -9,7 +8,8 @@ from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
 
-logger = logging.getLogger(name="[{name}]".format(name=__name__))
+log = logging.getLogger(name="xml2psqlgraph")
+
 
 possible_true_values = [
     'true',
@@ -129,7 +129,7 @@ class xml2psqlgraph(object):
             return []
 
         elif rlen > 1 and single:
-            logging.error(result)
+            log.error(result)
             raise Exception('{}: Expected 1 result for {}, found {}'.format(
                 label, path, result))
 
@@ -193,7 +193,7 @@ class xml2psqlgraph(object):
             try:
                 self.export_node(node, **kwargs)
             except:
-                logging.error('Unable to add node {}'.format(node))
+                log.error('Unable to add node {}'.format(node))
                 pprint.pprint(node.properties)
                 raise
             else:
@@ -210,7 +210,7 @@ class xml2psqlgraph(object):
                     try:
                         self.graph.edge_insert(e, session=session)
                     except:
-                        logging.error('Unable to add edge {}'.format(e.label))
+                        log.error('Unable to add edge {}'.format(e.label))
                         raise
         self.edges = {}
 
@@ -301,7 +301,7 @@ class xml2psqlgraph(object):
 
         """
         if not params.root:
-            logging.warn('No root xpath for {}'.format(node_type))
+            log.warn('No root xpath for {}'.format(node_type))
             return
         xml_nodes = self.xpath(
             params.root, root=root, expected=False,

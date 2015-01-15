@@ -4,13 +4,13 @@ import uuid
 import datetime
 import logging
 import psqlgraph
-import pprint
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
 import xml2psqlgraph
 
-logger = logging.getLogger(name="[{name}]".format(name=__name__))
+log = logging.getLogger(name="cghub2psqlgraph")
+
 
 possible_true_values = [
     'true',
@@ -99,8 +99,8 @@ class cghub2psqlgraph(object):
         self.export_count += 1
         self.rebase_file_nodes(source)
         self.export_edges()
-        print 'Exports: {}. Nodes: {}.'.format(
-            self.export_count, self.exported_nodes)
+        log.debug('Exports: {}. Nodes: {}.'.format(
+            self.export_count, self.exported_nodes))
 
     def get_existing_files(self, source, session):
         """dumps a list of files from a source to memory
@@ -130,7 +130,7 @@ class cghub2psqlgraph(object):
 
         existing = existing_files.get(file_name, None)
         if existing is not None:
-            print('Merging {}'.format(file_name))
+            log.debug('Merging {}'.format(file_name))
             node_id = existing.node_id
             self.graph.node_update(
                 node=existing,
@@ -138,15 +138,15 @@ class cghub2psqlgraph(object):
                 system_annotations=system_annotations,
                 session=session)
         else:
-            print('Adding {}'.format(file_name))
+            log.debug('Adding {}'.format(file_name))
             node_id = str(uuid.uuid4())
             node.node_id = node_id
             node.system_annotations.update(system_annotations)
             try:
                 self.graph.node_insert(node=node, session=session)
             except:
-                print node
-                pprint.pprint(node.properties)
+                log.error(node)
+                log.error(node.properties)
                 raise
 
         # Add the correct src_id to this file's edges now that we know it
@@ -172,17 +172,18 @@ class cghub2psqlgraph(object):
         with self.graph.session_scope() as session:
             existing_files = self.get_existing_files(
                 source, session)
-            print('Found {} existing files'.format(len(existing_files)))
+            log.debug('Found {} existing files'.format(len(existing_files)))
             for file_name, node in self.files_to_add.iteritems():
                 self.merge_file_node(existing_files, file_name, node,
                                      session, system_annotations)
             for file_name in self.files_to_delete:
                 node = existing_files.get(file_name, None)
                 if node:
-                    print('Redacting {}'.format(file_name))
+                    log.debug('Redacting {}'.format(file_name))
                     self.graph.node_delete(node=node, session=session)
                 else:
-                    print('Redaction not necessary {}'.format(file_name))
+                    log.debug('Redaction not necessary {}'.format(
+                        file_name))
         self.files_to_add, self.files_to_delete = {}, []
 
     def export_edges(self):
