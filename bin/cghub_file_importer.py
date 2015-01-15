@@ -3,29 +3,34 @@ import os
 import argparse
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from zug.datamodel import xml2psqlgraph
+from zug.datamodel import cghub2psqlgraph, cgquery
+from multiprocessing import Pool
+from lxml import etree
+from cdisutils.log import get_logger
 
+log = get_logger("cghub_file_importer")
+logging.root.setLevel(level=logging.INFO)
 
-logging.basicConfig(level=logging.DEBUG)
 current_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(os.path.abspath(
     os.path.join(current_dir, os.path.pardir)), 'data')
 mapping = os.path.join(data_dir, 'cghub.yaml')
 center_csv_path = os.path.join(data_dir, 'centerCode.csv')
 tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
+args, source, phsid = None, None, None
+
+poolsize = 10
 
 
-def initialize(host, user, password, database):
-
+def setup():
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
-
-    converter = xml2psqlgraph.xml2psqlgraph(
+    converter = cghub2psqlgraph.cghub2psqlgraph(
         translate_path=mapping,
-        host=host,
-        user=user,
-        password=password,
-        database=database,
+        host=args.host,
+        user=args.user,
+        password=args.password,
+        database=args.db,
         edge_validator=edge_validator,
         node_validator=node_validator,
         ignore_missing_properties=True,
@@ -33,28 +38,55 @@ def initialize(host, user, password, database):
     return converter
 
 
-def start(*args, **kwargs):
-    converter = initialize(*args)
-    g = converter.graph
-    logging.info("Reading import xml file")
-    with open(kwargs['path'], 'r') as f:
+def process(roots):
+    converter = setup()
+    for root in roots:
+        root = etree.fromstring(root)
+        converter.parse('file', root)
+    log.info('Merging {} nodes'.format(
+        len(converter.files_to_add)))
+    converter.rebase(source)
+
+
+def open_xml():
+    log.info('Loading xml from {}...'.format(args.file))
+    with open(args.file, 'r') as f:
         xml = f.read()
+    return xml
 
-    print('Pulling old file list')
-    sa_matches = {'source': 'cghub_tcga'}
-    files = list(g.node_lookup_by_matches(
-        system_annotation_matches=sa_matches, label='file').yield_per(1000))
-    print('Found {} exising files'.format(len(files)))
 
-    logging.info("Converting import xml file")
-    converter.xml2psqlgraph(xml)
+def download_xml():
+    # Download the file list
+    if args.all:
+        log.info('Importing all files from TCGA...'.format(args.days))
+        xml = cgquery.get_all(phsid)
+    else:
+        log.info('Rebasing past {} days from TCGA...'.format(args.days))
+        xml = cgquery.get_changes_last_x_days(args.days, phsid)
 
-    converter.export()
+    if not xml:
+        raise Exception('No xml found')
+    else:
+        log.info('File list downloaded.')
+
+    return xml
+
+
+def import_files(xml):
+    # Split the file into results
+    root = etree.fromstring(str(xml)).getroottree()
+    roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
+    log.info('Found {} results'.format(len(roots)))
+
+    # Chunk the results and distribute to process pool
+    chunksize = len(roots)/poolsize
+    chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
+    assert sum([len(c) for c in chunks]) == len(roots)
+    Pool(poolsize).map(process, chunks)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--file', type=str, help='xml file to parse')
-    parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
+    parser.add_argument('--db', default='gdc_datamodel', type=str,
                         help='to odatabase to import to')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='host of the postgres server')
@@ -62,6 +94,17 @@ if __name__ == '__main__':
                         help='the user to import as')
     parser.add_argument('-p', '--password', default='test', type=str,
                         help='the password for import user')
+    parser.add_argument('--all', action='store_true',
+                        help='import all the files')
+    parser.add_argument('-d', '--days', default=1, type=int,
+                        help='time in days days for incremental import')
+    parser.add_argument('-f', '--file', default=None, type=str,
+                        help='file to load from')
     args = parser.parse_args()
-    start(args.host, args.user, args.password,
-          args.database, path=args.file)
+
+    source, phsid = 'tcga_cghub', 'phs000178'
+    if args.file:
+        xml = open_xml()
+    else:
+        xml = download_xml()
+    import_files(xml)

@@ -1,8 +1,6 @@
 import yaml
 import json
-import uuid
 import datetime
-import logging
 import psqlgraph
 import pprint
 from psqlgraph.edge import PsqlEdge
@@ -10,7 +8,8 @@ from psqlgraph.node import PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
+
 
 possible_true_values = [
     'true',
@@ -20,6 +19,11 @@ possible_true_values = [
 possible_false_values = [
     'false',
     'no',
+]
+
+deletion_states = [
+    'suppressed',
+    'redacted',
 ]
 
 
@@ -125,7 +129,7 @@ class xml2psqlgraph(object):
             return []
 
         elif rlen > 1 and single:
-            logging.error(result)
+            log.error(result)
             raise Exception('{}: Expected 1 result for {}, found {}'.format(
                 label, path, result))
 
@@ -139,14 +143,22 @@ class xml2psqlgraph(object):
 
         return result
 
-    def export(self, **kwargs):
+    def export(self, silent=True, **kwargs):
         self.export_count += 1
         self.export_nodes(**kwargs)
         self.export_edges()
-        print 'Exports: {}. Nodes: {}. \r'.format(
-            self.export_count, self.exported_nodes),
+        if not silent:
+            print 'Exports: {}. Nodes: {}. \r'.format(
+                self.export_count, self.exported_nodes),
 
-    def export_node(self, node, group_id=None, version=None, sys_an={}):
+    def export_node(self, node, group_id=None, version=None,
+                    system_annotations={}):
+
+        if node.label == 'file':
+            raise Exception(
+                "Class xml2psqlgraph is not the right function "
+                "to export files from. Try calling cghub2psqlgraph().")
+
         with self.graph.session_scope() as session:
 
             old_node = self.graph.node_lookup_one(
@@ -154,23 +166,26 @@ class xml2psqlgraph(object):
 
             if group_id and old_node and \
                old_node.system_annotations.get('group_id', None) != group_id:
-                raise Exception('Group id does not match for {}'.format(node))
+                raise Exception(
+                    'Group id {} does not match old {} for {}'.format(
+                        group_id, old_node.system_annotations.get(
+                            'group_id', None), node))
 
             if group_id and version:
-                sys_an.update({
-                    'group_id': group_id, 'version': version})
+                system_annotations = {
+                    'group_id': group_id, 'version': version}
 
             if old_node:
                 if not version or not group_id or \
                    old_node.system_annotations.get('version', -1) < version:
-                    node.system_annotations.update(sys_an)
+                    node.system_annotations.update(system_annotations)
                     self.graph.node_clobber(
                         node_id=node.node_id, properties=node.properties,
                         system_annotations=node.system_annotations,
                         session=session)
 
             else:
-                node.merge(system_annotations=sys_an)
+                node.merge(system_annotations=system_annotations)
                 self.graph.node_insert(node)
 
     def export_nodes(self, **kwargs):
@@ -178,7 +193,7 @@ class xml2psqlgraph(object):
             try:
                 self.export_node(node, **kwargs)
             except:
-                logging.error('Unable to add node {}'.format(node))
+                log.error('Unable to add node {}'.format(node))
                 pprint.pprint(node.properties)
                 raise
             else:
@@ -195,7 +210,7 @@ class xml2psqlgraph(object):
                     try:
                         self.graph.edge_insert(e, session=session)
                     except:
-                        logging.error('Unable to add edge {}'.format(e.label))
+                        log.error('Unable to add edge {}'.format(e.label))
                         raise
         self.edges = {}
 
@@ -209,7 +224,7 @@ class xml2psqlgraph(object):
 
         if not data:
             return None
-        self.xml_root = etree.fromstring(data).getroottree()
+        self.xml_root = etree.fromstring(str(data)).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
         for node_type, params in self.translate.items():
             self.parse_node(node_type, params)
@@ -225,26 +240,28 @@ class xml2psqlgraph(object):
         """
         roots = self.get_node_roots(node_type, params)
         for root in roots:
+            # Get node and node properties
             node_id = self.get_node_id(root, node_type, params)
-            nprops = self.get_node_properties(
-                root, node_type, params, node_id)
-            n_date_props = self.get_node_datetime_properties(
-                root, node_type, params, node_id)
-            n_const_props = self.get_node_const_properties(
-                root, node_type, params, node_id)
-            nprops.update(n_date_props)
-            nprops.update(n_const_props)
+            args = (root, node_type, params, node_id)
+            props = self.get_node_properties(*args)
+            props.update(self.get_node_datetime_properties(*args))
+            props.update(self.get_node_const_properties(*args))
             acl = self.get_node_acl(root, node_type, params)
-            edges = self.get_node_edges(root, node_type, params, node_id)
-            self.insert_node(node_id, node_type, nprops, acl)
-            for dst_id, edge in edges.items():
-                dst_label, edge_label = edge
-                self.insert_edge(node_id, dst_id, dst_label, edge_label)
+            self.save_node(node_id, node_type, props, acl)
 
-    def insert_node(self, node_id, label, properties, acl=[]):
+            # Get edges to and from this node
+            edges = self.get_node_edges(root, node_type, params, node_id)
+            for dst_id, edge in edges.iteritems():
+                dst_label, edge_label = edge
+                self.save_edge(node_id, dst_id, dst_label, edge_label)
+
+    def save_node(self, node_id, label, properties, acl=[]):
         """Adds a node to the graph
 
         """
+
+        if label == 'file':
+            raise Exception('xml2psqlgraph is not built to handle file nodes')
 
         if node_id in self.nodes:
             self.nodes[node_id].merge(properties=properties)
@@ -256,8 +273,8 @@ class xml2psqlgraph(object):
                 properties=properties
             )
 
-    def insert_edge(self, src_id, dst_id, dst_label, edge_label,
-                    properties={}):
+    def save_edge(self, src_id, dst_id, dst_label, edge_label,
+                  properties={}):
         """Adds an edge to the graph
 
         """
@@ -273,7 +290,7 @@ class xml2psqlgraph(object):
                 properties=properties
             )
 
-    def get_node_roots(self, node_type, params):
+    def get_node_roots(self, node_type, params, root=None):
         """returns a list of xml node root elements for a given node_type
 
         :param str node_type:
@@ -284,10 +301,11 @@ class xml2psqlgraph(object):
 
         """
         if not params.root:
-            logging.warn('No root xpath for {}'.format(node_type))
+            log.warn('No root xpath for {}'.format(node_type))
             return
         xml_nodes = self.xpath(
-            params.root, expected=False, text=False, label='get_node_roots')
+            params.root, root=root, expected=False,
+            text=False, label='get_node_roots')
         return xml_nodes
 
     def get_node_acl(self, root, node_type, params):
@@ -318,9 +336,7 @@ class xml2psqlgraph(object):
 
         """
 
-        if node_type == 'file':
-            return str(uuid.uuid4())
-
+        # All other nodes
         if 'id' not in params or not params.id:
             return None
         node_id = self.xpath(params.id, root, single=True, label=node_type)
