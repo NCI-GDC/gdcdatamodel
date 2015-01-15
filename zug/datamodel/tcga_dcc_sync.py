@@ -74,7 +74,7 @@ def classify(archive, filename):
     classification.
     """
     if archive["data_level"] == "mage-tab":
-        return {}  # no classification for mage-tabs
+        return {"data_format": "to_be_ignored"}  # no classification for mage-tabs
     data_type = archive["data_type_in_url"]
     data_level = str(archive["data_level"])
     platform = archive["platform"]
