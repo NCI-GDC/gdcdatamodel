@@ -1,5 +1,6 @@
-from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer, insert_classification_nodes
+from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
+from zug.datamodel.prelude import create_prelude_nodes
 from argparse import ArgumentParser
 from tempfile import mkdtemp
 from psqlgraph import PsqlGraphDriver
@@ -61,7 +62,7 @@ def main():
     # insert the classification nodes
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
                              args.pg_pass, args.pg_database)
-    insert_classification_nodes(driver)
+    create_prelude_nodes(driver)
 
     if args.processes == 1:
         sync_list(args, archives)
