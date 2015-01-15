@@ -268,7 +268,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "full_name",
+        "name": "name",
         "type": "string",
         "doc": "TOREVIEW: display name for the project"
       }
@@ -280,7 +280,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "full_name",
+        "name": "name",
         "type": "string",
         "doc": "TOREVIEW: display name for the project"
       }
