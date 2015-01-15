@@ -1,14 +1,14 @@
 import yaml
 import json
 import datetime
-import logging
 import psqlgraph
 import pprint
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
+from cdisutils.log import get_logger
 
-log = logging.getLogger(name="xml2psqlgraph")
+log = get_logger(__name__)
 
 
 possible_true_values = [

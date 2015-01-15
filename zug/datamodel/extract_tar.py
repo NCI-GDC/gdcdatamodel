@@ -1,9 +1,10 @@
-import logging
 import re
 import tarfile
 import urllib2
 
-logger = logging.getLogger(name="[{name}]".format(name=__name__))
+from cdisutils.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class ExtractTar(object):

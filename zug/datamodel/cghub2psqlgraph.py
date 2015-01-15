@@ -7,9 +7,9 @@ import psqlgraph
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
-import xml2psqlgraph
+from cdisutils.log import get_logger
 
-log = logging.getLogger(name="cghub2psqlgraph")
+log = get_logger(__name__)
 
 
 possible_true_values = [

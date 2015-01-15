@@ -6,8 +6,9 @@ from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import cghub2psqlgraph, cgquery
 from multiprocessing import Pool
 from lxml import etree
+from cdisutils.log import get_logger
 
-log = logging.getLogger(name="cghub_file_importer")
+log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
