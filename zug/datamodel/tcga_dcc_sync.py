@@ -112,7 +112,7 @@ DATA_FORMATS = [
     "TXT", "VCF", "SVS", "idat", "CEL", "XML", "WIG",
     "PDF", "TIF", "TSV", "FSA", "SIF", "JPG", "PNG",
     "dat", "Biotab", "FA", "TR", "MAF", "BED", "DGE-Tag",
-    "HTML", "MAGE-Tab"
+    "HTML", "MAGE-Tab", "GAF"
 ]
 
 EXPERIMENTAL_STRATEGIES = [
