@@ -370,8 +370,7 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("%s is an FPPP archive, skipping", self.name)
             return
         self.log.info("syncing archive %s", self.name)
-        self.archive["non_tar_url"] = re.sub("\.tar\.gz$", "",
-                                             self.archive["dcc_archive_url"])
+        self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         with self.pg_driver.session_scope() as session:
             self.archive_node = self.store_archive_in_pg(session)
             if self.get_urls_from_signpost(self.archive_node.node_id):
