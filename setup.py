@@ -6,7 +6,9 @@ setup(
     packages=find_packages(),
     package_data={
         "zug": [
-            "tcga_classification.yaml",
+            "datamodel/tcga_classification.yaml",
+            "datamodel/centerCode.csv",
+            "datamodel/tissueSourceSite.csv",
         ]
     },
     install_requires=[
