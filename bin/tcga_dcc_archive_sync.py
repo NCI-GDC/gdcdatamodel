@@ -5,6 +5,16 @@ from argparse import ArgumentParser
 from tempfile import mkdtemp
 from psqlgraph import PsqlGraphDriver
 
+from libcloud.storage.types import Provider
+from libcloud.storage.providers import get_driver
+
+Local = get_driver(Provider.LOCAL)
+
+from random import shuffle
+
+from functools import partial
+from multiprocessing.pool import Pool
+
 from random import shuffle
 
 from functools import partial
@@ -21,6 +31,7 @@ def sync_list(args, archives):
             pg_driver=driver,
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
+            storage_client = Local(args.os_dir),
             dryrun=args.dryrun
         )
         try:
@@ -51,6 +62,8 @@ def main():
                         help="if passed, skip downlading / uploading tarballs")
     parser.add_argument("--scratch-dir", type=str,
                         help="directory to use as scratch space",
+                        default=mkdtemp())
+    parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
     parser.add_argument("-p", "--processes", type=int, help="process pool size to use")
 

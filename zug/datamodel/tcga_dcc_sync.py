@@ -327,7 +327,7 @@ class TCGADCCArchiveSyncer(object):
         self.pg_driver.node_update(file_node, properties={"state": state})
 
     def extract_file_data(self, filename):
-        return self.tarball.getmember(self.name)
+        return self.tarball.extractfile("/".join([self.name, filename]))
 
     def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database."""
