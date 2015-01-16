@@ -290,13 +290,22 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("ignoring %s for classification",
                           file_node["file_name"])
             return file_node
-        if not classification or "to_be_determined" in classification.values():
+        # TODO this is a lot of edge cases, needs to be simplified
+        if (not classification or "to_be_determined" in classification.values()
+            or "to_be_determined_protein_exp" in classification.values()
+            or classification == {"data_format": "TXT"}):
             self.log.error("file %s classified as %s, marking",
                            file_node["file_name"], classification)
             file_node.system_annotations["unclassified"] = True
             return file_node
         # TODO check that this matches what we know about the archive
-        file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
+        try:
+            file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
+        except:
+            self.log.error("%s has no acl but was not marked unclassified. classification: %s",
+                           file_node["file_name"],
+                           classification)
+            raise
         for k, v in classification.iteritems():
             if k.startswith("_"):
                 file_node.system_annotations[k] = v
