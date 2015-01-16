@@ -331,8 +331,6 @@ class TCGADCCArchiveSyncer(object):
 
     def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database."""
-        # TODO handle the fact that we need to insert mage-tab files,
-        # but not classify them
         file_node = self.lookup_file_in_pg(self.archive_node,
                                            filename, session)
         if file_node:
