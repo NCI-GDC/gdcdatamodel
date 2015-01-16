@@ -61,8 +61,9 @@ DATA_TYPES = {
         "Protein expression quantification", "Expression control"
     ],
     "Raw microarray data": [
-        "Raw intensities", "Normalized intensities", "CGH Array QC",
-        "Intensities Log2Ratio", "Expression control", "Intensities"
+        "Raw intensities", "Normalized intensities", "CGH array QC",
+        "Intensities Log2Ratio", "Expression control", "Intensities",
+        "Methylation array QC metrics"
     ],
     "DNA methylation": [
         "Methylation beta value", "Bisulfite sequence alignment",
@@ -103,7 +104,7 @@ DATA_FORMATS = [
     "TXT", "VCF", "SVS", "idat", "CEL", "XML", "WIG",
     "PDF", "TIF", "TSV", "FSA", "SIF", "JPG", "PNG",
     "dat", "Biotab", "FA", "TR", "MAF", "BED", "DGE-Tag",
-    "HTML", "MAGE-Tab", "GAF"
+    "HTML", "MAGE-Tab", "GAF", "sdf"
 ]
 
 EXPERIMENTAL_STRATEGIES = [
@@ -124,7 +125,7 @@ PLATFORMS = [
     "H-miRNA_8x15K", "AgilentG4502A_07_2", "HuEx-1_0-st-v2",
     "HG-U133_Plus_2", "Illumina DNA Methylation OMA003 CPI",
     "Illumina DNA Methylation OMA002 CPI", "AgilentG4502A_07_1", "ABI SOLiD",
-    "Mixed platforms"
+    "Mixed platforms", "Illumina MiSeq"
 ]
 
 PROJECTS = ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "CNTL", "COAD",

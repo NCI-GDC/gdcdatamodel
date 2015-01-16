@@ -1,9 +1,13 @@
 clin:
   Level_1:
     bio:
-      - &should_be_ignored
+      - &to_be_ignored
         data_format: to_be_ignored
-        pattern: ^((.*)?\.lsf.out|(.*_)?stderr.txt|(.*_)?stdout.txt|(.*_)?gp_execution_log.txt|rename.sh|DESCRIPTIO)$
+        pattern: ^((.*)?.processing\.log\.txt|(.*)?\.lsf.out|(.*_)?stderr.txt|(.*_)?stdout.txt|(.*_)?gp_execution_log.txt|rename.sh|DESCRIPTIO)$
+        category: {}
+      - &to_be_ignored_archive_manifest_files
+        data_format: to_be_ignored
+        pattern: ^(MANIFEST|README_DCC|CHANGES_DCC|README|DESCRIPTION|CHANGES|DATA_USE_DISCLAIMER|DCC_ALTERED_FILES|ADDITIONS|UUID_CHANGES|BCRBiotabREADME)\.(txt|html)$
         category: {}
       -
         data_format: XML
@@ -68,10 +72,6 @@ clin:
           data_level: Level_1
           data_access: open
           tag: auxiliary
-      - &archive_manifest_files
-        data_format: to_be_ignored
-        pattern: ^(MANIFEST|README_DCC|CHANGES_DCC|README|DESCRIPTION|CHANGES|DATA_USE_DISCLAIMER|DCC_ALTERED_FILES|ADDITIONS|UUID_CHANGES|BCRBiotabREADME)\.(txt|html)$
-        category: {} # TODO: need a solution for how to assign proper category to them, it's not easy because these are archive manifest files, containing files in a single archive can be assigned to different new categories
       -
         data_format: HTML
         pattern: BCR_auxiliary_description_.+\.html$
@@ -98,6 +98,8 @@ clin:
         category: {}
   Level_2:
     bio:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: Biotab
         pattern: .+_clinical_(cqcf|drug|follow_up|nte|patient|radiation)_\w+\.txt$
@@ -178,11 +180,13 @@ clin:
           data_access: open
           platform: Mixed platforms
           tag: ["auxiliary"]
-      - <<: *archive_manifest_files
       - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
 slide_images:
   Level_1:
     tissue_images:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: SVS
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{2}[_-][A-Z\d]{3,})\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.svs$
@@ -204,9 +208,11 @@ slide_images:
           - _slide_barcode
         category:
           <<: *tissue_image_lvl1
-      - <<: *archive_manifest_files
       - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
     diagnostic_images:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: SVS
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{2}[_-]DX\w{1,2})\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.svs$
@@ -234,11 +240,13 @@ slide_images:
           data_access: open
           platform: Hospital Record
           tag: image
-      - <<: *archive_manifest_files
       - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
 reports:
   Level_1:
     pathology_reports:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: PDF
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\..+\.pdf$  # the second part looks like an uuid, but it's not participant's uuid
@@ -251,11 +259,13 @@ reports:
           data_level: Level_1
           data_access: open
           platform: Hospital Record
-      - <<: *archive_manifest_files
       - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
 fragment_analysis:
   Level_1:
     microsat_i:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: (TCGA[_-].{2}[_-].{4}[_-].{3}[_-].{3}[_-].{4}[_-]\d{2})\.txt$
@@ -281,15 +291,17 @@ fragment_analysis:
         pattern: .+\.fsa$
         category:
           <<: *microsat_i_lvl1
-      - <<: *archive_manifest_files
       -
         data_format: to_be_determined
         pattern: .+
         category:
           <<: *microsat_i_lvl1
+      - <<: *to_be_determined
 tracerel:
   None:
     ABI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TR
         pattern: .+\.tr$
@@ -322,7 +334,6 @@ tracerel:
           data_level: Level_2
           data_access: open
           platform: ABI capillary sequencer
-      - <<: *archive_manifest_files
       -
         data_format: to_be_determined
         pattern: .+
@@ -335,6 +346,8 @@ tracerel:
 snp:
   Level_1:
     Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: CEL
         pattern: .+\.CEL
@@ -345,12 +358,10 @@ snp:
           data_level: Level_1
           data_access: protected
           platform: Affymetrix SNP Array 6.0
-      - <<: *archive_manifest_files
-      -
-        data_format: to_be_determined
-        pattern: .+
-        category: {}
+      - <<: *to_be_determined
     Human1MDuo:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.XandYintensity.txt
@@ -371,11 +382,10 @@ snp:
           data_level: Level_1
           data_access: protected
           platform: Illumina Human 1M Duo
-      -
-        data_format: to_be_ignored
-        pattern: ^(MANIFEST|README_DCC|CHANGES_DCC|README|DESCRIPTION|CHANGES|DATA_USE_DISCLAIMER|DCC_ALTERED_FILES|ADDITIONS|UUID_CHANGES|BCRBiotabREADME)\.(txt|html)$
-        category: {}
+      - <<: *to_be_determined
     HumanHap550:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.XandYintensity.txt
@@ -396,13 +406,11 @@ snp:
           data_level: Level_1
           data_access: protected
           platform: Illumina HumanHap550
-      -
-        data_format: to_be_ignored
-        pattern: ^(MANIFEST|README_DCC|CHANGES_DCC|README|DESCRIPTION|CHANGES|DATA_USE_DISCLAIMER|DCC_ALTERED_FILES|ADDITIONS|UUID_CHANGES|BCRBiotabREADME)\.(txt|html)$
-        category: {}
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
   Level_2:
     Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(alleleSpecificCN|pairedcn)\.dat$
@@ -473,8 +481,10 @@ snp:
           data_level: Level_2
           data_access: protected
           platform: Affymetrix SNP Array 6.0
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     Human1MDuo:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.(Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
@@ -499,8 +509,10 @@ snp:
           data_level: Level_2
           data_access: protected
           platform: Illumina Human 1M Duo
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     HumanHap550:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.(Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
@@ -525,9 +537,11 @@ snp:
           data_level: Level_2
           data_access: protected
           platform: Illumina HumanHap550
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
   Level_3:
     Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: dat
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(segmented)\.dat$
@@ -553,12 +567,10 @@ snp:
           data_level: Level_3
           data_access: open
           platform: Affymetrix SNP Array 6.0
-      - <<: *archive_manifest_files
-      -
-        data_format: to_be_determined
-        pattern: .+
-        category: {}
+      - <<: *to_be_determined
     Human1MDuo:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.loh\.txt$
@@ -582,8 +594,10 @@ snp:
           data_level: Level_3
           data_access: open
           platform: Illumina Human 1M Duo
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     HumanHap550:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.loh\.txt$
@@ -607,9 +621,11 @@ snp:
           data_level: Level_3
           data_access: open
           platform: Illumina HumanHap550
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
   aux:
     Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: SIF
         pattern: ^.+sif\.data\.txt$
@@ -621,11 +637,12 @@ snp:
           data_access: protected
           platform: Affymetrix SNP Array 6.0
           tag: sif
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
 mutations:
   Level_2:
     IlluminaGA_DNASeq_automated:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &mutations_wig
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -716,10 +733,10 @@ mutations:
           data_access: protected
           platform: Illumina GA
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -783,10 +800,10 @@ mutations:
           data_access: protected
           platform: Illumina GA
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq_curated:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -808,6 +825,17 @@ mutations:
           data_level: Level_2
           data_access: open
           platform: Illumina GA
+          tag: ["somatic", "snv"]
+      -
+        data_format: MAF
+        pattern: TERT_targeted_sequencing.*\.maf\.tert
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina MiSeq
           tag: ["somatic", "snv"]
       -
         data_format: VCF
@@ -850,10 +878,10 @@ mutations:
           data_access: protected
           platform: Illumina GA
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     SOLiD_DNASeq:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -917,10 +945,10 @@ mutations:
           data_access: protected
           platform: ABI SOLiD
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_curated:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -984,10 +1012,10 @@ mutations:
           data_access: protected
           platform: Mixed platforms
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_automated:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1051,10 +1079,10 @@ mutations:
           data_access: protected
           platform: Illumina HiSeq
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1118,10 +1146,10 @@ mutations:
           data_access: protected
           platform: Mixed platforms
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     SOLiD_DNASeq_curated:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1185,16 +1213,17 @@ mutations:
           data_access: protected
           platform: ABI SOLiD
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
   aux:
     IlluminaGA_DNASeq:
-      - <<: *should_be_ignored
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *to_be_determined
 mutations_protected:
   Level_2:
     IlluminaGA_DNASeq_Cont_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1285,11 +1314,10 @@ mutations_protected:
           data_access: protected
           platform: Illumina GA
           tag: snv
-      - <<: *should_be_ignored
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq_Cont:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1353,10 +1381,10 @@ mutations_protected:
           data_access: protected
           platform: Illumina GA
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_DNASeq_Cont_curated:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1420,9 +1448,10 @@ mutations_protected:
           data_access: protected
           platform: Illumina GA
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_Cont_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1486,9 +1515,36 @@ mutations_protected:
           data_access: protected
           platform: Illumina HiSeq
           tag: snv
-      - <<: *archive_manifest_files
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.snv\.(\w+)\.vcf\.gz$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.indel\.(\w+)\.vcf\.gz$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: indel
       - <<: *to_be_determined
     IlluminaHiSeq_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1552,9 +1608,10 @@ mutations_protected:
           data_access: protected
           platform: Illumina HiSeq
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     SOLiD_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1618,9 +1675,10 @@ mutations_protected:
           data_access: protected
           platform: ABI SOLiD
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_Cont_curated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1684,9 +1742,10 @@ mutations_protected:
           data_access: protected
           platform: Mixed platforms
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_Cont_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1750,9 +1809,10 @@ mutations_protected:
           data_access: protected
           platform: Mixed platforms
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     Mixed_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: WIG
         pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
@@ -1816,11 +1876,12 @@ mutations_protected:
           data_access: protected
           platform: Mixed platforms
           tag: snv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
 cna:
   Level_1:
     HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &cna_cgh_lvl1
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.+\.txt$
@@ -1832,7 +1893,6 @@ cna:
           experimental_strategy: CGH array
           data_level: Level_1
           data_access: open
-      - <<: *archive_manifest_files
       - &cna_cgh_lvl1_1
         data_format: TXT
         pattern: .+\.txt$
@@ -1842,22 +1902,23 @@ cna:
           experimental_strategy: CGH array
           data_level: Level_1
           data_access: open
-      - &cgh_to_be_determined
-        data_format: to_be_determined
-        pattern: .+
-        category: {}
+      - <<: *to_be_determined
     HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_lvl1
-      - <<: *archive_manifest_files
       - <<: *cna_cgh_lvl1_1
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_lvl1
-      - <<: *archive_manifest_files
       - <<: *cna_cgh_lvl1_1
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
   Level_2:
     HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &cna_cgh_lvl2_1
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*_lowess_normalized\.tsv$
@@ -1887,23 +1948,24 @@ cna:
           experimental_strategy: CGH array
           data_level: Level_2
           data_access: open
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     HG-CGH-244A:
-      - <<: *should_be_ignored
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_lvl2_1
       - <<: *cna_cgh_lvl2_1a
       - <<: *cna_cgh_lvl2_2
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_lvl2_1
       - <<: *cna_cgh_lvl2_1a
       - <<: *cna_cgh_lvl2_2
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     IlluminaHiSeq_DNASeqC:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: VCF
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*---(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*---(variationCalling|VariantCalling)\.vcf$
@@ -1931,6 +1993,8 @@ cna:
           tag: cnv
   Level_3:
     HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &cna_cgh_lvl3
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).+Segment\.tsv$
@@ -1953,20 +2017,22 @@ cna:
           data_level: Level_3
           data_access: open
           tag: cnv
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_lvl3
       - <<: *cna_cgh_lvl3_1
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_lvl3
       - <<: *cna_cgh_lvl3_1
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     IlluminaHiSeq_DNASeqC:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(.+---)?(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(.+---)?Segment\.tsv$
@@ -1993,8 +2059,11 @@ cna:
           data_access: protected
           platform: Illumina HiSeq
           tag: cnv
+      - <<: *to_be_determined
   aux:
     HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &cna_cgh_aux_1a
         data_format: TSV
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*(BioSizing|QA|lowess_normalized_smoothed)\.tsv$
@@ -2003,10 +2072,11 @@ cna:
           - tag
         category:
           data_type: Raw microarray data
-          data_subtype: CGH Array QC
+          data_subtype: CGH array QC
           experimental_strategy: CGH array
           data_level: Level_1
           data_access: open
+          tag: ["cgh", "qc"]
       - &cna_cgh_aux_1b
         data_format: PNG
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*(BioSizing|QA|lowess_normalized_smoothed)\.png$
@@ -2015,7 +2085,7 @@ cna:
           - tag
         category:
           data_type: Raw microarray data
-          data_subtype: CGH Array QC
+          data_subtype: CGH array QC
           experimental_strategy: CGH array
           data_level: Level_1
           data_access: open
@@ -2027,7 +2097,7 @@ cna:
           - _aliquot_barcode
         category:
           data_type: Raw microarray data
-          data_subtype: CGH Array QC
+          data_subtype: CGH array QC
           experimental_strategy: CGH array
           data_level: Level_1
           data_access: open
@@ -2039,30 +2109,33 @@ cna:
           - _aliquot_barcode
         category:
           data_type: Raw microarray data
-          data_subtype: CGH Array QC
+          data_subtype: CGH array QC
           experimental_strategy: CGH array
           data_level: Level_1
           data_access: open
           tag: ["cgh", "qc"]
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_aux_1a
       - <<: *cna_cgh_aux_1b
       - <<: *cna_cgh_aux_2
       - <<: *cna_cgh_aux_3
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
     CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *cna_cgh_aux_1a
       - <<: *cna_cgh_aux_1b
       - <<: *cna_cgh_aux_2
       - <<: *cna_cgh_aux_3
-      - <<: *archive_manifest_files
-      - <<: *cgh_to_be_determined
+      - <<: *to_be_determined
 methylation:
   Level_1:
     HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &illumina_meth_array_lvl1
         data_format: idat
         pattern: .+\.idat
@@ -2074,9 +2147,12 @@ methylation:
           data_access: open
           platform: Illumina Human Methylation 450
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     HumanMethylation27:
-      - data_format: idat
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: idat
         pattern: .+\.idat
         category:
           data_type: Raw microarray data
@@ -2086,8 +2162,10 @@ methylation:
           data_access: open
           platform: Illumina Human Methylation 27
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     IlluminaDNAMethylation_OMA003_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-1\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2101,8 +2179,10 @@ methylation:
           data_access: open
           platform: Illumina DNA Methylation OMA003 CPI
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     IlluminaDNAMethylation_OMA002_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-1\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2116,9 +2196,11 @@ methylation:
           data_access: open
           platform: Illumina DNA Methylation OMA002 CPI
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
   Level_2:
     HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &illumina_meth_array_lvl2
         data_format: TXT
         pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2132,8 +2214,10 @@ methylation:
           data_access: open
           platform: Illumina Human Methylation 450
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2147,8 +2231,10 @@ methylation:
           data_access: open
           platform: Illumina Human Methylation 27
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     IlluminaDNAMethylation_OMA003_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2162,8 +2248,10 @@ methylation:
           data_access: open
           platform: Illumina DNA Methylation OMA003 CPI
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     IlluminaDNAMethylation_OMA002_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2177,9 +2265,11 @@ methylation:
           data_access: open
           platform: Illumina DNA Methylation OMA002 CPI
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
   Level_3:
     HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-3\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2193,8 +2283,10 @@ methylation:
           data_access: open
           platform: Illumina Human Methylation 450
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
     HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+lvl-3\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
@@ -2208,38 +2300,43 @@ methylation:
           data_access: open
           platform: Illumina Human Methylation 27
           tag: meth
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
   aux:
     HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &meth_aux_sdf
         data_format: sdf
         pattern: ^\d+\.sdf$
-        category: &meth_aux
+        category:
           data_type: Raw microarray data
-          data_subtype: to_be_determined
+          data_subtype: Methylation array QC metrics
           experimental_strategy: Methylation array
-          data_level: to_be_determined
+          data_level: Level_2
           data_access: open
-          tag: ["auxiliary", "meth"]
+          tag: ["auxiliary", "meth", "qc"]
       - &meth_aux_mapping
         data_format: TXT
         pattern: ^\w+\.mappings\.csv
         category:
-          <<: *meth_aux
-      - &meth_aux_processing_log
-        data_format: TXT
-        pattern: ^\w+\.processing\.log\.txt
-        category: {}
-      - <<: *archive_manifest_files
+          data_type: Raw microarray data
+          data_subtype: Methylation array QC metrics
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          tag: ["auxiliary", "meth", "qc"]
+      - <<: *to_be_determined
     HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *meth_aux_sdf
       - <<: *meth_aux_mapping
-      - <<: *meth_aux_processing_log
-      - <<: *archive_manifest_files
+      - <<: *to_be_determined
 bisulfiteseq:
   Level_2:
     IlluminaHiSeq_WGBS:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: VCF
         pattern: .+\.vcf$
@@ -2254,7 +2351,8 @@ bisulfiteseq:
       - <<: *to_be_determined
   Level_3:
     IlluminaHiSeq_WGBS:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: BED
         pattern: .+\.fixed\.bed$
@@ -2270,6 +2368,8 @@ bisulfiteseq:
 protein_exp:
   Level_1:
     MDA_RPPA_Core:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TIF
         pattern: .+\.tif$
@@ -2288,13 +2388,14 @@ protein_exp:
           experimental_strategy: Protein expression array
           data_level: Level_1
           data_access: open
-      - <<: *archive_manifest_files
       - &to_be_determined_protein_exp
         data_format: to_be_determined_protein_exp
         pattern: .+
         category: {}
   Level_2:
     MDA_RPPA_Core:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.SuperCurve\.Level_2\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.txt$
@@ -2314,10 +2415,11 @@ protein_exp:
           data_level: Level_2
           data_access: open
           tag: control
-      - <<: *archive_manifest_files
       - <<: *to_be_determined_protein_exp
   Level_3:
     MDA_RPPA_Core:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.protein_expression\.Level_3\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.txt$
@@ -2337,11 +2439,12 @@ protein_exp:
           data_level: Level_3
           data_access: open
           tag: control
-      - <<: *archive_manifest_files
       - <<: *to_be_determined_protein_exp
 totalrnaseqv2:
   Level_3:
     IlluminaHiSeq_TotalRNASeqV2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.isoforms.results|rsem.isoforms.normalized_results)$
@@ -2393,11 +2496,12 @@ totalrnaseqv2:
           data_access: open
           platform: Illumina HiSeq
           tag: exon
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
 rnaseqv2:
   Level_3:
     IlluminaHiSeq_RNASeqV2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.isoforms.results|rsem.isoforms.normalized_results)$
@@ -2449,9 +2553,10 @@ rnaseqv2:
           data_access: open
           platform: Illumina HiSeq
           tag: exon
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_RNASeqV2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.isoforms.results|rsem.isoforms.normalized_results)$
@@ -2503,14 +2608,15 @@ rnaseqv2:
           data_access: open
           platform: Illumina GA
           tag: exon
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
 rnaseq:
   Level_2:
     IlluminaHiSeq_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: VCF
-        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(snv|indel)\.vcf$
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.snv\.vcf$
         captured_fields:
           - _aliquot_barcode
         category:
@@ -2523,6 +2629,19 @@ rnaseq:
           tag: snv
       -
         data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.indel\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: indel
+      -
+        data_format: VCF
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.vcf$
         captured_fields:
           - _aliquot_barcode
@@ -2547,15 +2666,15 @@ rnaseq:
           data_access: protected
           platform: Illumina HiSeq
           tag: sv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: VCF
-        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(snv|indel)\.vcf$
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.snv\.vcf$
         captured_fields:
           - _aliquot_barcode
-          - tag
         category:
           data_type: Simple nucleotide variation
           data_subtype: Simple nucleotide variation
@@ -2563,6 +2682,20 @@ rnaseq:
           data_level: Level_2
           data_access: protected
           platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.indel\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: indel
       -
         data_format: VCF
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.vcf$
@@ -2589,10 +2722,11 @@ rnaseq:
           data_access: protected
           platform: Illumina GA
           tag: sv
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
   Level_3:
     IlluminaHiSeq_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(exon\.quantification)\.txt$
@@ -2631,9 +2765,10 @@ rnaseq:
           data_level: Level_3
           data_access: open
           platform: Illumina HiSeq
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(exon\.quantification)\.txt$
@@ -2672,12 +2807,12 @@ rnaseq:
           data_level: Level_3
           data_access: open
           platform: Illumina GA
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
 transcriptome:
   Level_1:
     AgilentG4502A_07_3:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &expression_array_agilent_lvl1
         data_format: TXT
         pattern: ^.+\.txt$
@@ -2689,6 +2824,8 @@ transcriptome:
           data_access: open
       - <<: *to_be_determined
     HT_HG-U133A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &expression_array_affy_lvl1
         data_format: CEL
         pattern: .+\.CEL
@@ -2698,21 +2835,25 @@ transcriptome:
           experimental_strategy: Gene expression array
           data_level: Level_1
           data_access: protected
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     AgilentG4502A_07_2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_agilent_lvl1
       - <<: *to_be_determined
     HG-U133_Plus_2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_affy_lvl1
       - <<: *to_be_determined
     AgilentG4502A_07_1:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_agilent_lvl1
       - <<: *to_be_determined
     IlluminaGA_mRNA_DGE:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: DGE-Tag
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_sequence\.txt$
@@ -2726,10 +2867,11 @@ transcriptome:
           data_access: protected
           platform: Illumina GA
           tag: ["DGE", "Tag"]
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
   Level_2:
     AgilentG4502A_07_3:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &expression_array_level2_data
         data_format: TXT
         pattern: .+level2\.data\.txt$
@@ -2750,29 +2892,34 @@ transcriptome:
           experimental_strategy: Gene expression array
           data_level: Level_3
           data_access: open
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     HT_HG-U133A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level2_data
       - <<: *expression_array_level2_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     AgilentG4502A_07_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level2_data
       - <<: *expression_array_level2_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     HG-U133_Plus_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level2_data
       - <<: *expression_array_level2_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     AgilentG4502A_07_1:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level2_data
       - <<: *expression_array_level2_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_mRNA_DGE:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_frequency.txt$
@@ -2786,10 +2933,11 @@ transcriptome:
           data_access: protected
           platform: Illumina GA
           tag: ["DGE", "Tag"]
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
   Level_3:
     AgilentG4502A_07_3:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &expression_array_level3_data
         data_format: TXT
         pattern: .+level3\.data\.txt$
@@ -2810,29 +2958,34 @@ transcriptome:
           experimental_strategy: Gene expression array
           data_level: Level_3
           data_access: open
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     HT_HG-U133A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level3_data
       - <<: *expression_array_level3_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     AgilentG4502A_07_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level3_data
       - <<: *expression_array_level3_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     HG-U133_Plus_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level3_data
       - <<: *expression_array_level3_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     AgilentG4502A_07_1:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *expression_array_level3_data
       - <<: *expression_array_level3_data_1
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_mRNA_DGE:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(tags|genes)\.txt$
@@ -2844,11 +2997,12 @@ transcriptome:
           data_access: open
           platform: Illumina GA
           tag: ["DGE", "Tag"]
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
 mirnaseq:
   Level_3:
     IlluminaHiSeq_miRNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(.*mirna\.quantification|.*isoform\.quantification)\.txt$
@@ -2862,9 +3016,10 @@ mirnaseq:
           data_access: open
           platform: Illumina HiSeq
           tag: miRNA
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     IlluminaGA_miRNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(.*mirna\.quantification|.*isoform\.quantification)\.txt$
@@ -2878,12 +3033,12 @@ mirnaseq:
           data_access: open
           platform: Illumina GA
           tag: miRNA
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
 mirna:
   Level_1:
     H-miRNA_8x15Kv2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &mirna_array_lvl1
         data_format: TXT
         pattern: ^.+\.txt$
@@ -2896,11 +3051,14 @@ mirna:
           tag: miRNA
       - <<: *to_be_determined
     H-miRNA_8x15K:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *mirna_array_lvl1
       - <<: *to_be_determined
   Level_2:
     H-miRNA_8x15Kv2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &mirna_array_lvl2
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.probe\.tcga_level2\.data\.txt$
@@ -2913,15 +3071,16 @@ mirna:
           data_level: Level_2
           data_access: open
           tag: miRNA
-      - <<: *archive_manifest_files
       - <<: *to_be_determined
     H-miRNA_8x15K:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *mirna_array_lvl2
       - <<: *to_be_determined
   Level_3:
     H-miRNA_8x15Kv2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - &mirna_array_lvl3
         data_format: TXT
         pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.gene\.tcga_level3\.data\.txt$
@@ -2936,13 +3095,15 @@ mirna:
           tag: miRNA
       - <<: *to_be_determined
     H-miRNA_8x15K:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *mirna_array_lvl3
       - <<: *to_be_determined
 exon:
   Level_1:
     HuEx-1_0-st-v2: # Affy exon array
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: CEL
         pattern: .+\.CEL
@@ -2955,7 +3116,8 @@ exon:
       - <<: *to_be_determined
   Level_2:
     HuEx-1_0-st-v2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.exon\.txt$
@@ -2968,7 +3130,8 @@ exon:
       - <<: *to_be_determined
   Level_3:
     HuEx-1_0-st-v2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       -
         data_format: TXT
         pattern: .+\.(FIRMA|gene)\.txt$
@@ -2983,5 +3146,6 @@ exon:
       - <<: *to_be_determined
   aux:
     HuEx-1_0-st-v2:
-      - <<: *archive_manifest_files
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
       - <<: *to_be_determined
