@@ -97,12 +97,12 @@ def is_reference(s):
 
 def is_uuid(s):
     uuid_re = re.compile("^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$",re.IGNORECASE)
-    return bool(re.match(uuid_re, s))
+    return re.match(uuid_re, s)
 
 
 def is_barcode(s):
-    any_number_of_dashes_caps_numbers_re = "[\-A-Z0-9]*"
-    return s.startswith("TCGA-") and re.match(any_number_of_dashes_caps_numbers_re, s)
+    barcode_re = "^TCGA(-[0-9A-Za-z]{1,5})*$"
+    return re.match(barcode_re, s)
 
 
 def is_empty(s):
