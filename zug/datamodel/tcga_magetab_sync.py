@@ -207,7 +207,10 @@ class TCGAMAGETABSyncer(object):
                 return None, fixed
         raise RuntimeError("Can't compute uuid/barcode for {}".format(row))
 
-    def compute_mapping(self):
+    def compute_mapping(self, force=False):
+        if self._mapping and not force:
+            self.log.info("cached mapping present, not computing")
+            return self._mapping
         self.log.info("computing mappings . . .")
         groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
         result = {}  # a dict from (archive, filename) pairs to (uuid,
