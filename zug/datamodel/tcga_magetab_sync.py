@@ -4,6 +4,8 @@ import requests
 import os
 import re
 
+from psqlgraph import PsqlEdge
+
 from cdisutils.log import get_logger
 
 
@@ -168,6 +170,10 @@ def is_reference_row(row):
     return is_reference(row["Extract Name"])
 
 
+def get_legacy_id_and_rev(archive):
+    return re.sub("\.(\d+?)\.(\d+)$", "", archive["archive_name"]), archive["revision"]
+
+
 class TCGAMAGETABSyncer(object):
 
     def __init__(self, archive, pg_driver=None, dcc_auth=None):
@@ -176,7 +182,8 @@ class TCGAMAGETABSyncer(object):
         self.dcc_auth = dcc_auth
         folder_url = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.df = pd.read_table(sdrf_from_folder(folder_url))
-        self.log = get_logger("tcga_magetab_sync")
+        self.log = get_logger("tcga_magetab_sync_{}".format(
+            self.archive["archive_name"]))
 
     def sample_for(self, row):
         extract_name = "Extract Name"
@@ -193,11 +200,15 @@ class TCGAMAGETABSyncer(object):
         # are the weird barcodes with dots, e.g. TCGA-LN-A9FP-01A-41-A41Y-20.P
         else:
             fixed = strip_dot_trailer(row[extract_name])
+            # the `and not` bit is there because in all cases where the
+            # extract name is a wonky barcode, there shouldn't be a barcode
+            # column; if there is, something is wrong
             if is_barcode(fixed) and not row.get(tcga_barcode):
                 return None, fixed
         raise RuntimeError("Can't compute uuid/barcode for {}".format(row))
 
     def compute_mapping(self):
+        self.log.info("computing mappings . . .")
         groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
         result = {}  # a dict from (archive, filename) pairs to (uuid,
                      # barcode) pairs
@@ -216,5 +227,64 @@ class TCGAMAGETABSyncer(object):
                 if file is None and archive is None:
                     self.log.debug("couldnt extract file from row %s", row)
                     continue
-                result[(archive, file)] = (uuid, barcode)
+                if result.get((archive, file)):
+                    assert result[(archive, file)] == (uuid, barcode)
+                else:
+                    result[(archive, file)] = (uuid, barcode)
         return result
+
+    def get_file_node(self, archive_name, file_name, session):
+            if archive_name is None:
+                # this is a cghub file
+                file_node = self.pg_driver.node_lookup(
+                    label="file",
+                    property_matches={"file_name": file_name},
+                    system_annotations_matches={"source": "cghub"},
+                    session=session
+                ).one()
+            else:
+                legacy_id, revision = get_legacy_id_and_rev(self.archive)
+                archive_node = self.pg_driver.node_lookup(
+                    label="archive",
+                    property_matches={"legacy_id": legacy_id,
+                                      "revision": revision},
+                    session=session
+                )
+                # dcc file
+                file_node = self.pg_driver.node_lookup(
+                    label="file",
+                    property_matches={"file_name": file_name},
+                    session=session
+                ).with_edge_to_node("member_of", archive_node).one()
+            # TODO might need to explicitly free the archive node here
+            return file_node
+
+    def tie_to_biospecemin(self, file, uuid, barcode, session):
+        """You would think that this function would be called 'tie to
+        aliquot', but sadly no. It appears that in some rare cases,
+        the 'Extract Name' column of an sdrf actually refers to some
+        other component of the biospecemin pathway (e.g. a sample or
+        portion), so this function in most cases will tie files back
+        to aliquots, but sometimes other things as well.
+        """
+        if uuid:
+            # this should always be an aliquot (I think?)
+            bio = self.pg_driver.node_lookup(node_id=uuid)
+            assert bio.label == "aliquot"
+        else:
+            for label in ["aliquot", "portion", "sample"]:
+                bio = self.pg_driver.node_lookup(label="portion")
+                if bio:
+                    break
+        edge = PsqlEdge(
+            label="data_from",
+            src_id=file.node_id,
+            dst_id=bio.node_id
+        )
+        self.driver.edge_insert(edge, session=session)
+
+    def put_mapping_in_pg(self, mapping):
+        for (archive, filename), (uuid, barcode) in mapping.iteritems():
+            with self.pg_driver.session_scope() as session:
+                file = self.get_file_node(archive, filename, session)
+                self.tie_to_biospecemin(self, file, session)
