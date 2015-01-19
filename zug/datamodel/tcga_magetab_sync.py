@@ -45,8 +45,13 @@ def strip_dot_trailer(s):
     return re.sub("\..*$", "", s)
 
 
-def cleanup(subrow):
-    subrow.index = [re.sub("\.[0-9]*$", "", name) for name in subrow.index]
+def cleanup_row(row):
+    row.index = cleanup_list(row.index)
+
+
+def cleanup_list(xs):
+    return [re.sub("\.[0-9]*$", "", x) for x in xs]
+
 
 FILE_COL_NAMES = [
     'Array Data File',
@@ -125,10 +130,11 @@ class TCGAMAGETABSyncer(object):
         raise RuntimeError("Can't compute uuid/barcode for {}".format(row))
 
     def compute_mapping(self):
-        groups = [group for group in group_by_protocol(self.df)]
+        groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
         result = {}  # a dict from (archive, filename) pairs to (uuid,
                      # barcode) pairs
         file_groups = [group for group in groups if is_file_group(group)]
+        self.log.info("file groups are %s", file_groups)
         for _, row in self.df.iterrows():
             if is_reference_row(row):
                 self.log.debug("skipping row because Extract Name (%s) is a reference",
@@ -137,7 +143,7 @@ class TCGAMAGETABSyncer(object):
             uuid, barcode = self.sample_for(row)
             for group in file_groups:
                 subrow = row[group]
-                cleanup(subrow)
+                cleanup_row(subrow)
                 file, archive = get_file_and_archive(subrow)
                 if file is None and archive is None:
                     self.log.debug("couldnt extract file from row %s", row)
