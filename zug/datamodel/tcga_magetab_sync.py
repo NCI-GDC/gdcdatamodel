@@ -15,16 +15,84 @@ def sdrf_from_folder(url):
             return os.path.join(url, link.attrib["href"])
 
 
+REF_NAMES = {
+    '231 Control.P',
+    '231 IGF.P',
+    '468 Control.P',
+    '468 EGF.P',
+    'BD_Human_Tissue_Ref_RNA_Extract',
+    'BioChain_RtHanded_Total_Brain_RNA_Extract',
+    'BioChain_RtHanded_Total_Ovary_RNA_Extract',
+    'Control_Jurkat-Control-1.P',
+    'Control_Jurkat-Control-2.P',
+    'Control_Jurkat-Control-3.P',
+    'Control_Jurkat-Control-4.P',
+    'Control_Jurkat-Control-5.P',
+    'Control_Jurkat-Control-6.P',
+    'Control_Jurkat-Fas-1.P',
+    'Control_Jurkat-Fas-2.P',
+    'Control_Jurkat-Fas-3.P',
+    'Control_Jurkat-Fas-4.P',
+    'Control_Jurkat-Fas-5.P',
+    'Control_Jurkat-Fas-6.P',
+    'Control_MDA-MB-231-Control-1.P',
+    'Control_MDA-MB-231-Control-2.P',
+    'Control_MDA-MB-231-Control-3.P',
+    'Control_MDA-MB-231-Control-4.P',
+    'Control_MDA-MB-231-Control-5.P',
+    'Control_MDA-MB-231-Control-6.P',
+    'Control_MDA-MB-231-IGF-1.P',
+    'Control_MDA-MB-231-IGF-2.P',
+    'Control_MDA-MB-231-IGF-3.P',
+    'Control_MDA-MB-231-IGF-4.P',
+    'Control_MDA-MB-231-IGF-5.P',
+    'Control_MDA-MB-231-IGF-6.P',
+    'Control_MDA-MB-468-Control-1.P',
+    'Control_MDA-MB-468-Control-2.P',
+    'Control_MDA-MB-468-Control-3.P',
+    'Control_MDA-MB-468-Control-4.P',
+    'Control_MDA-MB-468-Control-5.P',
+    'Control_MDA-MB-468-Control-6.P',
+    'Control_MDA-MB-468-EGF-1.P',
+    'Control_MDA-MB-468-EGF-2.P',
+    'Control_MDA-MB-468-EGF-3.P',
+    'Control_MDA-MB-468-EGF-4.P',
+    'Control_MDA-MB-468-EGF-5.P',
+    'Control_MDA-MB-468-EGF-6.P',
+    'Control_Mixed-Cell-Lysate-1.P',
+    'Control_Mixed-Cell-Lysate-2.P',
+    'Control_Mixed-Cell-Lysate-3.P',
+    'Control_Mixed-Cell-Lysate-4.P',
+    'Control_Mixed-Cell-Lysate-5.P',
+    'Control_Mixed-Cell-Lysate-6.P',
+    'Control_Mixed-Cell-Lysate-7.P',
+    'Control_Mixed-Lysate-1.P',
+    'Control_Mixed-Lysate-10.P',
+    'Control_Mixed-Lysate-11.P',
+    'Control_Mixed-Lysate-12.P',
+    'Control_Mixed-Lysate-13.P',
+    'Control_Mixed-Lysate-14.P',
+    'Control_Mixed-Lysate-15.P',
+    'Control_Mixed-Lysate-2.P',
+    'Control_Mixed-Lysate-3.P',
+    'Control_Mixed-Lysate-4.P',
+    'Control_Mixed-Lysate-5.P',
+    'Control_Mixed-Lysate-6.P',
+    'Control_Mixed-Lysate-7.P',
+    'Control_Mixed-Lysate-8.P',
+    'Control_Mixed-Lysate-9.P',
+    'Human male genomic',
+    'Jurkat Control.P',
+    'Jurkat Fas.P',
+    'Mixed Lysate.P',
+    'Promega ref DNA',
+    'Stratagene Univeral Reference',
+    'Stratagene_Cell_Line_Hum_Ref_RNA_Extract'
+}
+
+
 def is_reference(s):
-    REF_NAMES = [
-        "Promega ref DNA", "Stratagene Univeral Reference",
-        "Human male genomic",
-        "Stratagene_Cell_Line_Hum_Ref_RNA_Extract",
-        "BD_Human_Tissue_Ref_RNA_Extract",
-        "BioChain_RtHanded_Total_Brain_RNA_Extract",
-        "BioChain_RtHanded_Total_Ovary_RNA_Extract"
-    ]
-    return s in REF_NAMES or "Control" in s
+    return s in REF_NAMES
 
 
 def is_uuid(s):
@@ -134,7 +202,7 @@ class TCGAMAGETABSyncer(object):
         result = {}  # a dict from (archive, filename) pairs to (uuid,
                      # barcode) pairs
         file_groups = [group for group in groups if is_file_group(group)]
-        self.log.info("file groups are %s", file_groups)
+        self.log.debug("file groups are %s", file_groups)
         for _, row in self.df.iterrows():
             if is_reference_row(row):
                 self.log.debug("skipping row because Extract Name (%s) is a reference",
