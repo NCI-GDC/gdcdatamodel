@@ -2,7 +2,7 @@ import csv
 from uuid import uuid5, UUID
 import os
 
-from psqlgraph import PsqlNode, PsqlEdge
+from psqlgraph import PsqlEdge
 from sqlalchemy.exc import IntegrityError
 
 from zug.datamodel import PKG_DIR
@@ -27,7 +27,7 @@ def import_code_table(graph, path, label, **kwargs):
         reader.next()
         for row in reader:
             graph.node_merge(
-                node_id=str(uuid5(GDC_NAMESPACES[label], row[kwargs["legacy_id"]])),
+                node_id=str(uuid5(GDC_NAMESPACES[label], row[kwargs["code"]])),
                 label=label,
                 properties={
                     key: row[index]
@@ -39,7 +39,7 @@ def import_code_table(graph, path, label, **kwargs):
 def import_center_codes(graph, path):
     import_code_table(
         graph, path, 'center',
-        legacy_id=0,
+        code=0,
         namespace=1,
         center_type=2,
         name=3,
@@ -50,7 +50,7 @@ def import_center_codes(graph, path):
 def import_tissue_source_site_codes(graph, path):
     import_code_table(
         graph, path, 'tissue_source_site',
-        legacy_id=0,
+        code=0,
         name=1,
         project=2,
         bcr_id=3,

@@ -1,6 +1,7 @@
-import unittest
 import logging
 import os
+import unittest
+import yaml
 
 from zug import datamodel
 
@@ -17,16 +18,16 @@ settings = dict(
 
 logging.basicConfig(level=logging.INFO)
 
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-
 
 class TestXML2PsqlGraph(unittest.TestCase):
 
     def setUp(self):
         # load sample data
+        with open(os.path.join(test_dir, 'sample1.yaml')) as f:
+            xml_mapping = yaml.load(f.read())
         self.converter = datamodel.xml2psqlgraph.xml2psqlgraph(
-            translate_path=os.path.join(TEST_DIR, 'sample1.yaml'), **settings)
-        with open(os.path.join(TEST_DIR, 'sample1.xml')) as f:
+            xml_mapping=xml_mapping, **settings)
+        with open(os.path.join(test_dir, 'sample1.xml')) as f:
             self.xml = f.read()
 
     def tearDown(self):

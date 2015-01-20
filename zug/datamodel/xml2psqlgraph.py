@@ -1,4 +1,3 @@
-import yaml
 import json
 import datetime
 import psqlgraph
@@ -55,10 +54,9 @@ class xml2psqlgraph(object):
     """
     """
 
-    def __init__(self, translate_path, host, user,
+    def __init__(self, xml_mapping, host, user,
                  password, database, node_validator=None,
-                 edge_validator=None, ignore_missing_properties=False,
-                 **kwargs):
+                 edge_validator=None, ignore_missing_properties=True):
         """
 
         :param str translate_path:
@@ -71,9 +69,8 @@ class xml2psqlgraph(object):
         self.exported_nodes = 0
         self.export_count = 0
         self.ignore_missing_properties = ignore_missing_properties
-        with open(translate_path) as f:
-            self.translate = json.loads(json.dumps(yaml.load(f)),
-                                        object_hook=AttrDict)
+        self.xml_mapping = json.loads(json.dumps(xml_mapping),
+                                      object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
         if node_validator:
@@ -226,8 +223,9 @@ class xml2psqlgraph(object):
             return None
         self.xml_root = etree.fromstring(str(data)).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
-        for node_type, params in self.translate.items():
-            self.parse_node(node_type, params)
+        for node_type, param_list in self.xml_mapping.items():
+            for params in param_list:
+                self.parse_node(node_type, params)
 
     def parse_node(self, node_type, params):
         """Convert a subsection of the xml that will be treated as a node

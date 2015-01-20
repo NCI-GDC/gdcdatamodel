@@ -1,22 +1,13 @@
 import logging
-import os
 import argparse
 from multiprocessing import Pool
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import xml2psqlgraph, latest_urls,\
-    extract_tar
-from zug.datamodel.import_tcga_code_tables import \
-    import_center_codes, import_tissue_source_site_codes
+    extract_tar, bcr_xml_mapping, prelude
 
 logging.basicConfig(level=logging.DEBUG)
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-data_dir = os.path.join(os.path.abspath(
-    os.path.join(current_dir, os.path.pardir)), 'data')
-mapping = os.path.join(data_dir, 'bcr.yaml')
-center_csv_path = os.path.join(data_dir, 'centerCode.csv')
-tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 args = None
 
 
@@ -27,14 +18,13 @@ def initialize():
     edge_validator = AvroEdgeValidator(edge_avsc_object)
 
     converter = xml2psqlgraph.xml2psqlgraph(
-        translate_path=mapping,
+        xml_mapping=bcr_xml_mapping,
         host=args.host,
         user=args.user,
         password=args.password,
         database=args.database,
         edge_validator=edge_validator,
         node_validator=node_validator,
-        ignore_missing_properties=True,
     )
     return extractor, converter
 
@@ -54,10 +44,8 @@ def process(archive):
 def start():
     extractor, converter = initialize()
 
-    logging.info("Importing table codes")
-    import_center_codes(converter.graph, center_csv_path)
-    import_tissue_source_site_codes(converter.graph, tss_csv_path)
-    converter.export()
+    logging.info("Importing prelude nodes")
+    prelude.create_prelude_nodes(converter.graph)
     latest = latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'})
 

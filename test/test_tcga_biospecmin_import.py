@@ -1,7 +1,8 @@
 import logging
 import unittest
 import os
-from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar
+from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar, \
+    bcr_xml_mapping
 from zug.datamodel.prelude import create_prelude_nodes
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
@@ -9,10 +10,7 @@ from gdcdatamodel import node_avsc_object, edge_avsc_object
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-test_dir = os.path.dirname(os.path.realpath(__file__))
-data_dir = os.path.join(os.path.abspath(
-    os.path.join(test_dir, os.path.pardir)), 'data')
-mapping = os.path.join(data_dir, 'bcr.yaml')
+data_dir = os.path.dirname(os.path.realpath(__file__))
 
 datatype = 'biospecimen'
 host = 'localhost'
@@ -37,24 +35,23 @@ def initialize(validated=False):
         regex=".*(bio).*(Level_1).*\\.xml"
     )
     converter = xml2psqlgraph.xml2psqlgraph(
-        translate_path=mapping,
-        data_type=datatype,
+        xml_mapping=bcr_xml_mapping,
         host=host,
         user=user,
         password=password,
         database=database,
         edge_validator=edge_validator,
         node_validator=node_validator,
-        ignore_missing_properties=True,
     )
     return parser, extractor, converter
 
 
 class TestTCGABiospeceminImport(unittest.TestCase):
 
-    IGNORED_LABELS = ['center', 'tissue_source_site', 'tag', 'experimental_strategy',
-                      'platform', 'data_subtype', 'data_type', 'program', 'project',
-                      'data_format']
+    IGNORED_LABELS = [
+        'center', 'tissue_source_site', 'tag', 'experimental_strategy',
+        'platform', 'data_subtype', 'data_type', 'program', 'project',
+        'data_format']
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
