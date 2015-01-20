@@ -240,6 +240,7 @@ class TCGAMAGETABSyncer(object):
                     assert result[(archive, file)] == (uuid, barcode)
                 else:
                     result[(archive, file)] = (uuid, barcode)
+        self. _mapping = result
         return result
 
     def get_file_node(self, archive_name, file_name, session):
