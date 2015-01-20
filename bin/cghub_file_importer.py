@@ -1,9 +1,8 @@
 import logging
-import os
 import argparse
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from zug.datamodel import cghub2psqlgraph, cgquery
+from zug.datamodel import cghub2psqlgraph, cgquery, cghub_xml_mapping
 from multiprocessing import Pool
 from lxml import etree
 from cdisutils.log import get_logger
@@ -11,12 +10,6 @@ from cdisutils.log import get_logger
 log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-data_dir = os.path.join(os.path.abspath(
-    os.path.join(current_dir, os.path.pardir)), 'data')
-mapping = os.path.join(data_dir, 'cghub.yaml')
-center_csv_path = os.path.join(data_dir, 'centerCode.csv')
-tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 args, source, phsid = None, None, None
 
 poolsize = 10
@@ -26,14 +19,13 @@ def setup():
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
     converter = cghub2psqlgraph.cghub2psqlgraph(
-        translate_path=mapping,
+        xml_mapping=cghub_xml_mapping,
         host=args.host,
         user=args.user,
         password=args.password,
         database=args.db,
         edge_validator=edge_validator,
         node_validator=node_validator,
-        ignore_missing_properties=True,
     )
     return converter
 
@@ -76,13 +68,18 @@ def import_files(xml):
     # Split the file into results
     root = etree.fromstring(str(xml)).getroottree()
     roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
-    log.info('Found {} results'.format(len(roots)))
+    log.info('Found {} result(s)'.format(len(roots)))
+    if not roots:
+        log.info('No results found for past {} days'.format(args.days))
+        return
 
     # Chunk the results and distribute to process pool
-    chunksize = len(roots)/poolsize
+    chunksize = len(roots)/poolsize+1
     chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    Pool(poolsize).map(process, chunks)
+    # Pool(poolsize).map(process, chunks)
+    for chunk in chunks:
+        process(chunk)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

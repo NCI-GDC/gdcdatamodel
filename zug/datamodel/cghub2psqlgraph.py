@@ -58,12 +58,8 @@ class cghub2psqlgraph(object):
 
     def __init__(self, xml_mapping, host, user,
                  password, database, node_validator=None,
-                 edge_validator=None, ignore_missing_properties=False,
-                 **kwargs):
+                 edge_validator=None, ignore_missing_properties=True):
         """
-
-        :param str translate_path:
-            path to translation mapping yaml file
 
         """
 
@@ -72,8 +68,8 @@ class cghub2psqlgraph(object):
         self.exported_nodes = 0
         self.export_count = 0
         self.ignore_missing_properties = ignore_missing_properties
-        self.translate = json.loads(json.dumps(xml_mapping),
-                                    object_hook=AttrDict)
+        self.xml_mapping = json.loads(json.dumps(xml_mapping),
+                                      object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
         if node_validator:
@@ -241,10 +237,10 @@ class cghub2psqlgraph(object):
 
         """
 
-        params = self.xml_mapping[node_type]
-        files = self.xml.get_node_roots(node_type, params, root=root)
-        for f in files:
-            self.parse_file_node(f, node_type, params)
+        for params in self.xml_mapping[node_type]:
+            files = self.xml.get_node_roots(node_type, params, root=root)
+            for f in files:
+                self.parse_file_node(f, node_type, params)
 
     def parse_file_node(self, root, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
