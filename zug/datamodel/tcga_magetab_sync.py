@@ -246,13 +246,14 @@ class TCGAMAGETABSyncer(object):
                     session=session
                 ).one()
             else:
+                # dcc file
                 legacy_id, revision = get_legacy_id_and_rev(self.archive)
                 archive_node = self.pg_driver.node_lookup(
                     label="archive",
                     property_matches={"legacy_id": legacy_id,
                                       "revision": revision},
                     session=session
-                )
+                ).one()
                 # dcc file
                 file_node = self.pg_driver.node_lookup(
                     label="file",
@@ -270,6 +271,10 @@ class TCGAMAGETABSyncer(object):
         portion), so this function in most cases will tie files back
         to aliquots, but sometimes other things as well.
         """
+        # TODO it seems like in many cases it's possible to figure out
+        # what kind of biospecemin a barcode is supposed to correspond
+        # to from another column of the magetab (e.g. Comment [TCGA
+        # Biospecimen Type])
         if uuid:
             # this should always be an aliquot (I think?)
             bio = self.pg_driver.node_lookup(node_id=uuid)
