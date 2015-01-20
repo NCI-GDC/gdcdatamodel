@@ -165,13 +165,17 @@ def insert_classification_nodes(driver):
             for subtype in subtypes:
                 subtype_node = idempotent_insert(driver, "data_subtype",
                                                  subtype, session)
-                edge = PsqlEdge(src_id=subtype_node.node_id,
-                                dst_id=type_node.node_id,
-                                label="member_of")
-                try:
-                    driver.edge_insert(edge, session=session)
-                except IntegrityError:
-                    pass  # assume someone beat us there
+                edge = driver.edge_lookup_one(src_id=subtype_node.node_id,
+                                              dst_id=type_node.node_id,
+                                              label="member_of")
+                if not edge:
+                    edge = PsqlEdge(src_id=subtype_node.node_id,
+                                    dst_id=type_node.node_id,
+                                    label="member_of")
+                    try:
+                        driver.edge_insert(edge, session=session)
+                    except IntegrityError:
+                        pass  # assume someone beat us there
         for tag in TAGS:
             idempotent_insert(driver, "tag", tag, session)
         for platform in PLATFORMS:
@@ -186,13 +190,17 @@ def insert_classification_nodes(driver):
         for project in PROJECTS:
             project_node = idempotent_insert(driver, "project", project,
                                              session)
-            edge = PsqlEdge(src_id=project_node.node_id,
-                            dst_id=tcga_program_node.node_id,
-                            label="member_of")
-            try:
-                driver.edge_insert(edge, session=session)
-            except IntegrityError:
-                pass  # assume someone beat us there
+            edge = driver.edge_lookup_one(src_id=project_node.node_id,
+                                          dst_id=tcga_program_node.node_id,
+                                          label="member_of")
+            if not edge:
+                edge = PsqlEdge(src_id=project_node.node_id,
+                                dst_id=tcga_program_node.node_id,
+                                label="member_of")
+                try:
+                    driver.edge_insert(edge, session=session)
+                except IntegrityError:
+                    pass  # assume someone beat us there
 
 
 def create_prelude_nodes(driver):
