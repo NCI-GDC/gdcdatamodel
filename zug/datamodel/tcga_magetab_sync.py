@@ -97,13 +97,46 @@ def is_reference(s):
     return s in REF_NAMES
 
 
-def is_uuid(s):
-    uuid_re = re.compile("^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$",re.IGNORECASE)
+def is_uuid4(s):
+    # note that this matches uuid4s, which it seems like everything in
+    # tcga is. some of ours are going to be uuid5s, so if you are
+    # looking at this wondering why it isn't matching, that might be
+    # why
+    uuid_re = re.compile("^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$")
     return re.match(uuid_re, s)
 
 
-def is_barcode(s):
-    barcode_re = "^TCGA(-[0-9A-Za-z]{1,5})*$"
+def is_truncated_shipped_portion_barcode(s):
+    # some shipped portion barcodes appear to have been truncated,
+    # e.g. TCGA-04-1342-01A-21-20. as far as I can tell they are
+    # totally useless, but the sample name for these should always
+    # have a useful uuid
+    barcode_re = re.compile("^TCGA-[A-Z0-9]{2}-[0-9A-Za-z]{4}-[0-9]{2}[A-Z]-[0-9]{2}-[0-9]{2}$")
+    return re.match(barcode_re, s)
+
+
+def is_fat_fingered_shipped_portion_barcode(s):
+    # some shipped portion barcodes appear to have been fat fingered, e.g.
+    # e.g. TCGA-D9-A1X3-06A21-A20M-20, which should be TCGA-D9-A1X3-06-A21-A20M-20
+    barcode_re = re.compile("^TCGA-[A-Z0-9]{2}-[0-9A-Za-z]{4}-[0-9]{2}[A-Z][0-9]{2}-[0-9A-Za-z]{4}-[0-9]{2}$")
+    return re.match(barcode_re, s)
+
+
+def fix_fat_fingered_barcode(s):
+    # what happened above is fairly clear, so we can fix it programmatically
+    return re.sub("([0-9]{2}[A-Z])([0-9]{2})", "\1-\2", s)
+
+
+def is_shipped_portion_barcode(s):
+    # e.g. TCGA-OR-A5LP-01A-21-A39K-20
+    #      TCGA-CM-5341-01A-21-1933-20
+    barcode_re = re.compile("^TCGA-[A-Z0-9]{2}-[0-9A-Za-z]{4}-[0-9]{2}[A-Z]-[0-9]{2}-[0-9A-Za-z]{4}-[0-9]{2}$")
+    return re.match(barcode_re, s)
+
+
+def is_aliquot_barcode(s):
+    # e.g. TCGA-02-0001-01C-01D-0182-01
+    barcode_re = re.compile("^TCGA-[A-Z0-9]{2}-[0-9A-Za-z]{4}-[0-9]{2}[A-Z]-[0-9]{2}[A-Z]-[0-9A-Za-z]{4}-[0-9]{2}$")
     return re.match(barcode_re, s)
 
 
@@ -186,31 +219,44 @@ class TCGAMAGETABSyncer(object):
             self.archive["archive_name"]))
 
     def sample_for(self, row):
-        extract_name = "Extract Name"
-        tcga_barcode = "Comment [TCGA Barcode]"
-        if is_uuid(row[extract_name]):
-            if is_barcode(row[tcga_barcode]):
+        EXTRACT_NAME = "Extract Name"
+        TCGA_BARCODE = "Comment [TCGA Barcode]"
+        SAMPLE_NAME = "Sample Name"
+        if is_uuid4(row[EXTRACT_NAME].lower()):
+            if is_aliquot_barcode(row[TCGA_BARCODE]):
                 # the most common case
-                return row[extract_name], row[tcga_barcode]
-        elif is_barcode(row[extract_name]):
-            if not row.get(tcga_barcode) or is_empty(row[tcga_barcode]):
+                return row[EXTRACT_NAME].lower(), row[TCGA_BARCODE]
+        elif is_aliquot_barcode(row[EXTRACT_NAME]):
+            if not row.get(TCGA_BARCODE) or is_empty(row[TCGA_BARCODE]):
                 # second most common, Extract Name is the barcode, there is
-                # no tcga barcode column
-                return None, row[extract_name]
-            elif (is_barcode(row[tcga_barcode])
-                    and row[tcga_barcode] == row[extract_name]):
-                # sometimes the barcode and extract_name are both
+                # no tcga barcode column (or it is empty)
+                return None, row[EXTRACT_NAME]
+            elif (is_aliquot_barcode(row[TCGA_BARCODE])
+                    and row[TCGA_BARCODE] == row[EXTRACT_NAME]):
+                # sometimes the barcode and EXTRACT_NAME are both
                 # identical barcodes
-                return None, row[extract_name]
-        # if we get here, the other possibility is that the Extract Names
-        # are the weird barcodes with dots, e.g. TCGA-LN-A9FP-01A-41-A41Y-20.P
+                return None, row[EXTRACT_NAME]
+        # if we get here, the other possibility is that the Extract
+        # Names are the shipped portion barcodes with dots,
+        # e.g. TCGA-LN-A9FP-01A-41-A41Y-20.P
         else:
-            fixed = strip_dot_trailer(row[extract_name])
-            # the `and not` bit is there because in all cases where the
-            # extract name is a wonky barcode, there shouldn't be a barcode
-            # column; if there is, something is wrong
-            if is_barcode(fixed) and not row.get(tcga_barcode):
-                return None, fixed
+            # we don't expect there to be a barcode column for the
+            # shipped portion magetabs
+            assert not row.get(TCGA_BARCODE)
+            fixed = strip_dot_trailer(row[EXTRACT_NAME])
+            if is_shipped_portion_barcode(fixed):
+                barcode = fixed
+            elif is_fat_fingered_shipped_portion_barcode(fixed):
+                barcode = fix_fat_fingered_barcode(fixed)
+                assert is_shipped_portion_barcode(barcode)
+            elif is_truncated_shipped_portion_barcode(fixed):
+                # in this case, the barcode is totally useless, so we just
+                # set it to None
+                barcode = None
+            # the sample name here should always be the uuid
+            uuid = row[SAMPLE_NAME].lower()
+            assert is_uuid4(uuid)
+            return uuid, barcode
         raise RuntimeError("Can't compute uuid/barcode for {}".format(row))
 
     def compute_mapping(self, force=False):
