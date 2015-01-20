@@ -103,6 +103,31 @@ portion:
         day: ./bio:day_of_creation
         month: ./bio:month_of_creation
         year: ./bio:year_of_creation
+  -
+    root: //bio:shipment_portion
+    id: .//bio:bcr_shipment_portion_uuid
+    edges:
+      derived_from:
+        sample: ancestor::bio:sample/bio:bcr_sample_uuid
+        center: ./bio:analytes/bio:analyte/bio:center_id
+    properties:
+      submitter_id:
+        path: ./bio:bcr_portion_barcode
+        type: str
+      portion_number:
+        path: ./bio:portion_number
+        type: str
+      weight:
+        path: ./bio:weight
+        type: float
+      is_ffpe:
+        path: ./bio:is_ffpe
+        type: bool
+    datetime_properties:
+      creation_datetime:
+        day: ./bio:day_of_creation
+        month: ./bio:month_of_creation
+        year: ./bio:year_of_creation
 
 sample:
   -
