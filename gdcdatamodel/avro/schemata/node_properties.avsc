@@ -6,7 +6,7 @@
     "doc": "The properties of an aliquot",
     "fields": [
       {
-        "name": "legacy_barcode",
+        "name": "submitter_id",
         "type": "string",
         "doc": "The legacy barcode used before prior to the use UUIDs. For TCGA this is bcr_aliquot_barcode."
       },
@@ -63,7 +63,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "legacy_barcode",
+        "name": "submitter_id",
         "type": "string",
         "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA this is bcr_analyte_barcode."
       },
@@ -110,7 +110,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "legacy_barcode",
+        "name": "submitter_id",
         "type": "string",
         "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA this is bcr_portion_barcode."
       },
@@ -224,7 +224,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "legacy_barcode",
+        "name": "submitter_id",
         "type": "string",
         "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_patient_barcode."
       },
@@ -241,7 +241,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "legacy_id",
+        "name": "code",
         "type": "string",
         "doc": "TODO: define, from DCC"
       },
@@ -292,7 +292,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "legacy_id",
+        "name": "code",
         "type": "string",
         "doc": "TODO: define, from DCC"
       },
@@ -433,7 +433,7 @@
         "doc": "The revision of this archive in the DCC."
       },
       {
-        "name": "legacy_id",
+        "name": "submitter_id",
         "type": "string",
         "doc": "Unique identifier of this archive in the DCC."
       }
@@ -584,7 +584,7 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "legacy_barcode",
+        "name": "submitter_id",
         "type": "string",
         "doc": "The legacy barcode used before prior to the use UUIDs, varies by project. For TCGA, this is bcr_slide_barcode."
       },
