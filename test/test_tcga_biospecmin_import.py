@@ -2,8 +2,7 @@ import logging
 import unittest
 import os
 from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar
-from zug.datamodel.import_tcga_code_tables import \
-    import_center_codes, import_tissue_source_site_codes
+from zug.datamodel.prelude import create_prelude_nodes
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -14,8 +13,6 @@ test_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(os.path.abspath(
     os.path.join(test_dir, os.path.pardir)), 'data')
 mapping = os.path.join(data_dir, 'bcr.yaml')
-center_csv_path = os.path.join(data_dir, 'centerCode.csv')
-tss_csv_path = os.path.join(data_dir, 'tissueSourceSite.csv')
 
 datatype = 'biospecimen'
 host = 'localhost'
@@ -55,9 +52,14 @@ def initialize(validated=False):
 
 class TestTCGABiospeceminImport(unittest.TestCase):
 
+    IGNORED_LABELS = ['center', 'tissue_source_site', 'tag', 'experimental_strategy',
+                      'platform', 'data_subtype', 'data_type', 'program', 'project',
+                      'data_format']
+
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
         self.parser, self.extrator, self.converter = initialize()
+        create_prelude_nodes(self.converter.graph)
 
     def tearDown(self):
         with self.converter.graph.engine.begin() as conn:
@@ -74,8 +76,6 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.export()
 
     def test_convert_validate_nodes_sample(self):
-        import_center_codes(self.converter.graph, center_csv_path)
-        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
@@ -83,8 +83,6 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.export_nodes()
 
     def test_convert_validate_edges_sample(self):
-        import_center_codes(self.converter.graph, center_csv_path)
-        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
@@ -93,11 +91,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.export_edges()
 
     def test_versioned_idempotency(self):
-        import_center_codes(self.converter.graph, center_csv_path)
-        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         g = self.converter.graph
-
-        ignored_labels = ['center', 'tissue_source_site']
         self.converter.export_nodes()
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
@@ -105,12 +99,12 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=1)
         v1 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in ignored_labels}
+              if n.label not in self.IGNORED_LABELS}
 
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=2.5)
         v2 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in ignored_labels}
+              if n.label not in self.IGNORED_LABELS}
 
         for node_id, node in v1.iteritems():
             self.assertTrue(node_id in v2)
@@ -125,11 +119,8 @@ class TestTCGABiospeceminImport(unittest.TestCase):
             self.assertEqual(v2[node_id].properties, v1[node_id].properties)
 
     def test_versioned_import(self):
-        import_center_codes(self.converter.graph, center_csv_path)
-        import_tissue_source_site_codes(self.converter.graph, tss_csv_path)
         self.converter.export_nodes()
 
-        ignored_labels = ['center', 'tissue_source_site']
         g = self.converter.graph
 
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
@@ -137,14 +128,14 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=1)
         v1 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in ignored_labels}
+              if n.label not in self.IGNORED_LABELS}
 
         with open(os.path.join(data_dir, 'sample_biospecimen_v2.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=2.5)
         v2 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in ignored_labels}
+              if n.label not in self.IGNORED_LABELS}
 
         for node_id, node in v1.iteritems():
             self.assertTrue(node_id in v2)

@@ -1,0 +1,3151 @@
+clin:
+  Level_1:
+    bio:
+      - &to_be_ignored
+        data_format: to_be_ignored
+        pattern: ^((.*)?.processing\.log\.txt|(.*)?\.lsf.out|(.*_)?stderr.txt|(.*_)?stdout.txt|(.*_)?gp_execution_log.txt|rename.sh|DESCRIPTIO)$
+        category: {}
+      - &to_be_ignored_archive_manifest_files
+        data_format: to_be_ignored
+        pattern: ^(MANIFEST|README_DCC|CHANGES_DCC|README|DESCRIPTION|CHANGES|DATA_USE_DISCLAIMER|DCC_ALTERED_FILES|ADDITIONS|UUID_CHANGES|BCRBiotabREADME)\.(txt|html)$
+        category: {}
+      -
+        data_format: XML
+        pattern: .+_clinical\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.xml$
+        captured_fields:
+          - _participant_barcode
+        category: &clinial_lvl1
+          data_type: Clinical
+          data_subtype: Clinical data
+          experimental_strategy: null
+          platform: Hospital Record
+          data_level: Level_1
+          data_access: open
+      -
+        data_format: XML
+        pattern: .+_biospecimen\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.xml$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Clinical
+          data_subtype: Biospecimen data
+          experimental_strategy: null
+          platform: BCR Record
+          data_level: Level_1
+          data_access: open
+      -
+        data_format: XML
+        pattern: .+_control\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.xml$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Clinical
+          data_subtype: Biospecimen data
+          experimental_strategy: null
+          platform: BCR Record
+          data_level: Level_1
+          data_access: open
+          tag: control
+      -
+        data_format: XML
+        pattern: .+_omf\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.xml$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Clinical
+          data_subtype: Clinical data
+          experimental_strategy: null
+          platform: Hospital Record
+          data_level: Level_1
+          data_access: open
+          tag: omf
+      -
+        data_format: XML
+        pattern: .+_auxiliary\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.xml$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Other
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
+          platform: Mixed platforms
+          data_level: Level_1
+          data_access: open
+          tag: auxiliary
+      -
+        data_format: HTML
+        pattern: BCR_auxiliary_description_.+\.html$
+        category:
+          data_type: Other
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
+          platform: Mixed platforms
+          data_level: Level_1
+          data_access: open
+          tag: [ "auxiliary", "description" ]
+      - &clinical_to_be_determined #the idea is to capture all other files did not match any of the above file pattern
+        data_format: to_be_determined
+        pattern: .+
+        category:
+          data_type: Clinical
+          data_subtype: to_be_determined
+          experimental_strategy: null
+          data_level: to_be_determined
+          data_access: open
+      - &to_be_determined
+        data_format: to_be_determined
+        pattern: .+
+        category: {}
+  Level_2:
+    bio:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: Biotab
+        pattern: .+_clinical_(cqcf|drug|follow_up|nte|patient|radiation)_\w+\.txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Clinical
+          data_subtype: Clinical data
+          experimental_strategy: null
+          data_level: Level_2
+          data_access: open
+          platform: Hospital Record
+      -
+        data_format: Biotab
+        pattern: .+_clinical_omf_v[\d\.]+_\w+\.txt$
+        category:
+          data_type: Clinical
+          data_subtype: Clinical data
+          experimental_strategy: null
+          data_level: Level_2
+          data_access: open
+          platform: Hospital Record
+          tag: omf
+      -
+        data_format: Biotab
+        pattern: .+_clinical_follow_up_v[\d\.]+_\w+\.txt$
+        category:
+          data_type: Clinical
+          data_subtype: Clinical data
+          experimental_strategy: null
+          data_level: Level_2
+          data_access: open
+          platform: Hospital Record
+          tag: follow_up
+      -
+        data_format: TXT
+        pattern: .+_clinical_patient_\w+\.txt$
+        category:
+          data_type: Clinical
+          data_subtype: Clinical data
+          experimental_strategy: null
+          data_level: Level_2
+          data_access: open
+          platform: Hospital Record
+          tag: patient
+      -
+        data_format: Biotab
+        pattern: .+_(biospecimen_)*?(aliquot|analyte|cqcf|diagnostic_slides|normal_control|portion|protocol|sample|shipment_portion|slide|tumor_sample|control)_\w+\.txt$
+        captured_fields:
+          - _
+          - tag
+        category:
+          data_type: Clinical
+          data_subtype: Biospecimen data
+          experimental_strategy: null
+          data_level: Level_2
+          data_access: open
+          platform: BCR Record
+      -
+        data_format: TXT
+        pattern: .+_(auxiliary)_\w+\.txt$
+        category:
+          data_type: Other
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: ["auxiliary"]
+      -
+        data_format: HTML
+        pattern: .+_(auxiliary)_\w+\.html$
+        category:
+          data_type: Other
+          data_subtype: Auxiliary test
+          experimental_strategy: Mixed strategies
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: ["auxiliary"]
+      - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
+slide_images:
+  Level_1:
+    tissue_images:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: SVS
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{2}[_-][A-Z\d]{3,})\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.svs$
+        captured_fields:
+          - _slide_barcode
+          - _slide_uuid
+        category: &tissue_image_lvl1
+          data_type: Clinical
+          data_subtype: Tissue slide image
+          experimental_strategy: null
+          data_level: Level_1
+          data_access: open
+          platform: Hospital Record
+          tag: image
+      -
+        data_format: SVS
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{2}[_-][A-Z\d]{3,})\.svs$
+        captured_fields:
+          - _slide_barcode
+        category:
+          <<: *tissue_image_lvl1
+      - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
+    diagnostic_images:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: SVS
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{2}[_-]DX\w{1,2})\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.svs$
+        captured_fields:
+          - _slide_barcode
+          - _slide_uuid
+        category:
+          data_type: Clinical
+          data_subtype: Diagnostic image
+          experimental_strategy: null
+          data_level: Level_1
+          data_access: open
+          platform: Hospital Record
+          tag: image
+      -
+        data_format: SVS
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{2}[_-]DX\w{1,2})\.svs$
+        captured_fields:
+          - _slide_barcode
+        category:
+          data_type: Clinical
+          data_subtype: Diagnostic image
+          experimental_strategy: null
+          data_level: Level_1
+          data_access: open
+          platform: Hospital Record
+          tag: image
+      - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
+reports:
+  Level_1:
+    pathology_reports:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: PDF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\..+\.pdf$  # the second part looks like an uuid, but it's not participant's uuid
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Clinical
+          data_subtype: Pathology report
+          experimental_strategy: null
+          data_level: Level_1
+          data_access: open
+          platform: Hospital Record
+      - <<: *clinical_to_be_determined
+      - <<: *to_be_determined
+fragment_analysis:
+  Level_1:
+    microsat_i:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: (TCGA[_-].{2}[_-].{4}[_-].{3}[_-].{3}[_-].{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category: &microsat_i_lvl1
+          data_type: Other
+          data_subtype: Microsattelite instability
+          experimental_strategy: MSI-Mono-Dinucleotide Assay
+          data_level: Level_1
+          data_access: protected
+          platform: ABI capillary sequencer
+          tag: msi
+      -
+        data_format: FSA
+        pattern: (TCGA[_-].{2}[_-].{4}[_-].{3}[_-].{3}[_-].{4}[_-]\d{2})_.+\.fsa$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          <<: *microsat_i_lvl1
+      -
+        data_format: FSA
+        pattern: .+\.fsa$
+        category:
+          <<: *microsat_i_lvl1
+      -
+        data_format: to_be_determined
+        pattern: .+
+        category:
+          <<: *microsat_i_lvl1
+      - <<: *to_be_determined
+tracerel:
+  None:
+    ABI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TR
+        pattern: .+\.tr$
+        category:
+          data_type: Other
+          data_subtype: ABI sequence trace
+          experimental_strategy: Capillary sequencing
+          data_level: Level_1
+          data_access: protected
+          platform: ABI capillary sequencer
+          tag: tr
+      -
+        data_format: TXT
+        pattern: .+\.cov$
+        category:
+          data_type: Other
+          data_subtype: ABI sequence trace
+          experimental_strategy: Capillary sequencing
+          data_level: Level_1
+          data_access: protected
+          platform: ABI capillary sequencer
+          tag: cov
+      -
+        data_format: MAF
+        pattern: .+\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: Capillary sequencing
+          data_level: Level_2
+          data_access: open
+          platform: ABI capillary sequencer
+      -
+        data_format: to_be_determined
+        pattern: .+
+        category:
+          data_type: Raw sequencing data
+          data_subtype: to_be_determined
+          experimental_strategy: ABI sequence trace
+          data_level: to_be_determined
+          data_access: to_be_determined
+snp:
+  Level_1:
+    Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: CEL
+        pattern: .+\.CEL
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_1
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+      - <<: *to_be_determined
+    Human1MDuo:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.XandYintensity.txt
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_1
+          data_access: protected
+          platform: Illumina Human 1M Duo
+      -
+        data_format: idat
+        pattern: .+\.idat
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_1
+          data_access: protected
+          platform: Illumina Human 1M Duo
+      - <<: *to_be_determined
+    HumanHap550:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.XandYintensity.txt
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_1
+          data_access: protected
+          platform: Illumina HumanHap550
+      -
+        data_format: idat
+        pattern: .+\.idat
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_1
+          data_access: protected
+          platform: Illumina HumanHap550
+      - <<: *to_be_determined
+  Level_2:
+    Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(alleleSpecificCN|pairedcn)\.dat$
+        captured_fields:
+          - _aliquot_barcode
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number estimate
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+      -
+        data_format: dat
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.intensities\.dat$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+      -
+        data_format: TXT
+        pattern: ^.+\.ismpolish.data.txt$
+        category:
+          data_type: Copy number variation
+          data_subtype: Normalized intensities
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+          tag: ismpolish
+      -
+        data_format: TXT
+        pattern: ^.+\.(byallele|raw|tangent).copynumber.data.txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number estimate
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+      -
+        data_format: dat
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.genotype\.dat$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Genotypes
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+      -
+        data_format: TXT
+        pattern: ^.+\.birdseed\.data\.txt$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Genotypes
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+      - <<: *to_be_determined
+    Human1MDuo:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.(Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number estimate
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina Human 1M Duo
+      -
+        data_format: TXT
+        pattern: .+\.(B_Allele_Freq|Delta_B_Allele_Freq).txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Genotypes
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina Human 1M Duo
+      - <<: *to_be_determined
+    HumanHap550:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.(Genotypes|Normal_LogR|Paired_LogR|Unpaired_LogR).txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number estimate
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HumanHap550
+      -
+        data_format: TXT
+        pattern: .+\.(B_Allele_Freq|Delta_B_Allele_Freq).txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Genotypes
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HumanHap550
+      - <<: *to_be_determined
+  Level_3:
+    Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: dat
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(segmented)\.dat$
+        captured_fields:
+          - _aliquot_barcode
+          - tag
+        category: &cna_snp_lvl3
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: Genotyping array
+          data_level: Level_3
+          data_access: open
+          platform: Affymetrix SNP Array 6.0
+      -
+        data_format: TXT
+        pattern: ^.+(hg18|hg19|nocnv_hg18|nocnv_hg19)\.seg\.txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: Genotyping array
+          data_level: Level_3
+          data_access: open
+          platform: Affymetrix SNP Array 6.0
+      - <<: *to_be_determined
+    Human1MDuo:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.loh\.txt$
+        category:
+          data_type: Copy number variation
+          data_subtype: LOH
+          experimental_strategy: Genotyping array
+          data_level: Level_3
+          data_access: open
+          platform: Illumina Human 1M Duo
+          tag: LOH
+      -
+        data_format: TXT
+        pattern: .+\.(seg|segnormal)\.txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: Genotyping array
+          data_level: Level_3
+          data_access: open
+          platform: Illumina Human 1M Duo
+      - <<: *to_be_determined
+    HumanHap550:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.loh\.txt$
+        category:
+          data_type: Copy number variation
+          data_subtype: LOH
+          experimental_strategy: Genotyping array
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HumanHap550
+          tag: LOH
+      -
+        data_format: TXT
+        pattern: .+\.(seg|segnormal)\.txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: Genotyping array
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HumanHap550
+      - <<: *to_be_determined
+  aux:
+    Genome_Wide_SNP_6:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: SIF
+        pattern: ^.+sif\.data\.txt$
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number QC metrics
+          experimental_strategy: Genotyping array
+          data_level: Level_2
+          data_access: protected
+          platform: Affymetrix SNP Array 6.0
+          tag: sif
+      - <<: *to_be_determined
+mutations:
+  Level_2:
+    IlluminaGA_DNASeq_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &mutations_wig
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: coverage
+      - &mutations_maf
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: somatic
+      - &mutations_vcf_1
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - &mutations_vcf_2
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - &mutations_vcf_3
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\..+\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.vcf(\.gz)?$
+        captured_fields:
+          - _control_aliquot_barcode
+          - _tumor_aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - <<: *to_be_determined
+    IlluminaGA_DNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - <<: *to_be_determined
+    IlluminaGA_DNASeq_curated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: ["somatic", "snv"]
+      -
+        data_format: MAF
+        pattern: TERT_targeted_sequencing.*\.maf\.tert
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina MiSeq
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - <<: *to_be_determined
+    SOLiD_DNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: ABI SOLiD
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: ABI SOLiD
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      - <<: *to_be_determined
+    Mixed_DNASeq_curated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: "coverage"
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      - <<: *to_be_determined
+    IlluminaHiSeq_DNASeq_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina HiSeq
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      - <<: *to_be_determined
+    Mixed_DNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      - <<: *to_be_determined
+    SOLiD_DNASeq_curated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: ABI SOLiD
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: ABI SOLiD
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      - <<: *to_be_determined
+  aux:
+    IlluminaGA_DNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *to_be_determined
+mutations_protected:
+  Level_2:
+    IlluminaGA_DNASeq_Cont_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\..+\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.vcf(\.gz)?$
+        captured_fields:
+          - _control_aliquot_barcode
+          - _tumor_aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - <<: *to_be_determined
+    IlluminaGA_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - <<: *to_be_determined
+    IlluminaGA_DNASeq_Cont_curated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina GA
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      - <<: *to_be_determined
+    IlluminaHiSeq_DNASeq_Cont_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina HiSeq
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.snv\.(\w+)\.vcf\.gz$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.indel\.(\w+)\.vcf\.gz$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: indel
+      - <<: *to_be_determined
+    IlluminaHiSeq_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Illumina HiSeq
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      - <<: *to_be_determined
+    SOLiD_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: ABI SOLiD
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: ABI SOLiD
+          tag: snv
+      - <<: *to_be_determined
+    Mixed_DNASeq_Cont_curated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      - <<: *to_be_determined
+    Mixed_DNASeq_Cont_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      - <<: *to_be_determined
+    Mixed_DNASeq_Cont:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      - <<: *to_be_determined
+cna:
+  Level_1:
+    HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &cna_cgh_lvl1
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.+\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: CGH array
+          data_level: Level_1
+          data_access: open
+      - &cna_cgh_lvl1_1
+        data_format: TXT
+        pattern: .+\.txt$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: CGH array
+          data_level: Level_1
+          data_access: open
+      - <<: *to_be_determined
+    HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_lvl1
+      - <<: *cna_cgh_lvl1_1
+      - <<: *to_be_determined
+    CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_lvl1
+      - <<: *cna_cgh_lvl1_1
+      - <<: *to_be_determined
+  Level_2:
+    HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &cna_cgh_lvl2_1
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*_lowess_normalized\.tsv$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: CGH array
+          data_level: Level_2
+          data_access: open
+      - &cna_cgh_lvl2_1a
+        data_format: TXT
+        pattern: ^.+_lowess_normalized\.tsv$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: CGH array
+          data_level: Level_2
+          data_access: open
+      - &cna_cgh_lvl2_2
+        data_format: TXT
+        pattern: .+\.mat$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Intensities Log2Ratio
+          experimental_strategy: CGH array
+          data_level: Level_2
+          data_access: open
+      - <<: *to_be_determined
+    HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_lvl2_1
+      - <<: *cna_cgh_lvl2_1a
+      - <<: *cna_cgh_lvl2_2
+      - <<: *to_be_determined
+    CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_lvl2_1
+      - <<: *cna_cgh_lvl2_1a
+      - <<: *cna_cgh_lvl2_2
+      - <<: *to_be_determined
+    IlluminaHiSeq_DNASeqC:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*---(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*---(variationCalling|VariantCalling)\.vcf$
+        captured_fields:
+          - _tumor_aliquot_barcode
+          - _control_aliquot_barcode
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number variation
+          experimental_strategy: WGS
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: cnv
+      -
+        data_format: to_be_determined
+        pattern: .+
+        category:
+          data_type: Copy number variation
+          data_subtype: to_be_determined
+          experimental_strategy: WXS
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: cnv
+  Level_3:
+    HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &cna_cgh_lvl3
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).+Segment\.tsv$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: CGH array
+          data_level: Level_3
+          data_access: open
+          tag: cnv
+      - &cna_cgh_lvl3_1
+        data_format: TXT
+        pattern: ^.+_out\.txt$
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: CGH array
+          data_level: Level_3
+          data_access: open
+          tag: cnv
+      - <<: *to_be_determined
+    HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_lvl3
+      - <<: *cna_cgh_lvl3_1
+      - <<: *to_be_determined
+    CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_lvl3
+      - <<: *cna_cgh_lvl3_1
+      - <<: *to_be_determined
+    IlluminaHiSeq_DNASeqC:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(.+---)?(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(.+---)?Segment\.tsv$
+        captured_fields:
+          - _tumor_aliquot_barcode
+          - "-"
+          - _control_aliquot_barcode
+        category:
+          data_type: Copy number variation
+          data_subtype: Copy number segmentation
+          experimental_strategy: WGS
+          data_level: Level_3
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: ["segmentation", "cnv"]
+      -
+        data_format: to_be_determined
+        pattern: .+
+        category:
+          data_type: Copy number variation
+          data_subtype: to_be_determined
+          experimental_strategy: WXS
+          data_level: Level_3
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: cnv
+      - <<: *to_be_determined
+  aux:
+    HG-CGH-415K_G4124A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &cna_cgh_aux_1a
+        data_format: TSV
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*(BioSizing|QA|lowess_normalized_smoothed)\.tsv$
+        captured_fields:
+          - _aliquot_barcode
+          - tag
+        category:
+          data_type: Raw microarray data
+          data_subtype: CGH array QC
+          experimental_strategy: CGH array
+          data_level: Level_1
+          data_access: open
+          tag: ["cgh", "qc"]
+      - &cna_cgh_aux_1b
+        data_format: PNG
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*(BioSizing|QA|lowess_normalized_smoothed)\.png$
+        captured_fields:
+          - _aliquot_barcode
+          - tag
+        category:
+          data_type: Raw microarray data
+          data_subtype: CGH array QC
+          experimental_strategy: CGH array
+          data_level: Level_1
+          data_access: open
+          tag: ["cgh", "qc"]
+      - &cna_cgh_aux_2
+        data_format: PDF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*\.pdf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: CGH array QC
+          experimental_strategy: CGH array
+          data_level: Level_1
+          data_access: open
+          tag: ["cgh", "qc"]
+      - &cna_cgh_aux_3
+        data_format: JPG
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_.*\.jpg$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: CGH array QC
+          experimental_strategy: CGH array
+          data_level: Level_1
+          data_access: open
+          tag: ["cgh", "qc"]
+      - <<: *to_be_determined
+    HG-CGH-244A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_aux_1a
+      - <<: *cna_cgh_aux_1b
+      - <<: *cna_cgh_aux_2
+      - <<: *cna_cgh_aux_3
+      - <<: *to_be_determined
+    CGH-1x1M_G4447A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *cna_cgh_aux_1a
+      - <<: *cna_cgh_aux_1b
+      - <<: *cna_cgh_aux_2
+      - <<: *cna_cgh_aux_3
+      - <<: *to_be_determined
+methylation:
+  Level_1:
+    HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &illumina_meth_array_lvl1
+        data_format: idat
+        pattern: .+\.idat
+        category: &meth_array_lvl1
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Methylation array
+          data_level: Level_1
+          data_access: open
+          platform: Illumina Human Methylation 450
+          tag: meth
+      - <<: *to_be_determined
+    HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: idat
+        pattern: .+\.idat
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Methylation array
+          data_level: Level_1
+          data_access: open
+          platform: Illumina Human Methylation 27
+          tag: meth
+      - <<: *to_be_determined
+    IlluminaDNAMethylation_OMA003_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-1\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Methylation array
+          data_level: Level_1
+          data_access: open
+          platform: Illumina DNA Methylation OMA003 CPI
+          tag: meth
+      - <<: *to_be_determined
+    IlluminaDNAMethylation_OMA002_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-1\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Methylation array
+          data_level: Level_1
+          data_access: open
+          platform: Illumina DNA Methylation OMA002 CPI
+          tag: meth
+      - <<: *to_be_determined
+  Level_2:
+    HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &illumina_meth_array_lvl2
+        data_format: TXT
+        pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category: &meth_array_lvl2
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          platform: Illumina Human Methylation 450
+          tag: meth
+      - <<: *to_be_determined
+    HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          platform: Illumina Human Methylation 27
+          tag: meth
+      - <<: *to_be_determined
+    IlluminaDNAMethylation_OMA003_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: DNA methylation
+          data_subtype: Methylation beta value
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          platform: Illumina DNA Methylation OMA003 CPI
+          tag: meth
+      - <<: *to_be_determined
+    IlluminaDNAMethylation_OMA002_CPI:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-2\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: DNA methylation
+          data_subtype: Methylation beta value
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          platform: Illumina DNA Methylation OMA002 CPI
+          tag: meth
+      - <<: *to_be_determined
+  Level_3:
+    HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-3\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: DNA methylation
+          data_subtype: Methylation beta value
+          experimental_strategy: Methylation array
+          data_level: Level_3
+          data_access: open
+          platform: Illumina Human Methylation 450
+          tag: meth
+      - <<: *to_be_determined
+    HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+lvl-3\.(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: DNA methylation
+          data_subtype: Methylation beta value
+          experimental_strategy: Methylation array
+          data_level: Level_3
+          data_access: open
+          platform: Illumina Human Methylation 27
+          tag: meth
+      - <<: *to_be_determined
+  aux:
+    HumanMethylation450:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &meth_aux_sdf
+        data_format: sdf
+        pattern: ^\d+\.sdf$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Methylation array QC metrics
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          tag: ["auxiliary", "meth", "qc"]
+      - &meth_aux_mapping
+        data_format: TXT
+        pattern: ^\w+\.mappings\.csv
+        category:
+          data_type: Raw microarray data
+          data_subtype: Methylation array QC metrics
+          experimental_strategy: Methylation array
+          data_level: Level_2
+          data_access: open
+          tag: ["auxiliary", "meth", "qc"]
+      - <<: *to_be_determined
+    HumanMethylation27:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *meth_aux_sdf
+      - <<: *meth_aux_mapping
+      - <<: *to_be_determined
+bisulfiteseq:
+  Level_2:
+    IlluminaHiSeq_WGBS:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: VCF
+        pattern: .+\.vcf$
+        category:
+          data_type: DNA methylation
+          data_subtype: Bisulfite sequence alignment  # other better name for this?
+          experimental_strategy: Bisulfite-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: ["bisulfite", "meth"]
+      - <<: *to_be_determined
+  Level_3:
+    IlluminaHiSeq_WGBS:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: BED
+        pattern: .+\.fixed\.bed$
+        category:
+          data_type: DNA methylation
+          data_subtype: Methylation percentage
+          experimental_strategy: Bisulfite-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: ["bisulfite", "meth"]
+      - <<: *to_be_determined
+protein_exp:
+  Level_1:
+    MDA_RPPA_Core:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TIF
+        pattern: .+\.tif$
+        category:
+          data_type: Raw microarray data # what should this be
+          data_subtype: Raw intensities
+          experimental_strategy: Protein expression array
+          data_level: Level_1
+          data_access: open
+      -
+        data_format: TXT
+        pattern: .+\.txt$
+        category:
+          data_type: Raw microarray data # what should this be
+          data_subtype: Raw intensities
+          experimental_strategy: Protein expression array
+          data_level: Level_1
+          data_access: open
+      - &to_be_determined_protein_exp
+        data_format: to_be_determined_protein_exp
+        pattern: .+
+        category: {}
+  Level_2:
+    MDA_RPPA_Core:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.SuperCurve\.Level_2\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.txt$
+        category: &protein_exp_lvl2
+          data_type: Raw microarray data
+          data_subtype: Intensities
+          experimental_strategy: Protein expression array
+          data_level: Level_2
+          data_access: open
+      -
+        data_format: TXT
+        pattern: .+\.Control_.+\.txt$  # *.Control_Jurkat-Fas-3.txt
+        category:
+          data_type: Raw microarray data
+          data_subtype: Expression control
+          experimental_strategy: Protein expression array
+          data_level: Level_2
+          data_access: open
+          tag: control
+      - <<: *to_be_determined_protein_exp
+  Level_3:
+    MDA_RPPA_Core:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.protein_expression\.Level_3\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.txt$
+        category:
+          data_type: Protein expression
+          data_subtype: Protein expression quantification
+          experimental_strategy: Protein expression array
+          data_level: Level_3
+          data_access: open
+      -
+        data_format: TXT
+        pattern: .+\.Control_.+\.txt$  # *.Control_Mixed-Lysate-7.txt
+        category:
+          data_type: Protein expression
+          data_subtype: Expression control
+          experimental_strategy: Protein expression array
+          data_level: Level_3
+          data_access: open
+          tag: control
+      - <<: *to_be_determined_protein_exp
+totalrnaseqv2:
+  Level_3:
+    IlluminaHiSeq_TotalRNASeqV2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.isoforms.results|rsem.isoforms.normalized_results)$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Isoform expression quantification
+          experimental_strategy: Total RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: isoform
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.genes.results|rsem.genes.normalized_results)$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: Total RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.junction_quantification\.txt$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Exon junction quantification
+          experimental_strategy: Total RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: ["exon", "junction"]
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.bt\.exon_quantification\.txt$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Exon quantification
+          experimental_strategy: Total RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: exon
+      - <<: *to_be_determined
+rnaseqv2:
+  Level_3:
+    IlluminaHiSeq_RNASeqV2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.isoforms.results|rsem.isoforms.normalized_results)$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Isoform expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: isoform
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.genes.results|rsem.genes.normalized_results)$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.junction_quantification\.txt$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Exon junction quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: ["exon", "junction"]
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.bt\.exon_quantification\.txt$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Exon quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: exon
+      - <<: *to_be_determined
+    IlluminaGA_RNASeqV2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.isoforms.results|rsem.isoforms.normalized_results)$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Isoform expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: isoform
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.(rsem.genes.results|rsem.genes.normalized_results)$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.junction_quantification\.txt$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Exon junction quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: ["exon", "junction"]
+      -
+        data_format: TXT
+        pattern:  .+\.([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.\d+\.bt\.exon_quantification\.txt$
+        captured_fields:
+          - _aliquot_uuid
+        category:
+          data_type: Gene expression
+          data_subtype: Exon quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: exon
+      - <<: *to_be_determined
+rnaseq:
+  Level_2:
+    IlluminaHiSeq_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.snv\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: snv
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.indel\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: indel
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Structural rearrangement
+          data_subtype: Structural variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: sv
+      -
+        data_format: FA
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.fa$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Structural rearrangement
+          data_subtype: Structural variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina HiSeq
+          tag: sv
+      - <<: *to_be_determined
+    IlluminaGA_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.snv\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: snv
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.indel\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: indel
+      -
+        data_format: VCF
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.vcf$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Structural rearrangement
+          data_subtype: Structural variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: sv
+      -
+        data_format: FA
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.sv\.fa$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Structural rearrangement
+          data_subtype: Structural variation
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: sv
+      - <<: *to_be_determined
+  Level_3:
+    IlluminaHiSeq_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(exon\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Exon quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: exon
+      -
+        data_format: TXT
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(spljxn\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Exon junction quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: ["exon", "junction"]
+      -
+        data_format: TXT
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(gene\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+      - <<: *to_be_determined
+    IlluminaGA_RNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(exon\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Exon quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: exon
+      -
+        data_format: TXT
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(spljxn\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Exon junction quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: ["exon", "junction"]
+      -
+        data_format: TXT
+        pattern: .*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2}).*\.(gene\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+      - <<: *to_be_determined
+transcriptome:
+  Level_1:
+    AgilentG4502A_07_3:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &expression_array_agilent_lvl1
+        data_format: TXT
+        pattern: ^.+\.txt$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Gene expression array
+          data_level: Level_1
+          data_access: open
+      - <<: *to_be_determined
+    HT_HG-U133A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &expression_array_affy_lvl1
+        data_format: CEL
+        pattern: .+\.CEL
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Gene expression array
+          data_level: Level_1
+          data_access: protected
+      - <<: *to_be_determined
+    AgilentG4502A_07_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_agilent_lvl1
+      - <<: *to_be_determined
+    HG-U133_Plus_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_affy_lvl1
+      - <<: *to_be_determined
+    AgilentG4502A_07_1:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_agilent_lvl1
+      - <<: *to_be_determined
+    IlluminaGA_mRNA_DGE:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: DGE-Tag
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_sequence\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Sequencing tag
+          experimental_strategy: RNA-Seq
+          data_level: Level_1
+          data_access: protected
+          platform: Illumina GA
+          tag: ["DGE", "Tag"]
+      - <<: *to_be_determined
+  Level_2:
+    AgilentG4502A_07_3:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &expression_array_level2_data
+        data_format: TXT
+        pattern: .+level2\.data\.txt$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Gene expression array
+          data_level: Level_2
+          data_access: open
+      - &expression_array_level2_data_1
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.MAS5\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Gene expression array
+          data_level: Level_3
+          data_access: open
+      - <<: *to_be_determined
+    HT_HG-U133A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level2_data
+      - <<: *expression_array_level2_data_1
+      - <<: *to_be_determined
+    AgilentG4502A_07_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level2_data
+      - <<: *expression_array_level2_data_1
+      - <<: *to_be_determined
+    HG-U133_Plus_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level2_data
+      - <<: *expression_array_level2_data_1
+      - <<: *to_be_determined
+    AgilentG4502A_07_1:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level2_data
+      - <<: *expression_array_level2_data_1
+      - <<: *to_be_determined
+    IlluminaGA_mRNA_DGE:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_frequency.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Sequencing tag counts
+          experimental_strategy: RNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Illumina GA
+          tag: ["DGE", "Tag"]
+      - <<: *to_be_determined
+  Level_3:
+    AgilentG4502A_07_3:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &expression_array_level3_data
+        data_format: TXT
+        pattern: .+level3\.data\.txt$
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: Gene expression array
+          data_level: Level_3
+          data_access: open
+      - &expression_array_level3_data_1
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.pergene\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: Gene expression array
+          data_level: Level_3
+          data_access: open
+      - <<: *to_be_determined
+    HT_HG-U133A:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level3_data
+      - <<: *expression_array_level3_data_1
+      - <<: *to_be_determined
+    AgilentG4502A_07_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level3_data
+      - <<: *expression_array_level3_data_1
+      - <<: *to_be_determined
+    HG-U133_Plus_2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level3_data
+      - <<: *expression_array_level3_data_1
+      - <<: *to_be_determined
+    AgilentG4502A_07_1:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *expression_array_level3_data
+      - <<: *expression_array_level3_data_1
+      - <<: *to_be_determined
+    IlluminaGA_mRNA_DGE:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})_(tags|genes)\.txt$
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: RNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: ["DGE", "Tag"]
+      - <<: *to_be_determined
+mirnaseq:
+  Level_3:
+    IlluminaHiSeq_miRNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(.*mirna\.quantification|.*isoform\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: miRNA quantification
+          experimental_strategy: miRNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina HiSeq
+          tag: miRNA
+      - <<: *to_be_determined
+    IlluminaGA_miRNASeq:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.(.*mirna\.quantification|.*isoform\.quantification)\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: miRNA quantification
+          experimental_strategy: miRNA-Seq
+          data_level: Level_3
+          data_access: open
+          platform: Illumina GA
+          tag: miRNA
+      - <<: *to_be_determined
+mirna:
+  Level_1:
+    H-miRNA_8x15Kv2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &mirna_array_lvl1
+        data_format: TXT
+        pattern: ^.+\.txt$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: miRNA expression array
+          data_level: Level_1
+          data_access: open
+          tag: miRNA
+      - <<: *to_be_determined
+    H-miRNA_8x15K:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *mirna_array_lvl1
+      - <<: *to_be_determined
+  Level_2:
+    H-miRNA_8x15Kv2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &mirna_array_lvl2
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.probe\.tcga_level2\.data\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: miRNA expression array
+          data_level: Level_2
+          data_access: open
+          tag: miRNA
+      - <<: *to_be_determined
+    H-miRNA_8x15K:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *mirna_array_lvl2
+      - <<: *to_be_determined
+  Level_3:
+    H-miRNA_8x15Kv2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - &mirna_array_lvl3
+        data_format: TXT
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4}[_-][A-Z\d]{3}[_-][A-Z\d]{3}[_-][A-Z\d]{4}[_-]\d{2})\.gene\.tcga_level3\.data\.txt$
+        captured_fields:
+          - _aliquot_barcode
+        category:
+          data_type: Gene expression
+          data_subtype: miRNA quantification
+          experimental_strategy: miRNA expression array
+          data_level: Level_3
+          data_access: open
+          tag: miRNA
+      - <<: *to_be_determined
+    H-miRNA_8x15K:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *mirna_array_lvl3
+      - <<: *to_be_determined
+exon:
+  Level_1:
+    HuEx-1_0-st-v2: # Affy exon array
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: CEL
+        pattern: .+\.CEL
+        category:
+          data_type: Raw microarray data
+          data_subtype: Raw intensities
+          experimental_strategy: Exon array
+          data_level: Level_1
+          data_access: protected
+      - <<: *to_be_determined
+  Level_2:
+    HuEx-1_0-st-v2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.exon\.txt$
+        category:
+          data_type: Raw microarray data
+          data_subtype: Normalized intensities
+          experimental_strategy: Exon array
+          data_level: Level_2
+          data_access: protected
+      - <<: *to_be_determined
+  Level_3:
+    HuEx-1_0-st-v2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: TXT
+        pattern: .+\.(FIRMA|gene)\.txt$
+        captured_fields:
+          - tag
+        category:
+          data_type: Gene expression
+          data_subtype: Gene expression quantification
+          experimental_strategy: Exon array
+          data_level: Level_3
+          data_access: open
+      - <<: *to_be_determined
+  aux:
+    HuEx-1_0-st-v2:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      - <<: *to_be_determined
