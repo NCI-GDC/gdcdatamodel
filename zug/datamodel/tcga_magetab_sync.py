@@ -194,7 +194,13 @@ class TCGAMAGETABSyncer(object):
                 return row[extract_name], row[tcga_barcode]
         elif is_barcode(row[extract_name]):
             if not row.get(tcga_barcode) or is_empty(row[tcga_barcode]):
-                # second most common, Extract Name is the barcode
+                # second most common, Extract Name is the barcode, there is
+                # no tcga barcode column
+                return None, row[extract_name]
+            elif (is_barcode(row[tcga_barcode])
+                    and row[tcga_barcode] == row[extract_name]):
+                # sometimes the barcode and extract_name are both
+                # identical barcodes
                 return None, row[extract_name]
         # if we get here, the other possibility is that the Extract Names
         # are the weird barcodes with dots, e.g. TCGA-LN-A9FP-01A-41-A41Y-20.P
