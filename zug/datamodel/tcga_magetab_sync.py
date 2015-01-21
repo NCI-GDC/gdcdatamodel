@@ -103,7 +103,7 @@ def is_uuid4(s):
     # tcga is. some of ours are going to be uuid5s, so if you are
     # looking at this wondering why it isn't matching, that might be
     # why
-    uuid_re = re.compile("^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$")
+    uuid_re = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
     return re.match(uuid_re, s)
 
 
@@ -183,6 +183,7 @@ def get_file_and_archive(row):
         return row["Derived Data File REF"], None
     elif row.get("Comment [Derived Data File REF]"):
         return row["Comment [Derived Data File REF]"], None
+    # now dcc files
     for name in FILE_COL_NAMES:
         if row.get(name):
             return row[name], row["Comment [TCGA Archive Name]"]
