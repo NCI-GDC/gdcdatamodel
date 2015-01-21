@@ -512,14 +512,14 @@
         "doc": "The survival state of the person registered on the protocol. CDE: 5. "
       },
       {
-        "name": "year_of_initial_pathologic_diagnosis",
+        "name": "year_of_diagnosis",
         "type": ["null", "int"],
-        "doc": "Numeric value to represent the day of an individual's initial pathologic diagnosis of cancer. CDE: 2896958."
+        "doc": "Numeric value to represent the year of an individual's initial pathologic diagnosis of cancer. CDE: 2896960."
       },
       {
-        "name": "age_at_initial_pathologic_diagnosis",
-        "type": ["null", "float"],
-        "doc": "Age at which a condition or disease was first diagnosed. CDE: 2006657."
+        "name": "age_at_diagnosis",
+        "type": ["null", "int"],
+        "doc": "Age in days at which a condition or disease was first diagnosed. CDE: 3225640. TCGA has the age in years with CDE 2006657, this is converted by ceil(age*365.25) to get days."
       },
       {
         "name": "days_to_death",
