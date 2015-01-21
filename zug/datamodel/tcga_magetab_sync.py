@@ -210,14 +210,26 @@ def get_legacy_id_and_rev(archive):
 
 class TCGAMAGETABSyncer(object):
 
-    def __init__(self, archive, pg_driver=None, dcc_auth=None):
+    def __init__(self, archive, pg_driver=None, dcc_auth=None,
+                 cache_path=None):
         self.archive = archive
         self.pg_driver = pg_driver
         self.dcc_auth = dcc_auth
         folder_url = self.archive["dcc_archive_url"].replace(".tar.gz", "")
-        self.df = pd.read_table(sdrf_from_folder(folder_url))
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
+        if cache_path:
+            pickle_path = os.path.join(cache_path, "{}.pickle".format(self.archive["archive_name"]))
+            self.log.info("reading sdrf from cache path %s", pickle_path)
+            self.df = pd.read_pickle(pickle_path)
+        else:
+            self.log.info("downloading sdrf from %s", folder_url)
+            self.df = pd.read_table(sdrf_from_folder(folder_url))
+        self._mapping = None
+
+    def cache_df_to_file(self, path):
+        self.df.to_pickle(os.path.join(path, "{}.pickle".format(
+            self.archive["archive_name"])))
 
     def sample_for(self, row):
         EXTRACT_NAME = "Extract Name"
