@@ -1,5 +1,0 @@
-'batch': ('batch', 'data_from', 'id')
-'center_name': ('center', 'received_from', 'center_name')
-'disease_code': ('study', 'data_from', 'id')
-'platform': ('platform', 'generated_by', 'id')
-'data_level': ('data_level', 'data_from', 'id')
