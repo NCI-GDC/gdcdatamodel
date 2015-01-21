@@ -219,24 +219,26 @@ class TCGAMAGETABSyncer(object):
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
 
-    def samples_for(self, row):
+    def sample_for(self, row):
         EXTRACT_NAME = "Extract Name"
         TCGA_BARCODE = "Comment [TCGA Barcode]"
         SAMPLE_NAME = "Sample Name"
+        ALIQUOT = "aliquot"
+        PORTION = "portion"
         if is_uuid4(row[EXTRACT_NAME].lower()):
             if is_aliquot_barcode(row[TCGA_BARCODE]):
                 # the most common case
-                return row[EXTRACT_NAME].lower(), row[TCGA_BARCODE]
+                return ALIQUOT, row[EXTRACT_NAME].lower(), row[TCGA_BARCODE]
         elif is_aliquot_barcode(row[EXTRACT_NAME]):
             if not row.get(TCGA_BARCODE) or is_empty(row[TCGA_BARCODE]):
                 # second most common, Extract Name is the barcode, there is
                 # no tcga barcode column (or it is empty)
-                return None, row[EXTRACT_NAME]
+                return ALIQUOT, None, row[EXTRACT_NAME]
             elif (is_aliquot_barcode(row[TCGA_BARCODE])
                     and row[TCGA_BARCODE] == row[EXTRACT_NAME]):
                 # sometimes the barcode and EXTRACT_NAME are both
                 # identical barcodes
-                return None, row[EXTRACT_NAME]
+                return ALIQUOT, None, row[EXTRACT_NAME]
         # if we get here, the other possibility is that the Extract
         # Names are the shipped portion barcodes with dots,
         # e.g. TCGA-LN-A9FP-01A-41-A41Y-20.P
@@ -257,7 +259,7 @@ class TCGAMAGETABSyncer(object):
             # the sample name here should always be the uuid
             uuid = row[SAMPLE_NAME].lower()
             assert is_uuid4(uuid)
-            return uuid, barcode
+            return PORTION, uuid, barcode
         raise RuntimeError("Can't compute uuid/barcode for {}".format(row))
 
     def compute_mapping(self, force=False):
