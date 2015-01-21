@@ -349,7 +349,13 @@ class xml2psqlgraph(object):
         return node_id.lower()
 
     def munge_property(self, prop, _type):
-        types = {'int': int, 'float': float, 'str': str, 'long': long}
+        types = {
+            'int': int,
+            'long': long,
+            'float': float,
+            'str': str,
+            'str.lower': lambda x: str(x).lower(),
+        }
         if _type == 'bool':
             prop = to_bool(prop)
         else:

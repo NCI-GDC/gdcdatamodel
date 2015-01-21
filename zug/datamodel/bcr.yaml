@@ -265,20 +265,20 @@ clinical:
     properties:
       gender:
           path: ./shared:gender
-          type: str
+          type: str.lower
       race:
           path: ./shared:race
-          type: str
+          type: str.lower
       ethnicity:
           path: ./shared:ethnicity
-          type: str
+          type: str.lower
       vital_status:
           path: ./shared:vital_status
-          type: str
+          type: str.lower
       year_of_diagnosis:
           path: ./shared:year_of_initial_pathologic_diagnosis
           type: int
-      age_of_diagnosis:
+      age_at_diagnosis:
           path: shared:age_at_initial_pathologic_diagnosis
           type: int
       days_to_death:
