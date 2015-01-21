@@ -283,6 +283,9 @@ class TCGAMAGETABSyncer(object):
                 subrow = row[group]
                 cleanup_row(subrow)
                 file, archive = get_file_and_archive(subrow)
+                if is_empty(file):
+                    self.log.debug("file is empty in row %s", row)
+                    continue
                 if file is None and archive is None:
                     self.log.debug("couldnt extract file from row %s", row)
                     continue
