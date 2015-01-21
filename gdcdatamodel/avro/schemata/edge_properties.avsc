@@ -83,7 +83,8 @@
         "name": "shipment_center_id",
         "type": "string",
         "doc": "TOREVIEW: The center to which shipped, replaces center_id. Is this needed if relationship is intact?"
-      }]
+      }
+    ]
   },
   {
     "type": "record",

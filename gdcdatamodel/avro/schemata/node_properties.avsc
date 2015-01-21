@@ -16,11 +16,6 @@
         "doc": "TODO: define, from BCR"
       },
       {
-        "name": "shipment_datetime",
-        "type": "long",
-        "doc": "TOREVIEW: The datetime of shipment encoded as seconds from epoch. If no time is given, it is set to 00:00:00. Replaces day_of_shipment/month_of_shipment/year_of_shipment."
-      },
-      {
         "name": "amount",
         "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
@@ -29,7 +24,7 @@
         "name": "concentration",
         "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
-      },
+      }
     ]
   },
   {
