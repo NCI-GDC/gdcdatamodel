@@ -50,11 +50,13 @@ def start():
         constraints={'data_level': 'Level_1', 'platform': 'bio'})
 
     logging.info("Importing latest xml archives")
-    p = Pool(8)
+    p = Pool(args.nproc)
     p.map(process, list(latest))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--nproc', default=8, type=int,
+                        help='number of processes to use')
     parser.add_argument('--datatype', default='biospecimen', type=str,
                         help='the datatype to filter')
     parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
