@@ -125,7 +125,7 @@ def is_fat_fingered_shipped_portion_barcode(s):
 
 def fix_fat_fingered_barcode(s):
     # what happened above is fairly clear, so we can fix it programmatically
-    return re.sub("([0-9]{2}[A-Z])([0-9]{2})", "\1-\2", s)
+    return re.sub("([0-9]{2}[A-Z])([0-9]{2})", "\g<1>-\g<2>", s)
 
 
 def is_shipped_portion_barcode(s):
