@@ -124,31 +124,35 @@ class TCGADCCArchiveSyncer(object):
         return self.archive["archive_name"]
 
     def store_archive_in_pg(self, session):
-        # legacy_id is just the name without the revision or series
-        # this will be identical between different versions of an archive as new
-        # versions are submitted
-        legacy_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
+        # submitter_id is just the name without the revision or series
+        # this will be identical between different versions of an
+        # archive as new versions are submitted
+        submitter_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
         self.log.info("looking for archive %s in postgres", self.name)
-        maybe_this_archive = self.pg_driver.node_lookup_one(label="archive",
-                                                            property_matches={"legacy_id": legacy_id,
-                                                                              "revision": self.archive["revision"]},
-                                                            session=session)
+        maybe_this_archive = self.pg_driver.node_lookup_one(
+            label="archive",
+            property_matches={"submitter_id": submitter_id,
+                              "revision": self.archive["revision"]},
+            session=session
+        )
         if maybe_this_archive:
             self.log.info("found archive %s in postgres, not inserting", self.name)
             return maybe_this_archive
-        self.log.info("looking up old versions of archive %s in postgres", legacy_id)
-        old_versions = self.pg_driver.node_lookup(label="archive",
-                                                  property_matches={"legacy_id": legacy_id},
-                                                  session=session).all()
+        self.log.info("looking up old versions of archive %s in postgres", submitter_id)
+        old_versions = self.pg_driver.node_lookup(
+            label="archive",
+            property_matches={"submitter_id": submitter_id},
+            session=session
+        ).all()
         if len(old_versions) > 1:
             # since we void all old versions of an archive when we add a new one,
             # there should never be more than one old version in the database
-            raise ValueError("multiple old versions of archive {} found".format(legacy_id))
+            raise ValueError("multiple old versions of archive {} found".format(submitter_id))
         if old_versions:
             old_archive = old_versions[0]
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive.properties["revision"],
-                          legacy_id)
+                          submitter_id)
             # TODO it would be awesome to verify that the changes we make actually match what's in
             # CHANGES_DCC.txt,
             # first get all the files related to this archive and void them
@@ -161,7 +165,7 @@ class TCGADCCArchiveSyncer(object):
         new_archive_node = PsqlNode(
             node_id=self.allocate_id_from_signpost(),
             label="archive",
-            properties={"legacy_id": legacy_id,
+            properties={"submitter_id": submitter_id,
                         "revision": self.archive["revision"]})
         project_node = self.pg_driver.node_lookup_one(label="project",
                                                       property_matches={"name": self.archive["disease_code"]},

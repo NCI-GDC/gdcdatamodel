@@ -22,11 +22,11 @@ class TestPrelude(unittest.TestCase):
         create_prelude_nodes(self.driver)
         self.driver.node_lookup(
             label="center",
-            property_matches={"legacy_id": "31"}
+            property_matches={"code": "31"}
         ).one()
         self.driver.node_lookup(
             label="tissue_source_site",
-            property_matches={"legacy_id": "14"}
+            property_matches={"code": "14"}
         ).one()
         self.driver.node_lookup(
             label="tag",

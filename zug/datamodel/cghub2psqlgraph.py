@@ -1,4 +1,3 @@
-import yaml
 import json
 import uuid
 import datetime
@@ -8,6 +7,7 @@ from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
+from zug.datamodel import xml2psqlgraph
 
 log = get_logger(__name__)
 
@@ -56,14 +56,10 @@ class cghub2psqlgraph(object):
     """
     """
 
-    def __init__(self, translate_path, host, user,
+    def __init__(self, xml_mapping, host, user,
                  password, database, node_validator=None,
-                 edge_validator=None, ignore_missing_properties=False,
-                 **kwargs):
+                 edge_validator=None, ignore_missing_properties=True):
         """
-
-        :param str translate_path:
-            path to translation mapping yaml file
 
         """
 
@@ -72,9 +68,8 @@ class cghub2psqlgraph(object):
         self.exported_nodes = 0
         self.export_count = 0
         self.ignore_missing_properties = ignore_missing_properties
-        with open(translate_path) as f:
-            self.translate = json.loads(json.dumps(yaml.load(f)),
-                                        object_hook=AttrDict)
+        self.xml_mapping = json.loads(json.dumps(xml_mapping),
+                                      object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
         if node_validator:
@@ -83,7 +78,7 @@ class cghub2psqlgraph(object):
             self.graph.edge_validator = edge_validator
         self.edges, self.files_to_add, self.files_to_delete = {}, {}, []
         self.xml = xml2psqlgraph.xml2psqlgraph(
-            translate_path, host, user, password, database,
+            xml_mapping, host, user, password, database,
             node_validator=node_validator,
             edge_validator=edge_validator)
 
@@ -221,12 +216,13 @@ class cghub2psqlgraph(object):
         self.xml_root = etree.fromstring(str(data)).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
         self.node_roots = {}
-        for node_type, params in self.translate.items():
-            self.node_roots[node_type] = self.xml.get_node_roots(
-                node_type, params, root=self.xml_root)
+        for node_type, param_list in self.xml_mapping.items():
+            for params in param_list:
+                self.node_roots[node_type] = self.xml.get_node_roots(
+                    node_type, params, root=self.xml_root)
 
     def parse_all(self):
-        for node_type, params in self.translate.items():
+        for node_type, params in self.xml_mapping.items():
             for root in self.node_roots[node_type]:
                 self.parse_file_node(node_type, root, params)
 
@@ -241,10 +237,10 @@ class cghub2psqlgraph(object):
 
         """
 
-        params = self.translate[node_type]
-        files = self.xml.get_node_roots(node_type, params, root=root)
-        for f in files:
-            self.parse_file_node(f, node_type, params)
+        for params in self.xml_mapping[node_type]:
+            files = self.xml.get_node_roots(node_type, params, root=root)
+            for f in files:
+                self.parse_file_node(f, node_type, params)
 
     def parse_file_node(self, root, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
