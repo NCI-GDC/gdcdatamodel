@@ -266,7 +266,7 @@ class TCGAMAGETABSyncer(object):
             return self._mapping
         self.log.info("computing mappings . . .")
         groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
-        result = defaultdict(lambda: [])  # a dict from (archive,
+        result = defaultdict(lambda: set())  # a dict from (archive,
                                           # filename) pairs to (label,
                                           # uuid, barcode) triples
         file_groups = [group for group in groups if is_file_group(group)]
@@ -285,7 +285,7 @@ class TCGAMAGETABSyncer(object):
                     self.log.debug("couldnt extract file from row %s", row)
                     continue
                 else:
-                    result[(archive, file)] += sample
+                    result[(archive, file)].add(sample)
         self. _mapping = result
         return result
 
