@@ -518,7 +518,7 @@
       },
       {
         "name": "age_at_initial_pathologic_diagnosis",
-        "type": ["null", "long"],
+        "type": ["null", "float"],
         "doc": "Age at which a condition or disease was first diagnosed. CDE: 2006657."
       },
       {
