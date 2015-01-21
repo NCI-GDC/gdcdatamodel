@@ -525,6 +525,11 @@
         "name": "days_to_death",
         "type": ["null", "int"],
         "doc": "Time interval from a person's date of death to the date of initial pathologic diagnosis, represented as a calculated number of days. CDE: 3165475."
+      },
+      {
+        "name": "icd_10",
+        "type": ["null", "string"],
+        "doc": "The tenth version of the International Classification of Disease (ICD), published by the World Health Organization in 1992. A system of numbered categories for representation of data. CDE: 3226287. "
       }
     ]
   },
