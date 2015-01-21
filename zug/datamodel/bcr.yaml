@@ -255,6 +255,39 @@ participant:
         path: ./bio:days_to_index
         type: int
 
+clinical:
+  -
+    root: //brca:patient
+    id: //admin:file_uuid
+    edges:
+      describes:
+        patient: ./shared:bcr_patient_uuid
+    properties:
+      gender:
+          path: ./shared:gender
+          type: str
+      race:
+          path: ./shared:race
+          type: str
+      ethnicity:
+          path: ./shared:ethnicity
+          type: str
+      vital_status:
+          path: ./shared:vital_status
+          type: str
+      year_of_diagnosis:
+          path: ./shared:year_of_initial_pathologic_diagnosis
+          type: int
+      age_of_diagnosis:
+          path: shared:age_at_initial_pathologic_diagnosis
+          type: int
+      days_to_death:
+          path: ./shared:days_to_death
+          type: int
+      icd_10:
+          path: ./shared:icd_10
+          type: str
+
 slide:
   -
     root: //bio:slide
