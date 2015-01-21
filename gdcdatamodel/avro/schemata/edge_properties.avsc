@@ -53,7 +53,38 @@
     "name": "shipped_to_properties",
     "namespace": "edu.uchicago.cdis",
     "doc": "The properties of shipped_to edge",
-    "fields": []
+    "fields": [
+      {
+        "name": "plate_id",
+        "type": "string",
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "plate_row",
+        "type": ["null", "string"],
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "plate_column",
+        "type": ["null", "string"],
+        "doc": "TODO: define, from BCR"
+      },
+      {
+        "name": "shipment_datetime",
+        "type": ["null", "long"],
+        "doc": "TOREVIEW: The datetime of shipment encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_creation/month_of_creation/year_of_creation."
+      },
+      {
+        "name": "shipment_reason",
+        "type": ["null", "shipment_reason_enum"],
+        "doc": "TOREVIEW: New property, reason for shipping, so can determine if expecting data"
+      },
+      {
+        "name": "shipment_center_id",
+        "type": "string",
+        "doc": "TOREVIEW: The center to which shipped, replaces center_id. Is this needed if relationship is intact?"
+      }
+    ]
   },
   {
     "type": "record",
