@@ -3,6 +3,7 @@ from lxml import html
 import requests
 import os
 import re
+from collections import defaultdict
 
 from psqlgraph import PsqlEdge
 
@@ -218,7 +219,7 @@ class TCGAMAGETABSyncer(object):
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
 
-    def sample_for(self, row):
+    def samples_for(self, row):
         EXTRACT_NAME = "Extract Name"
         TCGA_BARCODE = "Comment [TCGA Barcode]"
         SAMPLE_NAME = "Sample Name"
@@ -265,8 +266,9 @@ class TCGAMAGETABSyncer(object):
             return self._mapping
         self.log.info("computing mappings . . .")
         groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
-        result = {}  # a dict from (archive, filename) pairs to (uuid,
-                     # barcode) pairs
+        result = defaultdict(lambda: [])  # a dict from (archive,
+                                          # filename) pairs to (label,
+                                          # uuid, barcode) triples
         file_groups = [group for group in groups if is_file_group(group)]
         self.log.debug("file groups are %s", file_groups)
         for _, row in self.df.iterrows():
@@ -274,7 +276,7 @@ class TCGAMAGETABSyncer(object):
                 self.log.debug("skipping row because Extract Name (%s) is a reference",
                                row["Extract Name"])
                 continue
-            uuid, barcode = self.sample_for(row)
+            sample = self.sample_for(row)
             for group in file_groups:
                 subrow = row[group]
                 cleanup_row(subrow)
@@ -282,10 +284,8 @@ class TCGAMAGETABSyncer(object):
                 if file is None and archive is None:
                     self.log.debug("couldnt extract file from row %s", row)
                     continue
-                if result.get((archive, file)):
-                    assert result[(archive, file)] == (uuid, barcode)
                 else:
-                    result[(archive, file)] = (uuid, barcode)
+                    result[(archive, file)] += sample
         self. _mapping = result
         return result
 
