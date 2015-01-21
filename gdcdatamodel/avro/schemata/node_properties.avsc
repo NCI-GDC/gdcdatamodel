@@ -16,21 +16,6 @@
         "doc": "TODO: define, from BCR"
       },
       {
-        "name": "shipment_center_id",
-        "type": "string",
-        "doc": "TOREVIEW: The center to which the aliquot was shipped, replaces center_id. Is this needed if relationship is intact?"
-      },
-      {
-        "name": "shipment_datetime",
-        "type": "long",
-        "doc": "TOREVIEW: The datetime of shipment encoded as seconds from epoch. If no time is given, it is set to 00:00:00. Replaces day_of_shipment/month_of_shipment/year_of_shipment."
-      },
-      {
-        "name": "shipment_reason",
-        "type": ["null", "shipment_reason_enum"],
-        "doc": "TOREVIEW: New property, reason for shipping the aliquot, so can determine if expecting data"
-      },
-      {
         "name": "amount",
         "type": ["null", "float"],
         "doc": "TODO: define, from BCR"
@@ -38,21 +23,6 @@
       {
         "name": "concentration",
         "type": ["null", "float"],
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "plate_id",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "plate_row",
-        "type": ["null", "string"],
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "plate_column",
-        "type": ["null", "string"],
         "doc": "TODO: define, from BCR"
       }
     ]

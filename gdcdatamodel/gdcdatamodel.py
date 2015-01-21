@@ -15,6 +15,7 @@ node_schema_file_list = [os.path.join(schema_src_dir, f) for f in [
 ]]
 
 edge_schema_file_list = [os.path.join(schema_src_dir, f) for f in [
+    "field_types.avsc",
     "node_labels.avsc",
     "edge_labels.avsc",
     "node_pairs.avsc",
