@@ -325,36 +325,25 @@ class TCGAMAGETABSyncer(object):
                                       "revision": revision},
                     session=session
                 ).one()
-                # dcc file
                 file_node = self.pg_driver.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
                     session=session
                 ).with_edge_to_node("member_of", archive_node).one()
             # TODO might need to explicitly free the archive node here
+            # to avoid connection leaks
             return file_node
 
-    def tie_to_biospecemin(self, file, uuid, barcode, session):
-        """You would think that this function would be called 'tie to
-        aliquot', but sadly no. It appears that in some rare cases,
-        the 'Extract Name' column of an sdrf actually refers to some
-        other component of the biospecemin pathway (e.g. a sample or
-        portion), so this function in most cases will tie files back
-        to aliquots, but sometimes other things as well.
-        """
-        # TODO it seems like in many cases it's possible to figure out
-        # what kind of biospecemin a barcode is supposed to correspond
-        # to from another column of the magetab (e.g. Comment [TCGA
-        # Biospecimen Type])
+    def tie_to_biospecemin(self, file, label, uuid, barcode, session):
         if uuid:
-            # this should always be an aliquot (I think?)
-            bio = self.pg_driver.node_lookup(node_id=uuid)
-            assert bio.label == "aliquot"
-        else:
-            for label in ["aliquot", "portion", "sample"]:
-                bio = self.pg_driver.node_lookup(label="portion")
-                if bio:
-                    break
+            bio = self.pg_driver.node_lookup(node_id=uuid).one()
+            assert bio.label == label
+            assert bio["submiter_id"] == barcode
+        elif barcode:
+            bio = self.pg_driver.node_lookup(
+                label=label,
+                property_matches={"submiter_id": barcode},
+            ).one()
         edge = PsqlEdge(
             label="data_from",
             src_id=file.node_id,
@@ -363,7 +352,8 @@ class TCGAMAGETABSyncer(object):
         self.driver.edge_insert(edge, session=session)
 
     def put_mapping_in_pg(self, mapping):
-        for (archive, filename), (uuid, barcode) in mapping.iteritems():
+        for (archive, filename), (label, uuid, barcode) in mapping.iteritems():
             with self.pg_driver.session_scope() as session:
                 file = self.get_file_node(archive, filename, session)
-                self.tie_to_biospecemin(self, file, session)
+                self.tie_to_biospecemin(self, file, label, uuid,
+                                        barcode, session)
