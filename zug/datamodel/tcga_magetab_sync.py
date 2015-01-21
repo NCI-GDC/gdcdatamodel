@@ -318,7 +318,7 @@ class TCGAMAGETABSyncer(object):
                 ).one()
             else:
                 # dcc file
-                submitter_id, revision = get_submiter_id_and_rev(self.archive)
+                submitter_id, revision = get_submiter_id_and_rev(archive_name)
                 archive_node = self.pg_driver.node_lookup(
                     label="archive",
                     property_matches={"submitter_id": submitter_id,
