@@ -52,6 +52,7 @@ def start():
     logging.info("Importing latest xml archives")
     p = Pool(8)
     p.map(process, list(latest))
+    # process(list(latest)[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

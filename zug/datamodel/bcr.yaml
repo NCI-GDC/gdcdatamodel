@@ -1,3 +1,31 @@
+# example:
+#   -
+#     root: xpath
+#     id: xpath
+#     properties:
+#       property_name:
+#         path: xpath
+#         type: type
+#     datetime_properties:
+#       datetime_prop_name:
+#         day: xpath
+#         month: xpath
+#         year: xpath
+#     edges:
+#       edge_name:
+#         dst_node_type: xpath
+#     edge_properties:
+#       edge_name:
+#           prop_name:
+#             path: xpath
+#             type: type
+#     edge_datetime_properties:
+#       edge_name:
+#           datetime_prop_name:
+#             day: xpath
+#             month: xpath
+#             year: xpath
+
 aliquot:
   -
     root: //bio:aliquot
@@ -9,7 +37,30 @@ aliquot:
     edges_by_property:
       shipped_to:
         center:
-          submitter_id: .//bio:center_id
+          code: .//bio:center_id
+    edge_properties:
+      shipped_to:
+          plate_id:
+            path: ./bio:plate_id
+            type: str
+          plate_row:
+            path: ./bio:plate_row
+            type: str
+          plate_column:
+            path: ./bio:plate_column
+            type: str
+          shipment_center_id:
+            path: ./bio:center_id
+            type: str
+          shipment_reason:
+            path: ./bio:shipment_reason
+            type: str
+    edge_datetime_properties:
+      shipped_to:
+          shipment_datetime:
+            day: ./bio:day_of_shipment
+            month: ./bio:month_of_shipment
+            year: ./bio:year_of_shipment
     properties:
       submitter_id:
         path: ./bio:bcr_aliquot_barcode
@@ -17,32 +68,12 @@ aliquot:
       source_center:
         path: ./bio:source_center
         type: str
-      shipment_center_id:
-        path: ./bio:center_id
-        type: str
-      shipment_reason:
-        path: ./bio:shipment_reason
-        type: str
       amount:
         path: ./bio:amount
         type: float
       concentration:
         path: ./bio:concentration
         type: float
-      plate_id:
-        path: ./bio:plate_id
-        type: str
-      plate_row:
-        path: ./bio:plate_row
-        type: str
-      plate_column:
-        path: ./bio:plate_column
-        type: str
-    datetime_properties:
-      shipment_datetime:
-        day: ./bio:day_of_shipment
-        month: ./bio:month_of_shipment
-        year: ./bio:year_of_shipment
 
 analyte:
   -
@@ -84,7 +115,6 @@ portion:
     edges:
       derived_from:
         sample: ancestor::bio:sample/bio:bcr_sample_uuid
-        center: ./bio:analytes/bio:analyte/bio:center_id
     properties:
       submitter_id:
         path: ./bio:bcr_portion_barcode
@@ -109,10 +139,36 @@ portion:
     edges:
       derived_from:
         sample: ancestor::bio:sample/bio:bcr_sample_uuid
-        center: ./bio:analytes/bio:analyte/bio:center_id
+    edges_by_property:
+      shipped_to:
+        center:
+          code: .//bio:center_id
+    edge_properties:
+      shipped_to:
+          plate_id:
+            path: ./bio:plate_id
+            type: str
+          plate_row:
+            path: ./bio:plate_row
+            type: str
+          plate_column:
+            path: ./bio:plate_column
+            type: str
+          shipment_center_id:
+            path: ./bio:center_id
+            type: str
+          shipment_reason:
+            path: ./bio:shipment_reason
+            type: str
+    edge_datetime_properties:
+      shipped_to:
+          shipment_datetime:
+            day: ./bio:shipment_portion_day_of_shipment
+            month: ./bio:shipment_portion_month_of_shipment
+            year: ./bio:shipment_portion_year_of_shipment
     properties:
       submitter_id:
-        path: ./bio:bcr_portion_barcode
+        path: ./bio:shipment_portion_bcr_aliquot_barcode
         type: str
       portion_number:
         path: ./bio:portion_number
@@ -125,9 +181,9 @@ portion:
         type: bool
     datetime_properties:
       creation_datetime:
-        day: ./bio:day_of_creation
-        month: ./bio:month_of_creation
-        year: ./bio:year_of_creation
+        day: ./bio:shipment_portion_day_of_shipment
+        month: ./bio:shipment_portion_month_of_shipment
+        year: ./bio:shipment_portion_year_of_shipment
 
 sample:
   -

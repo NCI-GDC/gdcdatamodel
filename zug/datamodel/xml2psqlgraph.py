@@ -207,7 +207,9 @@ class xml2psqlgraph(object):
                     try:
                         self.graph.edge_insert(e, session=session)
                     except:
-                        log.error('Unable to add edge {}'.format(e.label))
+                        log.error(e.properties)
+                        log.error('Unable to add edge {} from {} to {}'.format(
+                            e.label, e.src, e.dst))
                         raise
         self.edges = {}
 
@@ -251,7 +253,13 @@ class xml2psqlgraph(object):
             edges = self.get_node_edges(root, node_type, params, node_id)
             for dst_id, edge in edges.iteritems():
                 dst_label, edge_label = edge
-                self.save_edge(node_id, dst_id, dst_label, edge_label)
+                edge_props = {}
+                edge_props.update(self.get_node_edge_properties(
+                    root, edge_label, params, node_id))
+                edge_props.update(self.get_node_edge_datetime_properties(
+                    root, edge_label, params, node_id))
+                self.save_edge(node_id, dst_id, dst_label, edge_label,
+                               edge_props)
 
     def save_node(self, node_id, label, properties, acl=[]):
         """Adds a node to the graph
@@ -518,3 +526,50 @@ class xml2psqlgraph(object):
                 for dst in dsts:
                     edges[dst.node_id] = (dst.label, edge_type)
         return edges
+
+    def get_node_edge_properties(self, root, edge_type, params, node_id=''):
+        if 'edge_properties' not in params or not params.edge_properties or \
+           edge_type not in params.edge_properties:
+            return {}
+
+        props = {}
+        for prop, args in params.edge_properties[edge_type].items():
+            path, _type = args['path'], args['type']
+            if not path:
+                continue
+            result = self.xpath(
+                path, root, single=True, text=True,
+                expected=(not self.ignore_missing_properties),
+                label='{}: {}'.format(edge_type, node_id))
+            props[prop] = self.munge_property(result, _type)
+        return props
+
+    def get_node_edge_datetime_properties(
+            self, root, edge_type, params, node_id=''):
+
+        if 'edge_datetime_properties' not in params \
+           or not params.edge_datetime_properties \
+           or edge_type not in params.edge_datetime_properties:
+            return {}
+
+        props = {}
+        # Loop over all given datetime properties
+        for name, timespans in params.edge_datetime_properties[edge_type]\
+                                     .items():
+            times = {'year': 0, 'month': 0, 'day': 0}
+
+            # Parse the year, month, day
+            for span in times:
+                if span in timespans:
+                    temp = self.xpath(
+                        timespans[span], root, single=True, text=True,
+                        expected=True,
+                        label='{}: {}'.format(edge_type, node_id))
+                    times[span] = 0 if temp is None else int(temp)
+
+            if not times['year']:
+                props[name] = 0
+            else:
+                props[name] = unix_time(datetime.datetime(
+                    times['year'], times['month'], times['day']))
+        return props
