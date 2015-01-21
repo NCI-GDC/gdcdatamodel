@@ -128,6 +128,51 @@
     "doc": "TOREVIEW: Allowed states for files, inspired but slightly different from CGHub vocab"
   },
   {
+    "name": "gender_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "male",
+      "female"
+    ],
+    "type": "enum",
+    "doc": "TOREVIEW: Allowed genders"
+  },
+  {
+    "name": "race_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "not reported",
+      "white",
+      "american indian or alaska native",
+      "black or african american",
+      "asian",
+      "native hawaiian or other pacific islander"
+    ],
+    "type": "enum",
+    "doc": "TOREVIEW: Allowed races"
+  },
+  {
+    "name": "ethnicity_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "hispanic or latino",
+      "not hispanic or latino"
+    ],
+    "type": "enum",
+    "doc": "TOREVIEW: Allowed ethnicities"
+  },
+  {
+    "name": "vital_status_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "alive",
+      "dead",
+      "lost to follow-up"
+    ],
+    "type": "enum",
+    "doc": "TOREVIEW: Allowed vital statuses"
+  },
+  {
     "name": "fixed16",
     "namespace": "edu.uchicago.cdis",
     "type": "fixed",

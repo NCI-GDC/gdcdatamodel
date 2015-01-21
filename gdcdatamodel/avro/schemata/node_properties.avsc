@@ -492,89 +492,39 @@
     "namespace": "edu.uchicago.cdis",
     "fields": [
       {
-        "name": "prior_dx",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
-      },
-      {
         "name": "gender",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
+        "type": "gender_enum",
+        "doc": "Text designations that identify gender. Gender is described as the assemblage of properties that distinguish people on the basis of their societal roles. CDE: 2200604"
       },
       {
-        "name": "birth_datetime",
-        "type": "long",
-        "doc": "TOREVIEW: The datetime of birth encoded as seconds from epoch. If no time is given, it is set to 00:00:00 of the date. Replaces day_of_birth/month_of_birth/year_of_birth."
-      },
-      {
-        "name": "days_to_death",
-        "type": "long",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "days_to_last_followup",
-        "type": "long",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "history_of_neoadjuvant_treatment",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "icd_10",
-        "type": "string",
-        "doc": "TODO: define, from BCR, not tier 1"
-      },
-      {
-        "name": "days_to_initial_pathologic_diagnosis",
-        "type": "long",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "age_at_initial_pathologic_diagnosis",
-        "type": "long",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "year_of_initial_pathologic_diagnosis",
-        "type": "long",
-        "doc": "TODO: define, from BCR"
+        "name": "race",
+        "type": "race_enum",
+        "doc": "The text for reporting information about race based on the Office of Management and Budget (OMB) categories. CDE: 2192199."
       },
       {
         "name": "ethnicity",
-        "type": "string",
-        "doc": "TODO: define, from BCR, not tier 1"
+        "type": "ethnicity_enum",
+        "doc": "The text for reporting information about ethnicity based on the Office of Management and Budget (OMB) categories. CDE: 2192217."
       },
       {
-        "name": "histological_type",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
+        "name": "vital_status",
+        "type": "vital_status_enum",
+        "doc": "The survival state of the person registered on the protocol. CDE: 5. "
       },
       {
-        "name": "histological_type_other",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
+        "name": "year_of_initial_pathologic_diagnosis",
+        "type": ["null", "int"],
+        "doc": "Numeric value to represent the day of an individual's initial pathologic diagnosis of cancer. CDE: 2896958."
       },
       {
-        "name": "stage_system_version",
-        "type": "string",
-        "doc": "TODO: define, from BCR, this is nested"
+        "name": "age_at_initial_pathologic_diagnosis",
+        "type": ["null", "long"],
+        "doc": "Age at which a condition or disease was first diagnosed. CDE: 2006657."
       },
       {
-        "name": "pathologic_stage",
-        "type": "string",
-        "doc": "TODO: define, from BCR, this is nested"
-      },
-      {
-        "name": "postoperative_rx_tx",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
-      },
-      {
-        "name": "radiation_therapy",
-        "type": "string",
-        "doc": "TODO: define, from BCR"
+        "name": "days_to_death",
+        "type": ["null", "int"],
+        "doc": "Time interval from a person's date of death to the date of initial pathologic diagnosis, represented as a calculated number of days. CDE: 3165475."
       }
     ]
   },
