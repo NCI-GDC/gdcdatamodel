@@ -205,7 +205,7 @@ def is_reference_row(row):
     return is_reference(row["Extract Name"])
 
 
-def get_legacy_id_and_rev(archive):
+def get_submiter_id_and_rev(archive):
     return re.sub("\.(\d+?)\.(\d+)$", "", archive["archive_name"]), archive["revision"]
 
 
@@ -318,10 +318,10 @@ class TCGAMAGETABSyncer(object):
                 ).one()
             else:
                 # dcc file
-                legacy_id, revision = get_legacy_id_and_rev(self.archive)
+                submitter_id, revision = get_submiter_id_and_rev(self.archive)
                 archive_node = self.pg_driver.node_lookup(
                     label="archive",
-                    property_matches={"legacy_id": legacy_id,
+                    property_matches={"submitter_id": submitter_id,
                                       "revision": revision},
                     session=session
                 ).one()
