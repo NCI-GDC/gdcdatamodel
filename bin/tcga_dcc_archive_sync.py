@@ -31,7 +31,6 @@ def sync_list(args, archives):
             syncer.sync()  # ugh
         except:
             syncer.log.exception("caught exception while syncing")
-            raise
 
 
 def split(a, n):
