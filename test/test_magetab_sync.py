@@ -40,6 +40,17 @@ class TestTCGAMAGETASync(unittest.TestCase):
             }
         )
 
+    def create_portion(self, uuid, barcode):
+        return self.driver.node_merge(
+            node_id=uuid if uuid else str(uuid.uuid4()),
+            label="portion",
+            properties={
+                "submitter_id": barcode,
+                "portion_number": "30",
+                "creation_datetime": 123456,
+            }
+        )
+
     def create_archive(self, archive):
         submitter_id, rev = get_submitter_id_and_rev(archive)
         return self.driver.node_merge(
@@ -106,3 +117,22 @@ class TestTCGAMAGETASync(unittest.TestCase):
         n_files = self.driver.node_lookup(label="file")\
                              .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
+
+    def test_shipped_portion_magetab_sync(self):
+        portion = self.create_portion("f9762bbb-bca0-4b54-a2c8-6f81a91de22f", "TCGA-OR-A5J2-01A-21-A39K-20")
+        lvl1 = self.create_archive("mdanderson.org_ACC.MDA_RPPA_Core.Level_1.1.1.0")
+        lvl2 = self.create_archive("mdanderson.org_ACC.MDA_RPPA_Core.Level_2.1.1.0")
+        lvl3 = self.create_archive("mdanderson.org_ACC.MDA_RPPA_Core.Level_3.1.2.0")
+        self.create_file("14-3-3_beta-R-V_GBL11066140.txt", archive=lvl1)
+        self.create_file("14-3-3_beta-R-V_GBL11066140.tif", archive=lvl1)
+        self.create_file("mdanderson.org_ACC.MDA_RPPA_Core.SuperCurve.Level_2.F9762BBB-BCA0-4B54-A2C8-6F81A91DE22F.txt",
+                         archive=lvl2)
+        self.create_file("mdanderson.org_ACC.MDA_RPPA_Core.protein_expression.Level_3.F9762BBB-BCA0-4B54-A2C8-6F81A91DE22F.txt",
+                         archive=lvl3)
+        syncer = TCGAMAGETABSyncer(self.fake_archive_for("duplicate.sdrf.txt"),
+                                   pg_driver=self.driver, lazy=True)
+        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
+        syncer.sync()
+        n_files = self.driver.node_lookup(label="file")\
+                             .with_edge_to_node("data_from", portion).count()
+        self.assertEqual(n_files, 4)
