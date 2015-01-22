@@ -475,12 +475,10 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("file %s already in signpost, skipping",
                           node["file_name"])
             return
-        self.set_file_state(node, "uploading")
         name = self.full_name(node["file_name"])
         obj = self.upload_data(self.tarball.extractfile(name), name)
         new_url = url_for(obj)
         self.store_url_in_signpost(node.node_id, new_url)
-        self.set_file_state(node, "validating")
 
     def sync(self):
         if self.archive["disease_code"] == "FPPP":
@@ -512,7 +510,11 @@ class TCGADCCArchiveSyncer(object):
                         file_nodes.append(file_node)
         if not self.dryrun:
             for node in file_nodes:
+                if node["state"] == "submitted":
+                    self.set_file_state(node, "uploading")
                 self.upload(node)
+                if node["state"] == "uploading":
+                    self.set_file_state(node, "validating")
                 self.verify(node)
             # finally, upload the archive itself
             self.temp_file.seek(0)
