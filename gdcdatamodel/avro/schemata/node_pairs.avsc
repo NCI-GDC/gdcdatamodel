@@ -456,11 +456,11 @@
     "fields": [
       {
         "name": "src_node_label",
-        "type": "participant_enum"
+        "type": "clinical_enum"
       },
       {
         "name": "dst_node_label",
-        "type": "clinical_enum"
+        "type": "participant_enum"
       }
     ]
   },
