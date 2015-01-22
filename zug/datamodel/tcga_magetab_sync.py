@@ -211,11 +211,9 @@ def get_submiter_id_and_rev(archive):
 
 class TCGAMAGETABSyncer(object):
 
-    def __init__(self, archive, pg_driver=None, dcc_auth=None,
-                 cache_path=None):
+    def __init__(self, archive, pg_driver=None, cache_path=None):
         self.archive = archive
         self.pg_driver = pg_driver
-        self.dcc_auth = dcc_auth
         folder_url = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
