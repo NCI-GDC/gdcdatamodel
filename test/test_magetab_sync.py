@@ -87,3 +87,22 @@ class TestTCGAMAGETASync(unittest.TestCase):
         n_files = self.driver.node_lookup(label="file")\
                              .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
+
+    def test_duplicate_barcode_magetab_sync(self):
+        aliquot = self.create_aliquot(str(uuid.uuid4()), "TCGA-28-1751-01A-02R-0598-07")
+        lvl1 = self.create_archive("unc.edu_GBM.AgilentG4502A_07_2.Level_1.1.6.0")
+        lvl2 = self.create_archive("unc.edu_GBM.AgilentG4502A_07_2.Level_2.1.6.0")
+        lvl3 = self.create_archive("unc.edu_GBM.AgilentG4502A_07_2.Level_3.1.6.0")
+        self.create_file("US82800149_251780410508_S01_GE2_105_Dec08.txt",
+                         archive=lvl1)
+        self.create_file("US82800149_251780410508_S01_GE2_105_Dec08.txt_lmean.out.logratio.probe.tcga_level2.data.txt",
+                         archive=lvl2)
+        self.create_file("US82800149_251780410508_S01_GE2_105_Dec08.txt_lmean.out.logratio.gene.tcga_level3.data.txt",
+                         archive=lvl3)
+        syncer = TCGAMAGETABSyncer(self.fake_archive_for("duplicate.sdrf.txt"),
+                                   pg_driver=self.driver, lazy=True)
+        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
+        syncer.sync()
+        n_files = self.driver.node_lookup(label="file")\
+                             .with_edge_to_node("data_from", aliquot).count()
+        self.assertEqual(n_files, 3)
