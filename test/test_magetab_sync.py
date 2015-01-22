@@ -99,6 +99,22 @@ class TestTCGAMAGETASync(unittest.TestCase):
                              .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
 
+    def test_magetab_sync_handles_missing_file_gracefully(self):
+        # this is the same as the above test, but one of the files is missing
+        aliquot = self.create_aliquot("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
+                                      "TCGA-OR-A5J5-01A-11R-A29W-13")
+        archive = self.create_archive("bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.Level_3.1.1.0")
+        self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13_mirna.bam")
+        self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
+                         archive=archive)
+        syncer = TCGAMAGETABSyncer(self.fake_archive_for("basic.sdrf.txt"),
+                                   pg_driver=self.driver, lazy=True)
+        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer.sync()
+        n_files = self.driver.node_lookup(label="file")\
+                             .with_edge_to_node("data_from", aliquot).count()
+        self.assertEqual(n_files, 2)
+
     def test_duplicate_barcode_magetab_sync(self):
         aliquot = self.create_aliquot(str(uuid.uuid4()), "TCGA-28-1751-01A-02R-0598-07")
         lvl1 = self.create_archive("unc.edu_GBM.AgilentG4502A_07_2.Level_1.1.6.0")

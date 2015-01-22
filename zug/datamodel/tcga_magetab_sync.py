@@ -6,6 +6,7 @@ import re
 from collections import defaultdict
 
 from psqlgraph import PsqlEdge
+from sqlalchemy.orm.exc import NoResultFound
 
 from cdisutils.log import get_logger
 
@@ -359,9 +360,18 @@ class TCGAMAGETABSyncer(object):
         for (archive, filename), specemins in mapping.iteritems():
             for (label, uuid, barcode) in specemins:
                 with self.pg_driver.session_scope() as session:
-                    file = self.get_file_node(archive, filename, session)
-                    self.tie_to_biospecemin(file, label, uuid,
-                                            barcode, session)
+                    try:
+                        file = self.get_file_node(archive, filename, session)
+                    except NoResultFound:
+                        session.rollback()
+                        self.log.warning("Couldn't find file %s in archive %s", filename, archive)
+                        continue
+                    try:
+                        self.tie_to_biospecemin(file, label, uuid,
+                                                barcode, session)
+                    except NoResultFound:
+                        session.rollback()
+                        self.log.warning("Couldn't find bionspecemin (%s, %s, %s)", label, uuid, barcode)
 
     def sync(self):
         mapping = self.compute_mapping()
