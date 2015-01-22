@@ -167,6 +167,7 @@ FILE_COL_NAMES = [
 
 
 def is_file_group(group):
+    group = cleanup_list(group)
     if "Derived Data File REF" in group:
         return True
     if "Comment [Derived Data File REF]" in group:
@@ -280,10 +281,10 @@ class TCGAMAGETABSyncer(object):
             self.log.info("cached mapping present, not computing")
             return self._mapping
         self.log.info("computing mappings . . .")
-        groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
+        groups = [group for group in group_by_protocol(self.df)]
         result = defaultdict(lambda: set())  # a dict from (archive,
                                              # filename) pairs to (label,
-                                          # uuid, barcode) triples
+                                             # uuid, barcode) triples
         file_groups = [group for group in groups if is_file_group(group)]
         self.log.debug("file groups are %s", file_groups)
         for _, row in self.df.iterrows():
