@@ -351,3 +351,7 @@ class TCGAMAGETABSyncer(object):
                 file = self.get_file_node(archive, filename, session)
                 self.tie_to_biospecemin(self, file, label, uuid,
                                         barcode, session)
+
+    def sync(self):
+        mapping = self.compute_mapping()
+        self.put_mapping_in_pg(mapping)
