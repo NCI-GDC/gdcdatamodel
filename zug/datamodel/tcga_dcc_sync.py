@@ -7,6 +7,7 @@ from urlparse import urlparse
 from functools import partial
 import copy
 import os
+from contextlib import contextmanager
 
 from lxml import html
 
@@ -26,6 +27,9 @@ from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
 
+
+class InvalidChecksumException(Exception):
+    pass
 
 def md5sum(iterable):
     md5 = hashlib.md5()
@@ -421,6 +425,8 @@ class TCGADCCArchiveSyncer(object):
                           "temp file on disk", resp.headers["content-length"])
             self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
         else:
+            self.log.info("archive size is %s bytes, storing in "
+                          "memory in StringIO" , resp.headers["content-length"])
             self.temp_file = StringIO()
         for chunk in resp.iter_content(chunk_size=16000):
             self.temp_file.write(chunk)
@@ -463,11 +469,10 @@ class TCGADCCArchiveSyncer(object):
         expected_sum = node["md5sum"]
         actual_sum = md5sum(obj.as_stream())
         if actual_sum != expected_sum:
-            self.pg_driver.node_update(node,
-                                       properties={"state": "invalid",
-                                                   "state_comment": "bad md5sum"})
+            self.pg_driver.node_update(
+                node, properties={"state_comment": "bad md5sum"})
             self.log.warning("file %s has invalid checksum", node["file_name"])
-        self.set_file_state(node, "live")
+            raise InvalidChecksumException()
 
     def upload(self, node):
         urls = self.get_urls_from_signpost(node.node_id)
@@ -479,6 +484,31 @@ class TCGADCCArchiveSyncer(object):
         obj = self.upload_data(self.tarball.extractfile(name), name)
         new_url = url_for(obj)
         self.store_url_in_signpost(node.node_id, new_url)
+
+    @contextmanager
+    def state_transition(self, file, original_state, intermediate_state, final_state,
+                         error_states={}):
+        """Try to do something to a file node, setting it's state to
+        intermediate_state while the thing is being done, moving to
+        final_state if the thing completes successfully, falling back to the original
+        state if the thing fails
+        """
+        if file["state"] != original_state:
+            self.log.info("%s not in state %s, skipping transition", file, original_state)
+        try:
+            self.set_file_state(file, intermediate_state)
+            yield
+            self.set_file_state(file, final_state)
+        except Exception as e:
+            for err_cls, state in error_states.iteritems():
+                if isinstance(e, err_cls):
+                    self.log.warning("%s caught, setting %s to %s", e, file, state)
+                    self.set_file_state(file, state)
+                    return
+            self.log.exception("failure while trying to move %s from %s to %s via %s",
+                               file, original_state, final_state, intermediate_state)
+            self.set_file_state(file, original_state)
+            raise
 
     def sync(self):
         if self.archive["disease_code"] == "FPPP":
@@ -510,12 +540,13 @@ class TCGADCCArchiveSyncer(object):
                         file_nodes.append(file_node)
         if not self.dryrun:
             for node in file_nodes:
-                if node["state"] == "submitted":
-                    self.set_file_state(node, "uploading")
-                self.upload(node)
-                if node["state"] == "uploading":
-                    self.set_file_state(node, "validating")
-                self.verify(node)
+                with self.state_transition(node, "submitted", "uploading", "uploaded"):
+                    self.log.info("uploading file %s (%s)", node, node["file_name"])
+                    self.upload(node)
+                with self.state_transition(node, "uploaded", "validating", "live",
+                                           error_states={InvalidChecksumException: "invalid"}):
+                    self.log.info("validating file %s (%s)", node, node["file_name"])
+                    self.verify(node)
             # finally, upload the archive itself
             self.temp_file.seek(0)
             self.upload_data(self.temp_file, "/".join(["archives", self.name]))
