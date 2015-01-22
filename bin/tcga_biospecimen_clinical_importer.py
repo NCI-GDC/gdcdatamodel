@@ -1,5 +1,6 @@
 import logging
 import argparse
+import re
 from multiprocessing import Pool
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
@@ -9,6 +10,11 @@ from cdisutils.log import get_logger
 
 log = get_logger("dcc_bio_importer")
 logging.root.setLevel(level=logging.INFO)
+
+re_biospecimen = re.compile(".*(biospecimen).*\\.xml")
+re_clinical = re.compile(".*(clinical).*\\.xml")
+all_reg = ".*(bio).*(Level_1).*(biospecimen|clinical).*\\.xml"
+
 
 args = None
 
@@ -25,14 +31,28 @@ def get_converter(mapping):
     )
 
 
-def process(args):
-    archive, mapping, datatype = args
-    converter = get_converter(mapping)
+def process(archive):
     url = archive['dcc_archive_url']
-    extractor = extract_tar.ExtractTar(
-        regex=".*(bio).*(Level_1).*({datatype}).*\\.xml".format(
-            datatype=datatype))
-    for xml in extractor(url):
+    extractor = extract_tar.ExtractTar(regex=all_reg)
+    if not args.no_biospecimen:
+        biospecimen_converter = get_converter(bcr_xml_mapping)
+    if not args.no_clinical:
+        clinical_converter = get_converter(clinical_xml_mapping)
+
+    for xml, name in extractor(url, return_name=True):
+        # multiplex on clinical or biospecimen
+        if re_biospecimen.match(name):
+            if args.no_biospecimen:
+                return
+            converter = biospecimen_converter
+        elif re_clinical.match(name):
+            if args.no_clinical:
+                return
+            converter = clinical_converter
+        else:
+            raise RuntimeError('Unknown datatype {}'.format(name))
+
+        # convert and export to psql
         converter.xml2psqlgraph(xml)
         group_id = "{study}_{batch}".format(
             study=archive['disease_code'], batch=archive['batch'])
@@ -41,13 +61,11 @@ def process(args):
         converter.purge_old_nodes(group_id, version)
 
 
-def import_datatype(mapping, datatype):
-    logging.info('Importing {} data'.format(datatype))
+def import_datatypes():
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
-    l = len(latest)
     p = Pool(args.nproc)
-    p.map(process, zip(latest, [mapping]*l, [datatype]*l))
+    p.map(process, latest)
 
 
 if __name__ == '__main__':
@@ -77,7 +95,5 @@ if __name__ == '__main__':
     if not args.no_prelude:
         logging.info("Importing prelude nodes")
         prelude.create_prelude_nodes(get_converter(None).graph)
-    if not args.no_biospecimen:
-        import_datatype(bcr_xml_mapping, 'biospecimen')
-    if not args.no_clinical:
-        import_datatype(clinical_xml_mapping, 'clinical')
+
+    import_datatypes()
