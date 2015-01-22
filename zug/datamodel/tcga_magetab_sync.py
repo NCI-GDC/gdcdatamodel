@@ -263,7 +263,7 @@ class TCGAMAGETABSyncer(object):
             # shipped portion magetabs
             assert not row.get(TCGA_BARCODE)
             # we expect the biospecemin type to be Shipped portion
-            assert row[SPECEMIN_TYPE] == "Shipped portion"
+            assert row[SPECEMIN_TYPE] in ["Shipped portion", "Shipped Portion"]
             fixed = strip_dot_trailer(row[EXTRACT_NAME])
             if is_shipped_portion_barcode(fixed):
                 barcode = fixed
