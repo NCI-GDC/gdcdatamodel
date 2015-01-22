@@ -240,13 +240,9 @@ class TCGAMAGETABSyncer(object):
             if is_aliquot_barcode(row[TCGA_BARCODE]):
                 # the most common case
                 return ALIQUOT, row[EXTRACT_NAME].lower(), row[TCGA_BARCODE]
-        elif is_aliquot_barcode(row[EXTRACT_NAME]):
-            if not row.get(TCGA_BARCODE) or is_empty(row[TCGA_BARCODE]):
-                # second most common, Extract Name is the barcode, there is
-                # no tcga barcode column (or it is empty)
-                return ALIQUOT, None, row[EXTRACT_NAME]
-            elif (is_aliquot_barcode(row[TCGA_BARCODE])
-                    and row[TCGA_BARCODE] == row[EXTRACT_NAME]):
+        elif (is_aliquot_barcode(row[EXTRACT_NAME])
+                and is_aliquot_barcode(row[TCGA_BARCODE])
+                and row[TCGA_BARCODE] == row[EXTRACT_NAME]):
                 # sometimes the barcode and EXTRACT_NAME are both
                 # identical barcodes
                 return ALIQUOT, None, row[EXTRACT_NAME]
@@ -280,7 +276,7 @@ class TCGAMAGETABSyncer(object):
         self.log.info("computing mappings . . .")
         groups = [cleanup_list(group) for group in group_by_protocol(self.df)]
         result = defaultdict(lambda: set())  # a dict from (archive,
-                                          # filename) pairs to (label,
+                                             # filename) pairs to (label,
                                           # uuid, barcode) triples
         file_groups = [group for group in groups if is_file_group(group)]
         self.log.debug("file groups are %s", file_groups)
