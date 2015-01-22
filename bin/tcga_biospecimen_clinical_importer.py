@@ -9,13 +9,12 @@ from zug.datamodel import xml2psqlgraph, latest_urls,\
 from cdisutils.log import get_logger
 
 log = get_logger("dcc_bio_importer")
-logging.root.setLevel(level=logging.INFO)
+logging.root.setLevel(level=logging.ERROR)
 
 re_biospecimen = re.compile(".*(biospecimen).*\\.xml")
 re_clinical = re.compile(".*(clinical).*\\.xml")
-all_reg = ".*(bio).*(Level_1).*(biospecimen|clinical).*\\.xml"
-
-
+all_reg = ".*(bio).*(Level_1).*\\.xml"
+biospecimen_converter, clinical_converter = None, None
 args = None
 
 
@@ -31,40 +30,43 @@ def get_converter(mapping):
     )
 
 
+def initializer(*args):
+    global biospecimen_converter, clinical_converter
+    biospecimen_converter = get_converter(bcr_xml_mapping)
+    clinical_converter = get_converter(clinical_xml_mapping)
+
+
 def process(archive):
     url = archive['dcc_archive_url']
     extractor = extract_tar.ExtractTar(regex=all_reg)
-    if not args.no_biospecimen:
-        biospecimen_converter = get_converter(bcr_xml_mapping)
-    if not args.no_clinical:
-        clinical_converter = get_converter(clinical_xml_mapping)
-
+    log.info(url)
     for xml, name in extractor(url, return_name=True):
         # multiplex on clinical or biospecimen
-        if re_biospecimen.match(name):
-            if args.no_biospecimen:
-                return
+        if not args.no_biospecimen and re_biospecimen.match(name):
             converter = biospecimen_converter
-        elif re_clinical.match(name):
-            if args.no_clinical:
-                return
+        elif not args.no_clinical and re_clinical.match(name):
             converter = clinical_converter
         else:
-            raise RuntimeError('Unknown datatype {}'.format(name))
+            continue
 
         # convert and export to psql
-        converter.xml2psqlgraph(xml)
-        group_id = "{study}_{batch}".format(
-            study=archive['disease_code'], batch=archive['batch'])
-        version = archive['revision']
-        converter.export(group_id=group_id, version=version)
-        converter.purge_old_nodes(group_id, version)
+        log.info(name)
+        try:
+            converter.xml2psqlgraph(xml)
+            group_id = "{study}_{batch}".format(
+                study=archive['disease_code'], batch=archive['batch'])
+            version = archive['revision']
+            converter.export(group_id=group_id, version=version)
+            converter.purge_old_nodes(group_id, version)
+        except Exception, msg:
+            log.error('Error parsing xml {} from {}'.format(name, url))
+            log.error(msg)
 
 
 def import_datatypes():
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
-    p = Pool(args.nproc)
+    p = Pool(args.nproc, initializer)
     p.map(process, latest)
 
 
@@ -96,4 +98,5 @@ if __name__ == '__main__':
         logging.info("Importing prelude nodes")
         prelude.create_prelude_nodes(get_converter(None).graph)
 
-    import_datatypes()
+    if not args.no_biospecimen or not args.no_clinical:
+        import_datatypes()

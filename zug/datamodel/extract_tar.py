@@ -23,11 +23,9 @@ class ExtractTar(object):
 
     def __call__(self, url, return_name=False):
         stream = urllib2.urlopen(url)
-        logger.info(url)
         tfile = tarfile.open(fileobj=stream, mode=self.mode)
         for entry in tfile:
             if not self.pattern or self.pattern.match(entry.name):
-                logger.info(entry.name)
                 if not return_name:
                     yield tfile.extractfile(entry).read()
                 else:

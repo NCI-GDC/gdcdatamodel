@@ -169,8 +169,8 @@ class xml2psqlgraph(object):
                             'group_id', None), node))
 
             if group_id and version:
-                system_annotations = {
-                    'group_id': group_id, 'version': version}
+                system_annotations.update({
+                    'group_id': group_id, 'version': version})
 
             if old_node:
                 if not version or not group_id or \
