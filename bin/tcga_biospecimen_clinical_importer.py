@@ -14,8 +14,10 @@ logging.root.setLevel(level=logging.ERROR)
 re_biospecimen = re.compile(".*(biospecimen).*\\.xml")
 re_clinical = re.compile(".*(clinical).*\\.xml")
 all_reg = ".*(bio).*(Level_1).*\\.xml"
-biospecimen_converter, clinical_converter = None, None
 args = None
+
+# These will be set when the process each initialized
+biospecimen_converter, clinical_converter = None, None
 
 
 def get_converter(mapping):
@@ -38,8 +40,11 @@ def initializer(*args):
 
 def process(archive):
     url = archive['dcc_archive_url']
-    extractor = extract_tar.ExtractTar(regex=all_reg)
+    group_id = "{}_{}".format(archive['disease_code'], archive['batch'])
+    version = archive['revision']
     log.info(url)
+
+    extractor = extract_tar.ExtractTar(regex=all_reg)
     for xml, name in extractor(url, return_name=True):
         # multiplex on clinical or biospecimen
         if not args.no_biospecimen and re_biospecimen.match(name):
@@ -48,19 +53,14 @@ def process(archive):
             converter = clinical_converter
         else:
             continue
+        converter.xml2psqlgraph(xml)
 
-        # convert and export to psql
-        log.info(name)
-        try:
-            converter.xml2psqlgraph(xml)
-            group_id = "{study}_{batch}".format(
-                study=archive['disease_code'], batch=archive['batch'])
-            version = archive['revision']
-            converter.export(group_id=group_id, version=version)
-            converter.purge_old_nodes(group_id, version)
-        except Exception, msg:
-            log.error('Error parsing xml {} from {}'.format(name, url))
-            log.error(msg)
+    # export
+    biospecimen_converter.export(group_id=group_id, version=version)
+    clinical_converter.export(group_id=group_id, version=version)
+
+    # purge (independent of datatype, just use biospecimen_converter)
+    biospecimen_converter.purge_old_nodes(group_id, version)
 
 
 def import_datatypes():

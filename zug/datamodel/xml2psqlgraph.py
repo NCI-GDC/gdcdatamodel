@@ -2,6 +2,7 @@ import json
 import datetime
 import psqlgraph
 import pprint
+from uuid import uuid5, UUID
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
@@ -340,10 +341,16 @@ class xml2psqlgraph(object):
 
         """
 
-        # All other nodes
-        if 'id' not in params or not params.id:
-            return None
-        node_id = self.xpath(params.id, root, single=True, label=node_type)
+        assert not ('id' in params and 'generated_id' in params),\
+            'Specification of an id xpath and parameters for generating an id'
+        if 'id' in params:
+            node_id = self.xpath(params.id, root, single=True, label=node_type)
+        elif 'generated_id' in params:
+            name = self.xpath(
+                params.generated_id.name, root, single=True, label=node_type)
+            node_id = str(uuid5(UUID(params.generated_id.namespace), name))
+        else:
+            raise LookupError('Unable to find id mapping in xml_mapping')
         return node_id.lower()
 
     def munge_property(self, prop, _type):
