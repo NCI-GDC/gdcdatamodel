@@ -117,6 +117,7 @@
     "symbols": [
       "submitted",
       "uploading",
+      "uploaded",
       "generating",
       "validating",
       "invalid",
