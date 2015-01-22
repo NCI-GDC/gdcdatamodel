@@ -22,6 +22,7 @@ from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from cdisutils.log import get_logger
+from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
 
@@ -194,6 +195,7 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
+    @no_proxy()
     def allocate_id_from_signpost(self):
         """Retrieve a new empty did from signpost."""
         resp = requests.post("/".join([self.signpost_url,
@@ -203,6 +205,7 @@ class TCGADCCArchiveSyncer(object):
         resp.raise_for_status()
         return resp.json()["did"]
 
+    @no_proxy()
     def get_urls_from_signpost(self, did):
         """Retrieve all the urls associated with a did in signpost."""
         resp = requests.get("/".join([self.signpost_url,
@@ -212,6 +215,7 @@ class TCGADCCArchiveSyncer(object):
         resp.raise_for_status()
         return resp.json()["urls"]
 
+    @no_proxy()
     def store_url_in_signpost(self, did, url):
         # replace whatever urls are in there with the one passed in
         # going to have to go a GET first to get the rev
