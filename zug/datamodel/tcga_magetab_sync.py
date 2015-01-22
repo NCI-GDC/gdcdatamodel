@@ -205,26 +205,32 @@ def is_reference_row(row):
     return is_reference(row["Extract Name"])
 
 
-def get_submiter_id_and_rev(archive):
-    return re.sub("\.(\d+?)\.(\d+)$", "", archive["archive_name"]), archive["revision"]
+def get_submitter_id_and_rev(archive):
+    pat = "\.(\d+?)\.(\d+)$"
+    return re.sub(pat, "", archive), re.search(pat, archive).group(1)
 
 
 class TCGAMAGETABSyncer(object):
 
-    def __init__(self, archive, pg_driver=None, cache_path=None):
+    def __init__(self, archive, pg_driver=None, cache_path=None, lazy=False):
         self.archive = archive
         self.pg_driver = pg_driver
-        folder_url = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
-        if cache_path:
-            pickle_path = os.path.join(cache_path, "{}.pickle".format(self.archive["archive_name"]))
+        self._cache_path = cache_path
+        if not lazy:
+            self.fetch_sdrf()
+        self._mapping = None
+
+    def fetch_sdrf(self):
+        folder_url = self.archive["dcc_archive_url"].replace(".tar.gz", "")
+        if self._cache_path:
+            pickle_path = os.path.join(self._cache_path, "{}.pickle".format(self.archive["archive_name"]))
             self.log.info("reading sdrf from cache path %s", pickle_path)
             self.df = pd.read_pickle(pickle_path)
         else:
             self.log.info("downloading sdrf from %s", folder_url)
             self.df = pd.read_table(sdrf_from_folder(folder_url))
-        self._mapping = None
 
     def cache_df_to_file(self, path):
         self.df.to_pickle(os.path.join(path, "{}.pickle".format(
@@ -307,12 +313,12 @@ class TCGAMAGETABSyncer(object):
                 file_node = self.pg_driver.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
-                    system_annotations_matches={"source": "cghub"},
+                    system_annotation_matches={"source": "cghub"},
                     session=session
                 ).one()
             else:
                 # dcc file
-                submitter_id, revision = get_submiter_id_and_rev(archive_name)
+                submitter_id, revision = get_submitter_id_and_rev(archive_name)
                 archive_node = self.pg_driver.node_lookup(
                     label="archive",
                     property_matches={"submitter_id": submitter_id,
@@ -332,25 +338,26 @@ class TCGAMAGETABSyncer(object):
         if uuid:
             bio = self.pg_driver.node_lookup(node_id=uuid).one()
             assert bio.label == label
-            assert bio["submiter_id"] == barcode
+            assert bio["submitter_id"] == barcode
         elif barcode:
             bio = self.pg_driver.node_lookup(
                 label=label,
-                property_matches={"submiter_id": barcode},
+                property_matches={"submitter_id": barcode},
             ).one()
         edge = PsqlEdge(
             label="data_from",
             src_id=file.node_id,
             dst_id=bio.node_id
         )
-        self.driver.edge_insert(edge, session=session)
+        self.pg_driver.edge_insert(edge, session=session)
 
     def put_mapping_in_pg(self, mapping):
-        for (archive, filename), (label, uuid, barcode) in mapping.iteritems():
-            with self.pg_driver.session_scope() as session:
-                file = self.get_file_node(archive, filename, session)
-                self.tie_to_biospecemin(self, file, label, uuid,
-                                        barcode, session)
+        for (archive, filename), specemins in mapping.iteritems():
+            for (label, uuid, barcode) in specemins:
+                with self.pg_driver.session_scope() as session:
+                    file = self.get_file_node(archive, filename, session)
+                    self.tie_to_biospecemin(file, label, uuid,
+                                            barcode, session)
 
     def sync(self):
         mapping = self.compute_mapping()
