@@ -243,6 +243,7 @@ class TCGAMAGETABSyncer(object):
         SAMPLE_NAME = "Sample Name"
         ALIQUOT = "aliquot"
         PORTION = "portion"
+        SPECEMIN_TYPE = "Comment [TCGA Biospecimen Type]"
         if is_uuid4(row[EXTRACT_NAME].lower()):
             if is_aliquot_barcode(row[TCGA_BARCODE]):
                 # the most common case
@@ -260,6 +261,8 @@ class TCGAMAGETABSyncer(object):
             # we don't expect there to be a barcode column for the
             # shipped portion magetabs
             assert not row.get(TCGA_BARCODE)
+            # we expect the biospecemin type to be Shipped portion
+            assert row[SPECEMIN_TYPE] == "Shipped portion"
             fixed = strip_dot_trailer(row[EXTRACT_NAME])
             if is_shipped_portion_barcode(fixed):
                 barcode = fixed
