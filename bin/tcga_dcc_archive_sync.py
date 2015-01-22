@@ -15,11 +15,6 @@ from random import shuffle
 from functools import partial
 from multiprocessing.pool import Pool
 
-from random import shuffle
-
-from functools import partial
-from multiprocessing.pool import Pool
-
 
 def sync_list(args, archives):
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
