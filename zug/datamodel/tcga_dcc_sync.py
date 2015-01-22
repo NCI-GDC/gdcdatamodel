@@ -414,7 +414,7 @@ class TCGADCCArchiveSyncer(object):
         return resp
 
     def download_archive(self):
-        self.log.info("downloading archive %s", self.name)
+        self.log.info("downloading archive")
         resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
         if int(resp.headers["content-length"]) > self.MAX_BYTES_IN_MEMORY:
             self.log.info("archive size is %s bytes, storing in "
@@ -426,6 +426,7 @@ class TCGADCCArchiveSyncer(object):
             self.temp_file.write(chunk)
         self.temp_file.seek(0)
         self.temp_file
+        self.log.info("archive downloaded, untaring")
         self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
 
     def manifest_is_complete(self, manifest, filenames):
@@ -445,6 +446,7 @@ class TCGADCCArchiveSyncer(object):
         parsed = urlparse(url)
         return self.storage_client.get_object(*parsed.path.split("/", 2)[1:])
 
+    @no_proxy()
     def upload_data(self, fileobj, key):
         obj = self.container.upload_object_via_stream(iterable_from_file(fileobj),
                                                       key)
