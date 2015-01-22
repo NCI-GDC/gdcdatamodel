@@ -60,12 +60,16 @@ def main():
                         default=mkdtemp())
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
+    parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
     parser.add_argument("-p", "--processes", type=int, help="process pool size to use")
 
     args = parser.parse_args()
     archives = list(LatestURLParser())
+    if args.archive_name:
+        archives = [a for a in archives if a["archive_name"] == args.archive_name]
+    if not archives:
+        raise RuntimeError("not archive with name {}".format(args.archive_name))
     shuffle(archives)
-    pool = Pool(args.processes)
 
     # insert the classification nodes
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
@@ -75,13 +79,13 @@ def main():
     if args.processes == 1:
         sync_list(args, archives)
     else:
+        pool = Pool(args.processes)
         # this splits the archives list into evenly size chunks
         segments = split(archives, args.processes)
         result = pool.map_async(partial(sync_list, args), segments)
         try:
             result.get(999999)
         except KeyboardInterrupt:
-            print "killed"
             return
 
 
