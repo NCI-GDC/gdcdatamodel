@@ -45,9 +45,9 @@ def import_datatype(mapping, datatype):
     logging.info('Importing {} data'.format(datatype))
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
-    process((latest[0], mapping, datatype))
-    # p = Pool(args.nproc)
-    # p.map(process, zip(latest, [datatype]*len(latest)))
+    l = len(latest)
+    p = Pool(args.nproc)
+    p.map(process, zip(latest, [mapping]*l, [datatype]*l))
 
 
 if __name__ == '__main__':

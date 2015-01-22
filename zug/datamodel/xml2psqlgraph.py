@@ -157,10 +157,9 @@ class xml2psqlgraph(object):
                 "Class xml2psqlgraph is not the right function "
                 "to export files from. Try calling cghub2psqlgraph().")
 
-        with self.graph.session_scope() as session:
+        with self.graph.session_scope():
 
-            old_node = self.graph.node_lookup_one(
-                node_id=node.node_id, session=session)
+            old_node = self.graph.node_lookup_one(node.node_id)
 
             if group_id and old_node and \
                old_node.system_annotations.get('group_id', None) != group_id:
@@ -179,8 +178,7 @@ class xml2psqlgraph(object):
                     node.system_annotations.update(system_annotations)
                     self.graph.node_clobber(
                         node_id=node.node_id, properties=node.properties,
-                        system_annotations=node.system_annotations,
-                        session=session)
+                        system_annotations=node.system_annotations)
 
             else:
                 node.merge(system_annotations=system_annotations)
@@ -207,9 +205,9 @@ class xml2psqlgraph(object):
                     try:
                         self.graph.edge_insert(e)
                     except:
-                        log.error(e.properties)
                         log.error('Unable to add edge {} from {} to {}'.format(
                             e.label, e.src, e.dst))
+                        log.error(e.properties)
                         raise
         self.edges = {}
 
