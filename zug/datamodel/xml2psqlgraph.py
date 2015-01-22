@@ -69,8 +69,9 @@ class xml2psqlgraph(object):
         self.exported_nodes = 0
         self.export_count = 0
         self.ignore_missing_properties = ignore_missing_properties
-        self.xml_mapping = json.loads(json.dumps(xml_mapping),
-                                      object_hook=AttrDict)
+        if xml_mapping:
+            self.xml_mapping = json.loads(json.dumps(xml_mapping),
+                                          object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
         if node_validator:

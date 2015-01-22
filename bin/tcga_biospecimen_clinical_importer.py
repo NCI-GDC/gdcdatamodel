@@ -4,7 +4,7 @@ from multiprocessing import Pool
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import xml2psqlgraph, latest_urls,\
-    extract_tar, bcr_xml_mapping, prelude
+    extract_tar, bcr_xml_mapping, clinical_xml_mapping, prelude
 from cdisutils.log import get_logger
 
 log = get_logger("dcc_bio_importer")
@@ -13,9 +13,9 @@ logging.root.setLevel(level=logging.INFO)
 args = None
 
 
-def get_converter():
+def get_converter(mapping):
     return xml2psqlgraph.xml2psqlgraph(
-        xml_mapping=bcr_xml_mapping,
+        xml_mapping=mapping,
         host=args.host,
         user=args.user,
         password=args.password,
@@ -26,13 +26,12 @@ def get_converter():
 
 
 def process(args):
-    archive, datatype = args
-    converter = get_converter()
+    archive, mapping, datatype = args
+    converter = get_converter(mapping)
     url = archive['dcc_archive_url']
     extractor = extract_tar.ExtractTar(
         regex=".*(bio).*(Level_1).*({datatype}).*\\.xml".format(
             datatype=datatype))
-    print url
     for xml in extractor(url):
         converter.xml2psqlgraph(xml)
         group_id = "{study}_{batch}".format(
@@ -42,11 +41,11 @@ def process(args):
         converter.purge_old_nodes(group_id, version)
 
 
-def import_datatype(datatype):
+def import_datatype(mapping, datatype):
     logging.info('Importing {} data'.format(datatype))
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
-    process((latest[0], datatype))
+    process((latest[0], mapping, datatype))
     # p = Pool(args.nproc)
     # p.map(process, zip(latest, [datatype]*len(latest)))
 
@@ -69,11 +68,13 @@ if __name__ == '__main__':
                         help='the number of processes')
     args = parser.parse_args()
 
-    logging.info("Importing prelude nodes")
-    # converter = get_converter()
-    # prelude.create_prelude_nodes(converter.graph)
+    # logging.info("Importing prelude nodes")
+    # prelude.create_prelude_nodes(get_converter(None).graph)
 
+    if args.no_biospecimen and args.no_clinical:
+        raise RuntimeWarning(
+            'Specifying these options leaves no work to be done')
     if not args.no_biospecimen:
-        import_datatype('biospecimen')
+        import_datatype(bcr_xml_mapping, 'biospecimen')
     if not args.no_clinical:
-        import_datatype('clinical')
+        import_datatype(clinical_xml_mapping, 'clinical')

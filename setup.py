@@ -11,6 +11,7 @@ setup(
             "datamodel/tissueSourceSite.csv",
             "datamodel/bcr.yaml",
             "datamodel/cghub.yaml",
+            "datamodel/clinical.yaml",
         ]
     },
     install_requires=[
