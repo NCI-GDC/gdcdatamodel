@@ -10,8 +10,6 @@ from libcloud.storage.providers import get_driver
 
 Local = get_driver(Provider.LOCAL)
 
-from random import shuffle
-
 from functools import partial
 from multiprocessing.pool import Pool
 
@@ -69,7 +67,6 @@ def main():
         archives = [a for a in archives if a["archive_name"] == args.archive_name]
     if not archives:
         raise RuntimeError("not archive with name {}".format(args.archive_name))
-    shuffle(archives)
 
     # insert the classification nodes
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
