@@ -384,8 +384,10 @@ class TCGADCCArchiveSyncer(object):
             return [elem.text for elem in archives_html.cssselect('a')
                     if elem.text not in NOT_PART_OF_ARCHIVE]
         else:
-            return [name.replace(self.name + "/", "")
-                    for name in self.tarball.getnames()]
+            # the reason for this is that sometimes the tarballs have
+            # an useless entry that's just the name of the tarball, so we filter it out
+            names = [name for name in self.tarball.getnames() if name != self.name]
+            return [name.replace(self.name + "/", "") for name in names]
 
     def get_with_auth(self, url, **kwargs):
         resp = requests.get(url, auth=self.dcc_auth,
