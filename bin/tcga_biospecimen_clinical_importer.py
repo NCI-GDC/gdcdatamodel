@@ -52,10 +52,12 @@ def import_datatype(mapping, datatype):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--no-prelude', action='store_true',
+                        help='do not import prelude nodes')
     parser.add_argument('--no-biospecimen', action='store_true',
-                        help='import biospecimen')
+                        help='do not import biospecimen')
     parser.add_argument('--no-clinical', action='store_true',
-                        help='import clinical')
+                        help='do not import clinical')
     parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
                         help='the database to import to')
     parser.add_argument('-u', '--user', default='test', type=str,
@@ -68,12 +70,13 @@ if __name__ == '__main__':
                         help='the number of processes')
     args = parser.parse_args()
 
-    # logging.info("Importing prelude nodes")
-    # prelude.create_prelude_nodes(get_converter(None).graph)
-
-    if args.no_biospecimen and args.no_clinical:
+    if args.no_biospecimen and args.no_clinical and args.no_prelude:
         raise RuntimeWarning(
             'Specifying these options leaves no work to be done')
+
+    if not args.no_prelude:
+        logging.info("Importing prelude nodes")
+        prelude.create_prelude_nodes(get_converter(None).graph)
     if not args.no_biospecimen:
         import_datatype(bcr_xml_mapping, 'biospecimen')
     if not args.no_clinical:

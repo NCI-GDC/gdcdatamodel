@@ -199,14 +199,13 @@ class xml2psqlgraph(object):
         self.nodes = {}
 
     def export_edges(self):
-        with self.graph.session_scope() as session:
+        with self.graph.session_scope():
             for edge_id, e in self.edges.iteritems():
-                existing = list(self.graph.edge_lookup(
-                    src_id=e.src_id, dst_id=e.dst_id, label=e.label,
-                    session=session).all())
-                if not len(existing):
+                existing = self.graph.edge_lookup(
+                    src_id=e.src_id, dst_id=e.dst_id, label=e.label).count()
+                if not existing:
                     try:
-                        self.graph.edge_insert(e, session=session)
+                        self.graph.edge_insert(e)
                     except:
                         log.error(e.properties)
                         log.error('Unable to add edge {} from {} to {}'.format(
