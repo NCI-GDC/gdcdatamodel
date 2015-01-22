@@ -503,7 +503,7 @@
       },
       {
         "name": "ethnicity",
-        "type": "ethnicity_enum",
+        "type": ["null", "ethnicity_enum"],
         "doc": "The text for reporting information about ethnicity based on the Office of Management and Budget (OMB) categories. CDE: 2192217."
       },
       {
