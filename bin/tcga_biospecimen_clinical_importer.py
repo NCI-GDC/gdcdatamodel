@@ -5,33 +5,34 @@ from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import xml2psqlgraph, latest_urls,\
     extract_tar, bcr_xml_mapping, prelude
+from cdisutils.log import get_logger
 
-logging.basicConfig(level=logging.DEBUG)
+log = get_logger("dcc_bio_importer")
+logging.root.setLevel(level=logging.INFO)
 
 args = None
 
 
-def initialize():
-    extractor = extract_tar.ExtractTar(
-        regex=".*(bio).*(Level_1).*\\.xml")
-    node_validator = AvroNodeValidator(node_avsc_object)
-    edge_validator = AvroEdgeValidator(edge_avsc_object)
-
-    converter = xml2psqlgraph.xml2psqlgraph(
+def get_converter():
+    return xml2psqlgraph.xml2psqlgraph(
         xml_mapping=bcr_xml_mapping,
         host=args.host,
         user=args.user,
         password=args.password,
         database=args.database,
-        edge_validator=edge_validator,
-        node_validator=node_validator,
+        edge_validator=AvroEdgeValidator(edge_avsc_object),
+        node_validator=AvroNodeValidator(node_avsc_object),
     )
-    return extractor, converter
 
 
-def process(archive):
-    extractor, converter = initialize()
+def process(args):
+    archive, datatype = args
+    converter = get_converter()
     url = archive['dcc_archive_url']
+    extractor = extract_tar.ExtractTar(
+        regex=".*(bio).*(Level_1).*({datatype}).*\\.xml".format(
+            datatype=datatype))
+    print url
     for xml in extractor(url):
         converter.xml2psqlgraph(xml)
         group_id = "{study}_{batch}".format(
@@ -41,31 +42,38 @@ def process(archive):
         converter.purge_old_nodes(group_id, version)
 
 
-def start():
-    extractor, converter = initialize()
+def import_datatype(datatype):
+    logging.info('Importing {} data'.format(datatype))
+    latest = list(latest_urls.LatestURLParser(
+        constraints={'data_level': 'Level_1', 'platform': 'bio'}))
+    process((latest[0], datatype))
+    # p = Pool(args.nproc)
+    # p.map(process, zip(latest, [datatype]*len(latest)))
 
-    logging.info("Importing prelude nodes")
-    prelude.create_prelude_nodes(converter.graph)
-    latest = latest_urls.LatestURLParser(
-        constraints={'data_level': 'Level_1', 'platform': 'bio'})
-
-    logging.info("Importing latest xml archives")
-    p = Pool(args.nproc)
-    p.map(process, list(latest))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--nproc', default=8, type=int,
-                        help='number of processes to use')
-    parser.add_argument('--datatype', default='biospecimen', type=str,
-                        help='the datatype to filter')
+    parser.add_argument('--no-biospecimen', action='store_true',
+                        help='import biospecimen')
+    parser.add_argument('--no-clinical', action='store_true',
+                        help='import clinical')
     parser.add_argument('-d', '--database', default='gdc_datamodel', type=str,
-                        help='to odatabase to import to')
+                        help='the database to import to')
     parser.add_argument('-u', '--user', default='test', type=str,
                         help='the user to import as')
     parser.add_argument('-p', '--password', default='test', type=str,
                         help='the password for import user')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='the postgres server host')
+    parser.add_argument('-n', '--nproc', default=8, type=int,
+                        help='the number of processes')
     args = parser.parse_args()
-    start()
+
+    logging.info("Importing prelude nodes")
+    # converter = get_converter()
+    # prelude.create_prelude_nodes(converter.graph)
+
+    if not args.no_biospecimen:
+        import_datatype('biospecimen')
+    if not args.no_clinical:
+        import_datatype('clinical')

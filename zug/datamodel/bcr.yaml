@@ -257,7 +257,7 @@ participant:
 
 clinical:
   -
-    root: //brca:patient
+    root: //*[local-name() = 'patient']
     id: //admin:file_uuid
     edges:
       describes:
