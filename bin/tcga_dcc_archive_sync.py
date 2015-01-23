@@ -25,7 +25,8 @@ def sync_list(args, archives):
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
             storage_client = Local(args.os_dir),
-            dryrun=args.dryrun
+            dryrun=args.dryrun,
+            force=args.force
         )
         try:
             syncer.sync()  # ugh
@@ -52,6 +53,8 @@ def main():
     parser.add_argument("--dcc-pass", type=str, help="password for dcc auth")
     parser.add_argument("--dryrun", action="store_true",
                         help="if passed, skip downlading / uploading tarballs")
+    parser.add_argument("--force", action="store_true",
+                        help="if passed, force sync even if archive appears complete")
     parser.add_argument("--scratch-dir", type=str,
                         help="directory to use as scratch space",
                         default=mkdtemp())

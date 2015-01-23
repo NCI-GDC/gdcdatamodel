@@ -110,7 +110,7 @@ class TCGADCCArchiveSyncer(object):
     def __init__(self, archive, signpost_url=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 dryrun=False):
+                 dryrun=False, force=False):
         self.archive = archive
         self.signpost_url = signpost_url
         self.pg_driver = pg_driver
@@ -120,6 +120,7 @@ class TCGADCCArchiveSyncer(object):
         self.storage_client = storage_client
         self.scratch_dir = scratch_dir
         self.dryrun = dryrun
+        self.force = force
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -517,7 +518,7 @@ class TCGADCCArchiveSyncer(object):
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         with self.pg_driver.session_scope() as session:
             self.archive_node = self.store_archive_in_pg(session)
-            if self.get_urls_from_signpost(self.archive_node.node_id):
+            if self.get_urls_from_signpost(self.archive_node.node_id) and not self.force:
                 self.log.info("archive already has urls in signpost, "
                               "assuming it's complete")
                 return
@@ -539,22 +540,26 @@ class TCGADCCArchiveSyncer(object):
                         file_nodes.append(file_node)
         if not self.dryrun:
             for node in file_nodes:
-                # TODO automatically handle stuck transient states
-                # (uploading, validating) here? it's pretty obvious
-                # what to do in each case . . .
-                if node["state"] == "submitted":
+                if node["state"] in ["submitted", "uploading"]:
                     with self.state_transition(node, "uploading", "uploaded"):
                         self.log.info("uploading file %s (%s)", node, node["file_name"])
                         self.upload(node)
-                if node["state"] == "uploaded":
+                if node["state"] in ["uploaded", "validating"]:
                     with self.state_transition(node, "validating", "live",
                                                error_states={InvalidChecksumException: "invalid"}):
                         self.log.info("validating file %s (%s)", node, node["file_name"])
                         self.verify(node)
+                if node["state"] in ["live", "invalid"]:
+                    self.log.info("%s (%s) is in state %s",
+                                  node, node["file_name"], node["state"])
+
             # finally, upload the archive itself
             self.temp_file.seek(0)
             self.log.info("uploading archive to storage")
             obj = self.upload_data(self.temp_file, "/".join(["archives", self.name]))
             archive_url = url_for(obj)
-            self.log.info("storing archive in signpost")
-            self.store_url_in_signpost(self.archive_node.node_id, archive_url)
+            if self.get_urls_from_signpost(self.archive_node.node_id):
+                self.log.info("archive already has signpost url")
+            else:
+                self.log.info("storing archive in signpost")
+                self.store_url_in_signpost(self.archive_node.node_id, archive_url)
