@@ -518,8 +518,8 @@ class TCGADCCArchiveSyncer(object):
         with self.pg_driver.session_scope() as session:
             self.archive_node = self.store_archive_in_pg(session)
             if self.get_urls_from_signpost(self.archive_node.node_id):
-                self.log.info("archive %s already has urls in signpost, "
-                              "assuming it's complete", self.archive)
+                self.log.info("archive already has urls in signpost, "
+                              "assuming it's complete")
                 return
             if not self.dryrun:
                 self.download_archive()
@@ -548,4 +548,8 @@ class TCGADCCArchiveSyncer(object):
                     self.verify(node)
             # finally, upload the archive itself
             self.temp_file.seek(0)
-            self.upload_data(self.temp_file, "/".join(["archives", self.name]))
+            self.log.info("uploading archive to storage")
+            obj = self.upload_data(self.temp_file, "/".join(["archives", self.name]))
+            archive_url = url_for(obj)
+            self.log.info("storing archive in signpost")
+            self.store_url_in_signpost(self.archive_node.node_id, archive_url)
