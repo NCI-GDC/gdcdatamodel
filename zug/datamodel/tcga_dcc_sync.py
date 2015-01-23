@@ -539,13 +539,18 @@ class TCGADCCArchiveSyncer(object):
                         file_nodes.append(file_node)
         if not self.dryrun:
             for node in file_nodes:
-                with self.state_transition(node, "submitted", "uploading", "uploaded"):
-                    self.log.info("uploading file %s (%s)", node, node["file_name"])
-                    self.upload(node)
-                with self.state_transition(node, "uploaded", "validating", "live",
-                                           error_states={InvalidChecksumException: "invalid"}):
-                    self.log.info("validating file %s (%s)", node, node["file_name"])
-                    self.verify(node)
+                # TODO automatically handle stuck transient states
+                # (uploading, validating) here? it's pretty obvious
+                # what to do in each case . . .
+                if node["state"] == "submitted":
+                    with self.state_transition(node, "uploading", "uploaded"):
+                        self.log.info("uploading file %s (%s)", node, node["file_name"])
+                        self.upload(node)
+                if node["state"] == "uploaded":
+                    with self.state_transition(node, "validating", "live",
+                                               error_states={InvalidChecksumException: "invalid"}):
+                        self.log.info("validating file %s (%s)", node, node["file_name"])
+                        self.verify(node)
             # finally, upload the archive itself
             self.temp_file.seek(0)
             self.log.info("uploading archive to storage")
