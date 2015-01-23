@@ -29,7 +29,7 @@ def sync_list(args, archives):
         )
         try:
             syncer.sync()  # ugh
-        except:
+        except Exception:  # we use Exception so as not to catch KeyboardInterrupt et al.
             syncer.log.exception("caught exception while syncing")
 
 
