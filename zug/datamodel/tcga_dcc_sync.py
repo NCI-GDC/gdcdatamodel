@@ -486,20 +486,19 @@ class TCGADCCArchiveSyncer(object):
         self.store_url_in_signpost(node.node_id, new_url)
 
     @contextmanager
-    def state_transition(self, file, original_state, intermediate_state, final_state,
+    def state_transition(self, file, intermediate_state, final_state,
                          error_states={}):
         """Try to do something to a file node, setting it's state to
         intermediate_state while the thing is being done, moving to
         final_state if the thing completes successfully, falling back to the original
         state if the thing fails
         """
-        if file["state"] != original_state:
-            self.log.info("%s not in state %s, skipping transition", file, original_state)
+        original_state = file["state"]
         try:
             self.set_file_state(file, intermediate_state)
             yield
             self.set_file_state(file, final_state)
-        except Exception as e:
+        except BaseException as e:
             for err_cls, state in error_states.iteritems():
                 if isinstance(e, err_cls):
                     self.log.warning("%s caught, setting %s to %s", e, file, state)
