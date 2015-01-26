@@ -107,10 +107,9 @@ def get_edge_maps():
     return edge_map_forward, edge_map_backward
 
 
-def get_participant_elasticsearc_mapping():
+def get_participant_es_mapping():
     """Generates the elasticsearch mapping for participants from the avro
     schema
 
     """
-
     return _walk_edges('participant', get_edge_maps()[1])
