@@ -82,7 +82,6 @@ def _munge_properties(source):
 
 
 def _walk_edges(source, edge_map, level=0, graph={}):
-    logging.debug('|--'*level+'+', source)
     graph['properties'] = _munge_properties(source)
     for dst in edge_map.get(source, []):
         if dst != source:
