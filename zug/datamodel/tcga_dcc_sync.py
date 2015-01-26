@@ -31,6 +31,7 @@ from zug.datamodel import tcga_classification
 class InvalidChecksumException(Exception):
     pass
 
+
 def md5sum(iterable):
     md5 = hashlib.md5()
     for chunk in iterable:
@@ -313,7 +314,11 @@ class TCGADCCArchiveSyncer(object):
             return file_node
         # TODO check that this matches what we know about the archive
         try:
-            file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
+            classifies_as_protected = classification["data_access"] == "protected"
+            if classifies_as_protected != self.archive["protected"]:
+                self.log.warning("file %s access from classification does not match access on archive %s",
+                                 file_node, self.archive_node)
+            file_node.acl = ["phs000178"] if classifies_as_protected else ["open"]
         except:
             self.log.error("%s has no acl but was not marked unclassified. classification: %s",
                            file_node["file_name"],
