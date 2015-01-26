@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from avro.schema import make_avsc_object, Names
@@ -54,6 +55,62 @@ def make_avsc_object_from_file_list(file_list):
 
 
 # Create avsc objects
+logging.debug('Loading gdcdatamodel avro schema.')
 node_avsc_object = make_avsc_object_from_file_list(node_schema_file_list)
 edge_avsc_object = make_avsc_object_from_file_list(edge_schema_file_list)
+node_avsc_json = node_avsc_object.to_json()
+edge_avsc_json = edge_avsc_object.to_json()
 logging.debug('gdcdatamodel avro schema loaded.')
+
+
+def get_es_type(_type):
+    if 'long' in _type or 'int' in _type:
+        return 'long'
+    else:
+        return 'string'
+
+
+def _munge_properties(source):
+    a = [n['fields'] for n in node_avsc_json if n['name'] == source][0]
+    fields = [b['type'] for b in a if b['name'] == 'properties']
+    return {
+        b['name']: {
+            'type': get_es_type(b['type']),
+            'index': 'not_analyzed',
+        } for b in fields[0][0]['fields']
+    }
+
+
+def _walk_edges(source, edge_map, level=0, graph={}):
+    logging.debug('|--'*level+'+', source)
+    graph['properties'] = _munge_properties(source)
+    for dst in edge_map.get(source, []):
+        if dst != source:
+            graph[dst] = {}
+            _walk_edges(dst, edge_map, level+1, graph[dst])
+    return graph if level else {source: graph}
+
+
+def get_edge_maps():
+    """Return sa map from edges to destinations
+
+    """
+    p = re.compile("(([a-z]+):([a-z]+))")
+    edge_map_forward, edge_map_backward = {}, {}
+    for match in p.findall(str(edge_avsc_json)):
+        if match[1] not in edge_map_forward:
+            edge_map_forward[match[1]] = []
+        if match[2] not in edge_map_backward:
+            edge_map_backward[match[2]] = []
+        edge_map_forward[match[1]].append(match[2])
+        edge_map_backward[match[2]].append(match[1])
+    return edge_map_forward, edge_map_backward
+
+
+def get_participant_elasticsearc_mapping():
+    """Generates the elasticsearch mapping for participants from the avro
+    schema
+
+    """
+
+    return _walk_edges('participant', get_edge_maps()[1])

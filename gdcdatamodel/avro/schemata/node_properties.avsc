@@ -463,7 +463,7 @@
     "fields": [
       {
         "name": "gender",
-        "type": "gender_enum",
+        "type": ["null", "gender_enum"],
         "doc": "Text designations that identify gender. Gender is described as the assemblage of properties that distinguish people on the basis of their societal roles. CDE: 2200604"
       },
       {
