@@ -26,7 +26,8 @@ def sync_list(args, archives):
             scratch_dir=args.scratch_dir,
             storage_client = Local(args.os_dir),
             dryrun=args.dryrun,
-            force=args.force
+            force=args.force,
+            max_memory=args.max_memory
         )
         try:
             syncer.sync()  # ugh
@@ -61,6 +62,8 @@ def main():
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
     parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
+    parser.add_argument("--max-memory", type=int, default=2*10**9,
+                        help="maximum size (bytes) of archive to download in memory")
     parser.add_argument("-p", "--processes", type=int, help="process pool size to use")
 
     args = parser.parse_args()

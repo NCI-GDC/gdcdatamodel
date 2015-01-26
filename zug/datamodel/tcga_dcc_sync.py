@@ -105,13 +105,12 @@ def classify(archive, filename):
 
 class TCGADCCArchiveSyncer(object):
 
-    MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB TODO make this configurable
     SIGNPOST_VERSION = "v0"
 
     def __init__(self, archive, signpost_url=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 dryrun=False, force=False):
+                 dryrun=False, force=False, max_memory=2*10**9):
         self.archive = archive
         self.signpost_url = signpost_url
         self.pg_driver = pg_driver
@@ -122,6 +121,7 @@ class TCGADCCArchiveSyncer(object):
         self.scratch_dir = scratch_dir
         self.dryrun = dryrun
         self.force = force
+        self.max_memory = max_memory
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -426,7 +426,7 @@ class TCGADCCArchiveSyncer(object):
     def download_archive(self):
         self.log.info("downloading archive")
         resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
-        if int(resp.headers["content-length"]) > self.MAX_BYTES_IN_MEMORY:
+        if int(resp.headers["content-length"]) > self.max_memory:
             self.log.info("archive size is %s bytes, storing in "
                           "temp file on disk", resp.headers["content-length"])
             self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
