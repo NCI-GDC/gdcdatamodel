@@ -27,13 +27,13 @@ participant_tree.tissue_source_site = {}
 
 # Annotation hierarchy
 annotation_tree = Dict()
-annotation_tree.project.program = {}
-annotation_tree.participant = {}
-annotation_tree.sample = {}
-annotation_tree.portion = {}
-annotation_tree.slide = {}
-annotation_tree.analyte = {}
 annotation_tree.aliquot = {}
+annotation_tree.analyte = {}
+annotation_tree.participant = {}
+annotation_tree.portion = {}
+annotation_tree.project.program = {}
+annotation_tree.sample = {}
+annotation_tree.slide = {}
 
 # Project hierarchy
 project_tree = Dict()
