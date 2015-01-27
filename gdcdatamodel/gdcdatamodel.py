@@ -2,6 +2,7 @@ import os
 import re
 import json
 import logging
+import itertools
 from avro.schema import make_avsc_object, Names
 
 logging.debug('loading gdcdatamodel avro schema...')
@@ -81,20 +82,20 @@ def _munge_properties(source):
     }
 
 
-def _walk_edges(source, edge_map, level=0, graph={}):
+def _walk_prop_edges(source, edge_map, level=0, graph={}):
     graph['properties'] = _munge_properties(source)
     for dst in edge_map.get(source, []):
         if dst != source:
             graph[dst] = {}
-            _walk_edges(dst, edge_map, level+1, graph[dst])
+            _walk_prop_edges(dst, edge_map, level+1, graph[dst])
     return graph if level else {source: graph}
 
 
 def get_edge_maps():
-    """Return sa map from edges to destinations
+    """Returns a map from edges to destinations
 
     """
-    p = re.compile("(([a-z]+):([a-z]+))")
+    p = re.compile("(([a-z_]+):([a-z_]+))")
     edge_map_forward, edge_map_backward = {}, {}
     for match in p.findall(str(edge_avsc_json)):
         if match[1] not in edge_map_forward:
@@ -111,4 +112,7 @@ def get_participant_es_mapping():
     schema
 
     """
-    return _walk_edges('participant', get_edge_maps()[1])
+    forward, backward = get_edge_maps()
+    return _walk_prop_edges(
+        'participant', forward, graph=_walk_prop_edges(
+            'participant', backward))
