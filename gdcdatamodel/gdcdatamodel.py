@@ -1,5 +1,4 @@
 import os
-import re
 import json
 import logging
 from avro.schema import make_avsc_object, Names
