@@ -3,7 +3,6 @@ import re
 import json
 import logging
 from avro.schema import make_avsc_object, Names
-from mappings import get_participant_es_mapping, get_file_es_mapping
 
 logging.debug('loading gdcdatamodel avro schema...')
 package_dir = os.path.dirname(os.path.realpath(__file__))
