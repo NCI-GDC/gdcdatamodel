@@ -15,11 +15,6 @@ from random import shuffle
 from functools import partial
 from multiprocessing.pool import Pool
 
-from random import shuffle
-
-from functools import partial
-from multiprocessing.pool import Pool
-
 
 def sync_list(args, archives):
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
@@ -32,13 +27,14 @@ def sync_list(args, archives):
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
             storage_client = Local(args.os_dir),
-            dryrun=args.dryrun
+            dryrun=args.dryrun,
+            force=args.force,
+            max_memory=args.max_memory
         )
         try:
             syncer.sync()  # ugh
-        except:
+        except Exception:  # we use Exception so as not to catch KeyboardInterrupt et al.
             syncer.log.exception("caught exception while syncing")
-            raise
 
 
 def split(a, n):
@@ -60,17 +56,28 @@ def main():
     parser.add_argument("--dcc-pass", type=str, help="password for dcc auth")
     parser.add_argument("--dryrun", action="store_true",
                         help="if passed, skip downlading / uploading tarballs")
+    parser.add_argument("--force", action="store_true",
+                        help="if passed, force sync even if archive appears complete")
     parser.add_argument("--scratch-dir", type=str,
                         help="directory to use as scratch space",
                         default=mkdtemp())
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
+    parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
+    parser.add_argument("--max-memory", type=int, default=2*10**9,
+                        help="maximum size (bytes) of archive to download in memory")
+    parser.add_argument("--shuffle", action="store_true",
+                        help="shuffle the list of archives before processing")
     parser.add_argument("-p", "--processes", type=int, help="process pool size to use")
 
     args = parser.parse_args()
     archives = list(LatestURLParser())
-    shuffle(archives)
-    pool = Pool(args.processes)
+    if args.archive_name:
+        archives = [a for a in archives if a["archive_name"] == args.archive_name]
+    if not archives:
+        raise RuntimeError("not archive with name {}".format(args.archive_name))
+    if args.shuffle:
+        shuffle(archives)
 
     # insert the classification nodes
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
@@ -80,13 +87,13 @@ def main():
     if args.processes == 1:
         sync_list(args, archives)
     else:
+        pool = Pool(args.processes)
         # this splits the archives list into evenly size chunks
         segments = split(archives, args.processes)
         result = pool.map_async(partial(sync_list, args), segments)
         try:
             result.get(999999)
         except KeyboardInterrupt:
-            print "killed"
             return
 
 

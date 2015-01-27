@@ -7,6 +7,7 @@ from urlparse import urlparse
 from functools import partial
 import copy
 import os
+from contextlib import contextmanager
 
 from lxml import html
 
@@ -22,8 +23,13 @@ from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from cdisutils.log import get_logger
+from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
+
+
+class InvalidChecksumException(Exception):
+    pass
 
 
 def md5sum(iterable):
@@ -99,13 +105,12 @@ def classify(archive, filename):
 
 class TCGADCCArchiveSyncer(object):
 
-    MAX_BYTES_IN_MEMORY = 2 * (10**9)  # 2GB TODO make this configurable
     SIGNPOST_VERSION = "v0"
 
     def __init__(self, archive, signpost_url=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 dryrun=False):
+                 dryrun=False, force=False, max_memory=2*10**9):
         self.archive = archive
         self.signpost_url = signpost_url
         self.pg_driver = pg_driver
@@ -115,6 +120,8 @@ class TCGADCCArchiveSyncer(object):
         self.storage_client = storage_client
         self.scratch_dir = scratch_dir
         self.dryrun = dryrun
+        self.force = force
+        self.max_memory = max_memory
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -194,6 +201,7 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
+    @no_proxy()
     def allocate_id_from_signpost(self):
         """Retrieve a new empty did from signpost."""
         resp = requests.post("/".join([self.signpost_url,
@@ -203,6 +211,7 @@ class TCGADCCArchiveSyncer(object):
         resp.raise_for_status()
         return resp.json()["did"]
 
+    @no_proxy()
     def get_urls_from_signpost(self, did):
         """Retrieve all the urls associated with a did in signpost."""
         resp = requests.get("/".join([self.signpost_url,
@@ -212,6 +221,7 @@ class TCGADCCArchiveSyncer(object):
         resp.raise_for_status()
         return resp.json()["urls"]
 
+    @no_proxy()
     def store_url_in_signpost(self, did, url):
         # replace whatever urls are in there with the one passed in
         # going to have to go a GET first to get the rev
@@ -304,7 +314,11 @@ class TCGADCCArchiveSyncer(object):
             return file_node
         # TODO check that this matches what we know about the archive
         try:
-            file_node.acl = ["phs000178"] if classification["data_access"] == "protected" else []
+            classifies_as_protected = classification["data_access"] == "protected"
+            if classifies_as_protected != self.archive["protected"]:
+                self.log.warning("file %s access from classification does not match access on archive %s",
+                                 file_node, self.archive_node)
+            file_node.acl = ["phs000178"] if classifies_as_protected else ["open"]
         except:
             self.log.error("%s has no acl but was not marked unclassified. classification: %s",
                            file_node["file_name"],
@@ -380,8 +394,10 @@ class TCGADCCArchiveSyncer(object):
             return [elem.text for elem in archives_html.cssselect('a')
                     if elem.text not in NOT_PART_OF_ARCHIVE]
         else:
-            return [name.replace(self.name + "/", "")
-                    for name in self.tarball.getnames()]
+            # the reason for this is that sometimes the tarballs have
+            # an useless entry that's just the name of the tarball, so we filter it out
+            names = [name for name in self.tarball.getnames() if name != self.name]
+            return [name.replace(self.name + "/", "") for name in names]
 
     def get_with_auth(self, url, **kwargs):
         resp = requests.get(url, auth=self.dcc_auth,
@@ -408,18 +424,21 @@ class TCGADCCArchiveSyncer(object):
         return resp
 
     def download_archive(self):
-        self.log.info("downloading archive %s", self.name)
+        self.log.info("downloading archive")
         resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
-        if int(resp.headers["content-length"]) > self.MAX_BYTES_IN_MEMORY:
+        if int(resp.headers["content-length"]) > self.max_memory:
             self.log.info("archive size is %s bytes, storing in "
                           "temp file on disk", resp.headers["content-length"])
             self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
         else:
+            self.log.info("archive size is %s bytes, storing in "
+                          "memory in StringIO" , resp.headers["content-length"])
             self.temp_file = StringIO()
         for chunk in resp.iter_content(chunk_size=16000):
             self.temp_file.write(chunk)
         self.temp_file.seek(0)
         self.temp_file
+        self.log.info("archive downloaded, untaring")
         self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
 
     def manifest_is_complete(self, manifest, filenames):
@@ -439,6 +458,7 @@ class TCGADCCArchiveSyncer(object):
         parsed = urlparse(url)
         return self.storage_client.get_object(*parsed.path.split("/", 2)[1:])
 
+    @no_proxy()
     def upload_data(self, fileobj, key):
         obj = self.container.upload_object_via_stream(iterable_from_file(fileobj),
                                                       key)
@@ -455,11 +475,10 @@ class TCGADCCArchiveSyncer(object):
         expected_sum = node["md5sum"]
         actual_sum = md5sum(obj.as_stream())
         if actual_sum != expected_sum:
-            self.pg_driver.node_update(node,
-                                       properties={"state": "invalid",
-                                                   "state_comment": "bad md5sum"})
+            self.pg_driver.node_update(
+                node, properties={"state_comment": "bad md5sum"})
             self.log.warning("file %s has invalid checksum", node["file_name"])
-        self.set_file_state(node, "live")
+            raise InvalidChecksumException()
 
     def upload(self, node):
         urls = self.get_urls_from_signpost(node.node_id)
@@ -467,12 +486,34 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("file %s already in signpost, skipping",
                           node["file_name"])
             return
-        self.set_file_state(node, "uploading")
         name = self.full_name(node["file_name"])
         obj = self.upload_data(self.tarball.extractfile(name), name)
         new_url = url_for(obj)
         self.store_url_in_signpost(node.node_id, new_url)
-        self.set_file_state(node, "validating")
+
+    @contextmanager
+    def state_transition(self, file, intermediate_state, final_state,
+                         error_states={}):
+        """Try to do something to a file node, setting it's state to
+        intermediate_state while the thing is being done, moving to
+        final_state if the thing completes successfully, falling back to the original
+        state if the thing fails
+        """
+        original_state = file["state"]
+        try:
+            self.set_file_state(file, intermediate_state)
+            yield
+            self.set_file_state(file, final_state)
+        except BaseException as e:
+            for err_cls, state in error_states.iteritems():
+                if isinstance(e, err_cls):
+                    self.log.warning("%s caught, setting %s to %s", e, file, state)
+                    self.set_file_state(file, state)
+                    return
+            self.log.exception("failure while trying to move %s from %s to %s via %s",
+                               file, original_state, final_state, intermediate_state)
+            self.set_file_state(file, original_state)
+            raise
 
     def sync(self):
         if self.archive["disease_code"] == "FPPP":
@@ -482,9 +523,9 @@ class TCGADCCArchiveSyncer(object):
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         with self.pg_driver.session_scope() as session:
             self.archive_node = self.store_archive_in_pg(session)
-            if self.get_urls_from_signpost(self.archive_node.node_id):
-                self.log.info("archive %s already has urls in signpost, "
-                              "assuming it's complete", self.archive)
+            if self.get_urls_from_signpost(self.archive_node.node_id) and not self.force:
+                self.log.info("archive already has urls in signpost, "
+                              "assuming it's complete")
                 return
             if not self.dryrun:
                 self.download_archive()
@@ -504,8 +545,26 @@ class TCGADCCArchiveSyncer(object):
                         file_nodes.append(file_node)
         if not self.dryrun:
             for node in file_nodes:
-                self.upload(node)
-                self.verify(node)
+                if node["state"] in ["submitted", "uploading"]:
+                    with self.state_transition(node, "uploading", "uploaded"):
+                        self.log.info("uploading file %s (%s)", node, node["file_name"])
+                        self.upload(node)
+                if node["state"] in ["uploaded", "validating"]:
+                    with self.state_transition(node, "validating", "live",
+                                               error_states={InvalidChecksumException: "invalid"}):
+                        self.log.info("validating file %s (%s)", node, node["file_name"])
+                        self.verify(node)
+                if node["state"] in ["live", "invalid"]:
+                    self.log.info("%s (%s) is in state %s",
+                                  node, node["file_name"], node["state"])
+
             # finally, upload the archive itself
             self.temp_file.seek(0)
-            self.upload_data(self.temp_file, "/".join(["archives", self.name]))
+            self.log.info("uploading archive to storage")
+            obj = self.upload_data(self.temp_file, "/".join(["archives", self.name]))
+            archive_url = url_for(obj)
+            if self.get_urls_from_signpost(self.archive_node.node_id):
+                self.log.info("archive already has signpost url")
+            else:
+                self.log.info("storing archive in signpost")
+                self.store_url_in_signpost(self.archive_node.node_id, archive_url)
