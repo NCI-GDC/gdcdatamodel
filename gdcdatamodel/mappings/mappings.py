@@ -21,7 +21,7 @@ def _munge_properties(source):
 def _walk_tree(tree, mapping):
     for branch in tree:
         mapping[branch] = {
-            # 'properties': _munge_properties(branch)
+            'properties': _munge_properties(branch)
         }
         _walk_tree(tree[branch], mapping[branch])
     return mapping
