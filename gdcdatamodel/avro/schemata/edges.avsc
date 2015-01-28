@@ -227,7 +227,7 @@
       {
         "name": "label",
         "type": [
-          "data_from_enum"
+          "related_to_enum"
         ],
         "doc": "String constant representing the related_to label."
       },
