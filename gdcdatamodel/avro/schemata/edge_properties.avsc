@@ -8,6 +8,13 @@
   },
   {
     "type": "record",
+    "name": "related_to_properties",
+    "namespace": "edu.uchicago.cdis",
+    "doc": "The properties of related_to edge",
+    "fields": []
+  },
+  {
+    "type": "record",
     "name": "member_of_properties",
     "namespace": "edu.uchicago.cdis",
     "doc": "The properties of member_of edge",
