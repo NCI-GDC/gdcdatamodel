@@ -3,7 +3,7 @@ import argparse
 import re
 from pprint import pprint
 from multiprocessing import Pool
-from zug.datamodel import Psqlgraph2JSON
+from zug.datamodel import psqlgraph2json
 from cdisutils.log import get_logger
 
 log = get_logger("dcc_bio_importer")
@@ -19,7 +19,7 @@ converter = None
 
 
 def get_converter():
-    return Psqlgraph2JSON.psqlgraph2json(
+    return psqlgraph2json.PsqlGraph2JSON(
         host=args.host,
         user=args.user,
         password=args.password,

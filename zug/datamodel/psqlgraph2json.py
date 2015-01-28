@@ -4,7 +4,7 @@ from gdcdatamodel.mappings import get_file_es_mapping, \
     get_participant_es_mapping
 
 
-class Psqlgraph2JSON(object):
+class PsqlGraph2JSON(object):
 
     """
     """
@@ -27,8 +27,6 @@ class Psqlgraph2JSON(object):
         for neighbor, label in itertools.chain(
                 [(a.src, a.label) for a in node.edges_in],
                 [(b.dst, b.label) for b in node.edges_out]):
-            print '|    '*level+'+', '{} - {} - {}'.format(
-                node.label, label, neighbor.label)
             if neighbor.label not in mapping.keys()\
                or node.node_id in path or neighbor.label in self.leaf_nodes:
                 continue

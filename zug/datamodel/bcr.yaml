@@ -247,6 +247,9 @@ participant:
       processed_at:
         tissue_source_site:
           submitter_id: ./shared:tissue_source_site
+      member_of:
+        project:
+          name: //admin:admin/admin:disease_code
     properties:
       submitter_id:
         path: ./shared:bcr_patient_barcode

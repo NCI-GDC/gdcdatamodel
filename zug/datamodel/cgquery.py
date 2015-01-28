@@ -3,7 +3,7 @@ import logging
 
 log = logging.getLogger(name="cgquery")
 
-url = 'https://cghub.ucsc.edu/cghub/metadata/analysisDetail'
+url = 'https://cghub.ucsc.edu/cghub/metadata/analysisFull'
 
 
 def query(cghub_study, **q):
