@@ -463,12 +463,12 @@
     "fields": [
       {
         "name": "gender",
-        "type": "gender_enum",
+        "type": ["null", "gender_enum"],
         "doc": "Text designations that identify gender. Gender is described as the assemblage of properties that distinguish people on the basis of their societal roles. CDE: 2200604"
       },
       {
         "name": "race",
-        "type": "race_enum",
+        "type": ["null", "race_enum"],
         "doc": "The text for reporting information about race based on the Office of Management and Budget (OMB) categories. CDE: 2192199."
       },
       {
@@ -478,7 +478,7 @@
       },
       {
         "name": "vital_status",
-        "type": "vital_status_enum",
+        "type": ["null", "vital_status_enum"],
         "doc": "The survival state of the person registered on the protocol. CDE: 5. "
       },
       {
