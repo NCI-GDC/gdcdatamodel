@@ -207,45 +207,6 @@
     ]
   },
   {
-    "name": "related_to",
-    "namespace": "edu.uchicago.cdis",
-    "type": "record",
-    "doc": "Indicates that the data contained in the destination file is related to the source entity.",
-    "fields": [
-      {
-        "name": "properties",
-        "type": [
-            "related_to_properties"
-        ],
-        "doc": "Key-values representing related_to properties"
-      },
-      {
-        "name": "id",
-        "type": "string",
-        "doc": "Primary unique edge ID"
-      },
-      {
-        "name": "label",
-        "type": [
-          "related_to_enum"
-        ],
-        "doc": "String constant representing the related_to label."
-      },
-      {
-        "name": "node_labels",
-        "type": [
-          "file:file"
-        ],
-        "doc": "The source/destination node types allowed."
-      },
-      {
-        "name": "node_ids",
-        "type": "src_dst_nodes",
-        "doc": "The primary IDs for the source and destination nodes."
-      }
-    ]
-  },
-  {
     "name": "describes",
     "namespace": "edu.uchicago.cdis",
     "type": "record",
