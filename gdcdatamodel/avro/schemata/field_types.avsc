@@ -24,6 +24,18 @@
     "doc": "Allowed analyte type IDs"
   },
   {
+    "name": "null_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "null_not_applicable",
+      "null_not_available",
+      "null_pending",
+      "null_error"
+    ],
+    "type": "enum",
+    "doc": "Allowed analyte type IDs"
+  },
+  {
     "name": "analyte_type_enum",
     "namespace": "edu.uchicago.cdis",
     "symbols": [
