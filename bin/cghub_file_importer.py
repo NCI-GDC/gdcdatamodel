@@ -96,8 +96,6 @@ if __name__ == '__main__':
                         help='number of processes to run import with')
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
-    parser.add_argument('-n', '--nproc', default=8, type=int,
-                        help='the number of processes')
     args = parser.parse_args()
 
     source, phsid = 'tcga_cghub', 'phs000178'
