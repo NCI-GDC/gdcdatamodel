@@ -53,7 +53,7 @@ files:
             path: ./filename
             regex: (.*)(\.bam)
 
-mapping:
+values:
   platform:
     454 GS FLX Titanium: TBD
     AB SOLiD 4 System: TBD

@@ -292,7 +292,7 @@ class cghub2psqlgraph(object):
     def categorize_file(self, root):
         if self.xml.xpath('./filename', root, single=True).endswith('.bai'):
             return
-        mapping = cghub_categorization_mapping['mapping']
+        mapping = cghub_categorization_mapping['values']
         parse = cghub_categorization_mapping['files']
         for dst_label, params in parse.iteritems():
             if 'const' in params:
