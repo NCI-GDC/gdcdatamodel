@@ -241,7 +241,7 @@ sample:
 
 participant:
   -
-    root: //bio:patient
+    root: //*[local-name()='patient']
     id: .//shared:bcr_patient_uuid
     edges_by_property:
       processed_at:

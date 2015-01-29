@@ -2,6 +2,7 @@ import json
 import datetime
 import psqlgraph
 import pprint
+from uuid import uuid5, UUID
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
@@ -69,8 +70,9 @@ class xml2psqlgraph(object):
         self.exported_nodes = 0
         self.export_count = 0
         self.ignore_missing_properties = ignore_missing_properties
-        self.xml_mapping = json.loads(json.dumps(xml_mapping),
-                                      object_hook=AttrDict)
+        if xml_mapping:
+            self.xml_mapping = json.loads(json.dumps(xml_mapping),
+                                          object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
         if node_validator:
@@ -156,10 +158,9 @@ class xml2psqlgraph(object):
                 "Class xml2psqlgraph is not the right function "
                 "to export files from. Try calling cghub2psqlgraph().")
 
-        with self.graph.session_scope() as session:
+        with self.graph.session_scope():
 
-            old_node = self.graph.node_lookup_one(
-                node_id=node.node_id, session=session)
+            old_node = self.graph.node_lookup_one(node.node_id)
 
             if group_id and old_node and \
                old_node.system_annotations.get('group_id', None) != group_id:
@@ -169,8 +170,8 @@ class xml2psqlgraph(object):
                             'group_id', None), node))
 
             if group_id and version:
-                system_annotations = {
-                    'group_id': group_id, 'version': version}
+                system_annotations.update({
+                    'group_id': group_id, 'version': version})
 
             if old_node:
                 if not version or not group_id or \
@@ -178,8 +179,7 @@ class xml2psqlgraph(object):
                     node.system_annotations.update(system_annotations)
                     self.graph.node_clobber(
                         node_id=node.node_id, properties=node.properties,
-                        system_annotations=node.system_annotations,
-                        session=session)
+                        system_annotations=node.system_annotations)
 
             else:
                 node.merge(system_annotations=system_annotations)
@@ -198,18 +198,17 @@ class xml2psqlgraph(object):
         self.nodes = {}
 
     def export_edges(self):
-        with self.graph.session_scope() as session:
+        with self.graph.session_scope():
             for edge_id, e in self.edges.iteritems():
-                existing = list(self.graph.edge_lookup(
-                    src_id=e.src_id, dst_id=e.dst_id, label=e.label,
-                    session=session).all())
-                if not len(existing):
+                existing = self.graph.edge_lookup(
+                    src_id=e.src_id, dst_id=e.dst_id, label=e.label).count()
+                if not existing:
                     try:
-                        self.graph.edge_insert(e, session=session)
+                        self.graph.edge_insert(e)
                     except:
-                        log.error(e.properties)
                         log.error('Unable to add edge {} from {} to {}'.format(
                             e.label, e.src, e.dst))
+                        log.error(e.properties)
                         raise
         self.edges = {}
 
@@ -342,14 +341,26 @@ class xml2psqlgraph(object):
 
         """
 
-        # All other nodes
-        if 'id' not in params or not params.id:
-            return None
-        node_id = self.xpath(params.id, root, single=True, label=node_type)
+        assert not ('id' in params and 'generated_id' in params),\
+            'Specification of an id xpath and parameters for generating an id'
+        if 'id' in params:
+            node_id = self.xpath(params.id, root, single=True, label=node_type)
+        elif 'generated_id' in params:
+            name = self.xpath(
+                params.generated_id.name, root, single=True, label=node_type)
+            node_id = str(uuid5(UUID(params.generated_id.namespace), name))
+        else:
+            raise LookupError('Unable to find id mapping in xml_mapping')
         return node_id.lower()
 
     def munge_property(self, prop, _type):
-        types = {'int': int, 'float': float, 'str': str, 'long': long}
+        types = {
+            'int': int,
+            'long': long,
+            'float': float,
+            'str': str,
+            'str.lower': lambda x: str(x).lower(),
+        }
         if _type == 'bool':
             prop = to_bool(prop)
         else:
