@@ -1,0 +1,30 @@
+tcga:
+  data_type:
+    const: 'Raw sequencing data'
+  experimental_strategy:
+    path: 'Result/library_strategy'
+  platform:
+    path: 'Result/experiment_xml/EXPERIMENT_SET/EXPERIMENT/PLATFORM/*/INSTRUMENT_MODEL'
+  data_subtype:
+    case:
+        TAR:
+          -
+            path: refassem_short_name
+            regex: '(^unaligned$)'
+          -
+            path: ./filename
+            regex: '(.*)(\.tar$)'
+        TARGZ:
+          -
+            path: refassem_short_name
+            regex: unaligned
+          -
+            path: ./filename
+            regex: '(.*)(\.tar\.gz$)'
+        BAM:
+          -
+            path: refassem_short_name
+            regex: '(?!(^unaligned$))'
+          -
+            path: ./filename
+            regex: (.*)(\.tar\.gz)
