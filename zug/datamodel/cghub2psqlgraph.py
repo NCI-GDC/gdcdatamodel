@@ -1,3 +1,4 @@
+import re
 import json
 import uuid
 import datetime
@@ -8,6 +9,7 @@ from psqlgraph.node import PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph
+
 
 log = get_logger(__name__)
 
@@ -67,6 +69,7 @@ class cghub2psqlgraph(object):
         self.namespaces = None
         self.exported_nodes = 0
         self.export_count = 0
+        self.bam_index_regex = re.compile('(.*)\.bai')
         self.ignore_missing_properties = ignore_missing_properties
         self.xml_mapping = json.loads(json.dumps(xml_mapping),
                                       object_hook=AttrDict)
@@ -77,6 +80,7 @@ class cghub2psqlgraph(object):
         if edge_validator:
             self.graph.edge_validator = edge_validator
         self.edges, self.files_to_add, self.files_to_delete = {}, {}, []
+        self.related_to_edges = []
         self.xml = xml2psqlgraph.xml2psqlgraph(
             xml_mapping, host, user, password, database,
             node_validator=node_validator,
@@ -96,6 +100,10 @@ class cghub2psqlgraph(object):
         self.export_edges()
         log.debug('Exports: {}. Nodes: {}.'.format(
             self.export_count, self.exported_nodes))
+        self.reset()
+
+    def reset(self):
+        self.files_to_add, self.files_to_delete = {}, []
 
     def get_existing_files(self, source, session):
         """dumps a list of files from a source to memory
@@ -126,7 +134,7 @@ class cghub2psqlgraph(object):
         existing = existing_files.get(file_name, None)
         if existing is not None:
             log.debug('Merging {}'.format(file_name))
-            node_id = existing.node_id
+            node.node_id = existing.node_id
             self.graph.node_update(
                 node=existing,
                 properties=node.properties,
@@ -134,8 +142,7 @@ class cghub2psqlgraph(object):
                 session=session)
         else:
             log.debug('Adding {}'.format(file_name))
-            node_id = str(uuid.uuid4())
-            node.node_id = node_id
+            node.node_id = str(uuid.uuid4())
             node.system_annotations.update(system_annotations)
             try:
                 self.graph.node_insert(node=node, session=session)
@@ -145,8 +152,8 @@ class cghub2psqlgraph(object):
                 raise
 
         # Add the correct src_id to this file's edges now that we know it
-        for edge in self.edges[file_name]:
-            edge.src_id = node_id
+        for edge in self.edges.get(file_name, []):
+            edge.src_id = node.node_id
 
         self.exported_nodes += 1
 
@@ -179,7 +186,6 @@ class cghub2psqlgraph(object):
                 else:
                     log.debug('Redaction not necessary {}'.format(
                         file_name))
-        self.files_to_add, self.files_to_delete = {}, []
 
     def export_edge(self, edge, session):
         existing = self.graph.edge_lookup(
@@ -198,12 +204,16 @@ class cghub2psqlgraph(object):
                     {'missing_aliquot': edge.dst_id})
 
     def export_edges(self):
-        """Adds edges to psqlgraph from self.edges
+        """Adds related_to edges then all other edges to psqlgraph from
+        self.edges
 
         ..note: postcondition: self.edges is cleared.
 
         """
-
+        for src_name, dst_name in self.related_to_edges:
+            self.save_edge(
+                src_name, self.files_to_add[dst_name].node_id, 'file',
+                'related_to', self.files_to_add[src_name].node_id)
         with self.graph.session_scope() as session:
             for src_f_name, edges in self.edges.iteritems():
                 for edge in edges:
@@ -261,18 +271,26 @@ class cghub2psqlgraph(object):
 
         # Save the node for deletion or insertion
         state = self.get_file_node_state(*args)
-
         if state in deletion_states:
             self.files_to_delete.append(file_name)
         else:
-            self.save_file_node(file_name, node_type, props, acl)
+            node = self.save_file_node(file_name, node_type, props, acl)
+            self.add_edges(root, node_type, params, file_name, node)
 
+    def add_edges(self, root, node_type, params, file_name, node):
+        if self.is_bam_index_file(file_name):
+            bam_file_name = self.bam_index_regex.match(file_name).group(1)
+            self.related_to_edges.append((bam_file_name, file_name))
+        else:
             # Get edges to and from this node
             edges = self.xml.get_node_edges(
                 root, node_type, params, file_name)
             for dst_id, edge in edges.iteritems():
                 dst_label, edge_label = edge
                 self.save_edge(file_name, dst_id, dst_label, edge_label)
+
+    def is_bam_index_file(self, file_name):
+        return self.bam_index_regex.match(file_name)
 
     def save_file_node(self, file_name, label, properties, acl=[]):
         """Adds an node to self.nodes_to_add
@@ -284,16 +302,18 @@ class cghub2psqlgraph(object):
 
         properties.update({u'file_name': file_name})
         if file_name in self.files_to_add:
-            self.files_to_add[file_name].merge(properties=properties)
+            node = self.files_to_add[file_name]
+            node.merge(properties=properties)
         else:
-            self.files_to_add[file_name] = PsqlNode(
+            node = PsqlNode(
                 node_id=None,
                 acl=acl,
                 label=label,
                 properties=properties
             )
+            self.files_to_add[file_name] = node
 
-    def save_edge(self, file_name, dst_id, dst_label, edge_label,
+    def save_edge(self, file_name, dst_id, dst_label, edge_label, src_id=None,
                   properties={}):
         """Adds an edge to self.edges
 
@@ -304,7 +324,7 @@ class cghub2psqlgraph(object):
         """
 
         edge = PsqlEdge(
-            src_id=None,
+            src_id=src_id,
             dst_id=dst_id,
             label=edge_label,
             properties=properties
