@@ -8,23 +8,23 @@ tcga:
   data_subtype:
     case:
         TAR:
-          -
+          condition1:
             path: refassem_short_name
             regex: '(^unaligned$)'
-          -
+          condition2:
             path: ./filename
             regex: '(.*)(\.tar$)'
         TARGZ:
-          -
+          condition1:
             path: refassem_short_name
             regex: unaligned
-          -
+          condition2:
             path: ./filename
             regex: '(.*)(\.tar\.gz$)'
         BAM:
-          -
+          condition1:
             path: refassem_short_name
             regex: '(?!(^unaligned$))'
-          -
+          condition2:
             path: ./filename
             regex: (.*)(\.tar\.gz)
