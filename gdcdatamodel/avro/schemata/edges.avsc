@@ -194,8 +194,7 @@
           "file:portion",
           "file:sample",
           "file:participant",
-          "file:slide",
-          "file:file"
+          "file:slide"
         ],
         "doc": "The source/destination node types allowed."
       },
