@@ -12,8 +12,6 @@ logging.root.setLevel(level=logging.INFO)
 
 args, source, phsid = None, None, None
 
-poolsize = 10
-
 
 def setup():
     node_validator = AvroNodeValidator(node_avsc_object)
@@ -74,10 +72,10 @@ def import_files(xml):
         return
 
     # Chunk the results and distribute to process pool
-    chunksize = len(roots)/poolsize+1
+    chunksize = len(roots)/args.processes+1
     chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    Pool(poolsize).map(process, chunks)
+    Pool(args.processes).map(process, chunks)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -93,6 +91,8 @@ if __name__ == '__main__':
                         help='import all the files')
     parser.add_argument('-d', '--days', default=1, type=int,
                         help='time in days days for incremental import')
+    parser.add_argument('-n', '--processes', default=8, type=int,
+                        help='number of processes to run import with')
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
     args = parser.parse_args()
