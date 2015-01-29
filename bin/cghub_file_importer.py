@@ -72,6 +72,7 @@ def import_files(xml):
         return
 
     # Chunk the results and distribute to process pool
+
     chunksize = len(roots)/args.processes+1
     chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
@@ -95,6 +96,8 @@ if __name__ == '__main__':
                         help='number of processes to run import with')
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
+    parser.add_argument('-n', '--nproc', default=8, type=int,
+                        help='the number of processes')
     args = parser.parse_args()
 
     source, phsid = 'tcga_cghub', 'phs000178'
