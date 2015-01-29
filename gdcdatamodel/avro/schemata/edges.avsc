@@ -314,6 +314,7 @@
         "type": [
           "annotation:participant",
           "annotation:sample",
+          "annotation:slide",
           "annotation:portion",
           "annotation:analyte",
           "annotation:aliquot",
