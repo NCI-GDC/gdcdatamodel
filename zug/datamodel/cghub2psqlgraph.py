@@ -8,7 +8,7 @@ from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
-from zug.datamodel import xml2psqlgraph
+from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
 
 
 log = get_logger(__name__)
@@ -268,6 +268,8 @@ class cghub2psqlgraph(object):
         props.update(self.xml.get_node_datetime_properties(*args))
         props.update(self.xml.get_node_const_properties(*args))
         acl = self.xml.get_node_acl(root, node_type, params)
+        print file_name
+        self.categorize_file(root)
 
         # Save the node for deletion or insertion
         state = self.get_file_node_state(*args)
@@ -276,6 +278,41 @@ class cghub2psqlgraph(object):
         else:
             node = self.save_file_node(file_name, node_type, props, acl)
             self.add_edges(root, node_type, params, file_name, node)
+
+    def categorize_by_switch(self, root, cases):
+        for dst_name, case in cases.iteritems():
+            if None not in [
+                re.match(
+                    condition['regex'], self.xml.xpath(
+                        condition['path'], root, single=True, label=dst_name))
+                    for condition in case.values()]:
+                return dst_name
+        raise RuntimeError('Unable to find correct categorization')
+
+    def categorize_file(self, root):
+        if self.xml.xpath('./filename', root, single=True).endswith('.bai'):
+            return
+        mapping = cghub_categorization_mapping['mapping']
+        parse = cghub_categorization_mapping['files']
+        for dst_label, params in parse.iteritems():
+            if 'const' in params:
+                dst_name = params['const']
+            elif 'path' in params:
+                dst_name = self.xml.xpath(
+                    params['path'], root, label=dst_label)[0]
+            elif 'switch' in params:
+                dst_name = self.categorize_by_switch(root, params['switch'])
+                dst_name = None if '_IGNORED_' in dst_name else dst_name
+            else:
+                raise RuntimeError('File classification mapping is invalid')
+            if not dst_name:
+                continue
+            if dst_label in mapping:
+                dst_name = mapping[dst_label][dst_name]
+            print dst_label, dst_name
+            # dsts = list(self.graph.node_lookup(
+            #     label=dst_label, property_matches={'name': dst_name}))
+            # self.save_edge(file_name, dst_id, dst_label, edge_label)
 
     def add_edges(self, root, node_type, params, file_name, node):
         if self.is_bam_index_file(file_name):

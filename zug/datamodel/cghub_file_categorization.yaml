@@ -1,30 +1,68 @@
-tcga:
+files:
   data_type:
-    const: 'Raw sequencing data'
+    const: Raw sequencing data
+
   experimental_strategy:
-    path: 'Result/library_strategy'
+    edge_label:
+    path: 'ancestor::Result/library_strategy'
+
   platform:
-    path: 'Result/experiment_xml/EXPERIMENT_SET/EXPERIMENT/PLATFORM/*/INSTRUMENT_MODEL'
+    edge_label:
+    path: 'ancestor::Result/experiment_xml/EXPERIMENT_SET/EXPERIMENT/PLATFORM/*/INSTRUMENT_MODEL'
+
   data_subtype:
-    case:
+    edge_label:
+    switch:
+        Unaligned reads:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(^unaligned$)'
+          condition2:
+            path: ./filename
+            regex: '(.*)(\.tar)(\.gz)?'
+        Aligned reads:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(?!(^unaligned$))'
+          condition2:
+            path: ./filename
+            regex: (.*)(\.bam)
+
+  data_format:
+    edge_label:
+    switch:
         TAR:
           condition1:
-            path: refassem_short_name
+            path: ancestor::Result/refassem_short_name
             regex: '(^unaligned$)'
           condition2:
             path: ./filename
             regex: '(.*)(\.tar$)'
         TARGZ:
           condition1:
-            path: refassem_short_name
-            regex: unaligned
+            path: ancestor::Result/refassem_short_name
+            regex: '(^unaligned$)'
           condition2:
             path: ./filename
             regex: '(.*)(\.tar\.gz$)'
         BAM:
           condition1:
-            path: refassem_short_name
+            path: ancestor::Result/refassem_short_name
             regex: '(?!(^unaligned$))'
           condition2:
             path: ./filename
-            regex: (.*)(\.tar\.gz)
+            regex: (.*)(\.bam)
+
+mapping:
+  platform:
+    454 GS FLX Titanium: TBD
+    AB SOLiD 4 System: TBD
+    AB SOLiD System 2.0: TBD
+    AB SOLiD System 3.0: TBD
+    AB SOLiD System 3.0: TBD
+    Illumina Genome Analyzer II: TBD
+    Illumina Genome Analyzer IIx: TBD
+    Illumina HiSeq 2000: TBD
+    Illumina HiSeq 2500: TBD
+    Illumina MiSeq: TBD
+    Ion Torrent PGM: TBD

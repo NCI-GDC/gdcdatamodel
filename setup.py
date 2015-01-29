@@ -12,6 +12,7 @@ setup(
             "datamodel/bcr.yaml",
             "datamodel/cghub.yaml",
             "datamodel/clinical.yaml",
+            "datamodel/cghub_file_categorization.yaml",
         ]
     },
     install_requires=[
