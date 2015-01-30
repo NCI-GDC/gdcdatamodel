@@ -58,8 +58,8 @@ def setup_database(user, password, database, root_user='postgres', host=''):
             user=user, password=password)
         conn.execute(user_stmt)
 
-        perm_stmt = 'GRANT ALL PRIVILEGES ON DATABASE {database} to {password}'\
-                    ''.format(database=database, password=password)
+        perm_stmt = 'GRANT ALL PRIVILEGES ON DATABASE {database} to {user}'\
+                    ''.format(database=database, user=user)
         conn.execute(perm_stmt)
         conn.execute("commit")
     except Exception, msg:
