@@ -3,6 +3,8 @@ import itertools
 from gdcdatamodel.mappings import get_file_es_mapping, \
     get_participant_es_mapping
 
+from pprint import pprint
+
 
 class PsqlGraph2JSON(object):
 
@@ -23,15 +25,17 @@ class PsqlGraph2JSON(object):
         self.file_mapping = get_file_es_mapping()
         self.participant_mapping = get_participant_es_mapping()
 
-    def walk_participant_node(self, node, mapping, path=[], level=0):
+    def walk_participant_node(self, node, traversal, accumulation,
+                              path=[], level=0):
         for neighbor, label in itertools.chain(
                 [(a.src, a.label) for a in node.edges_in],
                 [(b.dst, b.label) for b in node.edges_out]):
-            if neighbor.label not in mapping.keys()\
+            if neighbor.label not in traversal.keys()\
                or node.node_id in path or neighbor.label in self.leaf_nodes:
                 continue
+            accumulation[node.label] = node.properties
             self.walk_participant_node(
-                neighbor, mapping[neighbor.label],
+                neighbor, traversal[neighbor.label], accumulation,
                 path+[node.node_id], level+1)
 
     def get_participants(self):
@@ -42,4 +46,6 @@ class PsqlGraph2JSON(object):
     def walk_participants(self):
         self.get_participants()
         for f in self.participants:
-            self.walk_participant_node(f, self.participant_mapping)
+            json = {}
+            self.walk_participant_node(f, self.participant_mapping, json)
+            pprint(json)

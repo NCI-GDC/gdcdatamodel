@@ -246,7 +246,7 @@ participant:
     edges_by_property:
       processed_at:
         tissue_source_site:
-          submitter_id: ./shared:tissue_source_site
+          code: ./shared:tissue_source_site
       member_of:
         project:
           name: //admin:admin/admin:disease_code
