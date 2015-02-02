@@ -1,5 +1,4 @@
 import json
-import uuid
 import datetime
 import logging
 import psqlgraph
@@ -58,7 +57,8 @@ class cghub2psqlgraph(object):
 
     def __init__(self, xml_mapping, host, user,
                  password, database, node_validator=None,
-                 edge_validator=None, ignore_missing_properties=True):
+                 edge_validator=None, ignore_missing_properties=True,
+                 signpost=None):
         """
 
         """
@@ -81,6 +81,7 @@ class cghub2psqlgraph(object):
             xml_mapping, host, user, password, database,
             node_validator=node_validator,
             edge_validator=edge_validator)
+        self.signpost = signpost  # should be a SignpostClient object
 
     def rebase(self, source):
         """Similar to export in xml2psqlgraph, but re-writes changes onto the
@@ -134,7 +135,8 @@ class cghub2psqlgraph(object):
                 session=session)
         else:
             log.debug('Adding {}'.format(file_name))
-            node_id = str(uuid.uuid4())
+            doc = self.signpost.create()
+            node_id = doc.did
             node.node_id = node_id
             node.system_annotations.update(system_annotations)
             try:
