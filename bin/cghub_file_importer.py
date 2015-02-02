@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import logging
 import argparse
 import uuid
@@ -112,7 +113,8 @@ if __name__ == '__main__':
                         help='file to load from')
     parser.add_argument('-n', '--nproc', default=8, type=int,
                         help='the number of processes')
-    parser.add_argument('-H', '--signpost-host', default='localhost', type=str,
+    parser.add_argument('-H', '--signpost-host',
+                        default='signpost.service.consul', type=str,
                         help='signpost server host')
     parser.add_argument('-P', '--signpost-port', default=80,
                         help='signpost server port')

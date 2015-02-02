@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This is a one-time use script to set up a fresh install of Postgres 9.4
 Needs to be run as the postgres user.
