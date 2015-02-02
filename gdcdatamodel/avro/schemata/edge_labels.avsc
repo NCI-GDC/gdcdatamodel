@@ -9,6 +9,15 @@
     "doc":"Allowed string constants for indicating derived_from"
   },
   {
+    "name": "related_to_enum",
+    "namespace": "edu.uchicago.cdis",
+    "symbols": [
+      "related_to"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating related_to"
+  },
+  {
     "name": "member_of_enum",
     "namespace": "edu.uchicago.cdis",
     "symbols": [

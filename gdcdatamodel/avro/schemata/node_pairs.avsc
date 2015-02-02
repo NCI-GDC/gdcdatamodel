@@ -226,6 +226,21 @@
   },
   {
     "type": "record",
+    "name": "annotation:slide",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "annotation_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "slide_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "annotation:participant",
     "namespace": "edu.uchicago.cdis",
     "fields": [
