@@ -26,7 +26,7 @@ setup(
         'cssselect==0.9.1'
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@1bb1a5a05fd75acc6b445a7a2064b3955fdff37e#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@ab36169777266eec4c6eea02f52ba2ad46867fc7#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@79ab8323197ecb322ce188302b3b5ebe2d3159f8#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@381e41d09dd7a0f9cd5f1ea5abea5bb1f34e9e70#egg=signpostclient',
