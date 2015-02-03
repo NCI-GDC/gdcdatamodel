@@ -20,6 +20,7 @@ setup(
         'gdcdatamodel',
         'cdisutils',
         'signpostclient',
+        'lockfile',
         'lxml==3.4.1',
         'requests==2.5.1',
         'apache-libcloud==0.15.1',
