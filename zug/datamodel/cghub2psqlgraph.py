@@ -180,8 +180,6 @@ class cghub2psqlgraph(object):
                                      session, system_annotations)
             for file_key in self.files_to_delete:
                 node = existing_files.get(file_key, None)
-                print '--', file_key, node
-                print existing_files.keys()
                 if node:
                     log.debug('Redacting {}'.format(file_key))
                     self.graph.node_delete(node=node, session=session)
