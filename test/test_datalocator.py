@@ -60,8 +60,8 @@ class DataLocatorTest(unittest.TestCase):
         doc = self.signpost_client.create()
         self.graph.node_insert(node=PsqlNode(node_id=doc.did,
                                              label='file',
-                                             properties={"file_name": "baz.txt",
-                                                         "submitter_id": "abc123"}))
+                                             properties={"file_name": "baz.txt"},
+                                             system_annotations={"analysis_id": "abc123"}))
         cont = self.storage_client.get_container("test")
         self.storage_client.upload_object_via_stream("data", cont, "abc123/baz.txt")
         self.locator = DataLocator(storage_client=self.storage_client,
