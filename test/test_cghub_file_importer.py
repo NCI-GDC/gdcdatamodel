@@ -70,38 +70,42 @@ class TestCGHubFileImporter(unittest.TestCase):
         self.converter.graph.engine.dispose()
 
     def test_simple_parse(self):
-        to_add = [
-            '00007994-abeb-4b16-a6ad-7230300a29e9/UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam',
-            '00007994-abeb-4b16-a6ad-7230300a29e9/UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai']
-        to_delete = [
-            '000dbac5-2f8c-48d9-9121-c84421e70381/TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam',
-            '000dbac5-2f8c-48d9-9121-c84421e70381/TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam']
-        for root in TEST_DATA:
-            self.converter.parse('file', etree.fromstring(root))
+        with self.converter.graph.session_scope():
+            to_add = [
+                ('00007994-abeb-4b16-a6ad-7230300a29e9', 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam'),
+                ('00007994-abeb-4b16-a6ad-7230300a29e9', 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai')]
+            to_delete = [
+                ('000dbac5-2f8c-48d9-9121-c84421e70381', 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam'),
+                ('000dbac5-2f8c-48d9-9121-c84421e70381', 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam.bai')]
+            for root in TEST_DATA:
+                self.converter.parse('file', etree.fromstring(root))
 
-        # pre-insert files to add
-        self.assertEqual(len(self.converter.files_to_add), 2)
-        for name in to_add:
-            self.assertTrue(name in self.converter.files_to_add)
+            print self.converter.files_to_add
+            # pre-insert files to add
+            self.assertEqual(len(self.converter.files_to_add), 2)
+            for file_key in to_add:
+                self.assertTrue(file_key in self.converter.files_to_add)
 
-        # pre-insert files to delete
-        self.assertEqual(len(self.converter.files_to_delete), 2)
-        for name in to_delete:
-            self.assertTrue(name in self.converter.files_to_delete)
+            # pre-insert files to delete
+            self.assertEqual(len(self.converter.files_to_delete), 2)
+            for file_key in to_delete:
+                self.assertTrue(file_key in self.converter.files_to_delete)
 
-        # post-insert
-        self.converter.rebase('test')
-        for name in to_add:
-            node = self.converter.graph.nodes().props({'file_name': name}).one()
-        for name in to_delete:
-            self.assertEqual(
-                self.converter.graph.nodes().props(
-                    {'file_name': name}).count(), 0)
+            # post-insert
+            self.converter.rebase('test')
+            for file_key in to_add:
+                node = self.converter.graph.nodes().props(
+                    {'file_name': file_key[1]}).one()
+            for file_key in to_delete:
+                self.assertEqual(
+                    self.converter.graph.nodes().props(
+                        {'file_name': file_key[1]}).count(), 0)
 
 
     def test_idempotency(self):
-        for i in range(5):
-            self.test_simple_parse()
+        with self.converter.graph.session_scope():
+            for i in range(5):
+                self.test_simple_parse()
 
 
 TEST_DATA = ["""

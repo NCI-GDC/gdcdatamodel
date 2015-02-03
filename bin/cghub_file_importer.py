@@ -95,6 +95,7 @@ def import_files(xml):
     assert sum([len(c) for c in chunks]) == len(roots)
     Pool(args.nproc).map(process, chunks)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', default='gdc_datamodel', type=str,
