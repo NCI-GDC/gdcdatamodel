@@ -93,7 +93,8 @@ def import_files(xml):
     chunksize = len(roots)/args.nproc+1
     chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    Pool(args.nproc).map(process, chunks)
+    # Pool(args.nproc).map(process, chunks)
+    process(chunks[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
