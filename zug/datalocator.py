@@ -35,8 +35,8 @@ class DataLocator(object):
             try:
                 with self.graph.session_scope():
                     self.log.info("looking for node with submitter_id %s and name %s", analysis_id, name)
-                    file_node = self.graph.nodes().props({"submitter_id": analysis_id,
-                                                          "file_name": name}).one()
+                    file_node = self.graph.nodes().props({"file_name": name})\
+                                                  .sysan({"analysis_id": analysis_id}).one()
                 doc = self.signpost.get(file_node.node_id)
                 url = url_for(obj)
                 doc.urls = [url]
