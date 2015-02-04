@@ -81,8 +81,10 @@ class cghub2psqlgraph(object):
             the file source to be put in system_annotations
 
         """
-        self.rebase_file_nodes(source)
-        self.export_edges()
+        with self.graph.session_scope():
+            self.rebase_file_nodes(source)
+        with self.graph.session_scope():
+            self.export_edges()
         self.reset()
 
     def reset(self):
@@ -91,22 +93,14 @@ class cghub2psqlgraph(object):
         self.edges = {}
         self.related_to_edges = {}
 
-    def get_existing_files(self, source):
-        """dumps a list of files from a source to memory
+    def get_file_by_key(self, file_key):
+        analysis_id, file_name = file_key
+        return self.graph.nodes().labels('file')\
+                                 .props({'file_name': file_name})\
+                                 .sysan({'analysis_id': analysis_id})\
+                                 .first()
 
-        :param src source:
-            the file source to be put in system_annotations
-
-        """
-        return {
-            (f.system_annotations.get('analysis_id', None), f['file_name']):
-            f for f in self.graph.node_lookup_by_matches(
-                system_annotation_matches={'source': source},
-                label='file').yield_per(1000)
-            if f.system_annotations.get('analysis_id', None)}
-
-    def merge_file_node(self, existing_files, file_key, node,
-                        system_annotations):
+    def merge_file_node(self, file_key, node, system_annotations):
         """either create or update file record
 
         1. does this file_key already exist
@@ -119,7 +113,7 @@ class cghub2psqlgraph(object):
         """
 
         analysis_id, file_name = file_key
-        existing = existing_files.get(file_key, None)
+        existing = self.get_file_by_key(file_key)
         system_annotations.update({'analysis_id': analysis_id})
 
         if existing is not None:
@@ -157,24 +151,18 @@ class cghub2psqlgraph(object):
 
         """
         system_annotations = {'source': source}
-        with self.graph.session_scope():
-            # Cache existing files in kv map
-            existing_files = self.get_existing_files(source)
-            log.debug('Found {} existing files'.format(len(existing_files)))
+        # Loop through files to add and merge them into the graph
+        for file_key, node in self.files_to_add.iteritems():
+            self.merge_file_node(file_key, node, system_annotations)
 
-            # Loop through files to add and merge them into the graph
-            for file_key, node in self.files_to_add.iteritems():
-                self.merge_file_node(
-                    existing_files, file_key, node, system_annotations)
-
-            # Loop through files to remove and delete them from the graph
-            for file_key in self.files_to_delete:
-                node = existing_files.get(file_key, None)
-                if node:
-                    log.debug('Redacting {}'.format(file_key))
-                    self.graph.node_delete(node=node)
-                else:
-                    log.debug('Redaction not necessary {}'.format(file_key))
+        # Loop through files to remove and delete them from the graph
+        for file_key in self.files_to_delete:
+            node = self.get_file_by_key(file_key)
+            if node:
+                log.debug('Redacting {}'.format(file_key))
+                self.graph.node_delete(node=node)
+            else:
+                log.debug('Redaction not necessary {}'.format(file_key))
 
     def export_edge(self, edge):
         """
@@ -204,9 +192,8 @@ class cghub2psqlgraph(object):
             self.save_edge(src_key, self.files_to_add[dst_key].node_id,
                            'file', 'related_to',
                            src_id=self.files_to_add[src_key].node_id)
-        with self.graph.session_scope():
-            for src_f_name, edges in self.edges.iteritems():
-                map(self.export_edge, edges)
+        for src_f_name, edges in self.edges.iteritems():
+            map(self.export_edge, edges)
         self.edges = {}
 
     def initialize(self, data):
@@ -256,11 +243,11 @@ class cghub2psqlgraph(object):
         :param str data: xml string to convert and insert
 
         """
-
-        for params in self.xml_mapping[node_type]:
-            files = self.xml.get_node_roots(node_type, params, root=root)
-            for f in files:
-                self.parse_file_node(f, node_type, params)
+        with self.graph.session_scope():
+            for params in self.xml_mapping[node_type]:
+                files = self.xml.get_node_roots(node_type, params, root=root)
+                for f in files:
+                    self.parse_file_node(f, node_type, params)
 
     def parse_file_node(self, root, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
@@ -322,7 +309,7 @@ class cghub2psqlgraph(object):
                 continue
 
             # Skip experimental strategies None and OTHER
-            if dst_label == 'expertimental_strategy' \
+            if dst_label == 'experimental_strategy' \
                and dst_name in [None, 'OTHER']:
                 continue
 
