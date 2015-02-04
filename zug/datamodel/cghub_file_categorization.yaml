@@ -1,17 +1,14 @@
 files:
-  data_type:
-    const: Raw sequencing data
-
   experimental_strategy:
-    edge_label:
+    edge_label: member_of
     path: 'ancestor::Result/library_strategy'
 
   platform:
-    edge_label:
+    edge_label: generated_from
     path: 'ancestor::Result/experiment_xml/EXPERIMENT_SET/EXPERIMENT/PLATFORM/*/INSTRUMENT_MODEL'
 
   data_subtype:
-    edge_label:
+    edge_label: member_of
     switch:
         Unaligned reads:
           condition1:
@@ -29,7 +26,7 @@ files:
             regex: (.*)(\.bam)
 
   data_format:
-    edge_label:
+    edge_label: member_of
     switch:
         TAR:
           condition1:
@@ -53,16 +50,16 @@ files:
             path: ./filename
             regex: (.*)(\.bam)
 
-values:
+names:
   platform:
-    454 GS FLX Titanium: TBD
-    AB SOLiD 4 System: TBD
-    AB SOLiD System 2.0: TBD
-    AB SOLiD System 3.0: TBD
-    AB SOLiD System 3.0: TBD
-    Illumina Genome Analyzer II: TBD
-    Illumina Genome Analyzer IIx: TBD
-    Illumina HiSeq 2000: TBD
-    Illumina HiSeq 2500: TBD
-    Illumina MiSeq: TBD
-    Ion Torrent PGM: TBD
+    454 GS FLX Titanium: 'LS 454'
+    AB SOLiD 4 System: 'ABI SOLiD'
+    AB SOLiD System 2.0: 'ABI SOLiD'
+    AB SOLiD System 3.0: 'ABI SOLiD'
+    AB SOLiD System 3.0: 'ABI SOLiD'
+    Illumina Genome Analyzer II: 'Illumina GA'
+    Illumina Genome Analyzer IIx: 'Illumina GA'
+    Illumina HiSeq 2000: 'Illumina HiSeq'
+    Illumina HiSeq 2500: 'Illumina HiSeq'
+    Illumina MiSeq: 'Illumina MiSeq'
+    Ion Torrent PGM: 'Ion PGM'

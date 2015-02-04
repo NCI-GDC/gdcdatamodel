@@ -201,7 +201,6 @@ class cghub2psqlgraph(object):
 
         """
         for src_key, dst_key in self.related_to_edges.items():
-            print 'id:', self.files_to_add[dst_key].node_id
             self.save_edge(src_key, self.files_to_add[dst_key].node_id,
                            'file', 'related_to',
                            src_id=self.files_to_add[src_key].node_id)
@@ -279,7 +278,6 @@ class cghub2psqlgraph(object):
         props.update(self.xml.get_node_datetime_properties(*args))
         props.update(self.xml.get_node_const_properties(*args))
         acl = self.xml.get_node_acl(root, node_type, params)
-        self.categorize_file(root)
 
         # Save the node for deletion or insertion
         state = self.get_file_node_state(*args)
@@ -287,6 +285,7 @@ class cghub2psqlgraph(object):
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
         else:
+            self.categorize_file(root, file_key)
             node = self.save_file_node(file_key, node_type, props, acl)
             self.add_edges(root, node_type, params, file_key, node)
 
@@ -298,14 +297,14 @@ class cghub2psqlgraph(object):
                 return dst_name
         raise RuntimeError('Unable to find correct categorization')
 
-    def categorize_file(self, root):
+    def categorize_file(self, root, file_key):
         file_name = self.xml.xpath('./filename', root, single=True)
         if file_name.endswith('.bai'):
             return
-        mapping = cghub_categorization_mapping['values']
-        parse = cghub_categorization_mapping['files']
-        for dst_label, params in parse.iteritems():
-            # Select on type of parameter
+        names = cghub_categorization_mapping['names']
+        file_mapping = cghub_categorization_mapping['files']
+        for dst_label, params in file_mapping.items():
+            # Cases for type of parameter to get dst_name
             if 'const' in params:
                 dst_name = params['const']
             elif 'path' in params:
@@ -313,19 +312,28 @@ class cghub2psqlgraph(object):
                     params['path'], root, label=dst_label)[0]
             elif 'switch' in params:
                 dst_name = self.categorize_by_switch(root, params['switch'])
-                dst_name = None if '_IGNORED_' in dst_name else dst_name
             else:
                 raise RuntimeError('File classification mapping is invalid')
 
+            # Handle those without a destination name
             if not dst_name:
-                log.warn(
-                    'No desination from {name} to {dst_label} found'.format(
-                        file_name, dst_label))
-            if dst_label in mapping:
-                dst_name = mapping[dst_label][dst_name]
-            # dsts = list(self.graph.node_lookup(
-            #     label=dst_label, property_matches={'name': dst_name}))
-            # self.save_edge(file_name, dst_id, dst_label, edge_label)
+                log.warn('No desination from {} to {} found'.format(
+                    file_name, dst_label))
+                continue
+
+            # Skip experimental strategies None and OTHER
+            if dst_label == 'expertimental_strategy' \
+               and dst_name in [None, 'OTHER']:
+                continue
+
+            # Cache edge to categorization node
+            normalized = names.get(dst_label, {}).get(str(dst_name), dst_name)
+            print '{} | {}'.format(dst_label, normalized)
+            dst_id = self.graph.nodes().labels(dst_label)\
+                                       .props(dict(name=normalized))\
+                                       .one().node_id
+            edge_label = file_mapping[dst_label]['edge_label']
+            self.save_edge(file_key, dst_id, dst_label, edge_label)
 
     def add_edges(self, root, node_type, params, file_key, node):
         """
