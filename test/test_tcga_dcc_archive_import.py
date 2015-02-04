@@ -12,9 +12,30 @@ from zug.datamodel.latest_urls import LatestURLParser
 from zug.datamodel.prelude import create_prelude_nodes
 
 from psqlgraph import PsqlGraphDriver
+from signpost import Signpost
+from signpostclient import SignpostClient
+from multiprocessing import Process
+import time
+import random
+
+
+def run_signpost(port):
+    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(host="localhost",
+                                                                  port=port)
 
 
 class TCGADCCArchiveSyncTest(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.port = random.randint(5000, 6000)
+        cls.signpost = Process(target=run_signpost, args=[cls.port])
+        cls.signpost.start()
+        time.sleep(1)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.signpost.terminate()
 
     def setUp(self):
         self.pg_driver = PsqlGraphDriver('localhost', 'test',
@@ -24,7 +45,8 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.storage_client = Local(tempfile.mkdtemp())
         self.storage_client.create_container("tcga_dcc_public")
         self.storage_client.create_container("tcga_dcc_protected")
-        self.signpost_url = "http://localhost:5000"
+        self.signpost_client = SignpostClient("http://localhost:{}".format(self.port),
+                                              version="v0")
         self.parser = LatestURLParser()
         create_prelude_nodes(self.pg_driver)
 
@@ -42,7 +64,7 @@ class TCGADCCArchiveSyncTest(TestCase):
     def syncer_for(self, archive, **kwargs):
         return TCGADCCArchiveSyncer(
             archive,
-            signpost_url=self.signpost_url,
+            signpost=self.signpost_client,
             pg_driver=self.pg_driver,
             scratch_dir=self.scratch_dir,
             storage_client=self.storage_client,

@@ -1,2 +1,3 @@
 lockfile
 mock
+-e git+git@github.com:NCI-GDC/signpost.git@f642c09f2c394e2a8713f7baad74ea643640154b#egg=signpost
