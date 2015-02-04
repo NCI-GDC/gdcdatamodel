@@ -28,6 +28,7 @@ Project dependencies are managed using [PIP](https://pip.readthedocs.org/en/late
 # Example validation usage
 ```
 from gdcdatamodel import node_avsc_object
+from gdcdatamodel.mappings import get_participant_es_mapping, get_file_es_mapping
 from avro.io import validate
 import json
 
@@ -35,6 +36,10 @@ import json
 with open('examples/nodes/aliquot_valid.json', 'r') as f:
     node = json.loads(f.read())
 print validate(node_avsc_object, node)  # if valid, prints True
+
+
+print(get_participant_es_mapping())  # Prints participant elasticsearch mapping
+print(get_file_es_mapping())         # Prints file elasticsearch mapping
 ```
 
 # Example Elasticsearch mapping usage
