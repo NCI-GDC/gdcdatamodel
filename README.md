@@ -8,9 +8,6 @@ Repo to keep information about the GDC data model design.
 To install the gdcdatamodel library run the setup script:
 ```
 ❯ python setup.py install
-Setting up test database
-Dropping old test data
-Creating tables in test database
 ```
 
 ## Dependencies
@@ -28,7 +25,7 @@ The gdcdatamodel library requires the following pip dependencies
 
 Project dependencies are managed using [PIP](https://pip.readthedocs.org/en/latest/)
 
-# Example usage
+# Example validation usage
 ```
 from gdcdatamodel import node_avsc_object
 from avro.io import validate
@@ -38,6 +35,13 @@ import json
 with open('examples/nodes/aliquot_valid.json', 'r') as f:
     node = json.loads(f.read())
 print validate(node_avsc_object, node)  # if valid, prints True
+```
+
+# Example Elasticsearch mapping usage
+```
+from gdcdatamodel import mappings
+print mappings.get_file_es_mapping()
+print mappings.get_participant_es_mapping()
 ```
 
 # Tests
