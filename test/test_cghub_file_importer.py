@@ -9,7 +9,7 @@ from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping, prelude
 from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
-logging.root.setLevel(level=logging.INFO)
+logging.root.setLevel(level=logging.DEBUG)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class TestCGHubFileImporter(unittest.TestCase):
 
     def _add_required_nodes(self):
         map(self.converter.graph.node_insert, [
-            Node(str(uuid.uuid4()),
+            Node('c18465ae-447d-46c8-8b54-0156ab502265',
                  'aliquot', properties={
                      u'amount': 0.0, u'concentration': 0.0,
                      u'source_center': u'test', u'submitter_id': u'test'}),
@@ -85,6 +85,11 @@ class TestCGHubFileImporter(unittest.TestCase):
             for file_key in to_add:
                 self.assertTrue(file_key in self.converter.files_to_add)
 
+            for n in self.converter.graph.nodes():
+                print n
+            for n in self.converter.files_to_delete:
+                print n
+
             # pre-insert files to delete
             self.assertEqual(len(self.converter.files_to_delete), 2)
             for file_key in to_delete:
@@ -99,13 +104,21 @@ class TestCGHubFileImporter(unittest.TestCase):
                 self.assertEqual(
                     self.converter.graph.nodes().props(
                         {'file_name': file_key[1]}).count(), 0)
-            self.converter.graph.nodes().props(
-                {'file_name': 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai'}).one()
+            bam = self.converter.graph.nodes().props(
+                {'file_name': 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam'}
+            ).one()
+            bai = self.converter.graph.nodes().props(
+                {'file_name': 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai'}
+            ).one()
+            self.assertEqual(len(list(bai.get_edges())), 1)
+            self.assertEqual(bai.edges_in[0].src_id, bam.node_id)
+            self.assertEqual(bai.edges_in[0].label, 'related_to')
 
     def test_idempotency(self):
         with self.converter.graph.session_scope():
             for i in range(5):
                 self.test_simple_parse()
+        self.tearDown()
 
 
 TEST_DATA = ["""
