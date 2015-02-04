@@ -116,8 +116,6 @@ if __name__ == '__main__':
                         help='number of processes to run import with')
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
-    parser.add_argument('-n', '--nproc', default=8, type=int,
-                        help='the number of processes')
     parser.add_argument('-H', '--signpost-host',
                         default='signpost.service.consul', type=str,
                         help='signpost server host')

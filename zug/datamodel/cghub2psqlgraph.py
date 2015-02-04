@@ -328,7 +328,6 @@ class cghub2psqlgraph(object):
 
             # Cache edge to categorization node
             normalized = names.get(dst_label, {}).get(str(dst_name), dst_name)
-            print '{} | {}'.format(dst_label, normalized)
             dst_id = self.graph.nodes().labels(dst_label)\
                                        .props(dict(name=normalized))\
                                        .one().node_id
