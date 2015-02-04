@@ -1,6 +1,7 @@
 import logging
 import argparse
 import re
+from itertools import islice
 from pprint import pprint
 from multiprocessing import Pool
 from zug.datamodel import psqlgraph2json
@@ -27,23 +28,12 @@ def get_converter():
     )
 
 
-def initializer(*args):
-    global converter
-    converter = get_converter()
-
-
-def process(archive):
-    pass
-
-
 def start_conversion():
     converter = get_converter()
-    for f in converter.get_files():
-        pprint(converter.denormalize_file(f))
-        break
-    for f in converter.get_participants():
+    # for f in islice(converter.get_files(), 20):
+    #     pprint(converter.denormalize_file(f))
+    for f in islice(converter.get_participants(), 20):
         pprint(converter.denormalize_participant(f))
-        break
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

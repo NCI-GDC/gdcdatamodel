@@ -94,8 +94,8 @@ class PsqlGraph2JSON(object):
     def denormalize_participant(self, node):
         participant = self.walk_tree(node, participant_tree)
         files = []
-        for f in self.walk_paths(node, participant_traversal,
-                                 participant_tree)['files']:
+        temp = self.walk_paths(node, participant_traversal, participant_tree)
+        for f in temp.get('files', []):
             f['participant'] = copy(participant)
             files.append(f)
         participant['files'] = files
