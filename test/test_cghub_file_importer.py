@@ -21,6 +21,12 @@ class TestSignpostClient(object):
         return self
 
 
+analysis_idA = '00007994-abeb-4b16-a6ad-7230300a29e9'
+analysis_idB = '000dbac5-2f8c-48d9-9121-c84421e70381'
+bamA = 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam'
+bamB = 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam'
+baiA = bamA + '.bai'
+baiB = bamB + '.bai'
 host = 'localhost'
 user = 'test'
 password = 'test'
@@ -71,13 +77,6 @@ class TestCGHubFileImporter(unittest.TestCase):
 
     def test_simple_parse(self):
         graph = self.converter.graph
-        analysis_idA = '00007994-abeb-4b16-a6ad-7230300a29e9'
-        analysis_idB = '000dbac5-2f8c-48d9-9121-c84421e70381'
-        bamA = 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam'
-        bamB = 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam'
-        baiA = bamA + '.bai'
-        baiB = bamB + '.bai'
-
         with graph.session_scope():
             to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
             to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
@@ -108,14 +107,20 @@ class TestCGHubFileImporter(unittest.TestCase):
             bai = graph.nodes().props({'file_name': baiA}).one()
 
     def test_related_to(self):
+        graph = self.converter.graph
         with graph.session_scope():
             self.test_simple_parse()
+            bam = graph.nodes().props({'file_name': bamA}).one()
+            bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bai.get_edges())), 1)
-            graph.nodes().ids(bai.node_id).path_in(['file']).one()
+            self.converter.graph.nodes().ids(bai.node_id).path_in(['file']).one()
 
     def test_categorization(self):
+        graph = self.converter.graph
         with graph.session_scope():
             self.test_simple_parse()
+            bam = graph.nodes().props({'file_name': bamA}).one()
+            bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bam.get_edges())), 6)
             base = graph.nodes().ids(bam.node_id)
             base.path_end(['platform']).props({'name': 'Illumina GA'}).one()
