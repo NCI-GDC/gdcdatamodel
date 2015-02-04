@@ -38,8 +38,8 @@ def process(archive):
 
 def start_conversion():
     converter = get_converter()
-    converter.walk_participants()
-    # converter.walk_files()
+    # converter.walk_participants()
+    converter.walk_files()
 
 
 if __name__ == '__main__':

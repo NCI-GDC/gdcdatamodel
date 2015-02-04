@@ -2,6 +2,7 @@ import psqlgraph
 from psqlgraph import PsqlNode
 import itertools
 import json
+from copy import copy
 from pprint import pprint
 from gdcdatamodel.mappings import \
     participant_tree, participant_traversal,\
@@ -51,7 +52,7 @@ class PsqlGraph2JSON(object):
     def walk_tree(self, node, mapping, doc=None, path=[], level=0):
         # print('|  '*level, '+', node.label, mapping.corr)
         subdoc = {'uuid': node.node_id}
-        # subdoc.update(node.properties)
+        subdoc.update(node.properties)
         for neighbor, label in itertools.chain(
                 [(a.src, a.label) for a in node.edges_in],
                 [(b.dst, b.label) for b in node.edges_out]):
@@ -65,30 +66,30 @@ class PsqlGraph2JSON(object):
         return doc
 
     def _walk_path(self, node, path):
-        print path
         props = []
         for node in self.graph.nodes().ids(node.node_id).path_end(path).all():
             nprop = {'uuid': node.node_id}
-            # nprop.update(node.properties)
+            nprop.update(node.properties)
             props.append(nprop)
         return props
 
     def walk_paths(self, node, traversals, mapping, doc=None):
         subdoc = {'uuid': node.node_id}
-        # subdoc.update(node.properties)
+        subdoc.update(node.properties)
         for dst, paths in traversals.items():
             corr, name = mapping[dst].corr
             props = []
             for path in paths:
                 props += self._walk_path(node, path)
+            # remove duplicates
+            props = [dict(t) for t in set([tuple(d.items()) for d in props])]
             if corr == ONE_TO_ONE and props:
-                assert len(props) <= 1
+                assert len(props) <= 1, props
                 subdoc[name] = props[0]
             elif props:
                 if name not in subdoc:
-                    subdoc[name] = props
-                else:
-                    subdoc[name] += props
+                    subdoc[name] = []
+                subdoc[name] += props
         doc = self.update_doc(doc, subdoc)
         return doc
 
@@ -96,7 +97,7 @@ class PsqlGraph2JSON(object):
         self.participants = self.graph.nodes()\
                                       .labels('participant')\
                                       .yield_per(self.batch_size)\
-                                      .limit(2)
+                                      .limit(1)
 
     def get_files(self):
         self.files = self.graph.nodes()\
@@ -104,21 +105,40 @@ class PsqlGraph2JSON(object):
                                .yield_per(self.batch_size)\
                                .limit(1)
 
+    def walk_participant(self, node):
+        participant = self.walk_tree(node, participant_tree)
+        files = []
+        for f in self.walk_paths(node, participant_traversal,
+                                 participant_tree)['files']:
+            f['participant'] = copy(participant)
+            files.append(f)
+        participant['files'] = files
+        return participant
+
+    def walk_file(self, f):
+        res = self.walk_tree(f, file_tree)
+        paths = self.walk_paths(f, file_traversal, file_tree)
+        res.update(paths)
+        p_dict = paths.pop('participant', None)
+        if p_dict:
+            participant = self.walk_tree(
+                self.graph.nodes().ids(p_dict['uuid']).one(),
+                participant_tree)
+            res['participant'] = participant
+        return res
+
     def walk_participants(self):
         with self.graph.session_scope():
             self.get_participants()
             docs = []
             for p in self.participants:
-                participant = self.walk_tree(p, participant_tree)
-                # participant.update(self.walk_paths(
-                #     p, participant_traversal, participant_tree))
-                docs.append(participant)
-            # print json.dumps(docs, indent=2)
+                docs.append(self.walk_participant(p))
+            return docs
 
     def walk_files(self):
         with self.graph.session_scope():
             self.get_files()
             docs = []
             for f in self.files:
-                docs.append(self.walk_paths(f, file_traversal, file_tree))
-                print json.dumps(docs, indent=2)
+                docs.append(self.walk_file(f))
+            return docs
