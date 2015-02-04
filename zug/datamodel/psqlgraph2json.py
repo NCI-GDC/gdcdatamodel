@@ -50,7 +50,6 @@ class PsqlGraph2JSON(object):
         return subdoc
 
     def walk_tree(self, node, mapping, doc=None, path=[], level=0):
-        # print('|  '*level, '+', node.label, mapping.corr)
         subdoc = {'uuid': node.node_id}
         subdoc.update(node.properties)
         for neighbor, label in itertools.chain(
@@ -81,7 +80,6 @@ class PsqlGraph2JSON(object):
             props = []
             for path in paths:
                 props += self._walk_path(node, path)
-            # remove duplicates
             props = [dict(t) for t in set([tuple(d.items()) for d in props])]
             if corr == ONE_TO_ONE and props:
                 assert len(props) <= 1, props
@@ -93,19 +91,7 @@ class PsqlGraph2JSON(object):
         doc = self.update_doc(doc, subdoc)
         return doc
 
-    def get_participants(self):
-        self.participants = self.graph.nodes()\
-                                      .labels('participant')\
-                                      .yield_per(self.batch_size)\
-                                      .limit(1)
-
-    def get_files(self):
-        self.files = self.graph.nodes()\
-                               .labels('file')\
-                               .yield_per(self.batch_size)\
-                               .limit(1)
-
-    def walk_participant(self, node):
+    def denormalize_participant(self, node):
         participant = self.walk_tree(node, participant_tree)
         files = []
         for f in self.walk_paths(node, participant_traversal,
@@ -115,7 +101,7 @@ class PsqlGraph2JSON(object):
         participant['files'] = files
         return participant
 
-    def walk_file(self, f):
+    def denormalize_file(self, f):
         res = self.walk_tree(f, file_tree)
         paths = self.walk_paths(f, file_traversal, file_tree)
         res.update(paths)
@@ -127,18 +113,22 @@ class PsqlGraph2JSON(object):
             res['participant'] = participant
         return res
 
+    def get_participants(self):
+        return self.graph.nodes()\
+                         .labels('participant')\
+                         .yield_per(self.batch_size)
+
+    def get_files(self):
+        return self.graph.nodes()\
+                         .labels('file')\
+                         .yield_per(self.batch_size)
+
     def walk_participants(self):
         with self.graph.session_scope():
-            self.get_participants()
-            docs = []
-            for p in self.participants:
-                docs.append(self.walk_participant(p))
-            return docs
+            for p in self.get_participants():
+                yield self.denormalize_participant(p)
 
     def walk_files(self):
         with self.graph.session_scope():
-            self.get_files()
-            docs = []
-            for f in self.files:
-                docs.append(self.walk_file(f))
-            return docs
+            for f in self.get_files():
+                yield self.denormalize_file(f)

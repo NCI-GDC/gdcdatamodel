@@ -38,9 +38,12 @@ def process(archive):
 
 def start_conversion():
     converter = get_converter()
-    # converter.walk_participants()
-    converter.walk_files()
-
+    for f in converter.get_files():
+        pprint(converter.denormalize_file(f))
+        break
+    for f in converter.get_participants():
+        pprint(converter.denormalize_participant(f))
+        break
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
