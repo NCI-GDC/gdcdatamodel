@@ -54,6 +54,9 @@ def make_avsc_object_from_file_list(file_list):
 
 
 # Create avsc objects
+logging.debug('Loading gdcdatamodel avro schema.')
 node_avsc_object = make_avsc_object_from_file_list(node_schema_file_list)
 edge_avsc_object = make_avsc_object_from_file_list(edge_schema_file_list)
+node_avsc_json = node_avsc_object.to_json()
+edge_avsc_json = edge_avsc_object.to_json()
 logging.debug('gdcdatamodel avro schema loaded.')
