@@ -13,7 +13,9 @@ file:
         center:
           legacy_id: ancestor::Result/center_name
     properties:
-      # file_name: This is inserted manually
+      file_name:
+        path: ./filename
+        type: str
       file_size:
         path: ./filesize
         type: int

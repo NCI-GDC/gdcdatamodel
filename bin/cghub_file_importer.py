@@ -1,10 +1,13 @@
+#!/usr/bin/env python
 import logging
 import argparse
+import uuid
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from zug.datamodel import cghub2psqlgraph, cgquery, cghub_xml_mapping
 from multiprocessing import Pool
 from lxml import etree
+from signpostclient import SignpostClient
 from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
@@ -13,7 +16,21 @@ logging.root.setLevel(level=logging.INFO)
 args, source, phsid = None, None, None
 
 
+class TestSignpostClient(object):
+
+    def create(self):
+        self.did = str(uuid.uuid4())
+        return self
+
+
 def setup():
+    if args.no_signpost:
+        signpost = TestSignpostClient()
+    else:
+        signpost = SignpostClient(
+            "http://{}:{}".format(args.signpost_host, args.signpost_port),
+            version=args.signpost_version)
+
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
     converter = cghub2psqlgraph.cghub2psqlgraph(
@@ -24,6 +41,7 @@ def setup():
         database=args.db,
         edge_validator=edge_validator,
         node_validator=node_validator,
+        signpost=signpost,
     )
     return converter
 
@@ -79,6 +97,7 @@ def import_files(xml):
     # Pool(args.processes).map(process, chunks)
     process(chunks[0])
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', default='gdc_datamodel', type=str,
@@ -97,6 +116,17 @@ if __name__ == '__main__':
                         help='number of processes to run import with')
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
+    parser.add_argument('-n', '--nproc', default=8, type=int,
+                        help='the number of processes')
+    parser.add_argument('-H', '--signpost-host',
+                        default='signpost.service.consul', type=str,
+                        help='signpost server host')
+    parser.add_argument('-P', '--signpost-port', default=80,
+                        help='signpost server port')
+    parser.add_argument('-V', '--signpost-version', default='v0',
+                        help='the version of signpost API')
+    parser.add_argument('--no-signpost', action='store_true',
+                        help='do not use signpost instance, use random ids')
     args = parser.parse_args()
 
     source, phsid = 'tcga_cghub', 'phs000178'

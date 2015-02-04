@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import logging
 import argparse
 import re
@@ -32,13 +33,11 @@ def get_converter(mapping):
     )
 
 
-def initializer(*args):
-    global biospecimen_converter, clinical_converter
+def process(archive):
+
     biospecimen_converter = get_converter(bcr_xml_mapping)
     clinical_converter = get_converter(clinical_xml_mapping)
 
-
-def process(archive):
     url = archive['dcc_archive_url']
     group_id = "{}_{}".format(archive['disease_code'], archive['batch'])
     version = archive['revision']
@@ -66,7 +65,7 @@ def process(archive):
 def import_datatypes():
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
-    p = Pool(args.nproc, initializer)
+    p = Pool(args.nproc)
     p.map(process, latest)
 
 

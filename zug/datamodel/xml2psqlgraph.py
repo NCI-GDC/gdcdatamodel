@@ -499,6 +499,9 @@ class xml2psqlgraph(object):
                 results = self.xpath(
                     path, root, expected=False, text=True,
                     label='{}: {}'.format(node_type, node_id))
+                if not results:
+                    log.warn('No {} edge for {} {} to {}'.format(
+                        edge_type, node_type, node_id, dst_label))
                 for result in results:
                     edges[result.lower()] = (dst_label, edge_type)
         return edges
@@ -533,6 +536,10 @@ class xml2psqlgraph(object):
                     dsts = list(self.graph.node_lookup(
                         label=dst_label, property_matches=dst_matches,
                         session=session))
+                    if not dsts:
+                        log.warn('No {} edge for {} {} to {} with {}'.format(
+                            edge_type, node_type, node_id,
+                            dst_label, dst_matches))
                     session.expunge_all()
                 for dst in dsts:
                     edges[dst.node_id] = (dst.label, edge_type)
