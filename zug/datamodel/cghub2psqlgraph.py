@@ -299,11 +299,13 @@ class cghub2psqlgraph(object):
         raise RuntimeError('Unable to find correct categorization')
 
     def categorize_file(self, root):
-        if self.xml.xpath('./filename', root, single=True).endswith('.bai'):
+        file_name = self.xml.xpath('./filename', root, single=True)
+        if file_name.endswith('.bai'):
             return
         mapping = cghub_categorization_mapping['values']
         parse = cghub_categorization_mapping['files']
         for dst_label, params in parse.iteritems():
+            # Select on type of parameter
             if 'const' in params:
                 dst_name = params['const']
             elif 'path' in params:
@@ -314,8 +316,11 @@ class cghub2psqlgraph(object):
                 dst_name = None if '_IGNORED_' in dst_name else dst_name
             else:
                 raise RuntimeError('File classification mapping is invalid')
+
             if not dst_name:
-                continue
+                log.warn(
+                    'No desination from {name} to {dst_label} found'.format(
+                        file_name, dst_label))
             if dst_label in mapping:
                 dst_name = mapping[dst_label][dst_name]
             # dsts = list(self.graph.node_lookup(
