@@ -2,19 +2,17 @@ file:
   -
     root: //file
     acl: ancestor::Result/study
-    analysis_id: ancestor::Result/analysis_id
     state: ancestor::Result/state
     file_name: ./filename
     edges:
       data_from:
         aliquot: ancestor::Result/aliquot_id
-    edges_by_property:
-      shipped_to:
-        center:
-          legacy_id: ancestor::Result/center_name
     properties:
       file_name:
         path: ./filename
+        type: str
+      submitter_id:
+        path: ancestor::Result/analysis_id
         type: str
       file_size:
         path: ./filesize

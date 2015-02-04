@@ -55,6 +55,7 @@ class cghub2psqlgraph(object):
 
         self.graph = []
         self.bam_index_regex = re.compile('(.*)\.bai')
+        self.center_regex = re.compile('(.*-){6}(.*)')
         self.xml_mapping = json.loads(
             json.dumps(xml_mapping), object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
@@ -138,7 +139,7 @@ class cghub2psqlgraph(object):
 
         # Add the correct src_id to this file's edges now that we know it
         for edge in self.edges.get(file_key, []):
-            edge.src_id = node.node_id
+            edge.src_id = node_id
 
     def rebase_file_nodes(self, source):
         """update file records in graph
@@ -271,10 +272,17 @@ class cghub2psqlgraph(object):
         if state in deletion_states:
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
-        else:
+        elif state == 'live':
             self.categorize_file(root, file_key)
             node = self.save_file_node(file_key, node_type, props, acl)
             self.add_edges(root, node_type, params, file_key, node)
+        else:
+            node = self.get_file_by_key(file_key)
+            if node:
+                log.warn("File {} is in {} state but was ".format(
+                    node, state) + "already in the graph. DELETING!")
+            if file_key not in self.files_to_delete:
+                self.files_to_delete.append(file_key)
 
     def categorize_by_switch(self, root, cases):
         for dst_name, case in cases.iteritems():
@@ -288,6 +296,8 @@ class cghub2psqlgraph(object):
         file_name = self.xml.xpath('./filename', root, single=True)
         if file_name.endswith('.bai'):
             return
+
+        self.save_center_edge(root, file_key)
         names = cghub_categorization_mapping['names']
         file_mapping = cghub_categorization_mapping['files']
         for dst_label, params in file_mapping.items():
@@ -320,6 +330,16 @@ class cghub2psqlgraph(object):
                                        .one().node_id
             edge_label = file_mapping[dst_label]['edge_label']
             self.save_edge(file_key, dst_id, dst_label, edge_label)
+
+    def save_center_edge(self, root, file_key):
+        legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
+                                          root, single=True, nullable=False)
+        code = self.center_regex.match(legacy_sample_id)
+        assert code, 'Unable to parse center code from barcode'
+        node = self.graph.nodes().labels('center')\
+                                 .props({'code': code.group(2)})\
+                                 .one()
+        self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
 
     def add_edges(self, root, node_type, params, file_key, node):
         """
@@ -401,5 +421,6 @@ class cghub2psqlgraph(object):
         file_name = self.xml.xpath(
             params.file_name, root, single=True, label=node_type)
         analysis_id = self.xml.xpath(
-            params.analysis_id, root, single=True, label=node_type)
+            params.properties.submitter_id.path, root,
+            single=True, label=node_type)
         return (analysis_id, file_name)
