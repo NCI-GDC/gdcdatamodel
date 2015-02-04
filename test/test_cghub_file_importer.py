@@ -99,7 +99,8 @@ class TestCGHubFileImporter(unittest.TestCase):
                 self.assertEqual(
                     self.converter.graph.nodes().props(
                         {'file_name': file_key[1]}).count(), 0)
-
+            self.converter.graph.nodes().props(
+                {'file_name': 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai'}).one()
 
     def test_idempotency(self):
         with self.converter.graph.session_scope():
