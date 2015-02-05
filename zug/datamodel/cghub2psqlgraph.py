@@ -82,8 +82,11 @@ class cghub2psqlgraph(object):
             the file source to be put in system_annotations
 
         """
+        log.info('Handling {} nodes'.format(len(self.files_to_add)))
         with self.graph.session_scope():
             self.rebase_file_nodes(source)
+        log.info('Handling {} edges'.format(
+            len(self.edges) + len(self.related_to_edges)))
         with self.graph.session_scope():
             self.export_edges()
         self.reset()
@@ -179,7 +182,6 @@ class cghub2psqlgraph(object):
             else:
                 logging.warn('Missing {} destination {}'.format(
                     edge.label, edge.dst_id))
-                src.system_annotations.update({'missing_aliquot': edge.dst_id})
         else:
             self.graph.edge_update(
                 existing, edge.system_annotations, edge.properties)

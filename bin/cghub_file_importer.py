@@ -51,8 +51,6 @@ def process(roots):
     for root in roots:
         root = etree.fromstring(root)
         converter.parse('file', root)
-    log.info('Merging {} nodes'.format(
-        len(converter.files_to_add)))
     converter.rebase(source)
 
 
