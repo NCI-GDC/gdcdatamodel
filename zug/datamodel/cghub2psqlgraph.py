@@ -82,8 +82,11 @@ class cghub2psqlgraph(object):
             the file source to be put in system_annotations
 
         """
+        log.info('Handling {} nodes'.format(len(self.files_to_add)))
         with self.graph.session_scope():
             self.rebase_file_nodes(source)
+        log.info('Handling {} edges'.format(
+            len(self.edges) + len(self.related_to_edges)))
         with self.graph.session_scope():
             self.export_edges()
         self.reset()
@@ -179,8 +182,6 @@ class cghub2psqlgraph(object):
             else:
                 logging.warn('Missing {} destination {}'.format(
                     edge.label, edge.dst_id))
-                src = self.graph.nodes().ids(edge.src_id).one()
-                src.system_annotations.update({'missing_aliquot': edge.dst_id})
         else:
             self.graph.edge_update(
                 existing, edge.system_annotations, edge.properties)
@@ -326,9 +327,12 @@ class cghub2psqlgraph(object):
 
             # Cache edge to categorization node
             normalized = names.get(dst_label, {}).get(str(dst_name), dst_name)
-            dst_id = self.graph.nodes().labels(dst_label)\
-                                       .props(dict(name=normalized))\
-                                       .one().node_id
+            dst = self.graph.nodes().labels(dst_label)\
+                                    .props(dict(name=normalized))\
+                                    .first()
+            assert dst, 'Missing dst {} name:{}, {}'.format(
+                dst_label, normalized, file_key)
+            dst_id = dst.node_id
             edge_label = file_mapping[dst_label]['edge_label']
             self.save_edge(file_key, dst_id, dst_label, edge_label)
 
@@ -339,7 +343,9 @@ class cghub2psqlgraph(object):
         assert code, 'Unable to parse center code from barcode'
         node = self.graph.nodes().labels('center')\
                                  .props({'code': code.group(2)})\
-                                 .one()
+                                 .first()
+        assert node, 'Missing center code:{}, {}'.format(
+            code.group(2), file_key)
         self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
 
     def add_edges(self, root, node_type, params, file_key, node):

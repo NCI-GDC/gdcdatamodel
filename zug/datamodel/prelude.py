@@ -141,7 +141,7 @@ PLATFORMS = [
     "H-miRNA_8x15K", "AgilentG4502A_07_2", "HuEx-1_0-st-v2",
     "HG-U133_Plus_2", "Illumina DNA Methylation OMA003 CPI",
     "Illumina DNA Methylation OMA002 CPI", "AgilentG4502A_07_1", "ABI SOLiD",
-    "Mixed platforms", "Illumina MiSeq"
+    "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM"
 ]
 
 PROJECTS = ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "CNTL", "COAD",
