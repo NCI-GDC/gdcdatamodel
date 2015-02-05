@@ -7,6 +7,7 @@ from urlparse import urlparse, urljoin
 from functools import partial
 import copy
 import os
+import time
 from contextlib import contextmanager
 
 from lxml import html
@@ -108,7 +109,8 @@ class TCGADCCArchiveSyncer(object):
     def __init__(self, archive, signpost=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 meta_only=False, force=False, max_memory=2*10**9):
+                 meta_only=False, force=False, no_upload=False,
+                 max_memory=2*10**9):
         self.archive = archive
         self.signpost = signpost  # this should be SignpostClient object
         self.pg_driver = pg_driver
@@ -120,6 +122,8 @@ class TCGADCCArchiveSyncer(object):
         self.meta_only = meta_only
         self.force = force
         self.max_memory = max_memory
+        self.tarball = None
+        self.no_upload = no_upload
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -226,7 +230,7 @@ class TCGADCCArchiveSyncer(object):
         # it's necessary to specify the accept-encoding here so that
         # there server doesn't send us gzipped content and we get the
         # wrong length
-        resp = requests.get(file_url, stream=True, headers={"accept-encoding": "text/plain"})
+        resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
         return int(resp.headers["content-length"])
 
     def store_file_in_pg(self, filename, md5, md5_source, session):
@@ -320,6 +324,9 @@ class TCGADCCArchiveSyncer(object):
             md5 = dcc_md5
             md5_source = "tcga_dcc"
         else:
+            if not self.tarball:
+                # now we have no choice in order to get the correct md5
+                self.download_archive()
             md5 = md5sum(iterable_from_file(
                 self.extract_file_data(filename)))
             md5_source = "gdc_import_process"
@@ -361,28 +368,37 @@ class TCGADCCArchiveSyncer(object):
             return [name.replace(self.name + "/", "") for name in names]
 
     def get_with_auth(self, url, **kwargs):
-        resp = requests.get(url, auth=self.dcc_auth,
-                            allow_redirects=False, **kwargs)
         tries = 0
-        while resp.is_redirect and tries < 5:
-            # sometimes it redirects, try again. normally requests
-            # does this automatically, but this doesn't work with auth
-            tries += 1
-            resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
-                                allow_redirects=False, **kwargs)
-        # ENTERING GROSS HACK ZONE
-        #
-        # sometimes it just returns a 401 (no redirect) when you're
-        # trying to hit tcga-data but you want
-        # tcga-data-secure. somehow Chrome manages to figure this out,
-        # I think it has something to do with cookies. In any case I
-        # do it manually here.
-        if resp.status_code == 401:
-            fixed_url = re.sub("tcga-data", "tcga-data-secure", url)
-            resp = requests.get(fixed_url, auth=self.dcc_auth,
-                                allow_redirects=False, **kwargs)
-        # EXITING GROSS HACK ZONE
-        return resp
+        while tries < 120:
+            try:
+                resp = requests.get(url, auth=self.dcc_auth,
+                                    allow_redirects=False, **kwargs)
+                redirects = 0
+                while resp.is_redirect and redirects < 5:
+                    # sometimes it redirects, try again. normally requests
+                    # does this automatically, but this doesn't work with auth
+                    redirects += 1
+                    resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
+                                        allow_redirects=False, **kwargs)
+                # ENTERING GROSS HACK ZONE
+                #
+                # sometimes it just returns a 401 (no redirect) when you're
+                # trying to hit tcga-data but you want
+                # tcga-data-secure. somehow Chrome manages to figure this out,
+                # I think it has something to do with cookies. In any case I
+                # do it manually here.
+                if resp.status_code == 401:
+                    fixed_url = re.sub("tcga-data", "tcga-data-secure", url)
+                    resp = requests.get(fixed_url, auth=self.dcc_auth,
+                                        allow_redirects=False, **kwargs)
+                # EXITING GROSS HACK ZONE
+                return resp
+            except requests.ConnectionError:
+                tries += 1
+                time.sleep(1)
+                self.log.exception("caught ConnectionError talking to %s, retrying", url)
+        raise RuntimeError("retries exceeded on {}".format(url))
+
 
     def download_archive(self):
         self.log.info("downloading archive")
@@ -502,7 +518,7 @@ class TCGADCCArchiveSyncer(object):
                     file_node = self.sync_file(filename, manifest.get(filename), session)
                     if file_node:
                         file_nodes.append(file_node)
-        if not self.meta_only:
+        if not self.no_upload and not self.meta_only:
             for node in file_nodes:
                 if node["state"] in ["submitted", "uploading"]:
                     with self.state_transition(node, "uploading", "uploaded"):
@@ -530,3 +546,5 @@ class TCGADCCArchiveSyncer(object):
                 doc = self.signpost.get(self.archive_node.node_id)
                 doc.urls = [archive_url]
                 doc.patch()
+        else:
+            self.log.info("skipping upload to object store")
