@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
 from zug.datamodel.prelude import create_prelude_nodes
