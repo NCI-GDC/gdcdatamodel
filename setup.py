@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='gdcdatamodel',
-    packages=["gdcdatamodel"],
+    packages=["gdcdatamodel", "gdcdatamodel.mappings"],
     install_requires=[
         'avro==1.7.7',
         'graphviz==0.4.2',
