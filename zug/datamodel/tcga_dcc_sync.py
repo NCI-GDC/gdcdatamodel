@@ -3,10 +3,11 @@ import tempfile
 import tarfile
 import re
 import hashlib
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from functools import partial
 import copy
 import os
+import time
 from contextlib import contextmanager
 
 from lxml import html
@@ -108,7 +109,8 @@ class TCGADCCArchiveSyncer(object):
     def __init__(self, archive, signpost=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 dryrun=False, force=False, max_memory=2*10**9):
+                 meta_only=False, force=False, no_upload=False,
+                 max_memory=2*10**9):
         self.archive = archive
         self.signpost = signpost  # this should be SignpostClient object
         self.pg_driver = pg_driver
@@ -117,9 +119,11 @@ class TCGADCCArchiveSyncer(object):
         self.dcc_auth = dcc_auth
         self.storage_client = storage_client
         self.scratch_dir = scratch_dir
-        self.dryrun = dryrun
+        self.meta_only = meta_only
         self.force = force
         self.max_memory = max_memory
+        self.tarball = None
+        self.no_upload = no_upload
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -179,9 +183,6 @@ class TCGADCCArchiveSyncer(object):
         edge_to_project = PsqlEdge(src_id=new_archive_node.node_id,
                                    dst_id=project_node.node_id,
                                    label="member_of")
-        if self.dryrun:
-            self.log.info("dryrun mode, inserting new archive node in postgres: %s", str(new_archive_node))
-            return new_archive_node
         self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
         self.pg_driver.node_insert(new_archive_node, session=session)
         self.pg_driver.edge_insert(edge_to_project, session=session)
@@ -221,19 +222,27 @@ class TCGADCCArchiveSyncer(object):
             edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
                                          src_id=file_node.node_id,
                                          dst_id=attr_node.node_id)
-            if not self.dryrun:
-                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+            self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+
+    def get_file_size_from_http(self, filename):
+        base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
+        file_url = urljoin(base_url, filename)
+        # it's necessary to specify the accept-encoding here so that
+        # there server doesn't send us gzipped content and we get the
+        # wrong length
+        resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
+        return int(resp.headers["content-length"])
 
     def store_file_in_pg(self, filename, md5, md5_source, session):
         # not there, need to get id from signpost and store it.
         doc = self.signpost.create()
         system_annotations = {"md5_source": md5_source,
                               "source": "tcga_dcc"}
-        if not self.dryrun:
+        if not self.meta_only:
             tarinfo = self.tarball.getmember(self.full_name(filename))
             file_size = tarinfo.size
         else:
-            file_size = 0
+            file_size = self.get_file_size_from_http(filename)
         file_node = PsqlNode(node_id=doc.did, label="file",
                              properties={"file_name": filename,
                                          "md5sum": md5,
@@ -249,9 +258,6 @@ class TCGADCCArchiveSyncer(object):
         # TODO tie files to the center they were submitted by.
         # skipping this for now because it's some work to find the
         # correct center for an archive
-        if self.dryrun:
-            self.log.info("dryrun mode, not inserting file %s as node %s", filename, file_node)
-            return file_node
         self.log.info("inserting file %s as node %s", filename, file_node)
         self.pg_driver.node_insert(file_node, session=session)
         self.pg_driver.edge_insert(edge_to_archive, session=session)
@@ -318,6 +324,9 @@ class TCGADCCArchiveSyncer(object):
             md5 = dcc_md5
             md5_source = "tcga_dcc"
         else:
+            if not self.tarball:
+                # now we have no choice in order to get the correct md5
+                self.download_archive()
             md5 = md5sum(iterable_from_file(
                 self.extract_file_data(filename)))
             md5_source = "gdc_import_process"
@@ -326,7 +335,7 @@ class TCGADCCArchiveSyncer(object):
         return file_node
 
     def get_manifest(self):
-        if self.dryrun:
+        if self.meta_only:
             resp = self.get_with_auth("/".join([self.archive["non_tar_url"],
                                                 "MANIFEST.txt"]))
             manifest_data = resp.content
@@ -345,7 +354,7 @@ class TCGADCCArchiveSyncer(object):
         return res
 
     def get_files(self):
-        if self.dryrun:
+        if self.meta_only:
             NOT_PART_OF_ARCHIVE = ["Name", "Last modified",
                                    "Size", "Parent Directory"]
             resp = self.get_with_auth(self.archive["non_tar_url"])
@@ -359,28 +368,37 @@ class TCGADCCArchiveSyncer(object):
             return [name.replace(self.name + "/", "") for name in names]
 
     def get_with_auth(self, url, **kwargs):
-        resp = requests.get(url, auth=self.dcc_auth,
-                            allow_redirects=False, **kwargs)
         tries = 0
-        while resp.is_redirect and tries < 5:
-            # sometimes it redirects, try again. normally requests
-            # does this automatically, but this doesn't work with auth
-            tries += 1
-            resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
-                                allow_redirects=False, **kwargs)
-        # ENTERING GROSS HACK ZONE
-        #
-        # sometimes it just returns a 401 (no redirect) when you're
-        # trying to hit tcga-data but you want
-        # tcga-data-secure. somehow Chrome manages to figure this out,
-        # I think it has something to do with cookies. In any case I
-        # do it manually here.
-        if resp.status_code == 401:
-            fixed_url = re.sub("tcga-data", "tcga-data-secure", url)
-            resp = requests.get(fixed_url, auth=self.dcc_auth,
-                                allow_redirects=False, **kwargs)
-        # EXITING GROSS HACK ZONE
-        return resp
+        while tries < 120:
+            try:
+                resp = requests.get(url, auth=self.dcc_auth,
+                                    allow_redirects=False, **kwargs)
+                redirects = 0
+                while resp.is_redirect and redirects < 5:
+                    # sometimes it redirects, try again. normally requests
+                    # does this automatically, but this doesn't work with auth
+                    redirects += 1
+                    resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
+                                        allow_redirects=False, **kwargs)
+                # ENTERING GROSS HACK ZONE
+                #
+                # sometimes it just returns a 401 (no redirect) when you're
+                # trying to hit tcga-data but you want
+                # tcga-data-secure. somehow Chrome manages to figure this out,
+                # I think it has something to do with cookies. In any case I
+                # do it manually here.
+                if resp.status_code == 401:
+                    fixed_url = re.sub("tcga-data", "tcga-data-secure", url)
+                    resp = requests.get(fixed_url, auth=self.dcc_auth,
+                                        allow_redirects=False, **kwargs)
+                # EXITING GROSS HACK ZONE
+                return resp
+            except requests.ConnectionError:
+                tries += 1
+                time.sleep(1)
+                self.log.exception("caught ConnectionError talking to %s, retrying", url)
+        raise RuntimeError("retries exceeded on {}".format(url))
+
 
     def download_archive(self):
         self.log.info("downloading archive")
@@ -490,23 +508,17 @@ class TCGADCCArchiveSyncer(object):
                 self.log.info("archive already has urls in signpost, "
                               "assuming it's complete")
                 return
-            if not self.dryrun:
+            if not self.meta_only:
                 self.download_archive()
             manifest = self.get_manifest()
             filenames = self.get_files()
-            if (not self.manifest_is_complete(manifest, filenames)
-                and self.dryrun):
-                self.log.warning("manifest for %s incomplete and "
-                                 "we are in dryrun,"
-                                 " skipping file sync", self.name)
-                return
             file_nodes = []
             for filename in filenames:
                 if filename != "MANIFEST.txt":
                     file_node = self.sync_file(filename, manifest.get(filename), session)
                     if file_node:
                         file_nodes.append(file_node)
-        if not self.dryrun:
+        if not self.no_upload and not self.meta_only:
             for node in file_nodes:
                 if node["state"] in ["submitted", "uploading"]:
                     with self.state_transition(node, "uploading", "uploaded"):
@@ -534,3 +546,5 @@ class TCGADCCArchiveSyncer(object):
                 doc = self.signpost.get(self.archive_node.node_id)
                 doc.urls = [archive_url]
                 doc.patch()
+        else:
+            self.log.info("skipping upload to object store")

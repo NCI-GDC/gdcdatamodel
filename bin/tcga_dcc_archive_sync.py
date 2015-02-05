@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
 from zug.datamodel.prelude import create_prelude_nodes
 from argparse import ArgumentParser
 from tempfile import mkdtemp
 from psqlgraph import PsqlGraphDriver
+from signpostclient import SignpostClient
 
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
@@ -22,14 +24,15 @@ def sync_list(args, archives):
     for archive in archives:
         syncer = TCGADCCArchiveSyncer(
             archive,
-            signpost_url=args.signpost_url,
+            signpost=SignpostClient(args.signpost_url, version="v0"),
             pg_driver=driver,
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
             storage_client = Local(args.os_dir),
-            dryrun=args.dryrun,
+            meta_only=args.meta_only,
             force=args.force,
-            max_memory=args.max_memory
+            max_memory=args.max_memory,
+            no_upload=args.no_upload
         )
         try:
             syncer.sync()  # ugh
@@ -54,7 +57,7 @@ def main():
     parser.add_argument("--signpost-url", type=str, help="signpost url to use")
     parser.add_argument("--dcc-user", type=str, help="username for dcc auth")
     parser.add_argument("--dcc-pass", type=str, help="password for dcc auth")
-    parser.add_argument("--dryrun", action="store_true",
+    parser.add_argument("--meta-only", action="store_true",
                         help="if passed, skip downlading / uploading tarballs")
     parser.add_argument("--force", action="store_true",
                         help="if passed, force sync even if archive appears complete")
@@ -64,6 +67,7 @@ def main():
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
     parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
+    parser.add_argument("--no-upload", action="store_true", help="dont try to upload to object store")
     parser.add_argument("--max-memory", type=int, default=2*10**9,
                         help="maximum size (bytes) of archive to download in memory")
     parser.add_argument("--shuffle", action="store_true",
