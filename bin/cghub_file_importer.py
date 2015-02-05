@@ -76,24 +76,25 @@ def download_xml():
         raise Exception('No xml found')
     else:
         log.info('File list downloaded.')
-
     return xml
 
 
 def import_files(xml):
     # Split the file into results
+    # print xml
     root = etree.fromstring(str(xml)).getroottree()
     roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
     log.info('Found {} result(s)'.format(len(roots)))
     if not roots:
-        log.info('No results found for past {} days'.format(args.days))
+        log.warn('No results found for past {} days'.format(args.days))
         return
 
     # Chunk the results and distribute to process pool
-    chunksize = len(roots)/args.nproc+1
-    chunks = [roots[i:i+chunksize] for i in xrange(0, len(roots), chunksize)]
+    chunksize = len(roots)/args.processes+1
+    chunks = [roots[i:i+chunksize]
+              for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    Pool(args.nproc).map(process, chunks)
+    Pool(args.processes).map(process, chunks)
 
 
 if __name__ == '__main__':
@@ -110,10 +111,10 @@ if __name__ == '__main__':
                         help='import all the files')
     parser.add_argument('-d', '--days', default=1, type=int,
                         help='time in days days for incremental import')
+    parser.add_argument('-n', '--processes', default=8, type=int,
+                        help='number of processes to run import with')
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
-    parser.add_argument('-n', '--nproc', default=8, type=int,
-                        help='the number of processes')
     parser.add_argument('-H', '--signpost-host',
                         default='signpost.service.consul', type=str,
                         help='signpost server host')

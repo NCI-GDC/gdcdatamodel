@@ -16,50 +16,49 @@ logger = logging.getLogger(__name__)
 
 
 class TestSignpostClient(object):
-
     def create(self):
         self.did = str(uuid.uuid4())
         return self
 
 
+analysis_idA = '00007994-abeb-4b16-a6ad-7230300a29e9'
+analysis_idB = '000dbac5-2f8c-48d9-9121-c84421e70381'
+bamA = 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam'
+bamB = 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam'
+baiA = bamA + '.bai'
+baiB = bamB + '.bai'
 host = 'localhost'
 user = 'test'
 password = 'test'
 database = 'automated_test'
 node_validator = AvroNodeValidator(node_avsc_object)
 edge_validator = AvroEdgeValidator(edge_avsc_object)
-converter = cghub2psqlgraph.cghub2psqlgraph(
-    xml_mapping=cghub_xml_mapping,
-    host=host,
-    user=user,
-    password=password,
-    database=database,
-    edge_validator=edge_validator,
-    node_validator=node_validator,
-    signpost=TestSignpostClient(),
-)
-
+center_id = str(uuid.uuid4())
 
 class TestCGHubFileImporter(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
-        self.converter = converter
+        self.converter = cghub2psqlgraph.cghub2psqlgraph(
+            xml_mapping=cghub_xml_mapping,
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            edge_validator=edge_validator,
+            node_validator=node_validator,
+            signpost=TestSignpostClient(),
+        )
         self._add_required_nodes()
 
-
     def _add_required_nodes(self):
-        map(self.converter.graph.node_insert, [
-            Node(str(uuid.uuid4()),
-                 'aliquot', properties={
-                     u'amount': 0.0, u'concentration': 0.0,
-                     u'source_center': u'test', u'submitter_id': u'test'}),
-            Node(str(uuid.uuid4()),
-                 'center', properties={
-                     u'short_name': u'UNC-LCCC', 'center_type': 'test',
-                     'code': 'test', 'name': 'test', 'namespace': 'test.test'}),
-        ])
-
+        prelude.create_prelude_nodes(self.converter.graph)
+        with self.converter.graph.session_scope():
+            self.converter.graph.node_merge(
+                'c18465ae-447d-46c8-8b54-0156ab502265', label='aliquot',
+                properties={
+                    u'amount': 0.0, u'concentration': 0.0,
+                    u'source_center': u'test', u'submitter_id': u'test'})
 
     def tearDown(self):
         with self.converter.graph.engine.begin() as conn:
@@ -70,17 +69,13 @@ class TestCGHubFileImporter(unittest.TestCase):
         self.converter.graph.engine.dispose()
 
     def test_simple_parse(self):
-        with self.converter.graph.session_scope():
-            to_add = [
-                ('00007994-abeb-4b16-a6ad-7230300a29e9', 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam'),
-                ('00007994-abeb-4b16-a6ad-7230300a29e9', 'UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai')]
-            to_delete = [
-                ('000dbac5-2f8c-48d9-9121-c84421e70381', 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam'),
-                ('000dbac5-2f8c-48d9-9121-c84421e70381', 'TCGA-BF-A1PZ-01A-11D-A18Z_120612_SN590_0162_BC0VNGACXX_s_5_rg.sorted.bam.bai')]
+        graph = self.converter.graph
+        with graph.session_scope():
+            to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
+            to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
             for root in TEST_DATA:
                 self.converter.parse('file', etree.fromstring(root))
 
-            print self.converter.files_to_add
             # pre-insert files to add
             self.assertEqual(len(self.converter.files_to_add), 2)
             for file_key in to_add:
@@ -91,21 +86,49 @@ class TestCGHubFileImporter(unittest.TestCase):
             for file_key in to_delete:
                 self.assertTrue(file_key in self.converter.files_to_delete)
 
-            # post-insert
+            # insert
             self.converter.rebase('test')
+
+            # post-insert
             for file_key in to_add:
-                node = self.converter.graph.nodes().props(
+                node = graph.nodes().props(
                     {'file_name': file_key[1]}).one()
             for file_key in to_delete:
-                self.assertEqual(
-                    self.converter.graph.nodes().props(
-                        {'file_name': file_key[1]}).count(), 0)
+                self.assertEqual(graph.nodes().props(
+                    {'file_name': file_key[1]}).count(), 0)
+            bam = graph.nodes().props({'file_name': bamA}).one()
+            bai = graph.nodes().props({'file_name': baiA}).one()
 
+            print self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
+
+    def test_related_to(self):
+        graph = self.converter.graph
+        with graph.session_scope():
+            self.test_simple_parse()
+            bam = graph.nodes().props({'file_name': bamA}).one()
+            bai = graph.nodes().props({'file_name': baiA}).one()
+            self.assertEqual(len(list(bai.get_edges())), 1)
+            self.converter.graph.nodes().ids(bai.node_id).path_in(['file']).one()
+
+    def test_categorization(self):
+        graph = self.converter.graph
+        with graph.session_scope():
+            self.test_simple_parse()
+            bam = graph.nodes().props({'file_name': bamA}).one()
+            bai = graph.nodes().props({'file_name': baiA}).one()
+            self.assertEqual(len(list(bam.get_edges())), 7)
+            base = graph.nodes().ids(bam.node_id)
+            base.path_end(['center']).props({'code': '07'}).one()
+            base.path_end(['platform']).props({'name': 'Illumina GA'}).one()
+            base.path_end(['data_subtype']).props({'name': 'Aligned reads'}).one()
+            base.path_end(['data_format']).props({'name': 'BAM'}).one()
+            base.path_end(['experimental_strategy']).props({'name': 'RNA-Seq'}).one()
 
     def test_idempotency(self):
-        with self.converter.graph.session_scope():
-            for i in range(5):
-                self.test_simple_parse()
+        for i in range(5):
+            self.test_simple_parse()
+            self.test_related_to()
+            self.test_categorization()
 
 
 TEST_DATA = ["""

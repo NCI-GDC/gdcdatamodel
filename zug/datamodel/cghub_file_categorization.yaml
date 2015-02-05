@@ -1,0 +1,65 @@
+files:
+  experimental_strategy:
+    edge_label: member_of
+    path: 'ancestor::Result/library_strategy'
+
+  platform:
+    edge_label: generated_from
+    path: 'ancestor::Result/experiment_xml/EXPERIMENT_SET/EXPERIMENT/PLATFORM/*/INSTRUMENT_MODEL'
+
+  data_subtype:
+    edge_label: member_of
+    switch:
+        Unaligned reads:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(^unaligned$)'
+          condition2:
+            path: ./filename
+            regex: '(.*)(\.tar)(\.gz)?'
+        Aligned reads:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(?!(^unaligned$))'
+          condition2:
+            path: ./filename
+            regex: (.*)(\.bam)
+
+  data_format:
+    edge_label: member_of
+    switch:
+        TAR:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(^unaligned$)'
+          condition2:
+            path: ./filename
+            regex: '(.*)(\.tar$)'
+        TARGZ:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(^unaligned$)'
+          condition2:
+            path: ./filename
+            regex: '(.*)(\.tar\.gz$)'
+        BAM:
+          condition1:
+            path: ancestor::Result/refassem_short_name
+            regex: '(?!(^unaligned$))'
+          condition2:
+            path: ./filename
+            regex: (.*)(\.bam)
+
+names:
+  platform:
+    454 GS FLX Titanium: 'LS 454'
+    AB SOLiD 4 System: 'ABI SOLiD'
+    AB SOLiD System 2.0: 'ABI SOLiD'
+    AB SOLiD System 3.0: 'ABI SOLiD'
+    AB SOLiD System 3.0: 'ABI SOLiD'
+    Illumina Genome Analyzer II: 'Illumina GA'
+    Illumina Genome Analyzer IIx: 'Illumina GA'
+    Illumina HiSeq 2000: 'Illumina HiSeq'
+    Illumina HiSeq 2500: 'Illumina HiSeq'
+    Illumina MiSeq: 'Illumina MiSeq'
+    Ion Torrent PGM: 'Ion PGM'
