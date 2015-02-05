@@ -134,7 +134,6 @@ class TestCGHubFileImporter(unittest.TestCase):
             self.test_simple_parse()
             self.test_related_to()
             self.test_categorization()
-        self.tearDown()
 
 
 TEST_DATA = ["""
