@@ -371,6 +371,11 @@
         "doc": "TOREVIEW: the file (object) name"
       },
       {
+        "name": "submitter_id",
+        "type": ["null", "string"],
+        "doc": "TOREVIEW: the file id assigned by the submitter"
+      },
+      {
         "name": "file_size",
         "type": "long",
         "doc": "the size file (object) in bytes"
