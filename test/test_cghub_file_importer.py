@@ -33,7 +33,7 @@ password = 'test'
 database = 'automated_test'
 node_validator = AvroNodeValidator(node_avsc_object)
 edge_validator = AvroEdgeValidator(edge_avsc_object)
-
+center_id = str(uuid.uuid4())
 
 class TestCGHubFileImporter(unittest.TestCase):
 
@@ -51,21 +51,14 @@ class TestCGHubFileImporter(unittest.TestCase):
         )
         self._add_required_nodes()
 
-
     def _add_required_nodes(self):
-        with self.converter.graph.engine.begin() as conn:
-            prelude.create_prelude_nodes(self.converter.graph)
-            map(self.converter.graph.node_insert, [
-                Node('c18465ae-447d-46c8-8b54-0156ab502265',
-                     'aliquot', properties={
-                         u'amount': 0.0, u'concentration': 0.0,
-                         u'source_center': u'test', u'submitter_id': u'test'}),
-                Node(str(uuid.uuid4()),
-                     'center', properties={
-                         u'short_name': u'UNC-LCCC', 'center_type': 'test',
-                         'code': 'test', 'name': 'test', 'namespace': 'test.test'}),
-            ])
-
+        prelude.create_prelude_nodes(self.converter.graph)
+        with self.converter.graph.session_scope():
+            self.converter.graph.node_merge(
+                'c18465ae-447d-46c8-8b54-0156ab502265', label='aliquot',
+                properties={
+                    u'amount': 0.0, u'concentration': 0.0,
+                    u'source_center': u'test', u'submitter_id': u'test'})
 
     def tearDown(self):
         with self.converter.graph.engine.begin() as conn:
@@ -78,7 +71,6 @@ class TestCGHubFileImporter(unittest.TestCase):
     def test_simple_parse(self):
         graph = self.converter.graph
         with graph.session_scope():
-
             to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
             to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
             for root in TEST_DATA:
@@ -106,6 +98,8 @@ class TestCGHubFileImporter(unittest.TestCase):
                     {'file_name': file_key[1]}).count(), 0)
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
+
+            print self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
 
     def test_related_to(self):
         graph = self.converter.graph

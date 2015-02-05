@@ -173,7 +173,7 @@ class cghub2psqlgraph(object):
         existing = self.graph.edge_lookup(
             src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label).first()
         if not existing:
-            src = self.graph.nodes().ids(edge.dst_id).first()
+            src = self.graph.nodes().ids(str(edge.dst_id)).first()
             if src:
                 self.graph.edge_insert(edge)
             else:
