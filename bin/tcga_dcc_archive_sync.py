@@ -27,7 +27,7 @@ def sync_list(args, archives):
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
             storage_client = Local(args.os_dir),
-            dryrun=args.dryrun,
+            meta_only=args.meta_only,
             force=args.force,
             max_memory=args.max_memory
         )
@@ -54,7 +54,7 @@ def main():
     parser.add_argument("--signpost-url", type=str, help="signpost url to use")
     parser.add_argument("--dcc-user", type=str, help="username for dcc auth")
     parser.add_argument("--dcc-pass", type=str, help="password for dcc auth")
-    parser.add_argument("--dryrun", action="store_true",
+    parser.add_argument("--meta-only", action="store_true",
                         help="if passed, skip downlading / uploading tarballs")
     parser.add_argument("--force", action="store_true",
                         help="if passed, force sync even if archive appears complete")
