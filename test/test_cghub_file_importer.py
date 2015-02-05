@@ -33,38 +33,38 @@ password = 'test'
 database = 'automated_test'
 node_validator = AvroNodeValidator(node_avsc_object)
 edge_validator = AvroEdgeValidator(edge_avsc_object)
-converter = cghub2psqlgraph.cghub2psqlgraph(
-    xml_mapping=cghub_xml_mapping,
-    host=host,
-    user=user,
-    password=password,
-    database=database,
-    edge_validator=edge_validator,
-    node_validator=node_validator,
-    signpost=TestSignpostClient(),
-)
 
 
 class TestCGHubFileImporter(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
-        self.converter = converter
+        self.converter = cghub2psqlgraph.cghub2psqlgraph(
+            xml_mapping=cghub_xml_mapping,
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            edge_validator=edge_validator,
+            node_validator=node_validator,
+            signpost=TestSignpostClient(),
+        )
         self._add_required_nodes()
 
 
     def _add_required_nodes(self):
-        prelude.create_prelude_nodes(self.converter.graph)
-        map(self.converter.graph.node_insert, [
-            Node('c18465ae-447d-46c8-8b54-0156ab502265',
-                 'aliquot', properties={
-                     u'amount': 0.0, u'concentration': 0.0,
-                     u'source_center': u'test', u'submitter_id': u'test'}),
-            Node(str(uuid.uuid4()),
-                 'center', properties={
-                     u'short_name': u'UNC-LCCC', 'center_type': 'test',
-                     'code': 'test', 'name': 'test', 'namespace': 'test.test'}),
-        ])
+        with self.converter.graph.engine.begin() as conn:
+            prelude.create_prelude_nodes(self.converter.graph)
+            map(self.converter.graph.node_insert, [
+                Node('c18465ae-447d-46c8-8b54-0156ab502265',
+                     'aliquot', properties={
+                         u'amount': 0.0, u'concentration': 0.0,
+                         u'source_center': u'test', u'submitter_id': u'test'}),
+                Node(str(uuid.uuid4()),
+                     'center', properties={
+                         u'short_name': u'UNC-LCCC', 'center_type': 'test',
+                         'code': 'test', 'name': 'test', 'namespace': 'test.test'}),
+            ])
 
 
     def tearDown(self):
@@ -78,6 +78,7 @@ class TestCGHubFileImporter(unittest.TestCase):
     def test_simple_parse(self):
         graph = self.converter.graph
         with graph.session_scope():
+
             to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
             to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
             for root in TEST_DATA:

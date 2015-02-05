@@ -177,8 +177,8 @@ class cghub2psqlgraph(object):
             if src:
                 self.graph.edge_insert(edge)
             else:
-                logging.warn('Missing destination {} to {}'.format(
-                    edge.dst_id, edge.label))
+                logging.warn('Missing {} destination {}'.format(
+                    edge.label, edge.dst_id))
                 src = self.graph.nodes().ids(edge.src_id).one()
                 src.system_annotations.update({'missing_aliquot': edge.dst_id})
         else:
