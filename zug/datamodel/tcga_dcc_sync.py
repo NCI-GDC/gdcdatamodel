@@ -238,6 +238,7 @@ class TCGADCCArchiveSyncer(object):
                              properties={"file_name": filename,
                                          "md5sum": md5,
                                          "state": "submitted",
+                                         "submitter_id": None,
                                          "file_size": file_size,
                                          "state_comment": None},
                              system_annotations=system_annotations)
