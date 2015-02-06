@@ -351,8 +351,6 @@ class TCGADCCArchiveSyncer(object):
             },
             session=session
         )
-        # if file_node["file_name"] == "mdanderson.org_PAAD.MDA_RPPA_Core.protein_expression.Level_3.1C42FC2D-73FD-4EB4-9D02-294C2DB75D50.txt":
-        #     import ipdb; ipdb.set_trace()
         maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
