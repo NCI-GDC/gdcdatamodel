@@ -96,7 +96,6 @@ class TCGADCCArchiveSyncTest(TestCase):
         self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
         self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
 
-
     def test_syncing_is_idempotent(self):
         archive = self.parser.parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
