@@ -11,6 +11,7 @@ from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 
 Local = get_driver(Provider.LOCAL)
+S3 = get_driver(Provider.S3)
 
 from random import shuffle
 
@@ -21,6 +22,13 @@ from multiprocessing.pool import Pool
 def sync_list(args, archives):
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
                              args.pg_pass, args.pg_database)
+    if args.s3_host:
+        storage_client = S3(args.s3_access_key, args.s3_secret_key,
+                            host=args.s3_host, secure=False)
+    elif args.os_dir:
+        storage_client = Local(args.os_dir)
+    else:
+        storage_client = None
     for archive in archives:
         syncer = TCGADCCArchiveSyncer(
             archive,
@@ -28,7 +36,7 @@ def sync_list(args, archives):
             pg_driver=driver,
             dcc_auth=(args.dcc_user, args.dcc_pass),
             scratch_dir=args.scratch_dir,
-            storage_client = Local(args.os_dir),
+            storage_client = storage_client,
             meta_only=args.meta_only,
             force=args.force,
             max_memory=args.max_memory,
@@ -67,6 +75,9 @@ def main():
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
     parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
+    parser.add_argument("--s3-host", type=str, help="s3 host to connect to")
+    parser.add_argument("--s3-access-key", type=str, help="s3 access key to use")
+    parser.add_argument("--s3-secret-key", type=str, help="s3 secret key to use")
     parser.add_argument("--no-upload", action="store_true", help="dont try to upload to object store")
     parser.add_argument("--max-memory", type=int, default=2*10**9,
                         help="maximum size (bytes) of archive to download in memory")
