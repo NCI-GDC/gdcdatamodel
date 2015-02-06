@@ -107,19 +107,22 @@ class TCGADCCArchiveSyncTest(TestCase):
         syncer.sync()
         # change some of the data to be bunk to verify that we fix it
         with self.pg_driver.session_scope():
-            archive = self.pg_driver.node_lookup(label="archive").one()
-            archive.acl = ["foobar"]
+            archive_node = self.pg_driver.node_lookup(label="archive").one()
+            archive_node.acl = ["foobar"]
             file = self.pg_driver.node_lookup(
                 label="file",
                 property_matches={"file_name": "mdanderson.org_PAAD.MDA_RPPA_Core.protein_expression.Level_3.1C42FC2D-73FD-4EB4-9D02-294C2DB75D50.txt"}
             ).one()
             file.acl = ["fizzbuzz"]
+        first_archive_id = self.pg_driver.node_lookup(label="archive").one().node_id
+        syncer = self.syncer_for(archive, force=True)  # you can't reuse a syncer
         syncer.sync()
         self.assertEqual(self.pg_driver.node_lookup(label="file").count(), 109)
         self.assertEqual(self.pg_driver.node_lookup(label="archive").count(), 1)
+        self.assertEqual(self.pg_driver.node_lookup(label="archive").one().node_id, first_archive_id)
         with self.pg_driver.session_scope():
-            archive = self.pg_driver.node_lookup(label="archive").one()
-            self.assertEqual(archive.acl, ["open"])
+            archive_node = self.pg_driver.node_lookup(label="archive").one()
+            self.assertEqual(archive_node.acl, ["open"])
             file = self.pg_driver.node_lookup(
                 label="file",
                 property_matches={"file_name": "mdanderson.org_PAAD.MDA_RPPA_Core.protein_expression.Level_3.1C42FC2D-73FD-4EB4-9D02-294C2DB75D50.txt"}

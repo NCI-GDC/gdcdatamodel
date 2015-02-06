@@ -134,11 +134,13 @@ class TCGADCCArchiveSyncer(object):
 
     def remove_old_versions(self, submitter_id, session):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
-        old_versions = self.pg_driver.node_lookup(
+        all_versions = self.pg_driver.node_lookup(
             label="archive",
             property_matches={"submitter_id": submitter_id},
             session=session
         ).all()
+        old_versions = [version for version in all_versions
+                        if version["revision"] < self.archive["revision"]]
         if len(old_versions) > 1:
             # since we void all old versions of an archive when we add a new one,
             # there should never be more than one old version in the database
@@ -233,15 +235,25 @@ class TCGADCCArchiveSyncer(object):
             # sometimes a list and sometimes a string
             value = [value]
         for val in value:
-            attr_node = self.pg_driver.node_lookup_one(label=attr,
-                                                       property_matches={"name": val},
-                                                       session=session)
+            attr_node = self.pg_driver.node_lookup_one(
+                label=attr,
+                property_matches={"name": val},
+                session=session
+            )
             if not attr_node:
                 self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
-            edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
-                                         src_id=file_node.node_id,
-                                         dst_id=attr_node.node_id)
-            self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+            maybe_edge_to_attr_node = self.pg_driver.edge_lookup_one(
+                label=LABEL_MAP[attr],
+                src_id=file_node.node_id,
+                dst_id=attr_node.node_id
+            )
+            if not maybe_edge_to_attr_node:
+                edge_to_attr_node = PsqlEdge(
+                    label=LABEL_MAP[attr],
+                    src_id=file_node.node_id,
+                    dst_id=attr_node.node_id
+                )
+                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
 
     def get_file_size_from_http(self, filename):
         base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
@@ -323,8 +335,8 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("merging file %s into graph with id %s", filename, node_id)
         file_node = self.pg_driver.node_merge(
             node_id=node_id,
-            acl=self.acl,
             label="file",
+            acl=self.acl,
             properties={
                 "file_name": filename,
                 "md5sum": md5,
@@ -336,8 +348,11 @@ class TCGADCCArchiveSyncer(object):
             system_annotations={
                 "source": "tcga_dcc",
                 "md5_source": md5_source,
-            }
+            },
+            session=session
         )
+        # if file_node["file_name"] == "mdanderson.org_PAAD.MDA_RPPA_Core.protein_expression.Level_3.1C42FC2D-73FD-4EB4-9D02-294C2DB75D50.txt":
+        #     import ipdb; ipdb.set_trace()
         maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
