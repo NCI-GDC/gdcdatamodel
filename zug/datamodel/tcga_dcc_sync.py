@@ -178,6 +178,7 @@ class TCGADCCArchiveSyncer(object):
         sysan["source"] = "tcga_dcc"
         archive_node = self.pg_driver.node_merge(
             node_id=node_id,
+            label='archive',
             acl=self.acl,
             properties={
                 "submitter_id": submitter_id,
@@ -522,7 +523,7 @@ class TCGADCCArchiveSyncer(object):
             return
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
-        self.acl = "phs000178" if self.archive["protected"] else "open"
+        self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
         with self.pg_driver.session_scope() as session:
             self.archive_node = self.sync_archive(session)
             archive_doc = self.signpost.get(self.archive_node.node_id)
