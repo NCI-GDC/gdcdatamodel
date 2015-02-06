@@ -25,7 +25,8 @@ def _munge_properties(source):
 def _walk_tree(tree, mapping):
     for k, v in [(k, v) for k, v in tree.items() if k != 'corr']:
         corr, name = v['corr']
-        mapping[name] = {'properties': _munge_properties(k)}
+        mapping[name] = {'properties': {}}
+        # mapping[name] = {'properties': _munge_properties(k)}
         _walk_tree(tree[k], mapping[name])
     return mapping
 
@@ -38,9 +39,9 @@ def get_file_es_mapping(include_participant=True):
 
 
 def get_participant_es_mapping(include_file=True):
-    participant = _walk_tree(file_tree, {})
+    participant = _walk_tree(participant_tree, {})
     if include_file:
-        participant['files'] = get_file_es_mapping(False)
+        participant['files'] = get_file_es_mapping(True)
     return participant
 
 

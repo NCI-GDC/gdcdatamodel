@@ -6,16 +6,16 @@ ONE_TO_MANY = '__one_to_many__'
 
 # File hierarchy
 file_tree = Dict()
-file_tree.annotation.corr = (ONE_TO_ONE, 'annotation')
+file_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
 file_tree.archive.corr = (ONE_TO_MANY, 'archives')
-file_tree.center.corr = (ONE_TO_MANY, 'centers')
-file_tree.data_format.corr = (ONE_TO_ONE, 'dataformat')
+file_tree.center.corr = (ONE_TO_ONE, 'centers')
+file_tree.data_format.corr = (ONE_TO_ONE, 'data_format')
 file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_type')
 file_tree.data_subtype.data_type.corr = (ONE_TO_ONE, 'data_type')
 file_tree.experimental_strategy.corr = (ONE_TO_ONE, 'experimental_strategy')
 file_tree.platform.corr = (ONE_TO_ONE, 'platform')
 file_tree.tag.corr = (ONE_TO_MANY, 'tags')
-file_tree.participant.corr = (ONE_TO_ONE, 'participant')
+file_tree.participant.corr = (ONE_TO_MANY, 'participant')
 
 file_traversal = Dict()
 file_traversal.center = [('center'), ('aliquot', 'center')]
@@ -33,6 +33,7 @@ file_traversal.participant = [
 # Participant hierarchy
 participant_tree = Dict()
 participant_tree.corr = (ONE_TO_MANY, 'participants')
+participant_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
 participant_tree.clinical.corr = (ONE_TO_ONE, 'clinical')
 participant_tree.project.corr = (ONE_TO_ONE, 'project')
 participant_tree.project.program.corr = (ONE_TO_ONE, 'program')
