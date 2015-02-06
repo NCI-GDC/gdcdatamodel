@@ -193,6 +193,9 @@ sample:
       derived_from:
         participant: ancestor::bio:patient/shared:bcr_patient_uuid
     properties:
+      submitter_id:
+        path: ./bio:bcr_sample_barcode
+        type: str
       sample_type_id:
         path: ./bio:sample_type_id
         type: str

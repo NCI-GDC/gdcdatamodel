@@ -87,7 +87,7 @@ class xml2psqlgraph(object):
                 session=s, system_annotation_matches={'group_id': group_id})
             for node in group:
                 if node.system_annotations['version'] < version:
-                    print('Found outdated node {}'.format(node))
+                    log.warn('Found outdated node {}'.format(node))
                     self.graph.node_delete(node=node, session=s)
 
     def xpath(self, path, root=None, single=False, nullable=True,
