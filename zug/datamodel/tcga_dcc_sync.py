@@ -3,10 +3,11 @@ import tempfile
 import tarfile
 import re
 import hashlib
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from functools import partial
 import copy
 import os
+import time
 from contextlib import contextmanager
 
 from lxml import html
@@ -108,7 +109,8 @@ class TCGADCCArchiveSyncer(object):
     def __init__(self, archive, signpost=None,
                  pg_driver=None, dcc_auth=None,
                  scratch_dir=None, storage_client=None,
-                 dryrun=False, force=False, max_memory=2*10**9):
+                 meta_only=False, force=False, no_upload=False,
+                 max_memory=2*10**9):
         self.archive = archive
         self.signpost = signpost  # this should be SignpostClient object
         self.pg_driver = pg_driver
@@ -117,9 +119,11 @@ class TCGADCCArchiveSyncer(object):
         self.dcc_auth = dcc_auth
         self.storage_client = storage_client
         self.scratch_dir = scratch_dir
-        self.dryrun = dryrun
+        self.meta_only = meta_only
         self.force = force
         self.max_memory = max_memory
+        self.tarball = None
+        self.no_upload = no_upload
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()) +
                               "_" + self.name)
@@ -128,21 +132,7 @@ class TCGADCCArchiveSyncer(object):
     def name(self):
         return self.archive["archive_name"]
 
-    def store_archive_in_pg(self, session):
-        # submitter_id is just the name without the revision or series
-        # this will be identical between different versions of an
-        # archive as new versions are submitted
-        submitter_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
-        self.log.info("looking for archive %s in postgres", self.name)
-        maybe_this_archive = self.pg_driver.node_lookup_one(
-            label="archive",
-            property_matches={"submitter_id": submitter_id,
-                              "revision": self.archive["revision"]},
-            session=session
-        )
-        if maybe_this_archive:
-            self.log.info("found archive %s in postgres, not inserting", self.name)
-            return maybe_this_archive
+    def remove_old_versions(self, submitter_id, session):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
         old_versions = self.pg_driver.node_lookup(
             label="archive",
@@ -156,36 +146,66 @@ class TCGADCCArchiveSyncer(object):
         if old_versions:
             old_archive = old_versions[0]
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
-                          old_archive.properties["revision"],
+                          old_archive["revision"],
                           submitter_id)
-            # TODO it would be awesome to verify that the changes we make actually match what's in
-            # CHANGES_DCC.txt,
-            # first get all the files related to this archive and void them
             for file in self.pg_driver.node_lookup(label="file", session=session)\
                                       .with_edge_to_node("member_of", old_archive)\
                                       .all():
                 self.log.info("voiding file %s", str(file))
                 self.pg_driver.node_delete(node=file, session=session)
             self.pg_driver.node_delete(node=old_archive, session=session)
-        doc = self.signpost.create()
-        new_archive_node = PsqlNode(
-            node_id=doc.did,
+
+    def sync_archive(self, session):
+        # submitter_id is just the name without the revision or series
+        # this will be identical between different versions of an
+        # archive as new versions are submitted
+        submitter_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
+        self.remove_old_versions(submitter_id, session)
+        self.log.info("looking for archive %s in postgres", self.name)
+        maybe_this_archive = self.pg_driver.node_lookup_one(
             label="archive",
-            properties={"submitter_id": submitter_id,
-                        "revision": self.archive["revision"]})
-        project_node = self.pg_driver.node_lookup_one(label="project",
-                                                      property_matches={"name": self.archive["disease_code"]},
-                                                      session=session)
-        edge_to_project = PsqlEdge(src_id=new_archive_node.node_id,
-                                   dst_id=project_node.node_id,
-                                   label="member_of")
-        if self.dryrun:
-            self.log.info("dryrun mode, inserting new archive node in postgres: %s", str(new_archive_node))
-            return new_archive_node
-        self.log.info("inserting new archive node in postgres: %s", str(new_archive_node))
-        self.pg_driver.node_insert(new_archive_node, session=session)
-        self.pg_driver.edge_insert(edge_to_project, session=session)
-        return new_archive_node
+            property_matches={"submitter_id": submitter_id,
+                              "revision": self.archive["revision"]},
+            session=session
+        )
+        if maybe_this_archive:
+            node_id = maybe_this_archive.node_id
+            self.log.info("found archive %s in postgres as node %s, not inserting", self.name, maybe_this_archive)
+        else:
+            node_id = self.signpost.create().did
+            self.log.info("inserting new archive node in postgres with id: %s", node_id)
+        sysan = self.archive
+        sysan["source"] = "tcga_dcc"
+        archive_node = self.pg_driver.node_merge(
+            node_id=node_id,
+            label='archive',
+            acl=self.acl,
+            properties={
+                "submitter_id": submitter_id,
+                "revision": self.archive["revision"]
+            },
+            system_annotations=sysan,
+            session=session
+        )
+        project_node = self.pg_driver.node_lookup_one(
+            label="project",
+            property_matches={"name": self.archive["disease_code"]},
+            session=session
+        )
+        maybe_edge_to_project = self.pg_driver.edge_lookup_one(
+            src_id=archive_node.node_id,
+            dst_id=project_node.node_id,
+            label="member_of",
+            session=session
+        )
+        if not maybe_edge_to_project:
+            edge_to_project = PsqlEdge(
+                src_id=archive_node.node_id,
+                dst_id=project_node.node_id,
+                label="member_of"
+            )
+            self.pg_driver.edge_insert(edge_to_project, session=session)
+        return archive_node
 
     def lookup_file_in_pg(self, archive_node, filename, session):
         q = self.pg_driver.node_lookup(label="file",
@@ -221,40 +241,16 @@ class TCGADCCArchiveSyncer(object):
             edge_to_attr_node = PsqlEdge(label=LABEL_MAP[attr],
                                          src_id=file_node.node_id,
                                          dst_id=attr_node.node_id)
-            if not self.dryrun:
-                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+            self.pg_driver.edge_insert(edge_to_attr_node, session=session)
 
-    def store_file_in_pg(self, filename, md5, md5_source, session):
-        # not there, need to get id from signpost and store it.
-        doc = self.signpost.create()
-        system_annotations = {"md5_source": md5_source,
-                              "source": "tcga_dcc"}
-        if not self.dryrun:
-            tarinfo = self.tarball.getmember(self.full_name(filename))
-            file_size = tarinfo.size
-        else:
-            file_size = 0
-        file_node = PsqlNode(node_id=doc.did, label="file",
-                             properties={"file_name": filename,
-                                         "md5sum": md5,
-                                         "state": "submitted",
-                                         "file_size": file_size,
-                                         "state_comment": None},
-                             system_annotations=system_annotations)
-        edge_to_archive = PsqlEdge(label="member_of",
-                                   src_id=file_node.node_id,
-                                   dst_id=self.archive_node.node_id,
-                                   properties={})
-        # TODO tie files to the center they were submitted by.
-        # skipping this for now because it's some work to find the
-        # correct center for an archive
-        if self.dryrun:
-            self.log.info("dryrun mode, not inserting file %s as node %s", filename, file_node)
-            return file_node
-        self.log.info("inserting file %s as node %s", filename, file_node)
-        self.pg_driver.node_insert(file_node, session=session)
-        self.pg_driver.edge_insert(edge_to_archive, session=session)
-        return file_node
+    def get_file_size_from_http(self, filename):
+        base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
+        file_url = urljoin(base_url, filename)
+        # it's necessary to specify the accept-encoding here so that
+        # there server doesn't send us gzipped content and we get the
+        # wrong length
+        resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
+        return int(resp.headers["content-length"])
 
     def classify(self, file_node, session):
         classification = classify(self.archive, file_node["file_name"])
@@ -270,18 +266,6 @@ class TCGADCCArchiveSyncer(object):
                            file_node["file_name"], classification)
             file_node.system_annotations["unclassified"] = True
             return file_node
-        # TODO check that this matches what we know about the archive
-        try:
-            classifies_as_protected = classification["data_access"] == "protected"
-            if classifies_as_protected != self.archive["protected"]:
-                self.log.warning("file %s access from classification does not match access on archive %s",
-                                 file_node, self.archive_node)
-            file_node.acl = ["phs000178"] if classifies_as_protected else ["open"]
-        except:
-            self.log.error("%s has no acl but was not marked unclassified. classification: %s",
-                           file_node["file_name"],
-                           classification)
-            raise
         for k, v in classification.iteritems():
             if k.startswith("_"):
                 file_node.system_annotations[k] = v
@@ -305,27 +289,76 @@ class TCGADCCArchiveSyncer(object):
     def extract_file_data(self, filename):
         return self.tarball.extractfile("/".join([self.name, filename]))
 
+    def determine_md5(self, filename, dcc_md5):
+        """If the md5 from the dcc is None, we need to compute our own, so do
+        that here."""
+        if dcc_md5:
+            return dcc_md5, "tcga_dcc"
+        else:
+            if not self.tarball:
+                # now we have no choice in order to get the correct md5
+                self.download_archive()
+            md5 = md5sum(iterable_from_file(
+                self.extract_file_data(filename)))
+            return md5, "gdc_import_process"
+
+    def determine_file_size(self, filename):
+        if not self.meta_only:
+            tarinfo = self.tarball.getmember(self.full_name(filename))
+            return int(tarinfo.size)
+        else:
+            return self.get_file_size_from_http(filename)
+
     def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database."""
         file_node = self.lookup_file_in_pg(self.archive_node,
                                            filename, session)
         if file_node:
-            self.log.info("file %s in already in postgres, not inserting",
-                          filename)
-            return file_node
-        if dcc_md5:
-            md5 = dcc_md5
-            md5_source = "tcga_dcc"
+            node_id = file_node.node_id
+            self.log.info("file %s in already in postgres with id %s, not inserting", filename, node_id)
         else:
-            md5 = md5sum(iterable_from_file(
-                self.extract_file_data(filename)))
-            md5_source = "gdc_import_process"
-        file_node = self.store_file_in_pg(filename, md5, md5_source, session)
+            node_id = self.signpost.create().did
+            self.log.info("inserting file %s into postgres with id %s", filename, node_id)
+        md5, md5_source = self.determine_md5(filename, dcc_md5)
+        self.log.info("merging file %s into graph with id %s", filename, node_id)
+        file_node = self.pg_driver.node_merge(
+            node_id=node_id,
+            acl=self.acl,
+            label="file",
+            properties={
+                "file_name": filename,
+                "md5sum": md5,
+                "file_size": self.determine_file_size(filename),
+                "state": "submitted",
+                "state_comment": None,
+                "submitter_id": None,
+            },
+            system_annotations={
+                "source": "tcga_dcc",
+                "md5_source": md5_source,
+            }
+        )
+        maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
+            src_id=file_node.node_id,
+            dst_id=self.archive_node.node_id,
+            label="member_of",
+            session=session
+        )
+        if not maybe_edge_to_archive:
+            edge_to_archive = PsqlEdge(
+                src_id=file_node.node_id,
+                dst_id=self.archive_node.node_id,
+                label="member_of"
+            )
+            self.pg_driver.edge_insert(edge_to_archive, session=session)
+        # TODO tie files to the center they were submitted by.
+        # skipping this for now because it's some work to find the
+        # correct center for an archive
         self.classify(file_node, session)
         return file_node
 
     def get_manifest(self):
-        if self.dryrun:
+        if self.meta_only:
             resp = self.get_with_auth("/".join([self.archive["non_tar_url"],
                                                 "MANIFEST.txt"]))
             manifest_data = resp.content
@@ -344,7 +377,7 @@ class TCGADCCArchiveSyncer(object):
         return res
 
     def get_files(self):
-        if self.dryrun:
+        if self.meta_only:
             NOT_PART_OF_ARCHIVE = ["Name", "Last modified",
                                    "Size", "Parent Directory"]
             resp = self.get_with_auth(self.archive["non_tar_url"])
@@ -358,28 +391,36 @@ class TCGADCCArchiveSyncer(object):
             return [name.replace(self.name + "/", "") for name in names]
 
     def get_with_auth(self, url, **kwargs):
-        resp = requests.get(url, auth=self.dcc_auth,
-                            allow_redirects=False, **kwargs)
         tries = 0
-        while resp.is_redirect and tries < 5:
-            # sometimes it redirects, try again. normally requests
-            # does this automatically, but this doesn't work with auth
-            tries += 1
-            resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
-                                allow_redirects=False, **kwargs)
-        # ENTERING GROSS HACK ZONE
-        #
-        # sometimes it just returns a 401 (no redirect) when you're
-        # trying to hit tcga-data but you want
-        # tcga-data-secure. somehow Chrome manages to figure this out,
-        # I think it has something to do with cookies. In any case I
-        # do it manually here.
-        if resp.status_code == 401:
-            fixed_url = re.sub("tcga-data", "tcga-data-secure", url)
-            resp = requests.get(fixed_url, auth=self.dcc_auth,
-                                allow_redirects=False, **kwargs)
-        # EXITING GROSS HACK ZONE
-        return resp
+        while tries < 120:
+            try:
+                resp = requests.get(url, auth=self.dcc_auth,
+                                    allow_redirects=False, **kwargs)
+                redirects = 0
+                while resp.is_redirect and redirects < 5:
+                    # sometimes it redirects, try again. normally requests
+                    # does this automatically, but this doesn't work with auth
+                    redirects += 1
+                    resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
+                                        allow_redirects=False, **kwargs)
+                # ENTERING GROSS HACK ZONE
+                #
+                # sometimes it just returns a 401 (no redirect) when you're
+                # trying to hit tcga-data but you want
+                # tcga-data-secure. somehow Chrome manages to figure this out,
+                # I think it has something to do with cookies. In any case I
+                # do it manually here.
+                if resp.status_code == 401:
+                    fixed_url = re.sub("tcga-data", "tcga-data-secure", url)
+                    resp = requests.get(fixed_url, auth=self.dcc_auth,
+                                        allow_redirects=False, **kwargs)
+                # EXITING GROSS HACK ZONE
+                return resp
+            except requests.ConnectionError:
+                tries += 1
+                time.sleep(1)
+                self.log.exception("caught ConnectionError talking to %s, retrying", url)
+        raise RuntimeError("retries exceeded on {}".format(url))
 
     def download_archive(self):
         self.log.info("downloading archive")
@@ -482,30 +523,25 @@ class TCGADCCArchiveSyncer(object):
             return
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
+        self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
         with self.pg_driver.session_scope() as session:
-            self.archive_node = self.store_archive_in_pg(session)
+            self.archive_node = self.sync_archive(session)
             archive_doc = self.signpost.get(self.archive_node.node_id)
             if archive_doc and archive_doc.urls and not self.force:
                 self.log.info("archive already has urls in signpost, "
                               "assuming it's complete")
                 return
-            if not self.dryrun:
+            if not self.meta_only:
                 self.download_archive()
             manifest = self.get_manifest()
             filenames = self.get_files()
-            if (not self.manifest_is_complete(manifest, filenames)
-                and self.dryrun):
-                self.log.warning("manifest for %s incomplete and "
-                                 "we are in dryrun,"
-                                 " skipping file sync", self.name)
-                return
             file_nodes = []
             for filename in filenames:
                 if filename != "MANIFEST.txt":
                     file_node = self.sync_file(filename, manifest.get(filename), session)
                     if file_node:
                         file_nodes.append(file_node)
-        if not self.dryrun:
+        if not self.no_upload and not self.meta_only:
             for node in file_nodes:
                 if node["state"] in ["submitted", "uploading"]:
                     with self.state_transition(node, "uploading", "uploaded"):
@@ -533,3 +569,5 @@ class TCGADCCArchiveSyncer(object):
                 doc = self.signpost.get(self.archive_node.node_id)
                 doc.urls = [archive_url]
                 doc.patch()
+        else:
+            self.log.info("skipping upload to object store")

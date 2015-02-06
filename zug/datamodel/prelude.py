@@ -91,7 +91,8 @@ DATA_TYPES = {
         "Structural germline variation", "Structural variation"
     ],
     "Raw sequencing data": [
-        "Coverage WIG", "Sequencing tag", "Sequencing tag counts"
+        "Coverage WIG", "Sequencing tag", "Sequencing tag counts",
+        'Aligned reads', 'Unaligned reads'
     ],
     "Other": [
         "Microsattelite instability", "ABI sequence trace", "HPV Test",
@@ -118,7 +119,7 @@ DATA_FORMATS = [
     "TXT", "VCF", "SVS", "idat", "CEL", "XML", "WIG",
     "PDF", "TIF", "TSV", "FSA", "SIF", "JPG", "PNG",
     "dat", "Biotab", "FA", "TR", "MAF", "BED", "DGE-Tag",
-    "HTML", "MAGE-Tab", "GAF", "sdf"
+    "HTML", "MAGE-Tab", "GAF", "sdf", "BAM", "TAR", "TARGZ"
 ]
 
 EXPERIMENTAL_STRATEGIES = [
@@ -126,7 +127,8 @@ EXPERIMENTAL_STRATEGIES = [
     "CGH array", "miRNA-Seq", "Protein expression array",
     "Gene expression array", "MSI-Mono-Dinucleotide Assay", "miRNA expression array",
     "WXS", "WGS", "Exon array", "Total RNA-Seq", "Mixed strategies",
-    "Capillary sequencing", "Bisulfite-Seq"
+    "Capillary sequencing", "Bisulfite-Seq", 'RNA-Seq', "AMPLICON",
+    "Bisulfite-Seq", "miRNA-Seq", "RNA-Seq", "VALIDATION", "WGS", "WXS"
 ]
 
 PLATFORMS = [
@@ -139,7 +141,7 @@ PLATFORMS = [
     "H-miRNA_8x15K", "AgilentG4502A_07_2", "HuEx-1_0-st-v2",
     "HG-U133_Plus_2", "Illumina DNA Methylation OMA003 CPI",
     "Illumina DNA Methylation OMA002 CPI", "AgilentG4502A_07_1", "ABI SOLiD",
-    "Mixed platforms", "Illumina MiSeq"
+    "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM"
 ]
 
 PROJECTS = ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "CNTL", "COAD",
