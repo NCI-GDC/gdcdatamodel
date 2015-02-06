@@ -93,7 +93,7 @@ def import_files(xml):
               for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
     Pool(args.processes).map(process, chunks)
-
+    log.info('Complete.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
