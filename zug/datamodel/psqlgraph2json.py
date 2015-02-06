@@ -1,13 +1,9 @@
 import psqlgraph
-from psqlgraph import PsqlNode
 import itertools
-import json
 from copy import copy
-from pprint import pprint
 from gdcdatamodel.mappings import \
     participant_tree, participant_traversal,\
     file_tree, file_traversal,\
-    get_file_es_mapping, get_participant_es_mapping, \
     ONE_TO_ONE, ONE_TO_MANY
 
 
@@ -29,14 +25,17 @@ class PsqlGraph2JSON(object):
         self.leaf_nodes = ['center', 'tissue_source_site']
 
     def add_child(self, mapping, label, doc):
+        if label not in mapping:
+            return None
+        plural = mapping[label].corr[1]
         if mapping[label].corr[0] == ONE_TO_ONE:
-            doc[mapping[label].corr[1]] = {}
+            doc[plural] = {}
         elif mapping[label].corr[0] == ONE_TO_MANY:
-            doc[mapping[label].corr[1]] = []
+            doc[plural] = []
         else:
             raise RuntimeError('Unknown correspondence for {} {}'.format(
                 label, mapping[label].corr))
-        return mapping[label].corr[1]
+        return plural
 
     def update_doc(self, doc, subdoc):
         if doc is None:
@@ -47,34 +46,40 @@ class PsqlGraph2JSON(object):
             doc.update(subdoc)
         else:
             raise RuntimeError('Unexpected document type')
-        return subdoc
-
-    def walk_tree(self, node, mapping, doc=None, path=[], level=0):
-        subdoc = {'uuid': node.node_id}
-        subdoc.update(node.properties)
-        for neighbor, label in itertools.chain(
-                [(a.src, a.label) for a in node.edges_in],
-                [(b.dst, b.label) for b in node.edges_out]):
-            if neighbor.label not in mapping.keys()\
-               or node.node_id in path or neighbor.label in self.leaf_nodes:
-                continue
-            new_label = self.add_child(mapping, neighbor.label, subdoc)
-            self.walk_tree(neighbor, mapping[neighbor.label],
-                           subdoc[new_label], path+[node.node_id], level+1)
-        doc = self.update_doc(doc, subdoc)
         return doc
 
+    def _get_base_doc(self, node):
+        base = {'{}_id'.format(node.label): node.node_id}
+        base.update(node.properties)
+        return base
+
+    def _is_walkable(self, node, path):
+        return (node.node_id not in path
+                and node.label not in self.leaf_nodes)
+
+    def _get_neighbors(self, node, mapping):
+        for neighbor_label in mapping:
+            for n in self.graph.nodes().ids(
+                    node.node_id).path_end([neighbor_label]):
+                yield n
+
+    def walk_tree(self, node, mapping, doc={}, path=[], level=0):
+        subdoc = self._get_base_doc(node)
+        for n in self._get_neighbors(node, mapping):
+            plural = self.add_child(mapping, n.label, subdoc)
+            self.update_doc(subdoc[plural], n.properties)
+            if self._is_walkable(n, path) and plural:
+                self.walk_tree(n, mapping[n.label], subdoc[plural],
+                               path+[node.node_id], level+1)
+        return self.update_doc(doc, subdoc)
+
     def _walk_path(self, node, path):
-        props = []
-        for node in self.graph.nodes().ids(node.node_id).path_end(path).all():
-            nprop = {'uuid': node.node_id}
-            nprop.update(node.properties)
-            props.append(nprop)
-        return props
+        return [self._get_base_doc(n)
+                for n in self.graph.nodes()
+                .ids(node.node_id).path_end(path)]
 
     def walk_paths(self, node, traversals, mapping, doc=None):
-        subdoc = {'uuid': node.node_id}
-        subdoc.update(node.properties)
+        subdoc = self._get_base_doc(node)
         for dst, paths in traversals.items():
             corr, name = mapping[dst].corr
             props = []
@@ -88,8 +93,7 @@ class PsqlGraph2JSON(object):
                 if name not in subdoc:
                     subdoc[name] = []
                 subdoc[name] += props
-        doc = self.update_doc(doc, subdoc)
-        return doc
+        return self.update_doc(doc, subdoc)
 
     def denormalize_participant(self, node):
         participant = self.walk_tree(node, participant_tree)
@@ -108,7 +112,7 @@ class PsqlGraph2JSON(object):
         p_dict = paths.pop('participant', None)
         if p_dict:
             participant = self.walk_tree(
-                self.graph.nodes().ids(p_dict['uuid']).one(),
+                self.graph.nodes().ids(p_dict['participant_id']).one(),
                 participant_tree)
             res['participant'] = participant
         return res

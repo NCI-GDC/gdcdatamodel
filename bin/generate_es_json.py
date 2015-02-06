@@ -1,12 +1,12 @@
+#!/usr/bin/env python
 import logging
 import argparse
-import re
 import json
 from itertools import islice
-from pprint import pprint
 from multiprocessing import Pool
 from zug.datamodel import psqlgraph2json
 from cdisutils.log import get_logger
+from pprint import pprint
 
 log = get_logger("json_generator")
 logging.root.setLevel(level=logging.ERROR)
@@ -26,8 +26,14 @@ def start_conversion():
     converter = get_converter()
     # print json.dumps([converter.denormalize_file(f)
     #                   for f in islice(converter.get_files(), 10)])
-    print json.dumps([converter.denormalize_participant(f)
-                      for f in islice(converter.get_participants(), 10)])
+    # print json.dumps([converter.denormalize_participant(f)
+    #                   for f in islice(converter.get_participants(), 10)])
+    for n in islice(converter.get_participants(), 1):
+        with converter.graph.session_scope():
+            print n.node_id
+            doc = converter.denormalize_participant(n)
+            pprint(doc)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
