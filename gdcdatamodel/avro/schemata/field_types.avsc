@@ -241,7 +241,7 @@
       "Tumor class but appears normal",
       "Tumor tissue origin incorrect",
       "Tumor type incorrect",
-      "WGA Failure",
+      "WGA Failure"
     ],
     "type": "enum",
     "doc": "Allowed annotation categories"
