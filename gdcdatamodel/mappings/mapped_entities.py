@@ -8,7 +8,7 @@ ONE_TO_MANY = '__one_to_many__'
 file_tree = Dict()
 file_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
 file_tree.archive.corr = (ONE_TO_MANY, 'archives')
-file_tree.center.corr = (ONE_TO_ONE, 'centers')
+file_tree.center.corr = (ONE_TO_ONE, 'center')
 file_tree.data_format.corr = (ONE_TO_ONE, 'data_format')
 file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_type')
 file_tree.data_subtype.data_type.corr = (ONE_TO_ONE, 'data_type')
@@ -16,6 +16,7 @@ file_tree.experimental_strategy.corr = (ONE_TO_ONE, 'experimental_strategy')
 file_tree.participant.corr = (ONE_TO_MANY, 'participants')
 file_tree.platform.corr = (ONE_TO_ONE, 'platform')
 file_tree.tag.corr = (ONE_TO_MANY, 'tags')
+file_tree.file.corr = (ONE_TO_MANY, 'related_files')
 
 file_traversal = Dict()
 file_traversal.center = [('center'), ('aliquot', 'center')]
@@ -71,6 +72,20 @@ annotation_tree.project.program.corr = (ONE_TO_ONE, 'program')
 annotation_tree.item.corr = (ONE_TO_ONE, 'item')
 
 annotation_traversal = Dict()
+annotation_traversal.file = [
+    ('sample', 'file'),
+    ('sample', 'file', 'file'),
+    ('analyte', 'file'),
+    ('analyte', 'file', 'file'),
+    ('participant', 'file'),
+    ('participant', 'file', 'file'),
+    ('sample', 'aliquot', 'file'),
+    ('sample', 'aliquot', 'file', 'file'),
+    ('sample', 'portion', 'analyte', 'file'),
+    ('sample', 'portion', 'analyte', 'file', 'file'),
+    ('sample', 'portion', 'analyte', 'aliquot', 'file'),
+    ('sample', 'portion', 'analyte', 'aliquot', 'file', 'file'),
+]
 
 # Project hierarchy
 project_tree = Dict()

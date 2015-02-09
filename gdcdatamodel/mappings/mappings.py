@@ -19,7 +19,10 @@ def _munge_properties(source):
     if not a:
         return
     fields = [b['type'] for b in a[0] if b['name'] == 'properties']
-    fields[0][0]['fields'].append({'name': 'uuid', 'type': 'string'})
+    fields[0][0]['fields'].append({
+        'name': '{}_id'.format(source),
+        'type': 'string'
+    })
     return {b['name']: {
         'type': _get_es_type(b['type']),
         'index': 'not_analyzed'
