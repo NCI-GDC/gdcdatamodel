@@ -23,17 +23,14 @@ def get_converter():
 
 
 def print_samples(converter):
-    # with open('participant.json', 'w') as f:
-    #     f.write(json.dumps([
-    #         converter.denormalize_participant(n)
-            # for n in islice(converter.get_nodes('participant'), 10)]))
-    # with open('files.json', 'w') as f:
-    # print json.dumps([
-    #     converter.denormalize_file(n)
-    #     for n in islice(converter.get_nodes('file'), 1)], indent=2)
-    print json.dumps([
-        converter.denormalize_file(n)
-        for n in islice(converter.get_nodes('file'), 2)], indent=4)
+    with open('participant.json', 'w') as f:
+        f.write(json.dumps([
+            converter.denormalize_participant(n)
+            for n in islice(converter.get_nodes('participant'), 10)]))
+    with open('file.json', 'w') as f:
+        f.write(json.dumps([
+            converter.denormalize_file(n)
+            for n in islice(converter.get_nodes('file'), 10)]))
 
 
 if __name__ == '__main__':

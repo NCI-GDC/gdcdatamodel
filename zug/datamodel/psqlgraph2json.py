@@ -63,8 +63,8 @@ class PsqlGraph2JSON(object):
 
     def _get_neighbors(self, node, mapping):
         for neighbor_label in mapping:
-            for n in self.graph.nodes().ids(
-                    node.node_id).path_end([neighbor_label]):
+            for n in self.graph.nodes().id_path_end(
+                    node.node_id, [neighbor_label]):
                 yield n
 
     def walk_tree(self, node, mapping, doc, path=[], level=0):
@@ -80,8 +80,7 @@ class PsqlGraph2JSON(object):
 
     def _walk_path(self, node, path):
         return [self._get_base_doc(n)
-                for n in self.graph.nodes()
-                .ids(node.node_id).path_end(path)]
+                for n in self.graph.nodes().id_path_end(node.node_id, path)]
 
     def walk_paths(self, node, traversals, mapping, doc):
         subdoc = self._get_base_doc(node)
