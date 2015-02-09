@@ -20,31 +20,32 @@ class TestPrelude(unittest.TestCase):
     def test_prelude(self):
         create_prelude_nodes(self.driver)
         create_prelude_nodes(self.driver)
-        self.driver.node_lookup(
-            label="center",
-            property_matches={"code": "31"}
-        ).one()
-        self.driver.node_lookup(
-            label="tissue_source_site",
-            property_matches={"code": "14"}
-        ).one()
-        self.driver.node_lookup(
-            label="tag",
-            property_matches={"name": "hg18"}
-        ).one()
-        tcga = self.driver.node_lookup(
-            label="program",
-            property_matches={"name": "TCGA"}
-        ).one()
-        self.driver.node_lookup(
-            label="project",
-            property_matches={"name": "ACC"}
-        ).with_edge_to_node("member_of", tcga).one()
-        clinical = self.driver.node_lookup(
-            label="data_type",
-            property_matches={"name": "Clinical"}
-        ).one()
-        self.driver.node_lookup(
-            label="data_subtype",
-            property_matches={"name": "Diagnostic image"}
-        ).with_edge_to_node("member_of", clinical).one()
+        with self.driver.session_scope():
+            self.driver.node_lookup(
+                label="center",
+                property_matches={"code": "31"}
+            ).one()
+            self.driver.node_lookup(
+                label="tissue_source_site",
+                property_matches={"code": "14"}
+            ).one()
+            self.driver.node_lookup(
+                label="tag",
+                property_matches={"name": "hg18"}
+            ).one()
+            tcga = self.driver.node_lookup(
+                label="program",
+                property_matches={"name": "TCGA"}
+            ).one()
+            self.driver.node_lookup(
+                label="project",
+                property_matches={"name": "ACC"}
+            ).with_edge_to_node("member_of", tcga).one()
+            clinical = self.driver.node_lookup(
+                label="data_type",
+                property_matches={"name": "Clinical"}
+            ).one()
+            self.driver.node_lookup(
+                label="data_subtype",
+                property_matches={"name": "Diagnostic image"}
+            ).with_edge_to_node("member_of", clinical).one()
