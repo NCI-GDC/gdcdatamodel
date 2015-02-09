@@ -1,11 +1,13 @@
 import psqlgraph
 import itertools
 from copy import copy
-from gdcdatamodel.mappings import \
-    participant_tree, participant_traversal,\
-    file_tree, file_traversal,\
+from gdcdatamodel.mappings import (
+    participant_tree, participant_traversal,
+    file_tree, file_traversal,
+    annotation_tree, annotation_traversal,
     ONE_TO_ONE, ONE_TO_MANY
-
+)
+from pprint import pprint
 
 class PsqlGraph2JSON(object):
 
@@ -28,7 +30,9 @@ class PsqlGraph2JSON(object):
         if label not in mapping:
             return None
         plural = mapping[label].corr[1]
-        if mapping[label].corr[0] == ONE_TO_ONE:
+        if plural in doc:
+            return plural
+        elif mapping[label].corr[0] == ONE_TO_ONE:
             doc[plural] = {}
         elif mapping[label].corr[0] == ONE_TO_MANY:
             doc[plural] = []
@@ -63,14 +67,15 @@ class PsqlGraph2JSON(object):
                     node.node_id).path_end([neighbor_label]):
                 yield n
 
-    def walk_tree(self, node, mapping, doc={}, path=[], level=0):
+    def walk_tree(self, node, mapping, doc, path=[], level=0):
         subdoc = self._get_base_doc(node)
         for n in self._get_neighbors(node, mapping):
             plural = self.add_child(mapping, n.label, subdoc)
-            self.update_doc(subdoc[plural], n.properties)
             if self._is_walkable(n, path) and plural:
-                self.walk_tree(n, mapping[n.label], subdoc[plural],
-                               path+[node.node_id], level+1)
+                self.update_doc(subdoc[plural], self.walk_tree(
+                    n, mapping[n.label], {}, path+[node.node_id], level+1))
+            else:
+                self.update_doc(subdoc[plural], n.properties)
         return self.update_doc(doc, subdoc)
 
     def _walk_path(self, node, path):
@@ -78,7 +83,7 @@ class PsqlGraph2JSON(object):
                 for n in self.graph.nodes()
                 .ids(node.node_id).path_end(path)]
 
-    def walk_paths(self, node, traversals, mapping, doc=None):
+    def walk_paths(self, node, traversals, mapping, doc):
         subdoc = self._get_base_doc(node)
         for dst, paths in traversals.items():
             corr, name = mapping[dst].corr
@@ -96,35 +101,32 @@ class PsqlGraph2JSON(object):
         return self.update_doc(doc, subdoc)
 
     def denormalize_participant(self, node):
-        participant = self.walk_tree(node, participant_tree)
+        participant = self.walk_tree(node, participant_tree, {})
         files = []
-        temp = self.walk_paths(node, participant_traversal, participant_tree)
-        for f in temp.get('files', []):
+        p = self.walk_paths(node, participant_traversal, participant_tree, {})
+        for f in p.get('files', []):
             f['participant'] = copy(participant)
             files.append(f)
         participant['files'] = files
         return participant
 
     def denormalize_file(self, f):
-        res = self.walk_tree(f, file_tree)
-        paths = self.walk_paths(f, file_traversal, file_tree)
-        res.update(paths)
-        p_dict = paths.pop('participant', None)
-        if p_dict:
+        res = self.walk_tree(f, file_tree, {})
+        res['participants'] = []
+        for p_dict in self.walk_paths(f, file_traversal, file_tree, {}).pop(
+                'participants', []):
             participant = self.walk_tree(
                 self.graph.nodes().ids(p_dict['participant_id']).one(),
-                participant_tree)
-            res['participant'] = participant
+                participant_tree, {})
+            res['participants'].append(participant)
         return res
 
-    def get_participants(self):
-        return self.graph.nodes()\
-                         .labels('participant')\
-                         .yield_per(self.batch_size)
+    def denormalize_annotation(self, a):
+        pass
 
-    def get_files(self):
+    def get_nodes(self, label):
         return self.graph.nodes()\
-                         .labels('file')\
+                         .labels(label)\
                          .yield_per(self.batch_size)
 
     def walk_participants(self):

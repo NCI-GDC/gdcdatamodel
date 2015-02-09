@@ -22,17 +22,18 @@ def get_converter():
     )
 
 
-def start_conversion():
-    converter = get_converter()
-    # print json.dumps([converter.denormalize_file(f)
-    #                   for f in islice(converter.get_files(), 10)])
-    # print json.dumps([converter.denormalize_participant(f)
-    #                   for f in islice(converter.get_participants(), 10)])
-    for n in islice(converter.get_participants(), 1):
-        with converter.graph.session_scope():
-            print n.node_id
-            doc = converter.denormalize_participant(n)
-            pprint(doc)
+def print_samples(converter):
+    # with open('participant.json', 'w') as f:
+    #     f.write(json.dumps([
+    #         converter.denormalize_participant(n)
+            # for n in islice(converter.get_nodes('participant'), 10)]))
+    # with open('files.json', 'w') as f:
+    # print json.dumps([
+    #     converter.denormalize_file(n)
+    #     for n in islice(converter.get_nodes('file'), 1)], indent=2)
+    print json.dumps([
+        converter.denormalize_file(n)
+        for n in islice(converter.get_nodes('file'), 2)], indent=4)
 
 
 if __name__ == '__main__':
@@ -48,4 +49,6 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--nproc', default=8, type=int,
                         help='the number of processes')
     args = parser.parse_args()
-    start_conversion()
+    converter = get_converter()
+    with converter.graph.session_scope():
+        print_samples(converter)
