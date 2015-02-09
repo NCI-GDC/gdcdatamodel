@@ -1,5 +1,4 @@
 import psqlgraph
-import itertools
 from copy import copy
 from gdcdatamodel.mappings import (
     participant_tree, participant_traversal,
@@ -8,6 +7,7 @@ from gdcdatamodel.mappings import (
     ONE_TO_ONE, ONE_TO_MANY
 )
 from pprint import pprint
+
 
 class PsqlGraph2JSON(object):
 
@@ -75,6 +75,7 @@ class PsqlGraph2JSON(object):
                 self.update_doc(subdoc[plural], self.walk_tree(
                     n, mapping[n.label], {}, path+[node.node_id], level+1))
             else:
+                subdoc[plural]['{}_id'.format(n.label)] = n.node_id
                 self.update_doc(subdoc[plural], n.properties)
         return self.update_doc(doc, subdoc)
 
@@ -121,7 +122,7 @@ class PsqlGraph2JSON(object):
         return res
 
     def denormalize_annotation(self, a):
-        pass
+        raise NotImplementedError()
 
     def get_nodes(self, label):
         return self.graph.nodes()\
