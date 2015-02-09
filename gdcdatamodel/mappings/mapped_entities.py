@@ -13,9 +13,9 @@ file_tree.data_format.corr = (ONE_TO_ONE, 'data_format')
 file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_type')
 file_tree.data_subtype.data_type.corr = (ONE_TO_ONE, 'data_type')
 file_tree.experimental_strategy.corr = (ONE_TO_ONE, 'experimental_strategy')
+file_tree.participant.corr = (ONE_TO_MANY, 'participants')
 file_tree.platform.corr = (ONE_TO_ONE, 'platform')
 file_tree.tag.corr = (ONE_TO_MANY, 'tags')
-file_tree.participant.corr = (ONE_TO_MANY, 'participant')
 
 file_traversal = Dict()
 file_traversal.center = [('center'), ('aliquot', 'center')]
@@ -66,13 +66,11 @@ participant_traversal.file = [
 
 # Annotation hierarchy
 annotation_tree = Dict()
-annotation_tree.aliquot = (ONE_TO_ONE, 'aliquot')
-annotation_tree.analyte = (ONE_TO_ONE, 'analyte')
-annotation_tree.participant = (ONE_TO_ONE, 'participant')
-annotation_tree.portion = (ONE_TO_ONE, 'portion')
-annotation_tree.project.program = (ONE_TO_ONE, 'program')
-annotation_tree.sample = (ONE_TO_ONE, 'sample')
-annotation_tree.slide = (ONE_TO_ONE, 'slide')
+annotation_tree.project.corr = (ONE_TO_ONE, 'project')
+annotation_tree.project.program.corr = (ONE_TO_ONE, 'program')
+annotation_tree.item.corr = (ONE_TO_ONE, 'item')
+
+annotation_traversal = Dict()
 
 # Project hierarchy
 project_tree = Dict()
