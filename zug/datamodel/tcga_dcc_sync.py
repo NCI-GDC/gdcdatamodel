@@ -496,32 +496,39 @@ class TCGADCCArchiveSyncer(object):
         raise RuntimeError("retries exceeded on {}".format(url))
 
     def download_archive(self):
-        tries = 0
-        while tries < 20:
-            tries += 1
-            self.log.info("downloading archive, try %s of 20", tries)
-            resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
-            if int(resp.headers["content-length"]) > self.max_memory:
-                self.log.info("archive size is %s bytes, storing in "
-                              "temp file on disk", resp.headers["content-length"])
-                self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
-            else:
-                self.log.info("archive size is %s bytes, storing in "
-                              "memory in StringIO" , resp.headers["content-length"])
-                self.temp_file = StringIO()
+        self.log.info("downloading archive")
+        info_resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
+        content_length = int(info_resp.headers["content-length"])
+        info_resp.close()  # to make sure we free the connection
+        if content_length > self.max_memory:
+            self.log.info("archive size is %s bytes, storing in "
+                          "temp file on disk", content_length)
+            self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
+        else:
+            self.log.info("archive size is %s bytes, storing in "
+                          "memory in StringIO", content_length)
+            self.temp_file = StringIO()
+        while self.temp_file.tell() != content_length:
+            self.log.info("bytes in temp file so far: %s", self.temp_file.tell())
+            range = "bytes={start}-{end}".format(start=self.temp_file.tell(),
+                                                 end=content_length)
+            self.log.info("file not yet completely downloaded, requesting %s", range)
+            resp = self.get_with_auth(self.archive["dcc_archive_url"],
+                                      headers={"Range": range}, stream=True)
+            self.log.info("writing chunks to temp file")
             for chunk in resp.iter_content(chunk_size=16000):
                 self.temp_file.write(chunk)
-            temp_file_len = self.temp_file.tell()
-            if temp_file_len == int(resp.headers["content-length"]):
-                self.temp_file.seek(0)
-                self.log.info("archive downloaded, untaring")
-                self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
-                return
-            else:
-                self.log.warning("archive download failed, got %s bytes but expected %s, retrying",
-                                 temp_file_len, resp.headers["content-length"])
-                self.temp_file.close()
-        raise RuntimeError("failed to download archive with 20 retries")
+        temp_file_len = self.temp_file.tell()
+        if temp_file_len == content_length:
+            self.temp_file.seek(0)
+            self.log.info("archive downloaded, untaring")
+            self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
+            return
+        else:
+            self.log.error("archive download failed, got %s bytes but expected %s, something is wrong",
+                           temp_file_len, content_length)
+            self.temp_file.close()
+
 
     def manifest_is_complete(self, manifest, filenames):
         """Verify that the manifest is complete."""
