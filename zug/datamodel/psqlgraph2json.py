@@ -6,7 +6,6 @@ from gdcdatamodel.mappings import (
     annotation_tree, annotation_traversal,
     ONE_TO_ONE, ONE_TO_MANY
 )
-from pprint import pprint
 
 
 class PsqlGraph2JSON(object):
@@ -14,14 +13,12 @@ class PsqlGraph2JSON(object):
     """
     """
 
-    def __init__(self, host, user, password, database,
-                 node_validator=None):
+    def __init__(self, psqlgraph_driver):
         """Walks the graph to produce elasticsearch json documents.
         Assumptions include:
 
         """
-        self.graph = psqlgraph.PsqlGraphDriver(
-            host=host, user=user, password=password, database=database)
+        self.graph = psqlgraph_driver
         self.files, self.participants = [], []
         self.batch_size = 10
         self.leaf_nodes = ['center', 'tissue_source_site']
@@ -63,7 +60,7 @@ class PsqlGraph2JSON(object):
 
     def _get_neighbors(self, node, mapping):
         for neighbor_label in mapping:
-            for n in self.graph.nodes().id_path_end(
+            for n in self.graph.nodes().ids_path_end(
                     node.node_id, [neighbor_label]):
                 yield n
 
@@ -81,7 +78,7 @@ class PsqlGraph2JSON(object):
 
     def _walk_path(self, node, path):
         return [self._get_base_doc(n)
-                for n in self.graph.nodes().id_path_end(node.node_id, path)]
+                for n in self.graph.nodes().ids_path_end(node.node_id, path)]
 
     def walk_paths(self, node, traversals, mapping, doc):
         subdoc = self._get_base_doc(node)
