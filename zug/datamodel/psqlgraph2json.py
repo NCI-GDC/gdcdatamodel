@@ -59,10 +59,10 @@ class PsqlGraph2JSON(object):
                 and node.label not in self.leaf_nodes)
 
     def _get_neighbors(self, node, mapping):
-        for neighbor_label in mapping:
-            for n in self.graph.nodes().ids_path_end(
-                    node.node_id, [neighbor_label]):
-                yield n
+        return self.graph.nodes()\
+                         .ids(node.node_id)\
+                         .neighbors()\
+                         .labels(mapping.keys()).all()
 
     def walk_tree(self, node, mapping, doc, path=[], level=0):
         subdoc = self._get_base_doc(node)
@@ -110,8 +110,9 @@ class PsqlGraph2JSON(object):
     def denormalize_file(self, f):
         res = self.walk_tree(f, file_tree, {})
         res['participants'] = []
-        for p_dict in self.walk_paths(f, file_traversal, file_tree, {}).pop(
-                'participants', []):
+        paths = self.walk_paths(f, file_traversal, file_tree, {})
+        participants = paths.pop('participants', [])
+        for p_dict in participants:
             participant = self.walk_tree(
                 self.graph.nodes().ids(p_dict['participant_id']).one(),
                 participant_tree, {})
