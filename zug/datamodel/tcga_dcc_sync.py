@@ -376,8 +376,7 @@ class TCGADCCArchiveSyncer(object):
                                                 "MANIFEST.txt"]))
             manifest_data = resp.content
         else:
-            manifest_tarinfo = self.tarball.getmember(
-                "{}/MANIFEST.txt".format(self.name))
+            manifest_tarinfo = self.tarball.getmember("{}/MANIFEST.txt".format(self.name))
             manifest_data = self.tarball.extractfile(manifest_tarinfo).read()
         res = {}
         try:
@@ -436,22 +435,32 @@ class TCGADCCArchiveSyncer(object):
         raise RuntimeError("retries exceeded on {}".format(url))
 
     def download_archive(self):
-        self.log.info("downloading archive")
-        resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
-        if int(resp.headers["content-length"]) > self.max_memory:
-            self.log.info("archive size is %s bytes, storing in "
-                          "temp file on disk", resp.headers["content-length"])
-            self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
-        else:
-            self.log.info("archive size is %s bytes, storing in "
-                          "memory in StringIO" , resp.headers["content-length"])
-            self.temp_file = StringIO()
-        for chunk in resp.iter_content(chunk_size=16000):
-            self.temp_file.write(chunk)
-        self.temp_file.seek(0)
-        self.temp_file
-        self.log.info("archive downloaded, untaring")
-        self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
+        tries = 0
+        while tries < 20:
+            self.log.info("downloading archive, try %s of 20", tries)
+            resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
+            if int(resp.headers["content-length"]) > self.max_memory:
+                self.log.info("archive size is %s bytes, storing in "
+                              "temp file on disk", resp.headers["content-length"])
+                self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
+            else:
+                self.log.info("archive size is %s bytes, storing in "
+                              "memory in StringIO" , resp.headers["content-length"])
+                self.temp_file = StringIO()
+            for chunk in resp.iter_content(chunk_size=16000):
+                self.temp_file.write(chunk)
+            temp_file_len = self.temp_file.tell()
+            if temp_file_len == int(resp.headers["content-length"]):
+                self.temp_file.seek(0)
+                self.log.info("archive downloaded, untaring")
+                self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
+                return
+            else:
+                self.log.warning("archive download failed, got %s bytes but expected %s, retrying",
+                                 temp_file_len, resp.headers["content-length"])
+                self.temp_file.close()
+                tries += 1
+        raise RuntimeError("failed to download archive with 20 retries")
 
     def manifest_is_complete(self, manifest, filenames):
         """Verify that the manifest is complete."""
@@ -584,3 +593,5 @@ class TCGADCCArchiveSyncer(object):
                 doc.patch()
         else:
             self.log.info("skipping upload to object store")
+        if not self.meta_only:
+            self.temp_file.close()
