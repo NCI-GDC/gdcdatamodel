@@ -44,9 +44,10 @@ class TestXML2PsqlGraph(unittest.TestCase):
         self.converter.export()
 
         # test conversion for accuracy
-        first = self.converter.graph.node_lookup_one(node_id='level1')
-        second = self.converter.graph.node_lookup_one(node_id='level2')
-        third = self.converter.graph.node_lookup_one(node_id='level3')
+        with self.converter.graph.session_scope():
+            first = self.converter.graph.node_lookup_one(node_id='level1')
+            second = self.converter.graph.node_lookup_one(node_id='level2')
+            third = self.converter.graph.node_lookup_one(node_id='level3')
         self.assertEqual(first.properties['text1.1'], '1a')
         self.assertEqual(second.properties['text2.2'], '2a')
         self.assertEqual(second.properties['text2.3'], '2b')
