@@ -38,21 +38,27 @@ def _walk_tree(tree, mapping):
 
 
 def get_file_es_mapping(include_participant=True):
-    files = _walk_tree(file_tree, {})
+    files = _walk_tree(file_tree, _munge_properties("file"))
+    files["_id"] = {"path": "file_id"}
     if include_participant:
         files['participant'] = get_participant_es_mapping(False)
+        files["participant"]["type"] = "nested"
     return files
 
 
 def get_participant_es_mapping(include_file=True):
-    participant = _walk_tree(participant_tree, {})
+    participant = _walk_tree(participant_tree, _munge_properties("participant"))
+    participant["_id"] = {"path": "participant_id"}
     if include_file:
         participant['files'] = get_file_es_mapping(True)
+        participant["files"]["type"] = "nested"
     return participant
 
 
 def get_annotation_es_mapping(include_file=True):
-    annotation = _walk_tree(annotation_tree, {})
+    annotation = _walk_tree(annotation_tree, _munge_properties("annotation"))
+    annotation["_id"] = {"path": "annotation_id"}
     if include_file:
         annotation['files'] = get_file_es_mapping(False)
+        annotation["files"]["type"] = "nested"
     return annotation
