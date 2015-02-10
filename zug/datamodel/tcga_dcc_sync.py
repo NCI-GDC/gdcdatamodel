@@ -29,9 +29,10 @@ from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
 
-
 import libcloud.storage.drivers.s3
-libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024  # upload in 500MB chunks
+# upload in 500MB chunks
+libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
+
 
 
 class InvalidChecksumException(Exception):
@@ -513,10 +514,13 @@ class TCGADCCArchiveSyncer(object):
                           "memory in StringIO", content_length)
             self.temp_file = StringIO()
         while self.temp_file.tell() != content_length:
-            self.log.info("bytes in temp file so far: %s", self.temp_file.tell())
+            self.log.info("sending new download request. "
+                          "downloaded so far: %s / %s bytes, %s percent complete",
+                          self.temp_file.tell(), content_length,
+                          float(self.temp_file.tell()) / float(content_length))
             range = "bytes={start}-{end}".format(start=self.temp_file.tell(),
                                                  end=content_length)
-            self.log.info("file not yet completely downloaded, requesting %s", range)
+            self.log.info("requesting %s", range)
             resp = self.get_with_auth(self.archive["dcc_archive_url"],
                                       headers={"Range": range}, stream=True)
             self.log.info("writing chunks to temp file")
