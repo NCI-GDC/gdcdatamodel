@@ -30,6 +30,10 @@ from cdisutils.net import no_proxy
 from zug.datamodel import tcga_classification
 
 
+import libcloud.storage.drivers.s3
+libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024  # upload in 500MB chunks
+
+
 class InvalidChecksumException(Exception):
     pass
 
