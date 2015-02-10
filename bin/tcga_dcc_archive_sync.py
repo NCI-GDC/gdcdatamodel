@@ -75,7 +75,7 @@ def main():
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
     parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
-    parser.add_argument("--only-unimported", type=str, help="process only archives which have not already been imported")
+    parser.add_argument("--only-unimported", type="store_true", help="process only archives which have not already been imported")
     parser.add_argument("--s3-host", type=str, help="s3 host to connect to")
     parser.add_argument("--s3-access-key", type=str, help="s3 access key to use")
     parser.add_argument("--s3-secret-key", type=str, help="s3 secret key to use")
