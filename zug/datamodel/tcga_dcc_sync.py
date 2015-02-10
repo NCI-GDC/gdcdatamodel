@@ -437,6 +437,7 @@ class TCGADCCArchiveSyncer(object):
     def download_archive(self):
         tries = 0
         while tries < 20:
+            tries += 1
             self.log.info("downloading archive, try %s of 20", tries)
             resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
             if int(resp.headers["content-length"]) > self.max_memory:
@@ -459,7 +460,6 @@ class TCGADCCArchiveSyncer(object):
                 self.log.warning("archive download failed, got %s bytes but expected %s, retrying",
                                  temp_file_len, resp.headers["content-length"])
                 self.temp_file.close()
-                tries += 1
         raise RuntimeError("failed to download archive with 20 retries")
 
     def manifest_is_complete(self, manifest, filenames):
