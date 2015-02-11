@@ -1,5 +1,5 @@
 import psqlgraph
-from copy import copy
+from copy import copy, deepcopy
 from gdcdatamodel.mappings import (
     participant_tree, participant_traversal,
     file_tree, file_traversal,
@@ -56,50 +56,51 @@ class PsqlGraph2JSON(object):
             doc.update(subdoc)
         return doc
 
-    def _walk_path(self, node, path):
-        return [self._get_base_doc(n)
-                for n in self.graph.nodes().ids_path_end(node.node_id, path)]
-
-    def walk_paths(self, node, traversals, mapping, doc):
-        subdoc = self._get_base_doc(node)
-        for dst, paths in traversals.items():
-            corr, name = mapping[dst].corr
-            props = []
-            for path in paths:
-                props += self._walk_path(node, path)
-            props = [dict(t) for t in set([tuple(d.items()) for d in props])]
-            if corr == ONE_TO_ONE and props:
-                assert len(props) <= 1, props
-                subdoc[name] = props[0]
-            elif props:
-                if name not in subdoc:
-                    subdoc[name] = []
-                subdoc[name] += props
-        return self.update_doc(doc, subdoc)
+    def copy_tree(self, original, new):
+        for node in original:
+            new[node] = {}
+            self.copy_tree(original[node], new[node])
+        return new
 
     def denormalize_participant(self, node):
         ptree = self.graph.nodes().tree(node.node_id, self.participant_tree)
-        return self.walk_tree(
+        participant = self.walk_tree(
             node, ptree, {'participant': participant_tree}, [])
+        for path in participant_traversal['file']:
+            for f in self.graph.nodes().ids(node.node_id).path_end(path).all():
+                self.denormalize_file(f, self.copy_tree(ptree, {}))
+        # return participant
 
-        # files = []
-        # p = self.walk_paths(node, participant_traversal, participant_tree, {})
-        # for f in p.get('files', []):
-        #     f['participant'] = copy(participant)
-        #     files.append(f)
-        # participant['files'] = files
+    def prune_participant(self, relevant_nodes, participant_tree, keys):
+        for node in participant_tree.keys():
+            if node.label not in keys:
+                continue
+            if participant_tree[node]:
+                self.prune_participant(
+                    relevant_nodes, participant_tree[node])
+            if node not in relevant_nodes:
+                participant_tree.pop(node)
 
-    def denormalize_file(self, f):
-        res = self.walk_tree(f, file_tree, {}, [])
-        res['participants'] = []
-        paths = self.walk_paths(f, file_traversal, file_tree, {})
-        participants = paths.pop('participants', [])
-        for p_dict in participants:
-            participant = self.walk_tree(
-                self.graph.nodes().ids(p_dict['participant_id']).one(),
-                participant_tree, {}, [])
-            res['participants'].append(participant)
-        return res
+    def denormalize_file(self, f, participant_tree):
+        relevant = {}
+        base = self.graph.nodes().ids(f.node_id)
+        union = base
+        for path in file_traversal.participant:
+            union = union.union(base.path_whole(path))
+        for n in union.all():
+            relevant[n.node_id] = n
+        self.prune_participant(
+            relevant, participant_tree, [
+                'sample', 'portion', 'analyte', 'aliquot', 'file'])
+        participants = []
+        for node in participant_tree.keys():
+            participants.append(self.walk_tree(
+                node, {node: participant_tree[node]},
+                {'participant': participant_tree}, []))
+        pprint(participants)
+
+        # participant = self.walk_tree(
+        #     node, ptree, {'participant': participant_tree}, [])
 
     def denormalize_annotation(self, a):
         raise NotImplementedError()
