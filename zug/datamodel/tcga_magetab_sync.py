@@ -349,12 +349,21 @@ class TCGAMAGETABSyncer(object):
                 label=label,
                 property_matches={"submitter_id": barcode},
             ).one()
-        edge = PsqlEdge(
-            label="data_from",
-            src_id=file.node_id,
-            dst_id=bio.node_id
-        )
-        self.pg_driver.edge_insert(edge, session=session)
+        maybe_edge = self.edge_lookup(label="data_from",
+                                      src_id=file.node_id,
+                                      dst_id=bio.node_id).one()
+        if not maybe_edge:
+            edge = PsqlEdge(
+                label="data_from",
+                src_id=file.node_id,
+                dst_id=bio.node_id
+            )
+            self.pg_driver.edge_insert(edge, session=session)
+
+    def drop_old_edges(self):
+        """We need to first find all the edges produced by previous runs of
+        this archive and delete them."""
+
 
     def put_mapping_in_pg(self, mapping):
         for (archive, filename), specemins in mapping.iteritems():
