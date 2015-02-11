@@ -1,7 +1,6 @@
 from unittest import TestCase
 from mock import patch
 import tempfile
-
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 
@@ -77,7 +76,6 @@ class TCGADCCArchiveSyncTest(TestCase):
         )
         syncer = self.syncer_for(archive)
         syncer.sync()
-        
        # make sure archive gets tied to project
         with self.pg_driver.session_scope():
             # make sure the files get ties to center
