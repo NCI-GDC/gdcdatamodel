@@ -6,6 +6,7 @@ import re
 from collections import defaultdict
 
 from psqlgraph import PsqlEdge
+from sqlalchemy.types import Integer
 from sqlalchemy.orm.exc import NoResultFound
 
 from cdisutils.log import get_logger
@@ -216,6 +217,7 @@ class TCGAMAGETABSyncer(object):
 
     def __init__(self, archive, pg_driver=None, cache_path=None, lazy=False):
         self.archive = archive
+        self.group_id = "{}_{}".format(self.archive["disease_code"], self.archive["batch"])
         self.pg_driver = pg_driver
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
@@ -341,47 +343,63 @@ class TCGAMAGETABSyncer(object):
 
     def tie_to_biospecemin(self, file, label, uuid, barcode, session):
         if uuid:
-            bio = self.pg_driver.node_lookup(node_id=uuid).one()
+            bio = self.pg_driver.node_lookup(node_id=uuid, session=session).one()
             assert bio.label == label
             assert bio["submitter_id"] == barcode
         elif barcode:
             bio = self.pg_driver.node_lookup(
                 label=label,
                 property_matches={"submitter_id": barcode},
+                session=session
             ).one()
-        maybe_edge = self.edge_lookup(label="data_from",
-                                      src_id=file.node_id,
-                                      dst_id=bio.node_id).one()
+        maybe_edge = self.pg_driver.edge_lookup_one(
+            label="data_from",
+            src_id=file.node_id,
+            dst_id=bio.node_id,
+            session=session
+        )
         if not maybe_edge:
             edge = PsqlEdge(
                 label="data_from",
                 src_id=file.node_id,
-                dst_id=bio.node_id
+                dst_id=bio.node_id,
+                system_annotations={
+                    "group_id": self.group_id,
+                    "revision": self.archive["revision"]
+                },
             )
             self.pg_driver.edge_insert(edge, session=session)
 
-    def drop_old_edges(self):
+    def delete_old_edges(self, session):
         """We need to first find all the edges produced by previous runs of
         this archive and delete them."""
-
+        to_delete = session.query(PsqlEdge)\
+                           .filter(PsqlEdge.system_annotations["group_id"].astext == self.group_id)\
+                           .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.archive["revision"])\
+                           .all()
+        self.log.info("found %s edges to delete from previous revisions", len(to_delete))
+        for edge in to_delete:
+            self.log.info("deleting old edge %s", edge)
+            self.pg_driver.edge_delete(edge, session=session)
 
     def put_mapping_in_pg(self, mapping):
-        for (archive, filename), specemins in mapping.iteritems():
-            for (label, uuid, barcode) in specemins:
-                with self.pg_driver.session_scope() as session:
+        with self.pg_driver.session_scope() as session:
+            self.delete_old_edges(session)
+            for (archive, filename), specemins in mapping.iteritems():
+                for (label, uuid, barcode) in specemins:
                     try:
                         file = self.get_file_node(archive, filename, session)
                     except NoResultFound:
-                        session.rollback()
                         self.log.warning("Couldn't find file %s in archive %s", filename, archive)
                         continue
                     try:
                         self.tie_to_biospecemin(file, label, uuid,
                                                 barcode, session)
                     except NoResultFound:
-                        session.rollback()
-                        self.log.warning("Couldn't find bionspecemin (%s, %s, %s)", label, uuid, barcode)
+                        self.log.warning("Couldn't find biospecemin (%s, %s, %s)", label, uuid, barcode)
 
     def sync(self):
+        # the "mapping" is a dictionary from (archive, filename) pairs
+        # to (label, uuid, barcode) triples
         mapping = self.compute_mapping()
         self.put_mapping_in_pg(mapping)

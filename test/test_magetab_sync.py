@@ -24,9 +24,14 @@ class TestTCGAMAGETASync(unittest.TestCase):
             conn.execute('delete from voided_nodes')
         self.driver.engine.dispose()
 
-    def fake_archive_for(self, fixture):
+    def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
-        return {"archive_name": fixture + "fake_test_archive"}
+        return {
+            "archive_name": fixture + "fake_test_archive",
+            "disease_code": "FAKE",
+            "batch": 1,
+            "revision": rev
+        }
 
     def create_aliquot(self, uuid, barcode):
         return self.driver.node_merge(
@@ -95,9 +100,33 @@ class TestTCGAMAGETASync(unittest.TestCase):
                                    pg_driver=self.driver, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
         syncer.sync()
-        n_files = self.driver.node_lookup(label="file")\
-                             .with_edge_to_node("data_from", aliquot).count()
+        with self.driver.session_scope():
+            n_files = self.driver.node_lookup(label="file")\
+                                 .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
+
+    def test_magetab_sync_deletes_old_edges(self):
+        aliquot = self.create_aliquot("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
+                                      "TCGA-OR-A5J5-01A-11R-A29W-13")
+        archive = self.create_archive("bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.Level_3.1.1.0")
+        self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13_mirna.bam")
+        self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
+                         archive=archive)
+        self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.mirna.quantification.txt",
+                         archive=archive)
+        syncer = TCGAMAGETABSyncer(self.fake_archive_for("basic.sdrf.txt", rev=1),
+                                   pg_driver=self.driver, lazy=True)
+        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer.sync()
+        with self.driver.session_scope():
+            old_edge_ids = set([edge.edge_id for edge in self.driver.edges().all()])
+        syncer = TCGAMAGETABSyncer(self.fake_archive_for("basic.sdrf.txt", rev=2),
+                                   pg_driver=self.driver, lazy=True)
+        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer.sync()
+        with self.driver.session_scope():
+            new_edge_ids = set([edge.edge_id for edge in self.driver.edges().all()])
+        self.assertNotEqual(old_edge_ids, new_edge_ids)
 
     def test_magetab_sync_handles_missing_file_gracefully(self):
         # this is the same as the above test, but one of the files is missing
@@ -111,8 +140,9 @@ class TestTCGAMAGETASync(unittest.TestCase):
                                    pg_driver=self.driver, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
         syncer.sync()
-        n_files = self.driver.node_lookup(label="file")\
-                             .with_edge_to_node("data_from", aliquot).count()
+        with self.driver.session_scope():
+            n_files = self.driver.node_lookup(label="file")\
+                                 .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 2)
 
     def test_duplicate_barcode_magetab_sync(self):
@@ -130,8 +160,9 @@ class TestTCGAMAGETASync(unittest.TestCase):
                                    pg_driver=self.driver, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
         syncer.sync()
-        n_files = self.driver.node_lookup(label="file")\
-                             .with_edge_to_node("data_from", aliquot).count()
+        with self.driver.session_scope():
+            n_files = self.driver.node_lookup(label="file")\
+                                 .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
 
     def test_shipped_portion_magetab_sync(self):
@@ -149,6 +180,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
                                    pg_driver=self.driver, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
         syncer.sync()
-        n_files = self.driver.node_lookup(label="file")\
-                             .with_edge_to_node("data_from", portion).count()
+        with self.driver.session_scope():
+            n_files = self.driver.node_lookup(label="file")\
+                                 .with_edge_to_node("data_from", portion).count()
         self.assertEqual(n_files, 4)
