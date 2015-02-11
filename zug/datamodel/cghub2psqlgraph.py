@@ -191,7 +191,7 @@ class cghub2psqlgraph(object):
         self.edges
 
         """
-        for src_key, dst_key in self.related_to_edges.items():
+        for src_key, dst_key in self.related_to_edges.iteritems():
             self.save_edge(src_key, self.files_to_add[dst_key].node_id,
                            'file', 'related_to',
                            src_id=self.files_to_add[src_key].node_id)

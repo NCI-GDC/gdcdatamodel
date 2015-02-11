@@ -4,8 +4,10 @@ import argparse
 import json
 from itertools import islice
 from multiprocessing import Pool
+from psqlgraph import PsqlGraphDriver
 from zug.datamodel import psqlgraph2json
 from cdisutils.log import get_logger
+from pprint import pprint
 
 log = get_logger("json_generator")
 logging.root.setLevel(level=logging.ERROR)
@@ -13,24 +15,18 @@ args = None
 
 
 def get_converter():
-    return psqlgraph2json.PsqlGraph2JSON(
+    return psqlgraph2json.PsqlGraph2JSON(PsqlGraphDriver(
         host=args.host,
         user=args.user,
         password=args.password,
         database=args.database,
-    )
+    ))
 
 
-def print_samples(converter):
-    with open('participants.json', 'w') as f:
-        f.write(json.dumps([
-            converter.denormalize_participant(n)
-            for n in islice(converter.get_nodes('participant'), 10)]))
-    with open('files.json', 'w') as f:
-        f.write(json.dumps([
-            converter.denormalize_file(n)
-            for n in islice(converter.get_nodes('file'), 10)]))
-
+def print_samples(conv):
+    # p = converter.get_nodes('participant').first()
+    p = conv.graph.nodes().ids('4756acc0-4e96-44d4-b359-04d64dc7eb84').one()
+    pprint(conv.denormalize_participant(p))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
