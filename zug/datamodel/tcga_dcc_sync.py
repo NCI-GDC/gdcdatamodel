@@ -28,7 +28,6 @@ from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
 
-
 class InvalidChecksumException(Exception):
     pass
 
@@ -222,6 +221,32 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
+    def tie_file_to_center(self,file_node,session):
+        query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
+        count = query.count()
+        if count == 1:
+            attr_node = query.first()
+            maybe_edge_to_attr_node = self.pg_driver.edge_lookup_one(
+                label='submitted_by',
+                src_id=file_node.node_id,
+                dst_id=attr_node.node_id
+            )
+            if not maybe_edge_to_attr_node:
+                edge_to_attr_node = PsqlEdge(
+                    label='submitted_by',
+                    src_id=file_node.node_id,
+                    dst_id=attr_node.node_id
+                )
+                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+
+        elif count == 0:
+            self.log.error("center with type %s and namespace %s not found" % self.archive['center_type'],\
+                self.archive['namespace'])
+        else:
+            self.log.error("more than one center with type %s and namespace %s" % self.archive['center_type'],\
+                self.archive['namespace'])
+
+    
     def tie_file_to_atribute(self, file_node, attr, value, session):
         LABEL_MAP = {
             "platform": "generated_from",
@@ -368,6 +393,7 @@ class TCGADCCArchiveSyncer(object):
         # skipping this for now because it's some work to find the
         # correct center for an archive
         self.classify(file_node, session)
+        self.tie_file_to_center(file_node,session)
         return file_node
 
     def get_manifest(self):
