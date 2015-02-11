@@ -40,10 +40,10 @@ class PsqlGraph2JSON(object):
         return base
 
     def walk_tree(self, node, tree, mapping, doc, level=0):
-        corr, plural = mapping[node.label].corr
+        corr, plural = mapping[node.label]['corr']
         subdoc = self._get_base_doc(node)
         for child in tree[node]:
-            child_corr, child_plural = mapping[node.label][child.label].corr
+            child_corr, child_plural = mapping[node.label][child.label]['corr']
             if child_plural not in subdoc and child_corr == ONE_TO_ONE:
                 subdoc[child_plural] = {}
             elif child_plural not in subdoc:
@@ -65,23 +65,25 @@ class PsqlGraph2JSON(object):
     def denormalize_participant(self, node):
         ptree = self.graph.nodes().tree(node.node_id, self.participant_tree)
         participant = self.walk_tree(
-            node, ptree, {'participant': participant_tree}, [])
+            node, ptree, {'participant': participant_tree}, [])[0]
+        participant['files'] = []
         for path in participant_traversal['file']:
             for f in self.graph.nodes().ids(node.node_id).path_end(path).all():
-                self.denormalize_file(f, self.copy_tree(ptree, {}))
-        # return participant
+                participant['files'].append(self.denormalize_file(
+                    f, self.copy_tree(ptree, {})))
+        return participant, participant['files']
 
-    def prune_participant(self, relevant_nodes, participant_tree, keys):
-        for node in participant_tree.keys():
+    def prune_participant(self, relevant_nodes, ptree, keys):
+        for node in ptree.keys():
             if node.label not in keys:
                 continue
-            if participant_tree[node]:
-                self.prune_participant(
-                    relevant_nodes, participant_tree[node])
+            if ptree[node]:
+                self.prune_participant(relevant_nodes, ptree[node])
             if node not in relevant_nodes:
-                participant_tree.pop(node)
+                ptree.pop(node)
 
-    def denormalize_file(self, f, participant_tree):
+    def denormalize_file(self, f, ptree):
+        doc = self._get_base_doc(f)
         relevant = {}
         base = self.graph.nodes().ids(f.node_id)
         union = base
@@ -89,18 +91,14 @@ class PsqlGraph2JSON(object):
             union = union.union(base.path_whole(path))
         for n in union.all():
             relevant[n.node_id] = n
-        self.prune_participant(
-            relevant, participant_tree, [
-                'sample', 'portion', 'analyte', 'aliquot', 'file'])
+        self.prune_participant(relevant, ptree, [
+            'sample', 'portion', 'analyte', 'aliquot', 'file'])
         participants = []
-        for node in participant_tree.keys():
+        for node in ptree.keys():
             participants.append(self.walk_tree(
-                node, {node: participant_tree[node]},
-                {'participant': participant_tree}, []))
-        pprint(participants)
-
-        # participant = self.walk_tree(
-        #     node, ptree, {'participant': participant_tree}, [])
+                node, ptree, {'participant': participant_tree}, []))
+        doc['participants'] = participants
+        return doc
 
     def denormalize_annotation(self, a):
         raise NotImplementedError()
