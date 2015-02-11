@@ -47,7 +47,7 @@ def get_file_es_mapping(include_participant=True):
 
 
 def get_participant_es_mapping(include_file=True):
-    participant = {"_id": {"path": "file_id"}}
+    participant = {"_id": {"path": "participant_id"}}
     participant["properties"] = _walk_tree(participant_tree, _munge_properties("participant"))
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
