@@ -233,7 +233,8 @@
       {
         "name": "node_labels",
         "type": [
-          "file:file"
+          "file:file",
+          "archive:file"
         ],
         "doc": "The source/destination node types allowed."
       },

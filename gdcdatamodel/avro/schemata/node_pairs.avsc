@@ -166,6 +166,21 @@
   },
   {
     "type": "record",
+    "name": "archive:file",
+    "namespace": "edu.uchicago.cdis",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "archive_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "file_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "annotation:aliquot",
     "namespace": "edu.uchicago.cdis",
     "fields": [
