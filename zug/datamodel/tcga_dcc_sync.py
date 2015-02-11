@@ -100,13 +100,13 @@ def classify(archive, filename):
                         else:
                             result[field] = match.groups()[i]
             return result
-    raise runtimeerror("file {}/{} failed to classify".format(archive["archive_name"], filename))
+    raise RuntimeError("file {}/{} failed to classify".format(archive["archive_name"], filename))
 
 class TCGADCCEdgeBuilder(object):
     def __init__(self, file_node, pg_driver):
         self.file_node = file_node
         self.pg_driver = pg_driver 
-        self.archive=self.__get_archive()    
+        self.archive=self._get_archive()    
         self.log = get_logger("tcga_dcc_edgebuilder_"+
                         str(os.getpid())+"_"+self.name)
         
@@ -114,7 +114,7 @@ class TCGADCCEdgeBuilder(object):
     def name(self):
         return self.archive["archive_name"]
 
-    def __get_archive(self):
+    def _get_archive(self):
         with self.pg_driver.session_scope():
             return self.pg_driver.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
 
@@ -128,12 +128,12 @@ class TCGADCCEdgeBuilder(object):
         count = query.count()
         if count == 1:
             attr_node = query.first()
-            maybe_edge_to_attr_node = self.pg_driver.edge_lookup_one(
+            maybe_edge_to_center = self.pg_driver.edge_lookup_one(
                 label='submitted_by',
                 src_id=file_node.node_id,
                 dst_id=attr_node.node_id
             )
-            if not maybe_edge_to_attr_node:
+            if not maybe_edge_to_center:
                 edge_to_attr_node = PsqlEdge(
                     label='submitted_by',
                     src_id=file_node.node_id,
@@ -142,11 +142,13 @@ class TCGADCCEdgeBuilder(object):
                 self.pg_driver.edge_insert(edge_to_attr_node, session=session)
 
         elif count == 0:
-            self.log.warning("center with type %s and namespace %s not found" % (self.archive['center_type'],\
-                self.archive['center_name']))
+            self.log.warning("center with type %s and namespace %s not found" ,
+                                self.archive['center_type'],
+                                self.archive['center_name'])
         else:
-            self.log.warning("more than one center with type %s and namespace %s" % (self.archive['center_type'],\
-                self.archive['center_name']))
+            self.log.warning("more than one center with type %s and namespace %s", 
+                                self.archive['center_type'],
+                                self.archive['center_name'])
 
     
     def tie_file_to_atribute(self, file_node, attr, value, session):

@@ -3,7 +3,6 @@ from mock import patch
 import tempfile
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
-
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
 
@@ -84,7 +83,8 @@ class TCGADCCArchiveSyncTest(TestCase):
                 label="file",
                 property_matches={"file_name":"TCGA-BT-A0S7-01A-11D-A10R-02_AC1927ACXX---TCGA-BT-A0S7-10A-01D-A10R-02_AC1927ACXX---Segment.tsv"}
                 ).one()
-            self.pg_driver.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
+            center = self.pg_driver.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
+            self.assertEqual(center['code'],'02')
             # make sure file and archive are in storage
         self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
         self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
