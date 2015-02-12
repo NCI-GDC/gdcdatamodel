@@ -90,4 +90,5 @@ annotation_traversal.file = [
 
 # Project hierarchy
 project_tree = Dict()
-project_tree.program = (ONE_TO_ONE, 'program')
+project_tree.corr = (ONE_TO_ONE, 'project')
+project_tree.program.corr = (ONE_TO_ONE, 'program')

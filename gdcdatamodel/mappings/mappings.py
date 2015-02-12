@@ -3,7 +3,8 @@ from mapped_entities import (
     file_tree, file_traversal,
     participant_tree, participant_traversal,
     annotation_tree, annotation_traversal,
-    ONE_TO_MANY, ONE_TO_ONE, annotation_tree
+    project_tree, annotation_tree,
+    ONE_TO_MANY, ONE_TO_ONE
 )
 
 
@@ -48,7 +49,8 @@ def get_file_es_mapping(include_participant=True):
 
 def get_participant_es_mapping(include_file=True):
     participant = {"_id": {"path": "participant_id"}}
-    participant["properties"] = _walk_tree(participant_tree, _munge_properties("participant"))
+    participant["properties"] = _walk_tree(
+        participant_tree, _munge_properties("participant"))
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
@@ -62,3 +64,27 @@ def get_annotation_es_mapping(include_file=True):
         annotation['files'] = get_file_es_mapping(False)
         annotation["files"]["type"] = "nested"
     return annotation
+
+
+def get_project_es_mapping():
+    project = {"_id": {"path": "project_id"}}
+    project["properties"] = _walk_tree(
+        project_tree, _munge_properties("project"))
+    _long = {u'index': u'not_analyzed', u'type': u'long'},
+    _str = {u'index': u'not_analyzed', u'type': u'string'}
+    project["properties"]["summary"] = {"properties": {
+        "file_count": _long,
+        "file_size": _long,
+        "participant_count": _long,
+        "experimental_strategies": {"properties": {
+            "participant_count": _long,
+            "experimental_strategy": _str,
+            "file_count": _long,
+        }},
+        "data_types": {"properties": {
+            "participant_count": _long,
+            "data_type": _str,
+            "file_count": _long,
+        }},
+    }}
+    return project
