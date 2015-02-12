@@ -113,7 +113,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
             n_files = self.driver.node_lookup(label="file")\
                                  .with_edge_to_node("data_from", aliquot)\
                                  .with_edge_from_node("related_to", fake_archive_node).count()
-        self.assertEqual(n_files, 3)
+        self.assertEqual(n_files, 2)
 
     def test_magetab_sync_deletes_old_edges(self):
         aliquot = self.create_aliquot("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
@@ -155,7 +155,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
         with self.driver.session_scope():
             n_files = self.driver.node_lookup(label="file")\
                                  .with_edge_to_node("data_from", aliquot).count()
-        self.assertEqual(n_files, 2)
+        self.assertEqual(n_files, 1)
 
     def test_duplicate_barcode_magetab_sync(self):
         aliquot = self.create_aliquot(str(uuid.uuid4()), "TCGA-28-1751-01A-02R-0598-07")
