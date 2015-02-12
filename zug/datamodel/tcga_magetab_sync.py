@@ -217,8 +217,12 @@ class TCGAMAGETABSyncer(object):
 
     def __init__(self, archive, pg_driver=None, cache_path=None, lazy=False):
         self.archive = archive
-        self.group_id = "{}_{}".format(self.archive["disease_code"], self.archive["batch"])
         self.pg_driver = pg_driver
+        submitter_id, _ = get_submitter_id_and_rev(self.archive["archive_name"])
+        with self.pg_driver.session_scope():
+            self.archive_node = self.pg_driver.nodes().labels("archive")\
+                                                      .props({"submitter_id": submitter_id}).one()
+        self.group_id = "{}_{}".format(self.archive["disease_code"], self.archive["batch"])
         self.log = get_logger("tcga_magetab_sync_{}".format(
             self.archive["archive_name"]))
         self._cache_path = cache_path
@@ -382,6 +386,24 @@ class TCGAMAGETABSyncer(object):
             self.log.info("deleting old edge %s", edge)
             self.pg_driver.edge_delete(edge, session=session)
 
+    def tie_to_archive(self, file):
+        maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
+            label="related_to",
+            src_id=self.archive_node.node_id,
+            dst_id=file.node_id
+        )
+        if not maybe_edge_to_archive:
+            edge_to_archive = PsqlEdge(
+                label="related_to",
+                src_id=self.archive_node.node_id,
+                dst_id=file.node_id,
+                system_annotations={
+                    "group_id": self.group_id,
+                    "revision": self.archive["revision"]
+                }
+            )
+            self.pg_driver.edge_insert(edge_to_archive)
+
     def put_mapping_in_pg(self, mapping):
         with self.pg_driver.session_scope() as session:
             self.delete_old_edges(session)
@@ -395,6 +417,7 @@ class TCGAMAGETABSyncer(object):
                     try:
                         self.tie_to_biospecemin(file, label, uuid,
                                                 barcode, session)
+                        self.tie_to_archive(file)
                     except NoResultFound:
                         self.log.warning("Couldn't find biospecemin (%s, %s, %s)", label, uuid, barcode)
 
