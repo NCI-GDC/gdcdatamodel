@@ -418,6 +418,9 @@ class TCGAMAGETABSyncer(object):
         with self.pg_driver.session_scope() as session:
             self.delete_old_edges(session)
             for (archive, filename), specemins in mapping.iteritems():
+                if archive is None:
+                    self.log.info("%s is a cghub file, skipping", filename)
+                    continue
                 for (label, uuid, barcode) in specemins:
                     self.log.info("attempting to tie file %s to specemin %s",
                                   (archive, filename),
