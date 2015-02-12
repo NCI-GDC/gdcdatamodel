@@ -15,7 +15,7 @@ def sync_magetab_list(args, archives):
         try:
             syncer = TCGAMAGETABSyncer(archive, pg_driver=driver)
         except Exception:
-            return
+            continue
         try:
             syncer.sync()  # ugh
         except Exception:  # we use Exception so as not to catch KeyboardInterrupt et al.
