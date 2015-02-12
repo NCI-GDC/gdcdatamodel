@@ -217,7 +217,7 @@ class TCGAMAGETABSyncer(object):
 
     def __init__(self, archive, pg_driver=None, cache_path=None, lazy=False):
         self.archive = archive
-        self.log = get_logger("tcga_magetab_sync_{}".format(self.archive["archive_name"]))
+        self.log = get_logger("tcga_magetab_sync_{}_{}".format(os.getpid(), self.archive["archive_name"]))
         self.pg_driver = pg_driver
         submitter_id, rev = get_submitter_id_and_rev(self.archive["archive_name"])
         with self.pg_driver.session_scope():
