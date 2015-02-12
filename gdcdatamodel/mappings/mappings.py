@@ -70,21 +70,19 @@ def get_project_es_mapping():
     project = {"_id": {"path": "project_id"}}
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
-    _long = {u'index': u'not_analyzed', u'type': u'long'},
-    _str = {u'index': u'not_analyzed', u'type': u'string'}
     project["properties"]["summary"] = {"properties": {
-        "file_count": _long,
-        "file_size": _long,
-        "participant_count": _long,
+        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "file_size": {u'index': u'not_analyzed', u'type': u'long'},
+        "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
         "experimental_strategies": {"properties": {
-            "participant_count": _long,
-            "experimental_strategy": _str,
-            "file_count": _long,
+            "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
+            "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
+            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         }},
         "data_types": {"properties": {
-            "participant_count": _long,
-            "data_type": _str,
-            "file_count": _long,
+            "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
+            "data_type": {u'index': u'not_analyzed', u'type': u'string'},
+            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         }},
     }}
     return project
