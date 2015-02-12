@@ -217,14 +217,15 @@ class TCGAMAGETABSyncer(object):
 
     def __init__(self, archive, pg_driver=None, cache_path=None, lazy=False):
         self.archive = archive
+        self.log = get_logger("tcga_magetab_sync_{}".format(self.archive["archive_name"]))
         self.pg_driver = pg_driver
         submitter_id, _ = get_submitter_id_and_rev(self.archive["archive_name"])
         with self.pg_driver.session_scope():
             self.archive_node = self.pg_driver.nodes().labels("archive")\
                                                       .props({"submitter_id": submitter_id}).one()
+        self.log.info("found archive node for this magetab: %s", self.archive_node)
         self.group_id = "{}_{}".format(self.archive["disease_code"], self.archive["batch"])
-        self.log = get_logger("tcga_magetab_sync_{}".format(
-            self.archive["archive_name"]))
+
         self._cache_path = cache_path
         if not lazy:
             self.fetch_sdrf()
@@ -348,6 +349,7 @@ class TCGAMAGETABSyncer(object):
     def tie_to_biospecemin(self, file, label, uuid, barcode, session):
         if uuid:
             bio = self.pg_driver.node_lookup(node_id=uuid, session=session).one()
+            self.log.info("found biospecemin by uuid: %s", bio)
             assert bio.label == label
             assert bio["submitter_id"] == barcode
         elif barcode:
@@ -356,6 +358,7 @@ class TCGAMAGETABSyncer(object):
                 property_matches={"submitter_id": barcode},
                 session=session
             ).one()
+            self.log.info("found biospecemin by barcode: %s", bio)
         maybe_edge = self.pg_driver.edge_lookup_one(
             label="data_from",
             src_id=file.node_id,
@@ -377,6 +380,7 @@ class TCGAMAGETABSyncer(object):
                     "source": "tcga_magetab",
                 },
             )
+            self.log.info("trying file to biospecemin: %s", edge)
             self.pg_driver.edge_insert(edge, session=session)
 
     def delete_old_edges(self, session):
@@ -409,6 +413,7 @@ class TCGAMAGETABSyncer(object):
                     "source": "tcga_magetab",
                 }
             )
+            self.log.info("relating file to magetab archive %s", edge_to_archive)
             self.pg_driver.edge_insert(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
@@ -416,8 +421,12 @@ class TCGAMAGETABSyncer(object):
             self.delete_old_edges(session)
             for (archive, filename), specemins in mapping.iteritems():
                 for (label, uuid, barcode) in specemins:
+                    self.log.info("attempting to tie file %s to specemin %s",
+                                  (archive, filename),
+                                  (label, uuid, barcode))
                     try:
                         file = self.get_file_node(archive, filename, session)
+                        self.log.info("found file node %s", file)
                     except NoResultFound:
                         self.log.warning("Couldn't find file %s in archive %s", filename, archive)
                         continue
