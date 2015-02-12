@@ -1,5 +1,3 @@
-import psqlgraph
-from copy import copy, deepcopy
 from gdcdatamodel.mappings import (
     participant_tree, participant_traversal,
     file_tree, file_traversal,
@@ -19,7 +17,7 @@ class PsqlGraph2JSON(object):
         Assumptions include:
 
         """
-        self.graph = psqlgraph_driver
+        self.g = psqlgraph_driver
         self.files, self.participants = [], []
         self.batch_size = 10
         self.leaf_nodes = ['center', 'tissue_source_site']
@@ -63,20 +61,24 @@ class PsqlGraph2JSON(object):
             self.copy_tree(original[node], new[node])
         return new
 
-    def combine_paths_from(self, node, paths):
-        base = self.graph.nodes().ids(node.node_id)
+    def combine_paths_from(self, ids, paths, labels=None, base=None):
+        if not base:
+            base = self.g.nodes().ids(ids)
         union = base
         for path in paths:
             union = union.union(base.path_end(path))
-        return union
+        if labels:
+            return union.labels(labels)
+        else:
+            return labels
 
     def denormalize_participant(self, node):
-        ptree = self.graph.nodes().tree(node.node_id, self.participant_tree)
+        ptree = self.g.nodes().tree(node.node_id, self.participant_tree)
         participant = self.walk_tree(
             node, ptree, {'participant': participant_tree}, [])[0]
         participant['files'] = []
         files = self.combine_paths_from(
-            node, participant_traversal['file']).labels('file').all()
+            node.node_id, participant_traversal['file'], 'file').all()
         get_file = lambda f: self.denormalize_file(
             f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
@@ -92,9 +94,9 @@ class PsqlGraph2JSON(object):
                 ptree.pop(node)
 
     def get_data_type_tree(self, f):
-        data_subtype = self.graph.nodes().ids(
+        data_subtype = self.g.nodes().ids(
             f.node_id).path_end(['data_subtype']).first()
-        data_type = self.graph.nodes().ids(
+        data_type = self.g.nodes().ids(
             f.node_id).path_end(['data_subtype', 'data_type']).first()
         if data_subtype and not data_type:
             return {data_subtype: {}}
@@ -103,11 +105,11 @@ class PsqlGraph2JSON(object):
         return {}
 
     def denormalize_file(self, f, ptree):
-        ftree = self.graph.nodes().tree(f.node_id, self.file_tree)
+        ftree = self.g.nodes().tree(f.node_id, self.file_tree)
         ftree[f].update(self.get_data_type_tree(f))
         doc = self.walk_tree(f, ftree, {'file': file_tree}, [])[0]
         relevant = {}
-        base = self.graph.nodes().ids(f.node_id)
+        base = self.g.nodes().ids(f.node_id)
         union = base
         for path in file_traversal.participant:
             union = union.union(base.path_whole(path))
@@ -126,16 +128,78 @@ class PsqlGraph2JSON(object):
         raise NotImplementedError()
 
     def get_nodes(self, label):
-        return self.graph.nodes()\
-                         .labels(label)\
-                         .yield_per(self.batch_size)
+        return self.g.nodes()\
+                     .labels(label)\
+                     .yield_per(self.batch_size)
 
     def walk_participants(self):
-        with self.graph.session_scope():
+        with self.g.session_scope():
             for p in self.get_participants():
                 yield self.denormalize_participant(p)
 
     def walk_files(self):
-        with self.graph.session_scope():
+        with self.g.session_scope():
             for f in self.get_files():
                 yield self.denormalize_file(f)
+
+    def denormalize_project(self, p):
+        doc = self._get_base_doc(p)
+
+        # Get programs
+        program = self.g.nodes().ids(p.node_id).path_end('program').first()
+
+        # Get participants
+        if program:
+            doc['program'] = self._get_base_doc(program)
+        parts = self.g.nodes().ids(p.node_id).path_end('participant').all()
+
+        # Get experimental strategies
+        exp_strat_paths = [list(path) + ['experimental_strategy']
+                           for path in participant_traversal['file']]
+        exp_strats = self.combine_paths_from(
+            [part.node_id for part in parts],
+            exp_strat_paths, 'experimental_strategy').all()
+        exp_strat_summaries = []
+        for exp_strat in exp_strats:
+            exp_strat_summaries.append({
+                'participant_count': self.combine_paths_from(
+                    exp_strat.node_id,
+                    [path[::-1]+['participant'] for path in exp_strat_paths],
+                    'participants').count(),
+                'file_count': self.g.nodes().ids(
+                    exp_strat.node_id).path_end('file').count(),
+                'experimental_strategy': exp_strat['name'],
+            })
+
+        # Get files
+        files = self.combine_paths_from(
+            [part.node_id for part in parts],
+            participant_traversal['file'], 'file').all()
+
+        # Get data types
+        data_type_summaries = []
+        data_type_paths = [['data_subtype']+list(path)[::-1]+['participant']
+                           for path in participant_traversal['file']]
+        data_types = self.g.nodes().ids(
+            [f.node_id for f in files]).path_end(
+            ['data_subtype', 'data_type']).all()
+        for data_type in data_types:
+            data_type_summaries.append({
+                'participant_count': self.combine_paths_from(
+                    [d.node_id for d in data_types],
+                    data_type_paths, 'participant').count(),
+                'data_type': data_type['name'],
+                'file_count': self.combine_paths_from(
+                    [d.node_id for d in data_types],
+                    ['data_subtype', 'file'], 'participant').count(),
+            })
+
+        # Compile summary
+        doc['summary'] = {
+            'participant_count': len(parts),
+            # 'experimental_strategies': exp_strat_summaries,
+            'file_count': len(files),
+            'file_size': sum([f['file_size'] for f in files]),
+            'data_types': data_type_summaries,
+        }
+        return doc

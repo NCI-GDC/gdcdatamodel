@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 import logging
 import argparse
-import json
-from itertools import islice
-from multiprocessing import Pool
 from psqlgraph import PsqlGraphDriver
 from zug.datamodel import psqlgraph2json
 from cdisutils.log import get_logger
@@ -24,9 +21,11 @@ def get_converter():
 
 
 def print_samples(conv):
-    for p in converter.get_nodes('participant').limit(5):
-        print p
-        participant, files = conv.denormalize_participant(p)
+    # for p in conv.get_nodes('participant').limit(5):
+    #     print p
+    #     participant, files = conv.denormalize_participant(p)
+    project = conv.g.nodes().labels('project').props({'name': 'LAML'}).one()
+    pprint(conv.denormalize_project(project))
 
 
 if __name__ == '__main__':
@@ -43,5 +42,5 @@ if __name__ == '__main__':
                         help='the number of processes')
     args = parser.parse_args()
     converter = get_converter()
-    with converter.graph.session_scope():
+    with converter.g.session_scope():
         print_samples(converter)
