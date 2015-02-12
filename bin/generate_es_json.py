@@ -38,7 +38,19 @@ def convert_participant(p):
             log.info(res)
 
 
-def print_samples(conv):
+def convert_project(p):
+    conv = get_converter()
+    if not args.no_es:
+        es = Elasticsearch(hosts=[args.es_host])
+    with conv.g.session_scope():
+        log.info(p)
+        project = conv.denormalize_project(p)
+    if not args.no_es:
+        res = es.index(index=args.es_index, doc_type="project", body=project)
+        log.info(res)
+
+
+def convert_participants(conv):
     log.info('Loading participants')
     if args.limit:
         participants = conv.get_nodes('participant').limit(args.limit).all()
@@ -47,6 +59,17 @@ def print_samples(conv):
     log.info('Found {} participants'.format(len(participants)))
     pool = Pool(args.processes)
     pool.map(convert_participant, participants)
+
+
+def convert_projects(conv):
+    log.info('Loading projects')
+    if args.limit:
+        projects = conv.get_nodes('project').limit(args.limit).all()
+    else:
+        projects = conv.get_nodes('project').all()
+    log.info('Found {} projects'.format(len(projects)))
+    pool = Pool(args.processes)
+    pool.map(convert_project, projects)
 
 
 if __name__ == '__main__':
@@ -63,13 +86,21 @@ if __name__ == '__main__':
                         help='the number of processes')
     parser.add_argument('-l', '--limit', default=0, type=int,
                         help='limit no. of nodes')
+    parser.add_argument('--no-projects', action='store_true',
+                        help='do not parse projects')
+    parser.add_argument('--no-participants', action='store_true',
+                        help='do not parse participants')
     parser.add_argument('--es-index', default='gdc_from_graph', type=str,
                         help='elasticsearch index')
     parser.add_argument('--es-host', default='elasticsearch.service.consul',
                         type=str, help='elasticsearch host')
     parser.add_argument('--no-es', action='store_true',
-                        help='do post to elasticsearch')
+                        help='do not post to elasticsearch')
     args = parser.parse_args()
+
     converter = get_converter()
     with converter.g.session_scope():
-        print_samples(converter)
+        if not args.no_projects:
+            convert_projects(converter)
+        if not args.no_participants:
+            convert_participants(converter)
