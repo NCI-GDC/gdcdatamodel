@@ -9,7 +9,8 @@ from elasticsearch import Elasticsearch
 from multiprocessing import Pool
 
 log = get_logger("json_generator")
-logging.root.setLevel(level=logging.INFO)
+logging.root.setLevel(level=logging.WARNING)
+log.setLevel(level=logging.INFO)
 args = None
 
 
@@ -45,6 +46,7 @@ def convert_project(p):
     with conv.g.session_scope():
         log.info(p)
         project = conv.denormalize_project(p)
+        pprint(project)
     if not args.no_es:
         res = es.index(index=args.es_index, doc_type="project", body=project)
         log.info(res)

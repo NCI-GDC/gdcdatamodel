@@ -4,7 +4,6 @@ from gdcdatamodel.mappings import (
     annotation_tree, annotation_traversal,
     ONE_TO_ONE, ONE_TO_MANY
 )
-from pprint import pprint
 
 
 class PsqlGraph2JSON(object):
@@ -149,7 +148,6 @@ class PsqlGraph2JSON(object):
         This is a pretty crazy graph traversal.
 
         """
-
         doc = self._get_base_doc(p)
 
         # Get programs
@@ -167,12 +165,13 @@ class PsqlGraph2JSON(object):
             [part.node_id for part in parts],
             exp_strat_paths, 'experimental_strategy').all()
         exp_strat_summaries = []
+        exp_paths = [list(path[::-1])+['participant']
+                     for path in participant_traversal['file']]
         for exp_strat in exp_strats:
             exp_strat_summaries.append({
                 'participant_count': self.combine_paths_from(
-                    exp_strat.node_id,
-                    [path[::-1]+['participant'] for path in exp_strat_paths],
-                    'participants').count(),
+                    exp_strat.node_id, exp_paths,
+                    'participant').count(),
                 'file_count': self.g.nodes().ids(
                     exp_strat.node_id).path_end('file').count(),
                 'experimental_strategy': exp_strat['name'],
