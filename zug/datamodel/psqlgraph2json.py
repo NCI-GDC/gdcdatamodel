@@ -24,6 +24,7 @@ class PsqlGraph2JSON(object):
         self.batch_size = 10
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.file_tree = self.parse_tree(file_tree, {})
+        self.file_tree.pop('data_subtype')
         self.participant_tree = self.parse_tree(participant_tree, {})
         self.annotation_tree = self.parse_tree(annotation_tree, {})
 
@@ -90,8 +91,20 @@ class PsqlGraph2JSON(object):
             if node not in relevant_nodes:
                 ptree.pop(node)
 
+    def get_data_type_tree(self, f):
+        data_subtype = self.graph.nodes().ids(
+            f.node_id).path_end(['data_subtype']).first()
+        data_type = self.graph.nodes().ids(
+            f.node_id).path_end(['data_subtype', 'data_type']).first()
+        if data_subtype and not data_type:
+            return {data_subtype: {}}
+        elif data_type:
+            return {data_subtype: {data_type: {}}}
+        return {}
+
     def denormalize_file(self, f, ptree):
         ftree = self.graph.nodes().tree(f.node_id, self.file_tree)
+        ftree[f].update(self.get_data_type_tree(f))
         doc = self.walk_tree(f, ftree, {'file': file_tree}, [])[0]
         relevant = {}
         base = self.graph.nodes().ids(f.node_id)

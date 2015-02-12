@@ -24,8 +24,10 @@ def get_converter():
 
 
 def print_samples(conv):
-    for p in converter.get_nodes('participant').limit(20):
+    for p in converter.get_nodes('participant').limit(5):
+        print p
         participant, files = conv.denormalize_participant(p)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
