@@ -105,11 +105,11 @@ def classify(archive, filename):
 class TCGADCCEdgeBuilder(object):
     def __init__(self, file_node, pg_driver):
         self.file_node = file_node
-        self.pg_driver = pg_driver 
-        self.archive=self._get_archive()    
+        self.pg_driver = pg_driver
+        self.archive=self._get_archive()
         self.log = get_logger("tcga_dcc_edgebuilder_"+
                         str(os.getpid())+"_"+self.name)
-        
+
     @property
     def name(self):
         return self.archive["archive_name"]
@@ -146,11 +146,11 @@ class TCGADCCEdgeBuilder(object):
                                 self.archive['center_type'],
                                 self.archive['center_name'])
         else:
-            self.log.warning("more than one center with type %s and namespace %s", 
+            self.log.warning("more than one center with type %s and namespace %s",
                                 self.archive['center_type'],
                                 self.archive['center_name'])
 
-    
+
     def tie_file_to_atribute(self, file_node, attr, value, session):
         LABEL_MAP = {
             "platform": "generated_from",
@@ -333,7 +333,7 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
-    
+
     def get_file_size_from_http(self, filename):
         base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
         file_url = urljoin(base_url, filename)
@@ -372,34 +372,47 @@ class TCGADCCArchiveSyncer(object):
 
     def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database."""
-        file_node = self.lookup_file_in_pg(self.archive_node,
-                                           filename, session)
+        file_node = self.lookup_file_in_pg(self.archive_node, filename, session)
+        md5, md5_source = self.determine_md5(filename, dcc_md5)
         if file_node:
             node_id = file_node.node_id
             self.log.info("file %s in already in postgres with id %s, not inserting", filename, node_id)
+            file_node = self.pg_driver.node_update(
+                file_node,
+                acl=self.acl,
+                properties={
+                    "file_name": filename,
+                    "md5sum": md5,
+                    "file_size": self.determine_file_size(filename),
+                    "submitter_id": None,
+                },
+                system_annotations={
+                    "source": "tcga_dcc",
+                    "md5_source": md5_source,
+                },
+                session=session
+            )
         else:
             node_id = self.signpost.create().did
+            file_node = self.pg_driver.node_merge(
+                node_id=node_id,
+                label="file",
+                acl=self.acl,
+                properties={
+                    "file_name": filename,
+                    "md5sum": md5,
+                    "file_size": self.determine_file_size(filename),
+                    "state": "submitted",
+                    "state_comment": None,
+                    "submitter_id": None,
+                },
+                system_annotations={
+                    "source": "tcga_dcc",
+                    "md5_source": md5_source,
+                },
+                session=session
+            )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
-        md5, md5_source = self.determine_md5(filename, dcc_md5)
-        self.log.info("merging file %s into graph with id %s", filename, node_id)
-        file_node = self.pg_driver.node_merge(
-            node_id=node_id,
-            label="file",
-            acl=self.acl,
-            properties={
-                "file_name": filename,
-                "md5sum": md5,
-                "file_size": self.determine_file_size(filename),
-                "state": "submitted",
-                "state_comment": None,
-                "submitter_id": None,
-            },
-            system_annotations={
-                "source": "tcga_dcc",
-                "md5_source": md5_source,
-            },
-            session=session
-        )
         maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
@@ -413,11 +426,8 @@ class TCGADCCArchiveSyncer(object):
                 label="member_of"
             )
             self.pg_driver.edge_insert(edge_to_archive, session=session)
-        # TODO tie files to the center they were submitted by.
-        # skipping this for now because it's some work to find the
-        # correct center for an archive
-        edgeBuilder=TCGADCCEdgeBuilder(file_node,self.pg_driver)
-        edgeBuilder.build()
+        edge_builder = TCGADCCEdgeBuilder(file_node, self.pg_driver)
+        edge_builder.build()
         return file_node
 
     def get_manifest(self):
