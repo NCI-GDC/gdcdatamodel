@@ -28,7 +28,6 @@ from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
 
-
 class InvalidChecksumException(Exception):
     pass
 
@@ -76,8 +75,8 @@ CLASSIFICATION_ATTRS = ["data_subtype", "data_format", "platform",
 
 
 def classify(archive, filename):
-    """Given a filename and an archive that it came from, attempt to
-    classify it. Return a dictionary representing the
+    """given a filename and an archive that it came from, attempt to
+    classify it. return a dictionary representing the
     classification.
     """
     if archive["data_level"] == "mage-tab":
@@ -103,6 +102,118 @@ def classify(archive, filename):
             return result
     raise RuntimeError("file {}/{} failed to classify".format(archive["archive_name"], filename))
 
+class TCGADCCEdgeBuilder(object):
+    def __init__(self, file_node, pg_driver):
+        self.file_node = file_node
+        self.pg_driver = pg_driver 
+        self.archive=self._get_archive()    
+        self.log = get_logger("tcga_dcc_edgebuilder_"+
+                        str(os.getpid())+"_"+self.name)
+        
+    @property
+    def name(self):
+        return self.archive["archive_name"]
+
+    def _get_archive(self):
+        with self.pg_driver.session_scope():
+            return self.pg_driver.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
+
+    def build(self):
+        with self.pg_driver.session_scope() as session:
+            self.classify(self.file_node, session)
+            self.tie_file_to_center(self.file_node,session)
+
+    def tie_file_to_center(self,file_node,session):
+        query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
+        count = query.count()
+        if count == 1:
+            attr_node = query.first()
+            maybe_edge_to_center = self.pg_driver.edge_lookup_one(
+                label='submitted_by',
+                src_id=file_node.node_id,
+                dst_id=attr_node.node_id
+            )
+            if not maybe_edge_to_center:
+                edge_to_attr_node = PsqlEdge(
+                    label='submitted_by',
+                    src_id=file_node.node_id,
+                    dst_id=attr_node.node_id
+                )
+                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+
+        elif count == 0:
+            self.log.warning("center with type %s and namespace %s not found" ,
+                                self.archive['center_type'],
+                                self.archive['center_name'])
+        else:
+            self.log.warning("more than one center with type %s and namespace %s", 
+                                self.archive['center_type'],
+                                self.archive['center_name'])
+
+    
+    def tie_file_to_atribute(self, file_node, attr, value, session):
+        LABEL_MAP = {
+            "platform": "generated_from",
+            "data_subtype": "member_of",
+            "data_format": "member_of",
+            "tag": "member_of",
+            "experimental_strategy": "member_of"
+        }
+        if not isinstance(value, list):
+            # this is to handle the thing where tag is
+            # sometimes a list and sometimes a string
+            value = [value]
+        for val in value:
+            attr_node = self.pg_driver.node_lookup_one(
+                label=attr,
+                property_matches={"name": val},
+                session=session
+            )
+            if not attr_node:
+                self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
+            maybe_edge_to_attr_node = self.pg_driver.edge_lookup_one(
+                label=LABEL_MAP[attr],
+                src_id=file_node.node_id,
+                dst_id=attr_node.node_id
+            )
+            if not maybe_edge_to_attr_node:
+                edge_to_attr_node = PsqlEdge(
+                    label=LABEL_MAP[attr],
+                    src_id=file_node.node_id,
+                    dst_id=attr_node.node_id
+                )
+                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+
+    def classify(self, file_node, session):
+        classification = classify(self.archive, file_node["file_name"])
+        if classification["data_format"] == "to_be_ignored":
+            self.log.info("ignoring %s for classification",
+                          file_node["file_name"])
+            return file_node
+        # TODO this is a lot of edge cases, needs to be simplified
+        if (not classification or "to_be_determined" in classification.values()
+            or "to_be_determined_protein_exp" in classification.values()
+            or classification == {"data_format": "TXT"}):
+            self.log.error("file %s classified as %s, marking",
+                           file_node["file_name"], classification)
+            file_node.system_annotations["unclassified"] = True
+            return file_node
+        for k, v in classification.iteritems():
+            if k.startswith("_"):
+                file_node.system_annotations[k] = v
+        # we need to create edges to: data_subtype, data_format,
+        # platform, experimental_strategy, tag.
+        #
+        # TODO drop any existing classification?
+        for attribute in CLASSIFICATION_ATTRS:
+            if classification.get(attribute):
+                self.tie_file_to_atribute(file_node, attribute,
+                                          classification[attribute],
+                                          session)
+            else:
+                self.log.warning("not tieing %s (node %s) to a %s",
+                                 file_node["file_name"], file_node, attribute)
+        return file_node
 
 class TCGADCCArchiveSyncer(object):
 
@@ -222,39 +333,7 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
-    def tie_file_to_atribute(self, file_node, attr, value, session):
-        LABEL_MAP = {
-            "platform": "generated_from",
-            "data_subtype": "member_of",
-            "data_format": "member_of",
-            "tag": "member_of",
-            "experimental_strategy": "member_of"
-        }
-        if not isinstance(value, list):
-            # this is to handle the thing where tag is
-            # sometimes a list and sometimes a string
-            value = [value]
-        for val in value:
-            attr_node = self.pg_driver.node_lookup_one(
-                label=attr,
-                property_matches={"name": val},
-                session=session
-            )
-            if not attr_node:
-                self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
-            maybe_edge_to_attr_node = self.pg_driver.edge_lookup_one(
-                label=LABEL_MAP[attr],
-                src_id=file_node.node_id,
-                dst_id=attr_node.node_id
-            )
-            if not maybe_edge_to_attr_node:
-                edge_to_attr_node = PsqlEdge(
-                    label=LABEL_MAP[attr],
-                    src_id=file_node.node_id,
-                    dst_id=attr_node.node_id
-                )
-                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
-
+    
     def get_file_size_from_http(self, filename):
         base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
         file_url = urljoin(base_url, filename)
@@ -264,36 +343,6 @@ class TCGADCCArchiveSyncer(object):
         resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
         return int(resp.headers["content-length"])
 
-    def classify(self, file_node, session):
-        classification = classify(self.archive, file_node["file_name"])
-        if classification["data_format"] == "to_be_ignored":
-            self.log.info("ignoring %s for classification",
-                          file_node["file_name"])
-            return file_node
-        # TODO this is a lot of edge cases, needs to be simplified
-        if (not classification or "to_be_determined" in classification.values()
-            or "to_be_determined_protein_exp" in classification.values()
-            or classification == {"data_format": "TXT"}):
-            self.log.error("file %s classified as %s, marking",
-                           file_node["file_name"], classification)
-            file_node.system_annotations["unclassified"] = True
-            return file_node
-        for k, v in classification.iteritems():
-            if k.startswith("_"):
-                file_node.system_annotations[k] = v
-        # we need to create edges to: data_subtype, data_format,
-        # platform, experimental_strategy, tag.
-        #
-        # TODO drop any existing classification?
-        for attribute in CLASSIFICATION_ATTRS:
-            if classification.get(attribute):
-                self.tie_file_to_atribute(file_node, attribute,
-                                          classification[attribute],
-                                          session)
-            else:
-                self.log.warning("not tieing %s (node %s) to a %s",
-                                 file_node["file_name"], file_node, attribute)
-        return file_node
 
     def set_file_state(self, file_node, state):
         self.pg_driver.node_update(file_node, properties={"state": state})
@@ -367,7 +416,8 @@ class TCGADCCArchiveSyncer(object):
         # TODO tie files to the center they were submitted by.
         # skipping this for now because it's some work to find the
         # correct center for an archive
-        self.classify(file_node, session)
+        edgeBuilder=TCGADCCEdgeBuilder(file_node,self.pg_driver)
+        edgeBuilder.build()
         return file_node
 
     def get_manifest(self):
