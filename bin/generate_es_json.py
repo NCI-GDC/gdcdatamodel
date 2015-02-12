@@ -5,9 +5,11 @@ from psqlgraph import PsqlGraphDriver
 from zug.datamodel import psqlgraph2json
 from cdisutils.log import get_logger
 from pprint import pprint
+from elasticsearch import Elasticsearch
+from multiprocessing import Pool
 
 log = get_logger("json_generator")
-logging.root.setLevel(level=logging.ERROR)
+logging.root.setLevel(level=logging.INFO)
 args = None
 
 
@@ -20,12 +22,31 @@ def get_converter():
     ))
 
 
+def convert_participant(p):
+    conv = get_converter()
+    if not args.no_es:
+        es = Elasticsearch(hosts=[args.es_host])
+    with conv.g.session_scope():
+        log.info(p)
+        participant, files = conv.denormalize_participant(p)
+    if not args.no_es:
+        res = es.index(
+            index=args.es_index, doc_type="participant", body=participant)
+        log.info(res)
+        for f in files:
+            res = es.index(index=args.es_index, doc_type="file", body=f)
+            log.info(res)
+
+
 def print_samples(conv):
-    # for p in conv.get_nodes('participant').limit(5):
-    #     print p
-    #     participant, files = conv.denormalize_participant(p)
-    project = conv.g.nodes().labels('project').props({'name': 'LAML'}).one()
-    pprint(conv.denormalize_project(project))
+    log.info('Loading participants')
+    if args.limit:
+        participants = conv.get_nodes('participant').limit(args.limit).all()
+    else:
+        participants = conv.get_nodes('participant').all()
+    log.info('Found {} participants'.format(len(participants)))
+    pool = Pool(args.processes)
+    pool.map(convert_participant, participants)
 
 
 if __name__ == '__main__':
@@ -38,8 +59,16 @@ if __name__ == '__main__':
                         help='the password for import user')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='the postgres server host')
-    parser.add_argument('-n', '--nproc', default=8, type=int,
+    parser.add_argument('-n', '--processes', default=8, type=int,
                         help='the number of processes')
+    parser.add_argument('-l', '--limit', default=0, type=int,
+                        help='limit no. of nodes')
+    parser.add_argument('--es-index', default='gdc_from_graph', type=str,
+                        help='elasticsearch index')
+    parser.add_argument('--es-host', default='elasticsearch.service.consul',
+                        type=str, help='elasticsearch host')
+    parser.add_argument('--no-es', action='store_true',
+                        help='do post to elasticsearch')
     args = parser.parse_args()
     converter = get_converter()
     with converter.g.session_scope():

@@ -73,6 +73,7 @@ class PsqlGraph2JSON(object):
             return labels
 
     def denormalize_participant(self, node):
+        node = self.g.nodes().ids(node.node_id).one()
         ptree = self.g.nodes().tree(node.node_id, self.participant_tree)
         participant = self.walk_tree(
             node, ptree, {'participant': participant_tree}, [])[0]
@@ -105,6 +106,7 @@ class PsqlGraph2JSON(object):
         return {}
 
     def denormalize_file(self, f, ptree):
+        f = self.g.nodes().ids(f.node_id).one()
         ftree = self.g.nodes().tree(f.node_id, self.file_tree)
         ftree[f].update(self.get_data_type_tree(f))
         doc = self.walk_tree(f, ftree, {'file': file_tree}, [])[0]
