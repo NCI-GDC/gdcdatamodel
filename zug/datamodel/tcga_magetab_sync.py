@@ -6,6 +6,8 @@ import re
 from collections import defaultdict
 
 from psqlgraph import PsqlEdge
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from gdcdatamodel import node_avsc_object, edge_avsc_object
 from sqlalchemy.types import Integer
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -219,12 +221,15 @@ class TCGAMAGETABSyncer(object):
         self.archive = archive
         self.log = get_logger("tcga_magetab_sync_{}_{}".format(os.getpid(), self.archive["archive_name"]))
         self.pg_driver = pg_driver
+        self.pg_driver.node_validator = AvroNodeValidator(node_avsc_object)
+        self.pg_driver.edge_validator = AvroEdgeValidator(edge_avsc_object)
         submitter_id, rev = get_submitter_id_and_rev(self.archive["archive_name"])
         with self.pg_driver.session_scope():
             try:
-                self.archive_node = self.pg_driver.nodes().labels("archive")\
-                                                          .props({"submitter_id": submitter_id,
-                                                                  "revision": rev}).one()
+                self.archive_node = self.pg_driver.nodes()\
+                                                  .labels("archive")\
+                                                  .props({"submitter_id": submitter_id, "revision": int(rev)})\
+                                                  .one()
             except Exception:
                 self.log.exception("Couldn't load exactly one archive from graph")
                 raise

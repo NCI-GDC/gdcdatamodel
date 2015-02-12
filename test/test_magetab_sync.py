@@ -36,7 +36,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
         )
         self.driver.node_insert(node)
         return {
-            "archive_name": fixture + "fake_test_archive.1.2.0",
+            "archive_name": fixture + "fake_test_archive.1." + str(rev) +".0",
             "disease_code": "FAKE",
             "batch": 1,
             "revision": rev
