@@ -324,7 +324,7 @@ class TCGAMAGETABSyncer(object):
                 file_node = self.pg_driver.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
-                    system_annotation_matches={"source": "cghub"},
+                    system_annotation_matches={"source": "tcga_cghub"},
                     session=session
                 ).one()
             else:
