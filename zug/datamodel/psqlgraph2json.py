@@ -62,15 +62,23 @@ class PsqlGraph2JSON(object):
             self.copy_tree(original[node], new[node])
         return new
 
+    def combine_paths_from(self, node, paths):
+        base = self.graph.nodes().ids(node.node_id)
+        union = base
+        for path in paths:
+            union = union.union(base.path_end(path))
+        return union
+
     def denormalize_participant(self, node):
         ptree = self.graph.nodes().tree(node.node_id, self.participant_tree)
         participant = self.walk_tree(
             node, ptree, {'participant': participant_tree}, [])[0]
         participant['files'] = []
-        for path in participant_traversal['file']:
-            for f in self.graph.nodes().ids(node.node_id).path_end(path).all():
-                participant['files'].append(self.denormalize_file(
-                    f, self.copy_tree(ptree, {})))
+        files = self.combine_paths_from(
+            node, participant_traversal['file']).labels('file').all()
+        get_file = lambda f: self.denormalize_file(
+            f, self.copy_tree(ptree, {}))
+        participant['files'] = map(get_file, files)
         return participant, participant['files']
 
     def prune_participant(self, relevant_nodes, ptree, keys):
@@ -83,7 +91,8 @@ class PsqlGraph2JSON(object):
                 ptree.pop(node)
 
     def denormalize_file(self, f, ptree):
-        doc = self._get_base_doc(f)
+        ftree = self.graph.nodes().tree(f.node_id, self.file_tree)
+        doc = self.walk_tree(f, ftree, {'file': file_tree}, [])[0]
         relevant = {}
         base = self.graph.nodes().ids(f.node_id)
         union = base
