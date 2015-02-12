@@ -6,6 +6,7 @@ ONE_TO_MANY = '__one_to_many__'
 
 # File hierarchy
 file_tree = Dict()
+file_tree.corr = (ONE_TO_MANY, 'files')
 file_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
 file_tree.archive.corr = (ONE_TO_MANY, 'archives')
 file_tree.center.corr = (ONE_TO_ONE, 'center')
