@@ -219,10 +219,15 @@ class TCGAMAGETABSyncer(object):
         self.archive = archive
         self.log = get_logger("tcga_magetab_sync_{}".format(self.archive["archive_name"]))
         self.pg_driver = pg_driver
-        submitter_id, _ = get_submitter_id_and_rev(self.archive["archive_name"])
+        submitter_id, rev = get_submitter_id_and_rev(self.archive["archive_name"])
         with self.pg_driver.session_scope():
-            self.archive_node = self.pg_driver.nodes().labels("archive")\
-                                                      .props({"submitter_id": submitter_id}).one()
+            try:
+                self.archive_node = self.pg_driver.nodes().labels("archive")\
+                                                          .props({"submitter_id": submitter_id,
+                                                                  "revision": rev}).one()
+            except Exception:
+                self.log.exception("Couldn't load exactly one archive from graph")
+                raise
         self.log.info("found archive node for this magetab: %s", self.archive_node)
         self._cache_path = cache_path
         if not lazy:
@@ -378,7 +383,7 @@ class TCGAMAGETABSyncer(object):
                     "source": "tcga_magetab",
                 },
             )
-            self.log.info("trying file to biospecemin: %s", edge)
+            self.log.info("tieing file to biospecemin: %s", edge)
             self.pg_driver.edge_insert(edge, session=session)
 
     def delete_old_edges(self, session):
