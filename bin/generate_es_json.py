@@ -24,10 +24,8 @@ def get_converter():
 
 
 def print_samples(conv):
-    # p = converter.get_nodes('participant').first()
-    p = conv.graph.nodes().ids('53245616-e095-4616-89bb-6062669122da').one()
-    participant, files = conv.denormalize_participant(p)
-    pprint(files)
+    for p in converter.get_nodes('participant').limit(20):
+        participant, files = conv.denormalize_participant(p)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
