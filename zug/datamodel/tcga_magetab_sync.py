@@ -373,7 +373,8 @@ class TCGAMAGETABSyncer(object):
                 dst_id=bio.node_id,
                 system_annotations={
                     "group_id": self.group_id,
-                    "revision": self.archive["revision"]
+                    "revision": self.archive["revision"],
+                    "source": "tcga_magetab",
                 },
             )
             self.pg_driver.edge_insert(edge, session=session)
@@ -382,6 +383,7 @@ class TCGAMAGETABSyncer(object):
         """We need to first find all the edges produced by previous runs of
         this archive and delete them."""
         to_delete = session.query(PsqlEdge)\
+                           .filter(PsqlEdge.system_annotations["source"].astext == "tcga_magetab")\
                            .filter(PsqlEdge.system_annotations["group_id"].astext == self.group_id)\
                            .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.archive["revision"])\
                            .all()
@@ -403,7 +405,8 @@ class TCGAMAGETABSyncer(object):
                 dst_id=file.node_id,
                 system_annotations={
                     "group_id": self.group_id,
-                    "revision": self.archive["revision"]
+                    "revision": self.archive["revision"],
+                    "source": "tcga_magetab",
                 }
             )
             self.pg_driver.edge_insert(edge_to_archive)
