@@ -9,8 +9,8 @@ from psqlgraph import PsqlGraphDriver
 def sync_magetab(args, archive):
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
                              args.pg_pass, args.pg_database)
-    syncer = TCGAMAGETABSyncer(archive, pg_driver=driver)
     try:
+        syncer = TCGAMAGETABSyncer(archive, pg_driver=driver)
         syncer.sync()  # ugh
     except Exception:  # we use Exception so as not to catch KeyboardInterrupt et al.
         syncer.log.exception("caught exception while syncing")
