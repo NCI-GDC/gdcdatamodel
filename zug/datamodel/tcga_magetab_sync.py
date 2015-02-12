@@ -224,8 +224,6 @@ class TCGAMAGETABSyncer(object):
             self.archive_node = self.pg_driver.nodes().labels("archive")\
                                                       .props({"submitter_id": submitter_id}).one()
         self.log.info("found archive node for this magetab: %s", self.archive_node)
-        self.group_id = "{}_{}".format(self.archive["disease_code"], self.archive["batch"])
-
         self._cache_path = cache_path
         if not lazy:
             self.fetch_sdrf()
@@ -375,7 +373,7 @@ class TCGAMAGETABSyncer(object):
                 src_id=file.node_id,
                 dst_id=bio.node_id,
                 system_annotations={
-                    "group_id": self.group_id,
+                    "submitter_id": self.archive_node["submitter_id"],
                     "revision": self.archive["revision"],
                     "source": "tcga_magetab",
                 },
@@ -388,7 +386,7 @@ class TCGAMAGETABSyncer(object):
         this archive and delete them."""
         to_delete = session.query(PsqlEdge)\
                            .filter(PsqlEdge.system_annotations["source"].astext == "tcga_magetab")\
-                           .filter(PsqlEdge.system_annotations["group_id"].astext == self.group_id)\
+                           .filter(PsqlEdge.system_annotations["submitter_id"].astext == self.archive_node["submitter_id"])\
                            .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.archive["revision"])\
                            .all()
         self.log.info("found %s edges to delete from previous revisions", len(to_delete))
@@ -408,7 +406,7 @@ class TCGAMAGETABSyncer(object):
                 src_id=self.archive_node.node_id,
                 dst_id=file.node_id,
                 system_annotations={
-                    "group_id": self.group_id,
+                    "submitter_id": self.archive_node["submitter_id"],
                     "revision": self.archive["revision"],
                     "source": "tcga_magetab",
                 }
