@@ -143,6 +143,11 @@ class PsqlGraph2JSON(object):
                 yield self.denormalize_file(f)
 
     def denormalize_project(self, p):
+        """
+        This is a pretty crazy graph traversal.
+
+        """
+
         doc = self._get_base_doc(p)
 
         # Get programs
@@ -189,15 +194,15 @@ class PsqlGraph2JSON(object):
                     [d.node_id for d in data_types],
                     data_type_paths, 'participant').count(),
                 'data_type': data_type['name'],
-                'file_count': self.combine_paths_from(
-                    [d.node_id for d in data_types],
-                    ['data_subtype', 'file'], 'participant').count(),
+                'file_count': self.g.nodes().ids(
+                    [d.node_id for d in data_types]).path_end(
+                        ['data_subtype', 'file']).count(),
             })
 
         # Compile summary
         doc['summary'] = {
             'participant_count': len(parts),
-            # 'experimental_strategies': exp_strat_summaries,
+            'experimental_strategies': exp_strat_summaries,
             'file_count': len(files),
             'file_size': sum([f['file_size'] for f in files]),
             'data_types': data_type_summaries,
