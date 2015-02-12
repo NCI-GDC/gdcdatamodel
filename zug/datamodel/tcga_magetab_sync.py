@@ -363,6 +363,10 @@ class TCGAMAGETABSyncer(object):
             session=session
         )
         if not maybe_edge:
+            if file.system_annotations["source"] == "tcga_cghub":
+                self.log.warning("cghub file %s should be tied to %s %s but is not",
+                                 file, label, (uuid, barcode))
+                return
             edge = PsqlEdge(
                 label="data_from",
                 src_id=file.node_id,
