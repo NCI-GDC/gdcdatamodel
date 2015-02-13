@@ -379,7 +379,7 @@ class TCGADCCArchiveSyncer(object):
         if file_node:
             node_id = file_node.node_id
             self.log.info("file %s in already in postgres with id %s, not inserting", filename, node_id)
-            file_node = self.pg_driver.node_update(
+            self.pg_driver.node_update(
                 file_node,
                 acl=self.acl,
                 properties={
