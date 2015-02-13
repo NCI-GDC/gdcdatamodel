@@ -524,7 +524,7 @@ class TCGADCCArchiveSyncer(object):
             resp = self.get_with_auth(self.archive["dcc_archive_url"],
                                       headers={"Range": range}, stream=True)
             self.log.info("writing chunks to temp file")
-            for chunk in resp.iter_content(chunk_size=16000):
+            for chunk in resp.iter_content(chunk_size=10000000):
                 self.temp_file.write(chunk)
         temp_file_len = self.temp_file.tell()
         if temp_file_len == content_length:
