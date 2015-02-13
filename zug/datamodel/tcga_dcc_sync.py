@@ -17,8 +17,9 @@ import requests
 from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
 from libcloud.storage.drivers.local import LocalStorageDriver
+from libcloud.common.types import LibcloudError
 
-from psqlgraph import PsqlNode, PsqlEdge
+from psqlgraph import PsqlEdge
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 
 from gdcdatamodel import node_avsc_object, edge_avsc_object
@@ -27,6 +28,7 @@ from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
+
 
 class InvalidChecksumException(Exception):
     pass
@@ -570,7 +572,18 @@ class TCGADCCArchiveSyncer(object):
                           node["file_name"])
             return
         name = self.full_name(node["file_name"])
-        obj = self.upload_data(self.tarball.extractfile(name), name)
+        tries = 0
+        while True:
+            tries += 1
+            try:
+                obj = self.upload_data(self.tarball.extractfile(name), name)
+                break
+            except LibcloudError as e:
+                if tries > 10:
+                    self.log.error("couldn't upload in 10 tries, failing")
+                    raise e
+                else:
+                    self.log.warning("caught %s while trying to upload, retrying", e)
         new_url = url_for(obj)
         doc.urls = [new_url]
         doc.patch()
@@ -591,7 +604,7 @@ class TCGADCCArchiveSyncer(object):
         except BaseException as e:
             for err_cls, state in error_states.iteritems():
                 if isinstance(e, err_cls):
-                    self.log.warning("%s caught, setting %s to %s", e, file, state)
+                    self.log.warning("%s caught, setting %s to %s", err_cls.__name__, file, state)
                     self.set_file_state(file, state)
                     return
             self.log.exception("failure while trying to move %s from %s to %s via %s",
