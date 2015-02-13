@@ -104,13 +104,14 @@ def classify(archive, filename):
             return result
     raise RuntimeError("file {}/{} failed to classify".format(archive["archive_name"], filename))
 
+
 class TCGADCCEdgeBuilder(object):
-    def __init__(self, file_node, pg_driver):
+
+    def __init__(self, file_node, pg_driver, logger):
         self.file_node = file_node
         self.pg_driver = pg_driver
-        self.archive=self._get_archive()
-        self.log = get_logger("tcga_dcc_edgebuilder_"+
-                        str(os.getpid())+"_"+self.name)
+        self.archive = self._get_archive()
+        self.log = logger
 
     @property
     def name(self):
@@ -123,9 +124,9 @@ class TCGADCCEdgeBuilder(object):
     def build(self):
         with self.pg_driver.session_scope() as session:
             self.classify(self.file_node, session)
-            self.tie_file_to_center(self.file_node,session)
+            self.tie_file_to_center(self.file_node, session)
 
-    def tie_file_to_center(self,file_node,session):
+    def tie_file_to_center(self, file_node, session):
         query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
         count = query.count()
         if count == 1:
@@ -136,21 +137,20 @@ class TCGADCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_center:
-                edge_to_attr_node = PsqlEdge(
+                edge_to_center = PsqlEdge(
                     label='submitted_by',
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id
                 )
-                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
-
+                self.pg_driver.edge_insert(edge_to_center, session=session)
         elif count == 0:
-            self.log.warning("center with type %s and namespace %s not found" ,
-                                self.archive['center_type'],
-                                self.archive['center_name'])
+            self.log.warning("center with type %s and namespace %s not found",
+                             self.archive['center_type'],
+                             self.archive['center_name'])
         else:
             self.log.warning("more than one center with type %s and namespace %s",
-                                self.archive['center_type'],
-                                self.archive['center_name'])
+                             self.archive['center_type'],
+                             self.archive['center_name'])
 
 
     def tie_file_to_atribute(self, file_node, attr, value, session):
@@ -428,7 +428,7 @@ class TCGADCCArchiveSyncer(object):
                 label="member_of"
             )
             self.pg_driver.edge_insert(edge_to_archive, session=session)
-        edge_builder = TCGADCCEdgeBuilder(file_node, self.pg_driver)
+        edge_builder = TCGADCCEdgeBuilder(file_node, self.pg_driver, self.log)
         edge_builder.build()
         return file_node
 
