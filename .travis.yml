@@ -10,7 +10,6 @@ addons:
   postgresql: '9.4'
 before_install:
   - echo -e 'Host github.com\n\tStrictHostKeyChecking no\n' >> ~/.ssh/config
-  - sudo apt-get update
   - sudo apt-get install libxml2-dev libxslt-dev python-dev
 install:
   - python setup.py install
