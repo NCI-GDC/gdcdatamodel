@@ -91,7 +91,8 @@ def main():
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
                              args.pg_pass, args.pg_database)
     archives = list(LatestURLParser())
-    all_archive_nodes = driver.nodes().labels("archive").all()
+    with driver.session_scope():
+        all_archive_nodes = driver.nodes().labels("archive").all()
     imported_names = [a.system_annotations["archive_name"]
                       for a in all_archive_nodes
                       if a.system_annotations.get("archive_name")]
