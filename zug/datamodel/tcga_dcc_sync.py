@@ -17,8 +17,9 @@ import requests
 from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
 from libcloud.storage.drivers.local import LocalStorageDriver
+from libcloud.common.types import LibcloudError
 
-from psqlgraph import PsqlNode, PsqlEdge
+from psqlgraph import PsqlEdge
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 
 from gdcdatamodel import node_avsc_object, edge_avsc_object
@@ -27,6 +28,12 @@ from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
+
+import libcloud.storage.drivers.s3
+# upload in 500MB chunks
+libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
+
+
 
 class InvalidChecksumException(Exception):
     pass
@@ -102,14 +109,15 @@ def classify(archive, filename):
             return result
     raise RuntimeError("file {}/{} failed to classify".format(archive["archive_name"], filename))
 
+
 class TCGADCCEdgeBuilder(object):
-    def __init__(self, file_node, pg_driver):
+
+    def __init__(self, file_node, pg_driver, logger):
         self.file_node = file_node
-        self.pg_driver = pg_driver 
-        self.archive=self._get_archive()    
-        self.log = get_logger("tcga_dcc_edgebuilder_"+
-                        str(os.getpid())+"_"+self.name)
-        
+        self.pg_driver = pg_driver
+        self.archive = self._get_archive()
+        self.log = logger
+
     @property
     def name(self):
         return self.archive["archive_name"]
@@ -121,9 +129,9 @@ class TCGADCCEdgeBuilder(object):
     def build(self):
         with self.pg_driver.session_scope() as session:
             self.classify(self.file_node, session)
-            self.tie_file_to_center(self.file_node,session)
+            self.tie_file_to_center(self.file_node, session)
 
-    def tie_file_to_center(self,file_node,session):
+    def tie_file_to_center(self, file_node, session):
         query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
         count = query.count()
         if count == 1:
@@ -134,23 +142,21 @@ class TCGADCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_center:
-                edge_to_attr_node = PsqlEdge(
+                edge_to_center = PsqlEdge(
                     label='submitted_by',
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id
                 )
-                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
-
+                self.pg_driver.edge_insert(edge_to_center, session=session)
         elif count == 0:
-            self.log.warning("center with type %s and namespace %s not found" ,
-                                self.archive['center_type'],
-                                self.archive['center_name'])
+            self.log.warning("center with type %s and namespace %s not found",
+                             self.archive['center_type'],
+                             self.archive['center_name'])
         else:
-            self.log.warning("more than one center with type %s and namespace %s", 
-                                self.archive['center_type'],
-                                self.archive['center_name'])
+            self.log.warning("more than one center with type %s and namespace %s",
+                             self.archive['center_type'],
+                             self.archive['center_name'])
 
-    
     def tie_file_to_atribute(self, file_node, attr, value, session):
         LABEL_MAP = {
             "platform": "generated_from",
@@ -333,7 +339,7 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
-    
+
     def get_file_size_from_http(self, filename):
         base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
         file_url = urljoin(base_url, filename)
@@ -372,34 +378,47 @@ class TCGADCCArchiveSyncer(object):
 
     def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database."""
-        file_node = self.lookup_file_in_pg(self.archive_node,
-                                           filename, session)
+        file_node = self.lookup_file_in_pg(self.archive_node, filename, session)
+        md5, md5_source = self.determine_md5(filename, dcc_md5)
         if file_node:
             node_id = file_node.node_id
             self.log.info("file %s in already in postgres with id %s, not inserting", filename, node_id)
+            self.pg_driver.node_update(
+                file_node,
+                acl=self.acl,
+                properties={
+                    "file_name": filename,
+                    "md5sum": md5,
+                    "file_size": self.determine_file_size(filename),
+                    "submitter_id": None,
+                },
+                system_annotations={
+                    "source": "tcga_dcc",
+                    "md5_source": md5_source,
+                },
+                session=session
+            )
         else:
             node_id = self.signpost.create().did
+            file_node = self.pg_driver.node_merge(
+                node_id=node_id,
+                label="file",
+                acl=self.acl,
+                properties={
+                    "file_name": filename,
+                    "md5sum": md5,
+                    "file_size": self.determine_file_size(filename),
+                    "state": "submitted",
+                    "state_comment": None,
+                    "submitter_id": None,
+                },
+                system_annotations={
+                    "source": "tcga_dcc",
+                    "md5_source": md5_source,
+                },
+                session=session
+            )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
-        md5, md5_source = self.determine_md5(filename, dcc_md5)
-        self.log.info("merging file %s into graph with id %s", filename, node_id)
-        file_node = self.pg_driver.node_merge(
-            node_id=node_id,
-            label="file",
-            acl=self.acl,
-            properties={
-                "file_name": filename,
-                "md5sum": md5,
-                "file_size": self.determine_file_size(filename),
-                "state": "submitted",
-                "state_comment": None,
-                "submitter_id": None,
-            },
-            system_annotations={
-                "source": "tcga_dcc",
-                "md5_source": md5_source,
-            },
-            session=session
-        )
         maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
@@ -413,11 +432,8 @@ class TCGADCCArchiveSyncer(object):
                 label="member_of"
             )
             self.pg_driver.edge_insert(edge_to_archive, session=session)
-        # TODO tie files to the center they were submitted by.
-        # skipping this for now because it's some work to find the
-        # correct center for an archive
-        edgeBuilder=TCGADCCEdgeBuilder(file_node,self.pg_driver)
-        edgeBuilder.build()
+        edge_builder = TCGADCCEdgeBuilder(file_node, self.pg_driver, self.log)
+        edge_builder.build()
         return file_node
 
     def get_manifest(self):
@@ -448,7 +464,7 @@ class TCGADCCArchiveSyncer(object):
                     if elem.text not in NOT_PART_OF_ARCHIVE]
         else:
             # the reason for this is that sometimes the tarballs have
-            # an useless entry that's just the name of the tarball, so we filter it out
+            # a useless entry that's just the name of the tarball, so we filter it out
             names = [name for name in self.tarball.getnames() if name != self.name]
             return [name.replace(self.name + "/", "") for name in names]
 
@@ -485,32 +501,42 @@ class TCGADCCArchiveSyncer(object):
         raise RuntimeError("retries exceeded on {}".format(url))
 
     def download_archive(self):
-        tries = 0
-        while tries < 20:
-            tries += 1
-            self.log.info("downloading archive, try %s of 20", tries)
-            resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
-            if int(resp.headers["content-length"]) > self.max_memory:
-                self.log.info("archive size is %s bytes, storing in "
-                              "temp file on disk", resp.headers["content-length"])
-                self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
-            else:
-                self.log.info("archive size is %s bytes, storing in "
-                              "memory in StringIO" , resp.headers["content-length"])
-                self.temp_file = StringIO()
+        self.log.info("downloading archive")
+        info_resp = self.get_with_auth(self.archive["dcc_archive_url"], stream=True)
+        content_length = int(info_resp.headers["content-length"])
+        info_resp.close()  # to make sure we free the connection
+        if content_length > self.max_memory:
+            self.log.info("archive size is %s bytes, storing in "
+                          "temp file on disk", content_length)
+            self.temp_file = tempfile.TemporaryFile(prefix=self.scratch_dir)
+        else:
+            self.log.info("archive size is %s bytes, storing in "
+                          "memory in StringIO", content_length)
+            self.temp_file = StringIO()
+        while self.temp_file.tell() != content_length:
+            self.log.info("sending new download request. "
+                          "downloaded so far: %s / %s bytes, %s percent complete",
+                          self.temp_file.tell(), content_length,
+                          float(self.temp_file.tell()) / float(content_length))
+            range = "bytes={start}-{end}".format(start=self.temp_file.tell(),
+                                                 end=content_length)
+            self.log.info("requesting %s", range)
+            resp = self.get_with_auth(self.archive["dcc_archive_url"],
+                                      headers={"Range": range}, stream=True)
+            self.log.info("writing chunks to temp file")
             for chunk in resp.iter_content(chunk_size=16000):
                 self.temp_file.write(chunk)
-            temp_file_len = self.temp_file.tell()
-            if temp_file_len == int(resp.headers["content-length"]):
-                self.temp_file.seek(0)
-                self.log.info("archive downloaded, untaring")
-                self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
-                return
-            else:
-                self.log.warning("archive download failed, got %s bytes but expected %s, retrying",
-                                 temp_file_len, resp.headers["content-length"])
-                self.temp_file.close()
-        raise RuntimeError("failed to download archive with 20 retries")
+        temp_file_len = self.temp_file.tell()
+        if temp_file_len == content_length:
+            self.temp_file.seek(0)
+            self.log.info("archive downloaded, untaring")
+            self.tarball = tarfile.open(fileobj=self.temp_file, mode="r:gz")
+            return
+        else:
+            self.log.error("archive download failed, got %s bytes but expected %s, something is wrong",
+                           temp_file_len, content_length)
+            self.temp_file.close()
+
 
     def manifest_is_complete(self, manifest, filenames):
         """Verify that the manifest is complete."""
@@ -560,7 +586,18 @@ class TCGADCCArchiveSyncer(object):
                           node["file_name"])
             return
         name = self.full_name(node["file_name"])
-        obj = self.upload_data(self.tarball.extractfile(name), name)
+        tries = 0
+        while True:
+            tries += 1
+            try:
+                obj = self.upload_data(self.tarball.extractfile(name), name)
+                break
+            except LibcloudError as e:
+                if tries > 10:
+                    self.log.error("couldn't upload in 10 tries, failing")
+                    raise e
+                else:
+                    self.log.warning("caught %s while trying to upload, retrying", e)
         new_url = url_for(obj)
         doc.urls = [new_url]
         doc.patch()
@@ -581,7 +618,7 @@ class TCGADCCArchiveSyncer(object):
         except BaseException as e:
             for err_cls, state in error_states.iteritems():
                 if isinstance(e, err_cls):
-                    self.log.warning("%s caught, setting %s to %s", e, file, state)
+                    self.log.warning("%s caught, setting %s to %s", err_cls.__name__, file, state)
                     self.set_file_state(file, state)
                     return
             self.log.exception("failure while trying to move %s from %s to %s via %s",
