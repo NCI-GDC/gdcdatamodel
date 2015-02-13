@@ -152,7 +152,6 @@ class TCGADCCEdgeBuilder(object):
                              self.archive['center_type'],
                              self.archive['center_name'])
 
-
     def tie_file_to_atribute(self, file_node, attr, value, session):
         LABEL_MAP = {
             "platform": "generated_from",

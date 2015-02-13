@@ -20,8 +20,6 @@ from multiprocessing.pool import Pool
 
 
 def sync_list(args, archives):
-    driver = PsqlGraphDriver(args.pg_host, args.pg_user,
-                             args.pg_pass, args.pg_database)
     if args.s3_host:
         storage_client = S3(args.s3_access_key, args.s3_secret_key,
                             host=args.s3_host, secure=False)
@@ -30,6 +28,8 @@ def sync_list(args, archives):
     else:
         storage_client = None
     for archive in archives:
+        driver = PsqlGraphDriver(args.pg_host, args.pg_user,
+                                 args.pg_pass, args.pg_database)
         syncer = TCGADCCArchiveSyncer(
             archive,
             signpost=SignpostClient(args.signpost_url, version="v0"),
@@ -46,6 +46,8 @@ def sync_list(args, archives):
             syncer.sync()  # ugh
         except Exception:  # we use Exception so as not to catch KeyboardInterrupt et al.
             syncer.log.exception("caught exception while syncing")
+        finally:
+            driver.engine.dispose()
 
 
 def split(a, n):
