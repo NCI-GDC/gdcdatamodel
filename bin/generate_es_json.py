@@ -100,9 +100,11 @@ if __name__ == '__main__':
                         help='do not post to elasticsearch')
     args = parser.parse_args()
 
-    converter = get_converter()
-    with converter.g.session_scope():
-        if not args.no_projects:
-            convert_projects(converter)
-        if not args.no_participants:
-            convert_participants(converter)
+    c = get_converter()
+    with c.g.session_scope():
+        # if not args.no_projects:
+        #     convert_projects(converter)
+        # if not args.no_participants:
+        #     convert_participants(converter)
+        project = c.g.nodes().ids('1334612b-3d2e-5941-a476-d455d71b458f').one()
+        pprint(convert_project(project))

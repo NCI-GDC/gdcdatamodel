@@ -4,6 +4,12 @@ from gdcdatamodel.mappings import (
     annotation_tree, annotation_traversal,
     ONE_TO_ONE, ONE_TO_MANY
 )
+import logging
+from cdisutils.log import get_logger
+from pprint import pprint
+
+log = get_logger("psqlgraph2json")
+log.setLevel(level=logging.INFO)
 
 
 class PsqlGraph2JSON(object):
@@ -69,7 +75,7 @@ class PsqlGraph2JSON(object):
         if labels:
             return union.labels(labels)
         else:
-            return labels
+            return union
 
     def denormalize_participant(self, node):
         node = self.g.nodes().ids(node.node_id).one()
@@ -151,61 +157,81 @@ class PsqlGraph2JSON(object):
         doc = self._get_base_doc(p)
 
         # Get programs
+
         program = self.g.nodes().ids(p.node_id).path_end('program').first()
 
         # Get participants
+        log.info('Query for programs')
         if program:
             doc['program'] = self._get_base_doc(program)
         parts = self.g.nodes().ids(p.node_id).path_end('participant').all()
 
-        # Get experimental strategies
-        exp_strat_paths = [list(path) + ['experimental_strategy']
-                           for path in participant_traversal['file']]
-        exp_strats = self.combine_paths_from(
+        # Construct paths
+        paths = [
+            ['file'],
+            ['sample', 'file'],
+            ['sample', 'aliquot', 'file'],
+            ['sample', 'portion', 'file'],
+            ['sample', 'portion', 'analyte', 'file'],
+            ['sample', 'portion', 'analyte', 'aliquot', 'file'],
+        ]
+        data_type_to_part_paths = [
+            ['data_subtype'] + path[::-1]+['participant'] for path in paths]
+        exp_strat_to_part_paths = [
+            path[::-1]+['participant'] for path in paths]
+        file_to_data_type_path = ['data_subtype', 'data_type']
+
+        # Get files
+        log.info('Query for files')
+        files = self.combine_paths_from(
             [part.node_id for part in parts],
-            exp_strat_paths, 'experimental_strategy').all()
+            paths, 'file').all()
+
+        # Get experimental strategies
+        log.info('Query for experimental strategies')
+        exp_strats = self.g.nodes().ids([f.node_id for f in files])\
+                                   .path_end(['experimental_strategy']).all()
         exp_strat_summaries = []
-        exp_paths = [list(path[::-1])+['participant']
-                     for path in participant_traversal['file']]
         for exp_strat in exp_strats:
+            participant_count = self.combine_paths_from(
+                str(exp_strat.node_id),
+                exp_strat_to_part_paths,
+                'participant').count()
+            file_count = self.g.nodes().ids(exp_strat.node_id)\
+                                       .path_end(['file']).count()
             exp_strat_summaries.append({
-                'participant_count': self.combine_paths_from(
-                    exp_strat.node_id, exp_paths,
-                    'participant').count(),
-                'file_count': self.g.nodes().ids(
-                    exp_strat.node_id).path_end('file').count(),
+                'participant_count': participant_count,
+                'file_count': file_count,
                 'experimental_strategy': exp_strat['name'],
             })
 
-        # Get files
-        files = self.combine_paths_from(
-            [part.node_id for part in parts],
-            participant_traversal['file'], 'file').all()
-
         # Get data types
+        log.info('Query for data_types')
         data_type_summaries = []
-        data_type_paths = [['data_subtype']+list(path)[::-1]+['participant']
-                           for path in participant_traversal['file']]
-        data_types = self.g.nodes().ids(
-            [f.node_id for f in files]).path_end(
-            ['data_subtype', 'data_type']).all()
+        data_types = self.g.nodes().ids([f.node_id for f in files])\
+                                   .path_end(file_to_data_type_path).all()
         for data_type in data_types:
+            participant_count = self.combine_paths_from(
+                str(data_type.node_id),
+                data_type_to_part_paths,
+                'participant').count()
+            file_count = self.g.nodes().ids([d.node_id for d in data_types])\
+                                       .path_end(['data_subtype', 'file'])\
+                                       .count()
             data_type_summaries.append({
-                'participant_count': self.combine_paths_from(
-                    [d.node_id for d in data_types],
-                    data_type_paths, 'participant').count(),
+                'participant_count': participant_count,
                 'data_type': data_type['name'],
-                'file_count': self.g.nodes().ids(
-                    [d.node_id for d in data_types]).path_end(
-                        ['data_subtype', 'file']).count(),
+                'file_count': file_count,
             })
 
         # Compile summary
         doc['summary'] = {
             'participant_count': len(parts),
-            'experimental_strategies': exp_strat_summaries,
             'file_count': len(files),
             'file_size': sum([f['file_size'] for f in files]),
-            'data_types': data_type_summaries,
         }
+        if exp_strat_summaries:
+            doc['summary']['experimental_strategies'] = exp_strat_summaries
+        if data_type_summaries:
+            doc['summary']['data_types'] = data_type_summaries
         return doc
