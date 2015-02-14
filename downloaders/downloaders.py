@@ -282,8 +282,8 @@ class Downloader(object):
                     continue
             if not self.do_carefully(self.download):
                 continue
-            if not self.do_carefully(self.checksum):
-                continue
+            # if not self.do_carefully(self.checksum):
+            #    continue
             if not self.do_carefully(self.upload):
                 continue
             self.do_carefully(self.finish_work)
