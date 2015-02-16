@@ -35,30 +35,23 @@ class PsqlGraph2JSON(object):
         self.file_tree.pop('data_subtype')
         self.participant_tree = self.parse_tree(participant_tree, {})
         self.annotation_tree = self.parse_tree(annotation_tree, {})
-        self.ptree_mapping = {'participant': participant_tree}
-        self.ftree_mapping = {'file': file_tree}
+        self.ptree_mapping = {'participant': participant_tree.to_dict()}
+        self.ftree_mapping = {'file': file_tree.to_dict()}
 
     def cache_database(self):
-        for n in self.g.nodes().yield_per(1000):
-            self.G.add_node(n)
+        log.info('Caching database ...')
+        log.info('Caching {} nodes ...'.format(self.g.nodes().count()))
+        log.info('Caching {} edges ...'.format(self.g.edges().count()))
         for e in self.g.edges().options(joinedload(Edge.src))\
                                .options(joinedload(Edge.dst))\
-                               .yield_per(1000):
+                               .yield_per(10000):
             self.G.add_edge(e.src, e.dst)
+        log.info('Cached {} edges'.format(self.G.number_of_edges()))
 
-    def cache_dev_participant(self):
-        pid = '752ad011-79e0-494f-9868-98bf6feb28f8'
-        ptree = self.g.nodes().ids(pid)\
-                              ._flatten_tree(self.participant_tree).all()
-        for n in ptree:
-            if len(list(n.get_edges())) > 50:
-                continue
-            for e in n.get_edges():
-                if e.src not in self.G.nodes():
-                    self.G.add_node(e.src)
-                if e.dst not in self.G.nodes():
-                    self.G.add_node(e.dst)
-                self.G.add_edge(e.src, e.dst)
+    def load_cache_from_disk(self, path):
+        log.info('Loading cache from disk ...')
+        self.G = nx.read_gpickle(path)
+        log.info('Cached {} nodes'.format(self.G.number_of_nodes()))
 
     def nodes_labeled(self, label):
         for n, p in self.G.nodes_iter(data=True):
@@ -79,17 +72,17 @@ class PsqlGraph2JSON(object):
 
     def _get_base_doc(self, node):
         base = {'{}_id'.format(node.label): node.node_id}
-        # base.update(node.properties)
+        base.update(node.properties)
         return base
 
-    def create_tree(self, node, mapping, tree, level=0):
-        corr, plural = mapping[node.label]['corr']
-        for child in self.G.neighbors(node):
-            if child.label not in mapping[node.label]:
+    def create_tree(self, node, mapping, tree):
+        submap = mapping.get(node.label)
+        corr, plural = submap['corr']
+        for child in self.G[node]:
+            if child.label not in submap:
                 continue
             tree[child] = {}
-            self.create_tree(child, mapping[node.label],
-                             tree[child], level+1)
+            self.create_tree(child, submap, tree[child])
         return tree
 
     def walk_tree(self, node, tree, mapping, doc, level=0):
@@ -128,11 +121,40 @@ class PsqlGraph2JSON(object):
             *[self.walk_path(node, path, whole)
               for path in paths])}
 
+    def get_exp_strats(self, files):
+        exp_strats = {}
+        for n in files:
+            for exp_strat in self.walk_path(n, ['experimental_strategy']):
+                name = exp_strat['name']
+                if name not in exp_strats:
+                    exp_strats[name] = {
+                        'expertimental_strategy': name,
+                        'file_count': 0}
+                exp_strats[name]['file_count'] += 1
+        return exp_strats.values()
+
+    def get_data_types(self, files):
+        exp_strats = {}
+        for n in files:
+            for exp_strat in self.walk_path(n, ['data_subtype', 'data_type']):
+                name = exp_strat['name']
+                if name not in exp_strats:
+                    exp_strats[name] = {
+                        'data_type': name,
+                        'file_count': 0}
+                exp_strats[name]['file_count'] += 1
+        return exp_strats.values()
+
     def denormalize_participant(self, node):
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
-        participant['files'] = []
         files = self.walk_paths(node, participant_traversal['file'])
+        participant['summary'] = {
+            'data_file_count': len(files),
+            'file_size': sum([f['file_size'] for f in files]),
+            'expertimental_strategies': self.get_exp_strats(files),
+            'data_types': self.get_data_types(files),
+        }
         get_file = lambda f: self.denormalize_file(
             f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
@@ -146,28 +168,18 @@ class PsqlGraph2JSON(object):
                 ptree.pop(node)
 
     def denormalize_file(self, node, ptree):
-        doc = self._get_base_doc(node)
-        relevant = self.walk_paths(node, file_traversal.participant,
-                                   whole=True)
+        ftree = {node: self.create_tree(node, self.ftree_mapping, {})}
+        doc = self.walk_tree(node, ftree, self.ftree_mapping, [])[0]
+        relevant = self.walk_paths(node, file_traversal.participant, True)
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
-        participants = []
-        for p in ptree.keys():
-            participants.append(self.walk_tree(
-                p, ptree, self.ptree_mapping, [])[0])
-        ptree = {node: self.create_tree(node, self.ftree_mapping, {})}
-        doc = self.walk_tree(node, ftree, self.ftree_mapping, [])[0]
-        pprint(doc)
-        doc['participants'] = participants
+        doc['participants'] = map(
+            lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
+            ptree)
         return doc
 
     def denormalize_annotation(self, a):
         raise NotImplementedError()
-
-    def get_nodes(self, label):
-        return self.g.nodes()\
-                     .labels(label)\
-                     .yield_per(self.batch_size)
 
     def denormalize_project(self, p):
         """
@@ -177,7 +189,6 @@ class PsqlGraph2JSON(object):
         doc = self._get_base_doc(p)
 
         # Get programs
-
         program = self.g.nodes().ids(p.node_id).path_end('program').first()
 
         # Get participants

@@ -7,6 +7,7 @@ from cdisutils.log import get_logger
 from pprint import pprint
 from elasticsearch import Elasticsearch
 from multiprocessing import Pool
+import time
 
 log = get_logger("json_generator")
 logging.root.setLevel(level=logging.WARNING)
@@ -102,12 +103,16 @@ if __name__ == '__main__':
 
     c = get_converter()
     with c.g.session_scope():
-        # if not args.no_projects:
-        #     convert_projects(converter)
-        # if not args.no_participants:
-        #     convert_participants(converter)
-        # project = c.g.nodes().ids('1334612b-3d2e-5941-a476-d455d71b458f').one()
-        # pprint(convert_project(project))
-        c.cache_dev_participant()
-        p = c.nodes_labeled('participant').next()
-        pprint(c.denormalize_participant(p)[1][0])
+        c.load_cache_from_disk('/home/ubuntu/ram/graph.gpickle')
+        participants, files = [], []
+        start = time.time()
+        for p in c.nodes_labeled('participant'):
+            p, f = c.denormalize_participant(p)
+            participants.append(p)
+            files += f
+            if len(participants) > 100:
+                break
+        end = time.time()
+        pprint(participants[-1])
+        print 'Rate: {} seconds/participant'.format(
+            (end - start)/len(participants))
