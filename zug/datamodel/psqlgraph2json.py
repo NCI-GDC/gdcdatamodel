@@ -9,6 +9,7 @@ from cdisutils.log import get_logger
 import networkx as nx
 from psqlgraph import Node, Edge
 from pprint import pprint
+import itertools
 from sqlalchemy.orm import joinedload
 
 log = get_logger("psqlgraph2json")
@@ -34,6 +35,7 @@ class PsqlGraph2JSON(object):
         self.file_tree.pop('data_subtype')
         self.participant_tree = self.parse_tree(participant_tree, {})
         self.annotation_tree = self.parse_tree(annotation_tree, {})
+        self.ptree_mapping = {'participant': participant_tree}
 
     def cache_database(self):
         for n in self.g.nodes().yield_per(1000):
@@ -43,8 +45,27 @@ class PsqlGraph2JSON(object):
                                .yield_per(1000):
             self.G.add_edge(e.src, e.dst)
 
-    def get_node_by_label(self, label):
+    def cache_dev_participant(self):
+        pid = '752ad011-79e0-494f-9868-98bf6feb28f8'
+        ptree = self.g.nodes().ids(pid)\
+                              ._flatten_tree(self.participant_tree).all()
+        for n in ptree:
+            if len(list(n.get_edges())) > 50:
+                continue
+            for e in n.get_edges():
+                if e.src not in self.G.nodes():
+                    self.G.add_node(e.src)
+                if e.dst not in self.G.nodes():
+                    self.G.add_node(e.dst)
+                self.G.add_edge(e.src, e.dst)
+
+    def nodes_labeled(self, label):
         for n, p in self.G.nodes_iter(data=True):
+            if n.label == label:
+                yield n
+
+    def neighbors_labeled(self, node, label):
+        for n in self.G.neighbors(node):
             if n.label == label:
                 yield n
 
@@ -57,8 +78,18 @@ class PsqlGraph2JSON(object):
 
     def _get_base_doc(self, node):
         base = {'{}_id'.format(node.label): node.node_id}
-        base.update(node.properties)
+        # base.update(node.properties)
         return base
+
+    def create_tree(self, node, mapping, tree, level=0):
+        corr, plural = mapping[node.label]['corr']
+        for child in self.G.neighbors(node):
+            if child.label not in mapping[node.label]:
+                continue
+            tree[child] = {}
+            self.create_tree(child, mapping[node.label],
+                             tree[child], level+1)
+        return tree
 
     def walk_tree(self, node, tree, mapping, doc, level=0):
         corr, plural = mapping[node.label]['corr']
@@ -83,25 +114,24 @@ class PsqlGraph2JSON(object):
             self.copy_tree(original[node], new[node])
         return new
 
-    def combine_paths_from(self, ids, paths, labels=None, base=None):
-        if not base:
-            base = self.g.nodes().ids(ids)
-        union = base
-        for path in paths:
-            union = union.union(base.path_end(path))
-        if labels:
-            return union.labels(labels)
-        else:
-            return union
+    def walk_path(self, node, path, whole=False, level=0):
+        if path:
+            for neighbor in self.neighbors_labeled(node, path[0]):
+                for n in self.walk_path(neighbor, path[1:], whole, level+1):
+                    yield n
+        if whole or (len(path) == 1 and path[0] == node.label):
+            yield node
+
+    def walk_paths(self, node, paths, whole=False):
+        return {n for n in itertools.chain(
+            *[self.walk_path(node, path, whole)
+              for path in paths])}
 
     def denormalize_participant(self, node):
-        node = self.g.nodes().ids(node.node_id).one()
-        ptree = self.g.nodes().tree(node.node_id, self.participant_tree)
-        participant = self.walk_tree(
-            node, ptree, {'participant': participant_tree}, [])[0]
+        ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
+        participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
         participant['files'] = []
-        files = self.combine_paths_from(
-            node.node_id, participant_traversal['file'], 'file').all()
+        files = self.walk_paths(node, participant_traversal['file'])
         get_file = lambda f: self.denormalize_file(
             f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
@@ -109,42 +139,21 @@ class PsqlGraph2JSON(object):
 
     def prune_participant(self, relevant_nodes, ptree, keys):
         for node in ptree.keys():
-            if node.label not in keys:
-                continue
             if ptree[node]:
-                self.prune_participant(relevant_nodes, ptree[node])
-            if node not in relevant_nodes:
+                self.prune_participant(relevant_nodes, ptree[node], keys)
+            if node.label in keys and node not in relevant_nodes:
                 ptree.pop(node)
 
-    def get_data_type_tree(self, f):
-        data_subtype = self.g.nodes().ids(
-            f.node_id).path_end(['data_subtype']).first()
-        data_type = self.g.nodes().ids(
-            f.node_id).path_end(['data_subtype', 'data_type']).first()
-        if data_subtype and not data_type:
-            return {data_subtype: {}}
-        elif data_type:
-            return {data_subtype: {data_type: {}}}
-        return {}
-
-    def denormalize_file(self, f, ptree):
-        f = self.g.nodes().ids(f.node_id).one()
-        ftree = self.g.nodes().tree(f.node_id, self.file_tree)
-        ftree[f].update(self.get_data_type_tree(f))
-        doc = self.walk_tree(f, ftree, {'file': file_tree}, [])[0]
-        relevant = {}
-        base = self.g.nodes().ids(f.node_id)
-        union = base
-        for path in file_traversal.participant:
-            union = union.union(base.path_whole(path))
-        for n in union.all():
-            relevant[n.node_id] = n
+    def denormalize_file(self, node, ptree):
+        doc = self._get_base_doc(node)
+        relevant = self.walk_paths(node, file_traversal.participant,
+                                   whole=True)
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
         participants = []
         for node in ptree.keys():
             participants.append(self.walk_tree(
-                node, ptree, {'participant': participant_tree}, []))
+                node, ptree, {'participant': participant_tree}, [])[0])
         doc['participants'] = participants
         return doc
 
@@ -155,16 +164,6 @@ class PsqlGraph2JSON(object):
         return self.g.nodes()\
                      .labels(label)\
                      .yield_per(self.batch_size)
-
-    def walk_participants(self):
-        with self.g.session_scope():
-            for p in self.get_participants():
-                yield self.denormalize_participant(p)
-
-    def walk_files(self):
-        with self.g.session_scope():
-            for f in self.get_files():
-                yield self.denormalize_file(f)
 
     def denormalize_project(self, p):
         """

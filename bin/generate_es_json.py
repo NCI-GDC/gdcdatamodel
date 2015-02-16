@@ -106,5 +106,8 @@ if __name__ == '__main__':
         #     convert_projects(converter)
         # if not args.no_participants:
         #     convert_participants(converter)
-        project = c.g.nodes().ids('1334612b-3d2e-5941-a476-d455d71b458f').one()
-        pprint(convert_project(project))
+        # project = c.g.nodes().ids('1334612b-3d2e-5941-a476-d455d71b458f').one()
+        # pprint(convert_project(project))
+        c.cache_dev_participant()
+        p = c.nodes_labeled('participant').next()
+        pprint(c.denormalize_participant(p)[1][0])
