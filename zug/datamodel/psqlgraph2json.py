@@ -6,7 +6,10 @@ from gdcdatamodel.mappings import (
 )
 import logging
 from cdisutils.log import get_logger
+import networkx as nx
+from psqlgraph import Node, Edge
 from pprint import pprint
+from sqlalchemy.orm import joinedload
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -23,6 +26,7 @@ class PsqlGraph2JSON(object):
 
         """
         self.g = psqlgraph_driver
+        self.G = nx.Graph()
         self.files, self.participants = [], []
         self.batch_size = 10
         self.leaf_nodes = ['center', 'tissue_source_site']
@@ -30,6 +34,19 @@ class PsqlGraph2JSON(object):
         self.file_tree.pop('data_subtype')
         self.participant_tree = self.parse_tree(participant_tree, {})
         self.annotation_tree = self.parse_tree(annotation_tree, {})
+
+    def cache_database(self):
+        for n in self.g.nodes().yield_per(1000):
+            self.G.add_node(n)
+        for e in self.g.edges().options(joinedload(Edge.src))\
+                               .options(joinedload(Edge.dst))\
+                               .yield_per(1000):
+            self.G.add_edge(e.src, e.dst)
+
+    def get_node_by_label(self, label):
+        for n, p in self.G.nodes_iter(data=True):
+            if n.label == label:
+                yield n
 
     def parse_tree(self, tree, result):
         for key in tree:
@@ -193,10 +210,12 @@ class PsqlGraph2JSON(object):
                                    .path_end(['experimental_strategy']).all()
         exp_strat_summaries = []
         for exp_strat in exp_strats:
+            log.info('Query for experimental strategies -> participant')
             participant_count = self.combine_paths_from(
                 str(exp_strat.node_id),
                 exp_strat_to_part_paths,
                 'participant').count()
+            log.info('Query for experimental strategies -> files')
             file_count = self.g.nodes().ids(exp_strat.node_id)\
                                        .path_end(['file']).count()
             exp_strat_summaries.append({
@@ -211,10 +230,12 @@ class PsqlGraph2JSON(object):
         data_types = self.g.nodes().ids([f.node_id for f in files])\
                                    .path_end(file_to_data_type_path).all()
         for data_type in data_types:
+            log.info('Query for data type -> participant')
             participant_count = self.combine_paths_from(
                 str(data_type.node_id),
                 data_type_to_part_paths,
                 'participant').count()
+            log.info('Query for data type -> file')
             file_count = self.g.nodes().ids([d.node_id for d in data_types])\
                                        .path_end(['data_subtype', 'file'])\
                                        .count()
