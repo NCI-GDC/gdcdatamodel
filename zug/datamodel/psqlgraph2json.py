@@ -36,6 +36,7 @@ class PsqlGraph2JSON(object):
         self.participant_tree = self.parse_tree(participant_tree, {})
         self.annotation_tree = self.parse_tree(annotation_tree, {})
         self.ptree_mapping = {'participant': participant_tree}
+        self.ftree_mapping = {'file': file_tree}
 
     def cache_database(self):
         for n in self.g.nodes().yield_per(1000):
@@ -151,9 +152,12 @@ class PsqlGraph2JSON(object):
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
         participants = []
-        for node in ptree.keys():
+        for p in ptree.keys():
             participants.append(self.walk_tree(
-                node, ptree, {'participant': participant_tree}, [])[0])
+                p, ptree, self.ptree_mapping, [])[0])
+        ptree = {node: self.create_tree(node, self.ftree_mapping, {})}
+        doc = self.walk_tree(node, ftree, self.ftree_mapping, [])[0]
+        pprint(doc)
         doc['participants'] = participants
         return doc
 
