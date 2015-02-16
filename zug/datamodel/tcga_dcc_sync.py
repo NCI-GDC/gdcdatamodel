@@ -131,8 +131,19 @@ class TCGADCCEdgeBuilder(object):
             self.classify(self.file_node, session)
             self.tie_file_to_center(self.file_node, session)
 
-    def tie_file_to_center(self, file_node, session):
-        query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
+
+    def tie_file_to_center(self,file_node,session):
+        center_type = self.archive['center_type']
+        namespace = self.archive['center_name']
+        if namespace == 'mdanderson.org' and center_type.upper() == 'CGCC':
+            query = self.pg_driver.nodes().labels('center').props({'code':'20'})
+        elif namespace == 'genome.wustl.edu' and center_type.upper() == 'CGCC':
+            query = self.pg_driver.nodes().labels('center').props({'code':'21'})
+        elif namespace == 'bcgsc.ca' and center_type.upper() == 'CGCC':
+            query = self.pg_driver.nodes().labels('center').props({'code':'13'})
+        else:
+            query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
+
         count = query.count()
         if count == 1:
             attr_node = query.first()

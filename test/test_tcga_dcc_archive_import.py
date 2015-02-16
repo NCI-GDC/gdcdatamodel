@@ -5,7 +5,6 @@ from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
-
 from zug.datamodel.prelude import create_prelude_nodes
 
 from psqlgraph import PsqlGraphDriver
@@ -113,6 +112,9 @@ class TCGADCCArchiveSyncTest(TestCase):
                           .with_edge_from_node("member_of", archive_node).one()
             # make sure the files get tied to classification stuff
             self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
+            center = self.pg_driver.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
+            self.assertEqual(center['code'],'20')
+
         # make sure file and archive are in storage
         self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
         self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
