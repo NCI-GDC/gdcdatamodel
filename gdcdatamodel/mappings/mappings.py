@@ -57,7 +57,6 @@ def get_participant_es_mapping(include_file=True):
     participant["properties"]["summary"] = {"properties": {
         "data_file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
-        "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
         "experimental_strategies": {"properties": {
             "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
