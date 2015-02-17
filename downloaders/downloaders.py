@@ -456,7 +456,7 @@ class Downloader(object):
             self.work.get('file_size', 0)/1e9))
 
         cmd = ' '.join([
-            'sudo gtdownload -v -k 15',
+            'gtdownload -v -k 15',
             '-c {cghub_key}',
             '-l {aid}.log',
             '--max-children 4',
