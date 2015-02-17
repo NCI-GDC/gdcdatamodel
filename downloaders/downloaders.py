@@ -21,7 +21,8 @@ import signal
 from contextlib import contextmanager
 
 # buffer 10 MB in memory at once
-boto.s3.Key.BufferSize = 10 * 1024 * 1024
+from boto.s3.key import Key
+Key.BufferSize = 10 * 1024 * 1024
 
 logger = logging.getLogger(name="downloader")
 logging.basicConfig(
