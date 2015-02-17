@@ -11,7 +11,7 @@ file_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
 file_tree.archive.corr = (ONE_TO_MANY, 'archives')
 file_tree.center.corr = (ONE_TO_ONE, 'center')
 file_tree.data_format.corr = (ONE_TO_ONE, 'data_format')
-file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_type')
+file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_subtype')
 file_tree.data_subtype.data_type.corr = (ONE_TO_ONE, 'data_type')
 file_tree.experimental_strategy.corr = (ONE_TO_ONE, 'experimental_strategy')
 file_tree.participant.corr = (ONE_TO_MANY, 'participants')
@@ -90,4 +90,5 @@ annotation_traversal.file = [
 
 # Project hierarchy
 project_tree = Dict()
-project_tree.program = (ONE_TO_ONE, 'program')
+project_tree.corr = (ONE_TO_ONE, 'project')
+project_tree.program.corr = (ONE_TO_ONE, 'program')

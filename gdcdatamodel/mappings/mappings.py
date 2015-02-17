@@ -3,7 +3,8 @@ from mapped_entities import (
     file_tree, file_traversal,
     participant_tree, participant_traversal,
     annotation_tree, annotation_traversal,
-    ONE_TO_MANY, ONE_TO_ONE, annotation_tree
+    project_tree, annotation_tree,
+    ONE_TO_MANY, ONE_TO_ONE
 )
 
 
@@ -48,7 +49,8 @@ def get_file_es_mapping(include_participant=True):
 
 def get_participant_es_mapping(include_file=True):
     participant = {"_id": {"path": "participant_id"}}
-    participant["properties"] = _walk_tree(participant_tree, _munge_properties("participant"))
+    participant["properties"] = _walk_tree(
+        participant_tree, _munge_properties("participant"))
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
@@ -62,3 +64,25 @@ def get_annotation_es_mapping(include_file=True):
         annotation['files'] = get_file_es_mapping(False)
         annotation["files"]["type"] = "nested"
     return annotation
+
+
+def get_project_es_mapping():
+    project = {"_id": {"path": "project_id"}}
+    project["properties"] = _walk_tree(
+        project_tree, _munge_properties("project"))
+    project["properties"]["summary"] = {"properties": {
+        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "file_size": {u'index': u'not_analyzed', u'type': u'long'},
+        "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "experimental_strategies": {"properties": {
+            "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
+            "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
+            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        }},
+        "data_types": {"properties": {
+            "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
+            "data_type": {u'index': u'not_analyzed', u'type': u'string'},
+            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        }},
+    }}
+    return project
