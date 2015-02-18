@@ -54,6 +54,18 @@ def get_participant_es_mapping(include_file=True):
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
+    participant["properties"]["summary"] = {"properties": {
+        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "file_size": {u'index': u'not_analyzed', u'type': u'long'},
+        "experimental_strategies": {"properties": {
+            "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
+            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        }},
+        "data_types": {"properties": {
+            "data_type": {u'index': u'not_analyzed', u'type': u'string'},
+            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        }},
+    }}
     return participant
 
 
@@ -71,7 +83,7 @@ def get_project_es_mapping():
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
     project["properties"]["summary"] = {"properties": {
-        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "data_file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
         "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
         "experimental_strategies": {"properties": {
