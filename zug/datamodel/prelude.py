@@ -144,12 +144,194 @@ PLATFORMS = [
     "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM"
 ]
 
-PROJECTS = ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "CNTL", "COAD",
-            "DLBC", "ESCA", "FPPP", "GBM", "HNSC", "KICH", "KIRC",
-            "KIRP", "LAML", "LCML", "LGG", "LIHC", "LUAD", "LUSC",
-            "MESO", "MISC", "OV", "PAAD", "PCPG", "PRAD", "READ",
-            "SARC", "SKCM", "STAD", "TGCT", "THCA", "THYM", "UCEC",
-            "UCS", "UVM"]
+PROJECTS = [
+    {
+        "name": "ACC",
+        "project_name": "Adrenocortical carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "BLCA",
+        "project_name": "Bladder Urothelial Carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "BRCA",
+        "project_name": "Breast invasive carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "CESC",
+        "project_name": "Cervical squamous cell carcinoma and endocervical adenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "CHOL",
+        "project_name": "Cholangiocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "CNTL",
+        "project_name": "Controls",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "COAD",
+        "project_name": "Colon adenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "DLBC",
+        "project_name": "Lymphoid Neoplasm Diffuse Large B-cell Lymphoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "ESCA",
+        "project_name": "Esophageal carcinoma ",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "FPPP",
+        "project_name": "FFPE Pilot Phase II",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "GBM",
+        "project_name": "Glioblastoma multiforme",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "HNSC",
+        "project_name": "Head and Neck squamous cell carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "KICH",
+        "project_name": "Kidney Chromophobe",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "KIRC",
+        "project_name": "Kidney renal clear cell carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "KIRP",
+        "project_name": "Kidney renal papillary cell carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "LAML",
+        "project_name": "Acute Myeloid Leukemia",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "LCML",
+        "project_name": "Chronic Myelogenous Leukemia",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "LGG",
+        "project_name": "Brain Lower Grade Glioma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "LIHC",
+        "project_name": "Liver hepatocellular carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "LUAD",
+        "project_name": "Lung adenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "LUSC",
+        "project_name": "Lung squamous cell carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "MESO",
+        "project_name": "Mesothelioma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "MISC",
+        "project_name": "Miscellaneous",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "OV",
+        "project_name": "Ovarian serous cystadenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "PAAD",
+        "project_name": "Pancreatic adenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "PCPG",
+        "project_name": "Pheochromocytoma and Paraganglioma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "PRAD",
+        "project_name": "Prostate adenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "READ",
+        "project_name": "Rectum adenocarcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "SARC",
+        "project_name": "Sarcoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "SKCM",
+        "project_name": "Skin Cutaneous Melanoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "STAD",
+        "project_name": "carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "TGCT",
+        "project_name": "Testicular Germ Cell Tumors",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "THCA",
+        "project_name": "Thyroid carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "THYM",
+        "project_name": "Thymoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "UCEC",
+        "project_name": "Uterine Corpus Endometrial Carcinoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "UCS",
+        "project_name": "Uterine Carcinosarcoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    }, {
+        "name": "UVM",
+        "project_name": "Uveal Melanoma",
+        "state": "legacy",
+        "primary_site": "TBD"
+    },
+]
 
 
 def idempotent_insert(driver, label, name, session):
@@ -157,6 +339,12 @@ def idempotent_insert(driver, label, name, session):
                                  label=label,
                                  properties={"name": name},
                                  session=session)
+
+
+def insert_project_nodes(driver):
+    for project in PROJECTS:
+        node_id = str(uuid5(GDC_NAMESPACES['project'], project['name']))
+        driver.node_merge(node_id=node_id, label='project', properties=project)
 
 
 def insert_classification_nodes(driver):
@@ -189,21 +377,7 @@ def insert_classification_nodes(driver):
 
         tcga_program_node = idempotent_insert(driver, "program", "TCGA",
                                               session)
-        for project in PROJECTS:
-            project_node = idempotent_insert(driver, "project", project,
-                                             session)
-            edge = driver.edge_lookup_one(src_id=project_node.node_id,
-                                          dst_id=tcga_program_node.node_id,
-                                          label="member_of")
-            if not edge:
-                edge = PsqlEdge(src_id=project_node.node_id,
-                                dst_id=tcga_program_node.node_id,
-                                label="member_of")
-                try:
-                    driver.edge_insert(edge, session=session)
-                except IntegrityError:
-                    pass  # assume someone beat us there
-
+        insert_project_nodes(driver)
 
 def create_prelude_nodes(driver):
     import_center_codes(driver, os.path.join(PKG_DIR, "centerCode.csv"))
