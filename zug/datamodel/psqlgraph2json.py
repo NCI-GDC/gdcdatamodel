@@ -1,3 +1,6 @@
+import gdcdatamodel
+reload(gdcdatamodel)
+
 from gdcdatamodel.mappings import (
     participant_tree, participant_traversal,
     file_tree, file_traversal,
@@ -11,6 +14,8 @@ from psqlgraph import Node, Edge
 from pprint import pprint
 import itertools
 from sqlalchemy.orm import joinedload
+from progressbar import *
+from copy import copy
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -28,38 +33,71 @@ class PsqlGraph2JSON(object):
         """
         self.g = psqlgraph_driver
         self.G = nx.Graph()
-        self.files, self.participants = [], []
-        self.batch_size = 10
-        self.leaf_nodes = ['center', 'tissue_source_site']
-        self.file_tree = self.parse_tree(file_tree, {})
-        self.file_tree.pop('data_subtype')
-        self.participant_tree = self.parse_tree(participant_tree, {})
-        self.annotation_tree = self.parse_tree(annotation_tree, {})
+        self.patch_trees()
         self.ptree_mapping = {'participant': participant_tree.to_dict()}
         self.ftree_mapping = {'file': file_tree.to_dict()}
+        self.leaf_nodes = ['center', 'tissue_source_site']
+        self.experimental_strategies = {}
+        self.data_types = {}
+        self.differentiated_edges = [
+            ('file', 'member_of', 'archive'),
+            ('archive', 'member_of', 'file')
+        ]
+
+    def pbar(self, title, maxval):
+        pbar = ProgressBar(widgets=[
+            title, Percentage(), ' ', Bar(marker='#', left='[',right=']'), ' ',
+            ETA(), ' '], maxval=maxval)
+        pbar.update(0)
+        return pbar
+
+    def es_bulk_upload(self, es, index, doc_type, docs, batch_size=256):
+        instruction = { "index" : { "_index" : index, "_type" : doc_type}}
+        pbar, results = self.pbar('Batch upload ', len(docs)), []
+        def body():
+            start = pbar.currval
+            for doc in docs[start:start+batch_size]:
+                yield instruction
+                yield doc
+                pbar.update(pbar.currval+1)
+        while pbar.currval < len(docs):
+            results.append(es.bulk(body=body()))
+        pbar.finish()
+        return results
+
+    def patch_trees(self):
+        file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_subtype')
+        participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
+        self.ptree_mapping = {'participant': participant_tree.to_dict()}
 
     def cache_database(self):
-        log.info('Caching database ...')
-        log.info('Caching {} edges ...'.format(self.g.edges().count()))
+        pbar, i = self.pbar('Caching Database: ', self.g.edges().count())
         for e in self.g.edges().options(joinedload(Edge.src))\
                                .options(joinedload(Edge.dst))\
-                               .all():
-            self.G.add_edge(e.src, e.dst)
-        log.info('Cached {} edges'.format(self.G.number_of_edges()))
-
-    def load_cache_from_disk(self, path):
-        log.info('Loading cache from disk ...')
-        self.G = nx.read_gpickle(path)
-        log.info('Cached {} nodes'.format(self.G.number_of_nodes()))
+                               .yield_per(int(1e5)):
+            pbar.update(pbar.currval+1)
+            needs_differentiation =  (e.src.label, e.label, e.dst.label) \
+                                     in self.differentiated_edges
+            if needs_differentiation and e.properties:
+                self.G.add_edge(e.src, e.dst, label=e.label, props=e.properties)
+            elif needs_differentiation and not e.properties:
+                self.G.add_edge(e.src, e.dst, label=e.label)
+            elif e.properties:
+                self.G.add_edge(e.src, e.dst, props=e.properties)
+            else:
+                self.G.add_edge(e.src, e.dst)
+        pbar.finish()
+        print('Cached {} nodes'.format(self.G.number_of_nodes()))
 
     def nodes_labeled(self, label):
         for n, p in self.G.nodes_iter(data=True):
             if n.label == label:
                 yield n
 
-    def neighbors_labeled(self, node, label):
+    def neighbors_labeled(self, node, labels):
+        labels = labels if hasattr(labels, '__iter__') else [labels]
         for n in self.G.neighbors(node):
-            if n.label == label:
+            if n.label in labels:
                 yield n
 
     def parse_tree(self, tree, result):
@@ -75,9 +113,11 @@ class PsqlGraph2JSON(object):
         return base
 
     def create_tree(self, node, mapping, tree):
-        submap = mapping.get(node.label)
+        if node.label in self.leaf_nodes:
+            return {}
+        submap = mapping[node.label]
         corr, plural = submap['corr']
-        for child in self.G[node]:
+        for child in self.G.neighbors(node):
             if child.label not in submap:
                 continue
             tree[child] = {}
@@ -107,55 +147,64 @@ class PsqlGraph2JSON(object):
             self.copy_tree(original[node], new[node])
         return new
 
-    def walk_path(self, node, path, whole=False, level=0):
+    def walk_path(self, node, path, whole=False):
         if path:
             for neighbor in self.neighbors_labeled(node, path[0]):
-                print neighbor
-                for n in self.walk_path(neighbor, path[1:], whole, level+1):
+                if whole or (len(path) == 1 and path[0] == neighbor.label):
+                    yield neighbor
+                for n in self.walk_path(neighbor, path[1:], whole):
                     yield n
-        print path, node.label
-        if whole or (len(path) == 1 and path[0] == node.label):
-            yield node
 
     def walk_paths(self, node, paths, whole=False):
         return {n for n in itertools.chain(
-            *[self.walk_path(node, path, whole)
+            *[self.walk_path(node, path, whole=whole)
               for path in paths])}
 
+    def cache_data_types(self):
+        if len(self.data_types):
+            return
+        print('Caching data types')
+        for data_type in self.nodes_labeled('data_type'):
+            self.data_types[data_type] = set(self.walk_path(
+                data_type, ['data_subtype', 'file']))
+
+    def cache_experimental_strategies(self):
+        if len(self.experimental_strategies):
+            return
+        print('Caching expertimental strategies')
+        for exp_strat in self.nodes_labeled('experimental_strategy'):
+            self.experimental_strategies[exp_strat] = set(self.walk_path(
+                exp_strat, ['file']))
+
     def get_exp_strats(self, files):
-        exp_strats = {}
-        for n in files:
-            for exp_strat in self.walk_path(n, ['experimental_strategy']):
-                name = exp_strat['name']
-                if name not in exp_strats:
-                    exp_strats[name] = {
-                        'expertimental_strategy': name,
-                        'file_count': 0}
-                exp_strats[name]['file_count'] += 1
-        return exp_strats.values()
+        self.cache_experimental_strategies()
+        for exp_strat, file_list in self.experimental_strategies.iteritems():
+            intersection = (file_list & files)
+            if intersection:
+                yield {'expertimental_strategy': exp_strat['name'],
+                       'file_count': len(intersection)}
 
     def get_data_types(self, files):
-        exp_strats = {}
-        for n in files:
-            for exp_strat in self.walk_path(n, ['data_subtype', 'data_type']):
-                name = exp_strat['name']
-                if name not in exp_strats:
-                    exp_strats[name] = {
-                        'data_type': name,
-                        'file_count': 0}
-                exp_strats[name]['file_count'] += 1
-        return exp_strats.values()
+        self.cache_data_types()
+        for data_type, file_list in self.data_types.iteritems():
+            intersection = (file_list & files)
+            if intersection:
+                yield {'data_type': data_type['name'],
+                       'file_count': len(intersection)}
+
+    def get_participant_summary(self, node, files):
+        return {
+            'data_file_count': len(files),
+            'file_size': sum([f['file_size'] for f in files]),
+            'expertimental_strategies': list(self.get_exp_strats(files)),
+            'data_types': list(self.get_data_types(files)),
+        }
 
     def denormalize_participant(self, node):
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
         files = self.walk_paths(node, participant_traversal['file'])
-        participant['summary'] = {
-            'data_file_count': len(files),
-            'file_size': sum([f['file_size'] for f in files]),
-            'expertimental_strategies': self.get_exp_strats(files),
-            'data_types': self.get_data_types(files),
-        }
+        participant['summary'] = self.get_participant_summary(node, files)
         get_file = lambda f: self.denormalize_file(
             f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
@@ -169,8 +218,40 @@ class PsqlGraph2JSON(object):
                 ptree.pop(node)
 
     def denormalize_file(self, node, ptree):
-        ftree = {node: self.create_tree(node, self.ftree_mapping, {})}
-        doc = self.walk_tree(node, ftree, self.ftree_mapping, [])[0]
+        doc = self._get_base_doc(node)
+
+        # Walk to neighbors
+        auto_neighbors = (dict(file_tree).pop('archive')).keys()
+        for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
+            corr, label = file_tree[neighbor.label]['corr']
+            if corr == ONE_TO_ONE:
+                assert label not in doc
+                doc[label] = self._get_base_doc(neighbor)
+            else:
+                if label not in doc:
+                    doc[label] = []
+                doc[label].append(self._get_base_doc(neighbor))
+
+        # Get archives
+        archives, related_archives = [], []
+        for archive in set(self.neighbors_labeled(node, 'archive')):
+            if self.G[node][archive].get('label') == 'member_of':
+                archives.append(self._get_base_doc(archive))
+            else:
+                related_archives.append(self._get_base_doc(archive))
+        if archives:
+            doc['archives'] = archives
+        if related_archives:
+            doc['related_archives'] = related_archives
+
+        # Get data type
+        if 'data_subtype' in doc.keys():
+            self.cache_data_types()
+            for data_type, _files in self.data_types.iteritems():
+                if node not in _files:
+                    continue
+                doc['data_subtype']['data_type'] = self._get_base_doc(data_type)
+
         relevant = self.walk_paths(node, file_traversal.participant, True)
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
@@ -184,18 +265,18 @@ class PsqlGraph2JSON(object):
 
     def denormalize_project(self, p):
         """
-        This is a pretty crazy graph traversal.
 
         """
         doc = self._get_base_doc(p)
 
         # Get programs
-        # program = self.g.nodes().ids(p.node_id).path_end('program').first()
-        program = list(self.walk_path(p, ['program']))[0]
+        program = self.neighbors_labeled(p, 'program').next()
+        print('Program: {}'.format(program))
         doc['program'] = self._get_base_doc(program)
 
-        log.info('Finding participants')
-        parts = list(self.nodes_labeled('participant'))
+        print('Finding participants')
+        parts = list(self.neighbors_labeled(p, 'participant'))
+        print('Got {} participants'.format(len(parts)))
 
         # Construct paths
         paths = [
@@ -210,47 +291,49 @@ class PsqlGraph2JSON(object):
             ['data_subtype'] + path[::-1]+['participant'] for path in paths]
         exp_strat_to_part_paths = [
             path[::-1]+['participant'] for path in paths]
-        file_to_data_type_path = ['data_subtype', 'data_type']
 
         # Get files
-        log.info('Getting files')
-        files = self.combine_paths_from(
-            [part.node_id for part in parts],
-            paths, 'file').all()
+        print('Getting files')
+        files = set()
+        part_files = {}
+        for part in parts:
+            part_files[part] = self.walk_paths(part, paths)
+            files = files.union(part_files[part])
+        print('Got {} files from {} participants'.format(
+            len(files), len(part_files)))
 
-        # Get experimental strategies
-        log.info('Getting experimental strategies')
-        exp_strats = {ex['name'] for ex in [self.walk_path(
-            f, ['experimental_strategy']) for f in files]}
+        # Get data types
         exp_strat_summaries = []
-        for exp_strat in exp_strats:
-            log.info('Getting experimental strategies -> participant')
+        exp_strats = set()
+        for exp_strat in self.nodes_labeled('experimental_strategy'):
+            print('{} {}'.format(exp_strat, exp_strat['name']))
+            dt_files = set(self.walk_path(exp_strat, ['file']))
+            if not len(dt_files & files):
+                continue
             participant_count = len(
-                {self.walk_paths(exp_strat, exp_strat_to_part_paths)})
-            log.info('Getting experimental strategies -> files')
-            file_count = len({self.walk_path(exp_strat, ['file'])})
+                {p for p, p_files in part_files.iteritems()
+                 if len(dt_files & p_files)})
             exp_strat_summaries.append({
-                'participant_count': participant_count(),
-                'file_count': len(files),
+                'participant_count': participant_count,
                 'experimental_strategy': exp_strat['name'],
+                'file_count': len(dt_files),
             })
 
         # Get data types
-        log.info('Getting data_types')
         data_type_summaries = []
-        data_types = {dt['name'] for dt in [self.walk_path(
-            f, file_to_data_type_path) for f in files]}
-        for data_type in data_types:
-            log.info('Getting data type -> participant')
+        data_types = set()
+        for data_type in self.nodes_labeled('data_type'):
+            print('{} {}'.format(data_type, data_type['name']))
+            dt_files = set(self.walk_path(data_type, ['data_subtype', 'file']))
+            if not len(dt_files & files):
+                continue
             participant_count = len(
-                {self.walk_paths(data_type, data_type_to_part_paths)})
-            log.info('Getting data type -> files')
-            file_count = len(
-                {self.walk_path(data_type, file_to_data_type_path)})
+                {p for p, p_files in part_files.iteritems()
+                 if len(dt_files & p_files)})
             data_type_summaries.append({
                 'participant_count': participant_count,
                 'data_type': data_type['name'],
-                'file_count': file_count,
+                'file_count': len(dt_files),
             })
 
         # Compile summary
@@ -264,3 +347,17 @@ class PsqlGraph2JSON(object):
         if data_type_summaries:
             doc['summary']['data_types'] = data_type_summaries
         return doc
+
+    def denormalize_participants(self, nodes):
+        total_part_docs, total_file_docs = [], []
+        pbar = self.pbar('Denormalizing participants ', len(nodes))
+        for n in nodes:
+            part_doc, file_docs = self.denormalize_participant(n)
+            total_part_docs.append(part_doc)
+            total_file_docs += file_docs
+            pbar.update(pbar.currval+1)
+        pbar.finish()
+        return total_part_docs, total_file_docs
+
+    def denormalize_projects(self):
+        return map(self.denormalize_project, self.nodes_labeled('project'))
