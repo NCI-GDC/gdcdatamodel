@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import argparse
@@ -11,7 +11,7 @@ if __name__ == '__main__':
                         help='download directory')
     parser.add_argument('-n', '--name', required=True, type=str,
                         help='name of the downloaders')
-    parser.add_argument('-g', '--gateway', default='192.170.230.172', type=str,
+    parser.add_argument('-g', '--gateway',  type=str,
                         help='s3 gateway host')
     parser.add_argument('-c', '--cypher', default='', type=str,
                         help='extra condition to append to cypher query')
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         resume=args.resume,
 
         # s3 settings
-        s3_auth_path=os.path.expanduser('~/authorization/cleversafe.yaml'),
+        s3_auth_path=os.path.expanduser('~/authorization/ceph.yaml'),
         s3_url=args.gateway,
         s3_bucket='target_cghub_protected',
     )

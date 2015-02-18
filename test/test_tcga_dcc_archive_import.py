@@ -1,14 +1,10 @@
 from unittest import TestCase
 from mock import patch
-
 import tempfile
-
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
-
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
-
 from zug.datamodel.prelude import create_prelude_nodes
 
 from psqlgraph import PsqlGraphDriver
@@ -17,7 +13,6 @@ from signpostclient import SignpostClient
 from multiprocessing import Process
 import time
 import random
-
 
 def run_signpost(port):
     Signpost({"driver": "inmemory", "layers": ["validator"]}).run(host="localhost",
@@ -71,6 +66,28 @@ class TCGADCCArchiveSyncTest(TestCase):
             **kwargs
         )
 
+    def test_syncing_an_archive_with_distinct_center(self):
+        archive = self.parser.parse_archive(
+            "hms.harvard.edu_BLCA.IlluminaHiSeq_DNASeqC.Level_3.1.3.0",
+            "12/16/2013",
+            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/blca/cgcc/hms.harvard.edu/illuminahiseq_dnaseqc/cna/hms.harvard.edu_BLCA.IlluminaHiSeq_DNASeqC.Level_3.1.3.0.tar.gz"
+        )
+        syncer = self.syncer_for(archive)
+        syncer.sync()
+       # make sure archive gets tied to project
+        with self.pg_driver.session_scope():
+            # make sure the files get ties to center
+            
+            file = self.pg_driver.node_lookup(
+                label="file",
+                property_matches={"file_name":"TCGA-BT-A0S7-01A-11D-A10R-02_AC1927ACXX---TCGA-BT-A0S7-10A-01D-A10R-02_AC1927ACXX---Segment.tsv"}
+                ).one()
+            center = self.pg_driver.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
+            self.assertEqual(center['code'],'02')
+            # make sure file and archive are in storage
+        self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
+        self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
+
     def test_syncing_an_archive_works(self):
         archive = self.parser.parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
@@ -95,7 +112,10 @@ class TCGADCCArchiveSyncTest(TestCase):
                           .with_edge_from_node("member_of", archive_node).one()
             # make sure the files get tied to classification stuff
             self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
-            # make sure file and archive are in storage
+            center = self.pg_driver.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
+            self.assertEqual(center['code'],'20')
+
+        # make sure file and archive are in storage
         self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
         self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
 

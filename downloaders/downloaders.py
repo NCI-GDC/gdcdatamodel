@@ -19,6 +19,11 @@ import math
 import calendar
 import signal
 from contextlib import contextmanager
+from mmap import mmap, PROT_READ, PAGESIZE
+
+# buffer 10 MB in memory at once
+from boto.s3.key import Key
+Key.BufferSize = 10 * 1024 * 1024
 
 logger = logging.getLogger(name="downloader")
 logging.basicConfig(
@@ -105,16 +110,32 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
 
                 # Upload this segment
                 logging.info("Posting part {}".format(index))
-                with FileChunkIO(path, 'r', offset=offset, bytes=bytes) as f:
-                    start = calendar.timegm(time.gmtime())
-                    mp.upload_part_from_file(f, index)
-                    stop = calendar.timegm(time.gmtime())
-                    els = stop - start
-                    logging.info("Posted part {} {} Mbps".format(
-                        index, bytes/7.63e6/els))
-                    return
-        except TimeoutError as e:
+                # logging.info("bytes is %s", bytes)
+                # logging.info("bytes mod pagesize is %s", bytes % PAGESIZE)
+                if bytes % PAGESIZE == 0:
+                    logging.info("chunk size is %s, mmaping chunk", bytes)
+                    f = open(path, "r+b")
+                    chunk_file = mmap(
+                        fileno=f.fileno(),
+                        length=bytes,
+                        offset=offset,
+                        prot=PROT_READ
+                    )
+                else:
+                    logging.info("chunk size is %s, not a multiple of page size, reading with FileChunkIO", bytes)
+                    chunk_file = FileChunkIO(path, "r", offset=offset, bytes=bytes)
+                start = calendar.timegm(time.gmtime())
+                mp.upload_part_from_file(chunk_file, index)
+                stop = calendar.timegm(time.gmtime())
+                chunk_file.close()
+                els = stop - start
+                logging.info("Posted part {} {} MBps".format(
+                    index, (bytes/float(1024*1024))/els))
+                return
+        except e:
             logging.exception(e)
+            if not isinstance(e, TimeoutError):
+                raise
 
 
 def no_proxy(func):
@@ -282,8 +303,8 @@ class Downloader(object):
                     continue
             if not self.do_carefully(self.download):
                 continue
-            if not self.do_carefully(self.checksum):
-                continue
+            # if not self.do_carefully(self.checksum):
+            #    continue
             if not self.do_carefully(self.upload):
                 continue
             self.do_carefully(self.finish_work)
@@ -435,7 +456,7 @@ class Downloader(object):
             self.work.get('file_size', 0)/1e9))
 
         cmd = ' '.join([
-            'sudo gtdownload -v -k 15',
+            'gtdownload -v -k 15',
             '-c {cghub_key}',
             '-l {aid}.log',
             '--max-children 4',

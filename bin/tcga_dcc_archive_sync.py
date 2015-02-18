@@ -20,8 +20,6 @@ from multiprocessing.pool import Pool
 
 
 def sync_list(args, archives):
-    driver = PsqlGraphDriver(args.pg_host, args.pg_user,
-                             args.pg_pass, args.pg_database)
     if args.s3_host:
         storage_client = S3(args.s3_access_key, args.s3_secret_key,
                             host=args.s3_host, secure=False)
@@ -30,6 +28,8 @@ def sync_list(args, archives):
     else:
         storage_client = None
     for archive in archives:
+        driver = PsqlGraphDriver(args.pg_host, args.pg_user,
+                                 args.pg_pass, args.pg_database)
         syncer = TCGADCCArchiveSyncer(
             archive,
             signpost=SignpostClient(args.signpost_url, version="v0"),
@@ -46,6 +46,8 @@ def sync_list(args, archives):
             syncer.sync()  # ugh
         except Exception:  # we use Exception so as not to catch KeyboardInterrupt et al.
             syncer.log.exception("caught exception while syncing")
+        finally:
+            driver.engine.dispose()
 
 
 def split(a, n):
@@ -75,7 +77,8 @@ def main():
     parser.add_argument("--os-dir", type=str, help="directory to use for mock local object storage",
                         default=mkdtemp())
     parser.add_argument("--archive-name", type=str, help="name of archive to filter to")
-    parser.add_argument("--only-unimported", type="store_true", help="process only archives which have not already been imported")
+    parser.add_argument("--only-unimported", action="store_true", help="process only archives which have not already been imported")
+    parser.add_argument("--only-imported", action="store_true", help="process only archives which have already been imported")
     parser.add_argument("--s3-host", type=str, help="s3 host to connect to")
     parser.add_argument("--s3-access-key", type=str, help="s3 access key to use")
     parser.add_argument("--s3-secret-key", type=str, help="s3 secret key to use")
@@ -90,13 +93,17 @@ def main():
     driver = PsqlGraphDriver(args.pg_host, args.pg_user,
                              args.pg_pass, args.pg_database)
     archives = list(LatestURLParser())
-    if args.only_unimported:
+    with driver.session_scope():
         all_archive_nodes = driver.nodes().labels("archive").all()
-        imported_names = [a.system_annotations["archive_name"]
-                          for a in all_archive_nodes
-                          if a.system_annotations.get("archive_name")]
+    imported_names = [a.system_annotations["archive_name"]
+                      for a in all_archive_nodes
+                      if a.system_annotations.get("archive_name")]
+    if args.only_unimported:
         archives = [a for a in archives
                     if a["archive_name"] not in imported_names]
+    if args.only_imported:
+        archives = [a for a in archives
+                    if a["archive_name"] in imported_names]
     if args.archive_name:
         archives = [a for a in archives if a["archive_name"] == args.archive_name]
     if not archives:

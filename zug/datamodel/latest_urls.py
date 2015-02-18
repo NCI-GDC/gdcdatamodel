@@ -8,7 +8,7 @@ from cdisutils.log import get_logger
 logger = get_logger(__name__)
 
 default_latest_firstline = 'ARCHIVE_NAME DATE_ADDED ARCHIVE_URL'.split()
-default_latest_url = "http://tcga-data.nci.nih.gov/datareports/resources/latestarchive"
+default_latest_url = "https://tcga-data.nci.nih.gov/datareports/resources/latestarchive"
 default_open_url = "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/"
 default_protected_url = "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/tcga4yeo/tumor/"
 
