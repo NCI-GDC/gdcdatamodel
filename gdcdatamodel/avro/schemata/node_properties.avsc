@@ -246,6 +246,21 @@
         "name": "name",
         "type": "string",
         "doc": "TOREVIEW: display name for the project"
+      },
+      {
+        "name": "project_name",
+        "type": "string",
+        "doc": "TOREVIEW: full name for the project"
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "doc": "TOREVIEW: state of the project"
+      },
+      {
+        "name": "primary_site",
+        "type": "string",
+        "doc": "TOREVIEW: primary site for the project"
       }
     ]
   },
