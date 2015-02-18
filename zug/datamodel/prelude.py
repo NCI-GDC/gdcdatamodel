@@ -342,11 +342,18 @@ def idempotent_insert(driver, label, name, session):
 
 
 def insert_project_nodes(driver):
+    tcga_id = str(uuid5(GDC_NAMESPACES['program'], 'TCGA'))
     with driver.session_scope():
         for project in PROJECTS:
             node_id = str(uuid5(GDC_NAMESPACES['project'], project['name']))
             driver.node_merge(
                 node_id=node_id, label='project', properties=project)
+            if driver.edge_lookup_one(
+                    src_id=node_id, dst_id=tcga_id, label="member_of"):
+                continue
+            driver.edge_insert(
+                PsqlEdge(src_id=node_id, dst_id=tcga_id, label="member_of"),
+                max_retries=4)
 
 
 def insert_classification_nodes(driver):
@@ -377,8 +384,7 @@ def insert_classification_nodes(driver):
         for format in DATA_FORMATS:
             idempotent_insert(driver, "data_format", format, session)
 
-        tcga_program_node = idempotent_insert(driver, "program", "TCGA",
-                                              session)
+        idempotent_insert(driver, "program", "TCGA", session)
 
 
 def create_prelude_nodes(driver):

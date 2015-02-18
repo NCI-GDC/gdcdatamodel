@@ -1,13 +1,17 @@
 from zug.datamodel.prelude import create_prelude_nodes
 import unittest
 from psqlgraph import PsqlGraphDriver
+from gdcdatamodel import node_avsc_object, edge_avsc_object
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 
 
 class TestPrelude(unittest.TestCase):
 
     def setUp(self):
-        self.driver = PsqlGraphDriver('localhost', 'test',
-                                      'test', 'automated_test')
+        self.driver = PsqlGraphDriver(
+            'localhost', 'test', 'test', 'automated_test',
+            edge_validator=AvroEdgeValidator(edge_avsc_object),
+            node_validator=AvroNodeValidator(node_avsc_object))
 
     def tearDown(self):
         with self.driver.engine.begin() as conn:
