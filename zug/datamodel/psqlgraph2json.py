@@ -40,11 +40,10 @@ class PsqlGraph2JSON(object):
 
     def cache_database(self):
         log.info('Caching database ...')
-        log.info('Caching {} nodes ...'.format(self.g.nodes().count()))
         log.info('Caching {} edges ...'.format(self.g.edges().count()))
         for e in self.g.edges().options(joinedload(Edge.src))\
                                .options(joinedload(Edge.dst))\
-                               .yield_per(10000):
+                               .all():
             self.G.add_edge(e.src, e.dst)
         log.info('Cached {} edges'.format(self.G.number_of_edges()))
 
@@ -111,8 +110,10 @@ class PsqlGraph2JSON(object):
     def walk_path(self, node, path, whole=False, level=0):
         if path:
             for neighbor in self.neighbors_labeled(node, path[0]):
+                print neighbor
                 for n in self.walk_path(neighbor, path[1:], whole, level+1):
                     yield n
+        print path, node.label
         if whole or (len(path) == 1 and path[0] == node.label):
             yield node
 
@@ -189,13 +190,12 @@ class PsqlGraph2JSON(object):
         doc = self._get_base_doc(p)
 
         # Get programs
-        program = self.g.nodes().ids(p.node_id).path_end('program').first()
+        # program = self.g.nodes().ids(p.node_id).path_end('program').first()
+        program = list(self.walk_path(p, ['program']))[0]
+        doc['program'] = self._get_base_doc(program)
 
-        # Get participants
-        log.info('Query for programs')
-        if program:
-            doc['program'] = self._get_base_doc(program)
-        parts = self.g.nodes().ids(p.node_id).path_end('participant').all()
+        log.info('Finding participants')
+        parts = list(self.nodes_labeled('participant'))
 
         # Construct paths
         paths = [
@@ -213,46 +213,40 @@ class PsqlGraph2JSON(object):
         file_to_data_type_path = ['data_subtype', 'data_type']
 
         # Get files
-        log.info('Query for files')
+        log.info('Getting files')
         files = self.combine_paths_from(
             [part.node_id for part in parts],
             paths, 'file').all()
 
         # Get experimental strategies
-        log.info('Query for experimental strategies')
-        exp_strats = self.g.nodes().ids([f.node_id for f in files])\
-                                   .path_end(['experimental_strategy']).all()
+        log.info('Getting experimental strategies')
+        exp_strats = {ex['name'] for ex in [self.walk_path(
+            f, ['experimental_strategy']) for f in files]}
         exp_strat_summaries = []
         for exp_strat in exp_strats:
-            log.info('Query for experimental strategies -> participant')
-            participant_count = self.combine_paths_from(
-                str(exp_strat.node_id),
-                exp_strat_to_part_paths,
-                'participant').count()
-            log.info('Query for experimental strategies -> files')
-            file_count = self.g.nodes().ids(exp_strat.node_id)\
-                                       .path_end(['file']).count()
+            log.info('Getting experimental strategies -> participant')
+            participant_count = len(
+                {self.walk_paths(exp_strat, exp_strat_to_part_paths)})
+            log.info('Getting experimental strategies -> files')
+            file_count = len({self.walk_path(exp_strat, ['file'])})
             exp_strat_summaries.append({
-                'participant_count': participant_count,
-                'file_count': file_count,
+                'participant_count': participant_count(),
+                'file_count': len(files),
                 'experimental_strategy': exp_strat['name'],
             })
 
         # Get data types
-        log.info('Query for data_types')
+        log.info('Getting data_types')
         data_type_summaries = []
-        data_types = self.g.nodes().ids([f.node_id for f in files])\
-                                   .path_end(file_to_data_type_path).all()
+        data_types = {dt['name'] for dt in [self.walk_path(
+            f, file_to_data_type_path) for f in files]}
         for data_type in data_types:
-            log.info('Query for data type -> participant')
-            participant_count = self.combine_paths_from(
-                str(data_type.node_id),
-                data_type_to_part_paths,
-                'participant').count()
-            log.info('Query for data type -> file')
-            file_count = self.g.nodes().ids([d.node_id for d in data_types])\
-                                       .path_end(['data_subtype', 'file'])\
-                                       .count()
+            log.info('Getting data type -> participant')
+            participant_count = len(
+                {self.walk_paths(data_type, data_type_to_part_paths)})
+            log.info('Getting data type -> files')
+            file_count = len(
+                {self.walk_path(data_type, file_to_data_type_path)})
             data_type_summaries.append({
                 'participant_count': participant_count,
                 'data_type': data_type['name'],
