@@ -55,7 +55,7 @@ def get_participant_es_mapping(include_file=True):
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
     participant["properties"]["summary"] = {"properties": {
-        "data_file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
         "experimental_strategies": {"properties": {
             "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
