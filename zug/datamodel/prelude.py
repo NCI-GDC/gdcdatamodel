@@ -342,9 +342,11 @@ def idempotent_insert(driver, label, name, session):
 
 
 def insert_project_nodes(driver):
-    for project in PROJECTS:
-        node_id = str(uuid5(GDC_NAMESPACES['project'], project['name']))
-        driver.node_merge(node_id=node_id, label='project', properties=project)
+    with driver.session_scope():
+        for project in PROJECTS:
+            node_id = str(uuid5(GDC_NAMESPACES['project'], project['name']))
+            driver.node_merge(
+                node_id=node_id, label='project', properties=project)
 
 
 def insert_classification_nodes(driver):
