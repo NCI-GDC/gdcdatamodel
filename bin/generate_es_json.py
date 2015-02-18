@@ -4,10 +4,7 @@ import argparse
 from psqlgraph import PsqlGraphDriver
 from zug.datamodel import psqlgraph2json
 from cdisutils.log import get_logger
-from pprint import pprint
 from elasticsearch import Elasticsearch
-from multiprocessing import Pool
-import time
 
 log = get_logger("json_generator")
 logging.root.setLevel(level=logging.WARNING)
@@ -24,55 +21,23 @@ def get_converter():
     ))
 
 
-def convert_participant(p):
-    conv = get_converter()
-    if not args.no_es:
-        es = Elasticsearch(hosts=[args.es_host])
-    with conv.g.session_scope():
-        log.info(p)
-        participant, files = conv.denormalize_participant(p)
-    if not args.no_es:
-        res = es.index(
-            index=args.es_index, doc_type="participant", body=participant)
-        log.info(res)
-        for f in files:
-            res = es.index(index=args.es_index, doc_type="file", body=f)
-            log.info(res)
-
-
-def convert_project(p):
-    conv = get_converter()
-    if not args.no_es:
-        es = Elasticsearch(hosts=[args.es_host])
-    with conv.g.session_scope():
-        log.info(p)
-        project = conv.denormalize_project(p)
-        pprint(project)
-    if not args.no_es:
-        res = es.index(index=args.es_index, doc_type="project", body=project)
-        log.info(res)
-
-
-def convert_participants(conv):
+def insert_participants(conv, es):
     log.info('Loading participants')
+    participants = list(conv.nodes_labeled('participant'))
     if args.limit:
-        participants = conv.get_nodes('participant').limit(args.limit).all()
-    else:
-        participants = conv.get_nodes('participant').all()
-    log.info('Found {} participants'.format(len(participants)))
-    pool = Pool(args.processes)
-    pool.map(convert_participant, participants)
+        participants = participants[:args.limit]
+    log.info('Transferring {} participants'.format(len(participants)))
+    part_docs, file_docs = conv.denormalize_participants(participants)
+    if es:
+        conv.es_bulk_upload(es, args.es_index, 'participant', part_docs)
+        conv.es_bulk_upload(es, args.es_index, 'file', file_docs)
 
 
-def convert_projects(conv):
+def insert_projects(conv, es):
     log.info('Loading projects')
-    if args.limit:
-        projects = conv.get_nodes('project').limit(args.limit).all()
-    else:
-        projects = conv.get_nodes('project').all()
-    log.info('Found {} projects'.format(len(projects)))
-    pool = Pool(args.processes)
-    pool.map(convert_project, projects)
+    project_docs = conv.denormalize_projects()
+    if es:
+        conv.es_bulk_upload(es, args.es_index, 'project', project_docs)
 
 
 if __name__ == '__main__':
@@ -103,16 +68,7 @@ if __name__ == '__main__':
 
     c = get_converter()
     with c.g.session_scope():
-        c.load_cache_from_disk('/home/ubuntu/ram/graph.gpickle')
-        participants, files = [], []
-        start = time.time()
-        for p in c.nodes_labeled('participant'):
-            p, f = c.denormalize_participant(p)
-            participants.append(p)
-            files += f
-            if len(participants) > 100:
-                break
-        end = time.time()
-        pprint(participants[-1])
-        print 'Rate: {} seconds/participant'.format(
-            (end - start)/len(participants))
+        c.cache_database()
+        es = None if args.no_es else Elasticsearch(hosts=[args.es_host])
+        insert_participants(c, es)
+        insert_projects(c, es)

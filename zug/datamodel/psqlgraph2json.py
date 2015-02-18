@@ -1,6 +1,3 @@
-import gdcdatamodel
-reload(gdcdatamodel)
-
 from gdcdatamodel.mappings import (
     participant_tree, participant_traversal,
     file_tree, file_traversal,
@@ -10,12 +7,11 @@ from gdcdatamodel.mappings import (
 import logging
 from cdisutils.log import get_logger
 import networkx as nx
-from psqlgraph import Node, Edge
+from psqlgraph import Edge
 from pprint import pprint
 import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import *
-from copy import copy
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -52,8 +48,9 @@ class PsqlGraph2JSON(object):
         return pbar
 
     def es_bulk_upload(self, es, index, doc_type, docs, batch_size=256):
-        instruction = { "index" : { "_index" : index, "_type" : doc_type}}
+        instruction = {"index": {"_index": index, "_type": doc_type}}
         pbar, results = self.pbar('Batch upload ', len(docs)), []
+
         def body():
             start = pbar.currval
             for doc in docs[start:start+batch_size]:
@@ -71,15 +68,16 @@ class PsqlGraph2JSON(object):
         self.ptree_mapping = {'participant': participant_tree.to_dict()}
 
     def cache_database(self):
-        pbar, i = self.pbar('Caching Database: ', self.g.edges().count())
+        pbar = self.pbar('Caching Database: ', self.g.edges().count())
         for e in self.g.edges().options(joinedload(Edge.src))\
                                .options(joinedload(Edge.dst))\
                                .yield_per(int(1e5)):
             pbar.update(pbar.currval+1)
-            needs_differentiation =  (e.src.label, e.label, e.dst.label) \
-                                     in self.differentiated_edges
+            needs_differentiation = ((e.src.label, e.label, e.dst.label)
+                                     in self.differentiated_edges)
             if needs_differentiation and e.properties:
-                self.G.add_edge(e.src, e.dst, label=e.label, props=e.properties)
+                self.G.add_edge(
+                    e.src, e.dst, label=e.label, props=e.properties)
             elif needs_differentiation and not e.properties:
                 self.G.add_edge(e.src, e.dst, label=e.label)
             elif e.properties:
@@ -287,10 +285,6 @@ class PsqlGraph2JSON(object):
             ['sample', 'portion', 'analyte', 'file'],
             ['sample', 'portion', 'analyte', 'aliquot', 'file'],
         ]
-        data_type_to_part_paths = [
-            ['data_subtype'] + path[::-1]+['participant'] for path in paths]
-        exp_strat_to_part_paths = [
-            path[::-1]+['participant'] for path in paths]
 
         # Get files
         print('Getting files')
@@ -304,7 +298,6 @@ class PsqlGraph2JSON(object):
 
         # Get data types
         exp_strat_summaries = []
-        exp_strats = set()
         for exp_strat in self.nodes_labeled('experimental_strategy'):
             print('{} {}'.format(exp_strat, exp_strat['name']))
             dt_files = set(self.walk_path(exp_strat, ['file']))
@@ -321,7 +314,6 @@ class PsqlGraph2JSON(object):
 
         # Get data types
         data_type_summaries = []
-        data_types = set()
         for data_type in self.nodes_labeled('data_type'):
             print('{} {}'.format(data_type, data_type['name']))
             dt_files = set(self.walk_path(data_type, ['data_subtype', 'file']))

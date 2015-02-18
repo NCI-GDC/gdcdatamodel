@@ -16,6 +16,7 @@ setup(
         ]
     },
     install_requires=[
+        'networkx',
         'pyyaml',
         'psqlgraph',
         'gdcdatamodel',
