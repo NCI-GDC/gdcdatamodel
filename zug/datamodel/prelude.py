@@ -377,9 +377,10 @@ def insert_classification_nodes(driver):
 
         tcga_program_node = idempotent_insert(driver, "program", "TCGA",
                                               session)
-        insert_project_nodes(driver)
+
 
 def create_prelude_nodes(driver):
     import_center_codes(driver, os.path.join(PKG_DIR, "centerCode.csv"))
     import_tissue_source_site_codes(driver, os.path.join(PKG_DIR, "tissueSourceSite.csv"))
     insert_classification_nodes(driver)
+    insert_project_nodes(driver)
