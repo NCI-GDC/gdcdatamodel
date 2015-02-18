@@ -1,17 +1,15 @@
 from gdcdatamodel.mappings import (
     participant_tree, participant_traversal,
     file_tree, file_traversal,
-    annotation_tree, annotation_traversal,
     ONE_TO_ONE, ONE_TO_MANY
 )
 import logging
 from cdisutils.log import get_logger
 import networkx as nx
 from psqlgraph import Edge
-from pprint import pprint
 import itertools
 from sqlalchemy.orm import joinedload
-from progressbar import *
+from progressbar import ProgressBar, Percentage, Bar, ETA
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -42,7 +40,8 @@ class PsqlGraph2JSON(object):
 
     def pbar(self, title, maxval):
         pbar = ProgressBar(widgets=[
-            title, Percentage(), ' ', Bar(marker='#', left='[',right=']'), ' ',
+            title, Percentage(), ' ',
+            Bar(marker='#', left='[', right=']'), ' ',
             ETA(), ' '], maxval=maxval)
         pbar.update(0)
         return pbar
@@ -229,6 +228,11 @@ class PsqlGraph2JSON(object):
                 if label not in doc:
                     doc[label] = []
                 doc[label].append(self._get_base_doc(neighbor))
+
+        # Get related_files
+        related_files = list(self.neighbors_labeled(node, 'file'))
+        if related_files:
+            doc['related_files'] = map(self._get_base_doc, related_files)
 
         # Get archives
         archives, related_archives = [], []

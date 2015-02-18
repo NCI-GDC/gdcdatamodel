@@ -16,6 +16,7 @@ setup(
         ]
     },
     install_requires=[
+        'progressbar==2.2',
         'networkx',
         'pyyaml',
         'psqlgraph',
