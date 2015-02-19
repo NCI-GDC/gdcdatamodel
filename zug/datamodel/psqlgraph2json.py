@@ -208,8 +208,7 @@ class PsqlGraph2JSON(object):
 
     def reconstruct_biospecimen_paths(self, participant):
         # For each sample.aliquot, reconstruct entire path
-        samples = participant.get('samples', [])
-        for sample in samples:
+        for sample in participant.get('samples', []):
             sample['portions'] = sample.get('portions', [])
             aliquots = sample.pop('aliquots', [])
             for aliquot in aliquots:
@@ -221,6 +220,7 @@ class PsqlGraph2JSON(object):
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
         files = self.walk_paths(node, participant_traversal['file'])
         participant['summary'] = self.get_participant_summary(node, files)
+        self.reconstruct_biospecimen_paths(participant)
 
         def get_file(f):
             self.denormalize_file(f, self.copy_tree(ptree, {}))
