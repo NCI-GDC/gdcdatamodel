@@ -3,7 +3,7 @@ import logging
 import argparse
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from psqlgraph import PsqlGraphDriver, Node
+from psqlgraph import PsqlGraphDriver, Node, Edge
 from cdisutils.log import get_logger
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from sqlalchemy.orm import joinedload
@@ -43,6 +43,7 @@ def connect_all(g):
     participants = g.nodes().labels('participant')\
                             .options(joinedload(Node.edges_in)).all()
     log.info('Found {} participants'.format(len(participants)))
+    pbar = get_pbar('Connecting participants ', len(participants))
 
     log.info('Loading xml files')
     xmls = {
@@ -54,9 +55,9 @@ def connect_all(g):
     }
     log.info('Found {} xml files'.format(len(xmls)))
 
-    pbar = get_pbar('Connecting participants ', len(participants))
     for participant in participants:
         barcode = participant['submitter_id']
+        p_neighbor_ids = [e.src_id for e in participant.edges_in]
         biospecimen_name = biospecimen_base.format(barcode=barcode)
         control_name = control_base.format(barcode=barcode)
         clinical_name = clinical_base.format(barcode=barcode)
@@ -67,16 +68,22 @@ def connect_all(g):
             biospecimen = xmls.get(control_name, None)
 
         if clinical:
-            existing = clinical.node_id in [
+            if clinical.node_id not in p_neighbor_ids:
+                g.edge_insert(Edge(
+                    src_id=clinical.node_id,
+                    dst_id=participant.node_id,
+                    label='describes'))
 
-            ]
-
-
-        # if not biospecimen:
-        #     log.warn('Missing biospecimen file for {} {}'.format(
-        #         participant, participant.system_annotations))
+        if biospecimen:
+            if biospecimen.node_id not in p_neighbor_ids:
+                g.edge_insert(Edge(
+                    src_id=biospecimen.node_id,
+                    dst_id=participant.node_id,
+                    label='describes'))
+        else:
+            log.warn('Missing biospecimen file for {} {}'.format(
+                participant, participant.system_annotations))
         pbar.update(pbar.currval+1)
-
     pbar.finish()
 
 if __name__ == '__main__':
