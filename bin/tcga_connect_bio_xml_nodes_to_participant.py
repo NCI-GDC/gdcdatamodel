@@ -6,6 +6,7 @@ from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from psqlgraph import PsqlGraphDriver, Node
 from cdisutils.log import get_logger
 from progressbar import ProgressBar, Percentage, Bar, ETA
+from sqlalchemy.orm import joinedload
 
 log = get_logger("tcga_connect_bio_xml_nodes_to_participant")
 logging.root.setLevel(level=logging.ERROR)
@@ -39,7 +40,8 @@ def get_pbar(title, maxval):
 
 def connect_all(g):
     log.info('Loading participants')
-    participants = g.nodes().labels('participant').all()
+    participants = g.nodes().labels('participant')\
+                            .options(joinedload(Node.edges_in)).all()
     log.info('Found {} participants'.format(len(participants)))
 
     log.info('Loading xml files')
@@ -63,6 +65,13 @@ def connect_all(g):
         biospecimen = xmls.get(biospecimen_name, None)
         if not biospecimen:
             biospecimen = xmls.get(control_name, None)
+
+        if clinical:
+            existing = clinical.node_id in [
+
+            ]
+
+
         # if not biospecimen:
         #     log.warn('Missing biospecimen file for {} {}'.format(
         #         participant, participant.system_annotations))
