@@ -207,27 +207,35 @@ class PsqlGraph2JSON(object):
         }
 
     def reconstruct_biospecimen_paths(self, participant):
-        # For each sample.aliquot, reconstruct entire path
+        """For each sample.aliquot, reconstruct entire path"""
+
         for sample in participant.get('samples', []):
             sample['portions'] = sample.get('portions', [])
-            aliquots = sample.pop('aliquots', [])
-            for aliquot in aliquots:
-                portion = {'portion': {'analyte': {aliquot}}}
-                sample['portions'].append(portion)
+            for aliquot in sample.pop('aliquots', []):
+                sample['portions'].append({'portion': {'analyte': {aliquot}}})
 
     def denormalize_participant(self, node):
+        # Walk graph naturally for tree of node objects
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
+        # Use tree to create nested json
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
+        # Walk from participant to all file leaves
         files = self.walk_paths(node, participant_traversal['file'])
+        # Create participant summary
         participant['summary'] = self.get_participant_summary(node, files)
+        # Take any out of place nodes and put then in correct place in tree
         self.reconstruct_biospecimen_paths(participant)
 
+        # Denormalize the participants files
         def get_file(f):
             self.denormalize_file(f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
         return participant, participant['files']
 
     def prune_participant(self, relevant_nodes, ptree, keys):
+        """Start with whole participant tree and remove any nodes that did not
+        contribute the the creation of this file.
+        """
         for node in ptree.keys():
             if ptree[node]:
                 self.prune_participant(relevant_nodes, ptree[node], keys)
@@ -235,6 +243,10 @@ class PsqlGraph2JSON(object):
                 ptree.pop(node)
 
     def denormalize_file(self, node, ptree):
+        """Given a participants tree and a file node, create the file json
+        document.
+
+        """
         doc = self._get_base_doc(node)
 
         # Walk to neighbors
@@ -297,7 +309,7 @@ class PsqlGraph2JSON(object):
         raise NotImplementedError()
 
     def denormalize_project(self, p):
-        """
+        """Summarize a project.
 
         """
         doc = self._get_base_doc(p)
