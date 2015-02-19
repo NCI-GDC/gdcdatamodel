@@ -321,12 +321,12 @@ class PsqlGraph2JSON(object):
 
         # Get programs
         program = self.neighbors_labeled(p, 'program').next()
-        print('Program: {}'.format(program))
+        log.debug('Program: {}'.format(program))
         doc['program'] = self._get_base_doc(program)
 
-        print('Finding participants')
+        log.debug('Finding participants')
         parts = list(self.neighbors_labeled(p, 'participant'))
-        print('Got {} participants'.format(len(parts)))
+        log.debug('Got {} participants'.format(len(parts)))
 
         # Construct paths
         paths = [
@@ -339,19 +339,19 @@ class PsqlGraph2JSON(object):
         ]
 
         # Get files
-        print('Getting files')
+        log.debug('Getting files')
         files = set()
         part_files = {}
         for part in parts:
             part_files[part] = self.walk_paths(part, paths)
             files = files.union(part_files[part])
-        print('Got {} files from {} participants'.format(
+        log.debug('Got {} files from {} participants'.format(
             len(files), len(part_files)))
 
         # Get data types
         exp_strat_summaries = []
         for exp_strat in self.nodes_labeled('experimental_strategy'):
-            print('{} {}'.format(exp_strat, exp_strat['name']))
+            log.debug('{} {}'.format(exp_strat, exp_strat['name']))
             dt_files = set(self.walk_path(exp_strat, ['file']))
             if not len(dt_files & files):
                 continue
@@ -367,7 +367,7 @@ class PsqlGraph2JSON(object):
         # Get data types
         data_type_summaries = []
         for data_type in self.nodes_labeled('data_type'):
-            print('{} {}'.format(data_type, data_type['name']))
+            log.debug('{} {}'.format(data_type, data_type['name']))
             dt_files = set(self.walk_path(data_type, ['data_subtype', 'file']))
             if not len(dt_files & files):
                 continue
@@ -404,4 +404,11 @@ class PsqlGraph2JSON(object):
         return total_part_docs, total_file_docs
 
     def denormalize_projects(self):
-        return map(self.denormalize_project, self.nodes_labeled('project'))
+        projects = list(self.nodes_labeled('project'))
+        project_docs = []
+        pbar = self.pbar('Denormalizing projects ', len(projects))
+        for project in projects:
+            project_docs.append(self.denormalize_project(project))
+            pbar.update(pbar.currval+1)
+        pbar.finish()
+        return project_docs
