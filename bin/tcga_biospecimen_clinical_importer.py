@@ -12,7 +12,7 @@ from cdisutils.log import get_logger
 log = get_logger("dcc_bio_importer")
 logging.root.setLevel(level=logging.ERROR)
 
-re_biospecimen = re.compile(".*(biospecimen).*\\.xml")
+re_biospecimen = re.compile(".*(biospecimen|control).*\\.xml")
 re_clinical = re.compile(".*(clinical).*\\.xml")
 all_reg = ".*(bio).*(Level_1).*\\.xml"
 args = None
@@ -63,8 +63,10 @@ def process(archive):
 
 
 def import_datatypes():
+    log.info('Downloading list of latest files...')
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
+    log.info('Found {} latest files.'.format(len(latest)))
     p = Pool(args.nproc)
     p.map(process, latest)
 
