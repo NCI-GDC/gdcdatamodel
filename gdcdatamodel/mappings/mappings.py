@@ -41,6 +41,10 @@ def _walk_tree(tree, mapping):
 def get_file_es_mapping(include_participant=True):
     files = {"_id": {"path": "file_id"}}
     files["properties"] = _walk_tree(file_tree, _munge_properties("file"))
+    files["properties"]['related_files'] = {
+        'type': 'nested',
+        'properties': _munge_properties("file"),
+    }
     if include_participant:
         files["properties"]['participant'] = get_participant_es_mapping(False)
         files["properties"]["participant"]["type"] = "nested"
