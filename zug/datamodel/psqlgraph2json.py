@@ -28,8 +28,6 @@ class PsqlGraph2JSON(object):
         self.g = psqlgraph_driver
         self.G = nx.Graph()
         self.patch_trees()
-        self.ptree_mapping = {'participant': participant_tree.to_dict()}
-        self.ftree_mapping = {'file': file_tree.to_dict()}
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
@@ -63,8 +61,19 @@ class PsqlGraph2JSON(object):
 
     def patch_trees(self):
         file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_subtype')
+
+        # Include files only attached to biospecimen pathway via another file
         participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
+
+        # Add leaves to root for things like target
+        participant_tree.aliquot = participant_tree.sample\
+                                                   .portion\
+                                                   .analyte\
+                                                   .aliquot
+
+        # Format tree in way that allows uniform walking
         self.ptree_mapping = {'participant': participant_tree.to_dict()}
+        self.ftree_mapping = {'file': file_tree.to_dict()}
 
     def cache_database(self):
         pbar = self.pbar('Caching Database: ', self.g.edges().count())
@@ -197,13 +206,24 @@ class PsqlGraph2JSON(object):
             'data_types': list(self.get_data_types(files)),
         }
 
+    def reconstruct_biospecimen_paths(self, participant):
+        # For each sample.aliquot, reconstruct entire path
+        samples = participant.get('samples', [])
+        for sample in samples:
+            sample['portions'] = sample.get('portions', [])
+            aliquots = sample.pop('aliquots', [])
+            for aliquot in aliquots:
+                portion = {'portion': {'analyte': {aliquot}}}
+                sample['portions'].append(portion)
+
     def denormalize_participant(self, node):
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
         files = self.walk_paths(node, participant_traversal['file'])
         participant['summary'] = self.get_participant_summary(node, files)
-        get_file = lambda f: self.denormalize_file(
-            f, self.copy_tree(ptree, {}))
+
+        def get_file(f):
+            self.denormalize_file(f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
         return participant, participant['files']
 
@@ -260,6 +280,17 @@ class PsqlGraph2JSON(object):
         doc['participants'] = map(
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
+
+        # Get annotations
+        annotations = doc.pop('annotations', [])
+        for parent in relevant:
+            p_annotations = self.neighbors_labeled('annotation')
+            for p_annotation in p_annotations:
+                ann_doc = self._get_base_doc(p_annotation)
+                ann_doc[parent.label] = self._get_base_doc(parent)
+                annotations.append(ann_doc)
+        if annotations:
+            doc['annotations'] = annotations
         return doc
 
     def denormalize_annotation(self, a):
