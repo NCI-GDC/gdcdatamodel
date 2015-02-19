@@ -228,7 +228,7 @@ class PsqlGraph2JSON(object):
 
         # Denormalize the participants files
         def get_file(f):
-            self.denormalize_file(f, self.copy_tree(ptree, {}))
+            return self.denormalize_file(f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
         return participant, participant['files']
 
@@ -296,13 +296,18 @@ class PsqlGraph2JSON(object):
         # Get annotations
         annotations = doc.pop('annotations', [])
         for parent in relevant:
-            p_annotations = self.neighbors_labeled('annotation')
-            for p_annotation in p_annotations:
+            for p_annotation in self.neighbors_labeled(parent, 'annotation'):
                 ann_doc = self._get_base_doc(p_annotation)
                 ann_doc[parent.label] = self._get_base_doc(parent)
                 annotations.append(ann_doc)
         if annotations:
             doc['annotations'] = annotations
+
+        if node.acl == ['open']:
+            doc['access'] = 'open'
+        else:
+            doc['access'] = 'protected'
+
         return doc
 
     def denormalize_annotation(self, a):
