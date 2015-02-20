@@ -121,7 +121,7 @@ def get_file_es_mapping(include_participant=True):
         'type': 'nested',
         'properties': _munge_properties("file"),
     }
-    files['properties']['access'] = {'index': 'not_analyzed', 'type': 'str'}
+    files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
     if include_participant:
         files["properties"]['participant'] = get_participant_es_mapping(False)
         files["properties"]["participant"]["type"] = "nested"
