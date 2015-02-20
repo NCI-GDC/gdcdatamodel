@@ -85,24 +85,27 @@ class PsqlGraph2JSON(object):
                 body=get_participant_es_mapping()),
         ]
 
-    def es_index_create_and_populate(self, index):
+    def es_index_create_and_populate(self, index, part_docs=None,
+                                     file_docs=None, project_docs=None):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
-        participants = list(self.nodes_labeled('participant'))[:100]
-        project_docs = self.denormalize_projects()
-        part_docs, file_docs = self.denormalize_participants(participants)
+        if not part_docs:
+            participants = list(self.nodes_labeled('participant'))[:100]
+            part_docs, file_docs = self.denormalize_participants(participants)
+        if not project_docs:
+            project_docs = self.denormalize_projects()
         self.es_bulk_upload(index, 'project', project_docs)
         self.es_bulk_upload(index, 'participant', part_docs)
         self.es_bulk_upload(index, 'file', file_docs)
 
-    def es_replace_index(self, old, new, alias):
-        self.es_index_create_and_populate(new)
-        self.es.update_alias({'actions': [
+    def es_replace_index(self, old, new, alias, **kwargs):
+        self.es_index_create_and_populate(new, **kwargs)
+        self.es.indices.update_aliases({'actions': [
             {'remove': {'index': old, 'alias': alias}},
             {'add': {'index': new, 'alias': alias}}]})
         self.es.indices.delete(index=old)
 
-    def deploy_alias(self, alias):
+    def deploy_alias(self, alias, **kwargs):
         try:
             aliases = self.es.indices.get_alias(alias)
             old_index = aliases.keys()[0]
@@ -117,14 +120,14 @@ class PsqlGraph2JSON(object):
             name = match.group(1)
             count = int(match.group(2))
             new_index = '{name}_{count}'.format(name=name, count=count+1)
-            print "Deploying index: '{}'->'{}' under alias '{}'".format(
+            print "Deploying index: [{}]->[{}] under alias [{}]".format(
                 old_index, new_index, alias)
-            self.es_replace_index(old_index, new_index, alias)
+            self.es_replace_index(old_index, new_index, alias, **kwargs)
         else:
             new_index = '{name}_0'.format(name=alias)
-            print "Deploying new index: '{}' under alias '{}'".format(
+            print "Deploying new index: [{}] under alias [{}]".format(
                 new_index, alias)
-            self.es_index_create_and_populate(new_index)
+            self.es_index_create_and_populate(new_index, **kwargs)
             self.es.indices.put_alias(index=new_index, name=alias)
 
     def patch_trees(self):
