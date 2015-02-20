@@ -86,7 +86,6 @@ def _munge_properties(source):
 
 
 def _multfield_template(name):
-    # return {name: {'type': 'string', 'index': 'not_analyzed'}}
     return {name: {
         "type": "string", "fields": {
             "raw": {
@@ -109,6 +108,8 @@ def _walk_tree(tree, mapping):
     for k, v in [(k, v) for k, v in tree.items() if k != 'corr']:
         corr, name = v['corr']
         mapping[name] = {'properties': _munge_properties(k)}
+        if corr == ONE_TO_MANY:
+            mapping[name]['type'] = 'nested'
         _walk_tree(tree[k], mapping[name])
     return mapping
 
@@ -122,9 +123,10 @@ def get_file_es_mapping(include_participant=True):
         'properties': _munge_properties("file"),
     }
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
+    files["properties"].pop('participant', None)
     if include_participant:
-        files["properties"]['participant'] = get_participant_es_mapping(False)
-        files["properties"]["participant"]["type"] = "nested"
+        files["properties"]["participants"] = get_participant_es_mapping(False)
+        files["properties"]["participants"]["type"] = "nested"
     return files
 
 
@@ -133,6 +135,7 @@ def get_participant_es_mapping(include_file=True):
     participant["_id"] = {"path": "participant_id"}
     participant["properties"] = _walk_tree(
         participant_tree, _munge_properties("participant"))
+    participant["properties"].pop('file', None)
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
