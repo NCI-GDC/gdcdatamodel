@@ -33,7 +33,9 @@ class PsqlGraph2JSON(object):
         self.data_types = {}
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
-            ('archive', 'member_of', 'file')
+            ('archive', 'member_of', 'file'),
+            ('file', 'describes', 'participant'),
+            ('participant', 'describes', 'file')
         ]
 
     def pbar(self, title, maxval):
@@ -213,6 +215,9 @@ class PsqlGraph2JSON(object):
             sample['portions'] = sample.get('portions', [])
             for aliquot in sample.pop('aliquots', []):
                 sample['portions'].append({'portion': {'analyte': {aliquot}}})
+
+    # def get_metadata_files(self):
+
 
     def denormalize_participant(self, node):
         # Walk graph naturally for tree of node objects
