@@ -47,6 +47,7 @@ digraph {
 			file -> slide [label=data_from]
 			file -> file [label=related_to]
 			archive -> file [label=related_to]
+			file -> participant [label=describes]
 			clinical -> participant [label=describes]
 			annotation -> participant [label=annotates]
 			annotation -> sample [label=annotates]
