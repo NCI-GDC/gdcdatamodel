@@ -273,8 +273,8 @@
       {
         "name": "node_labels",
         "type": [
-          "clinical:participant",
-          "file:participant"
+          "file:participant",
+          "clinical:participant"
         ],
         "doc": "The source/destination node types allowed."
       },

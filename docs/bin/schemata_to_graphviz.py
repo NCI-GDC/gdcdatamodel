@@ -26,12 +26,28 @@ for node in node_schema:
     dot.node(node['name'], node['name'])
     print node['name']
 
+
+def lookup_name(name):
+    print '\tlooking up ', name
+    for edge in edge_schema:
+        for field in edge['fields']:
+            for node_label in field['type']:
+                if isinstance(node_label, dict):
+                    if '{}.{}'.format(
+                            node_label['namespace'],
+                            node_label['name']) == name:
+                        return node_label
+
 # Add edges
 for edge in edge_schema:
     for field in edge['fields']:
         if field['name'] == 'node_labels':
             for node_label in field['type']:
-                src_label, dst_label = node_label['name'].split(':')
+                if isinstance(node_label, dict):
+                    dict_labels = node_label
+                else:
+                    dict_labels = lookup_name(node_label)
+                src_label, dst_label = dict_labels['name'].split(':')
                 dot.edge(src_label, dst_label, edge['name'])
 
 gv_path = os.path.join(root_dir, 'docs', 'viz', 'gdc_data_model.gv')
