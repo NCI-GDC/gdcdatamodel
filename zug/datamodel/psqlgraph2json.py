@@ -1,4 +1,6 @@
 from gdcdatamodel.mappings import (
+    get_project_es_mapping, get_participant_es_mapping, get_file_es_mapping,
+    index_settings,
     participant_tree, participant_traversal,
     file_tree, file_traversal,
     ONE_TO_ONE, ONE_TO_MANY
@@ -7,6 +9,7 @@ import logging
 from cdisutils.log import get_logger
 import networkx as nx
 from psqlgraph import Edge
+import re
 import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
@@ -20,13 +23,14 @@ class PsqlGraph2JSON(object):
     """
     """
 
-    def __init__(self, psqlgraph_driver):
+    def __init__(self, psqlgraph_driver, es=None):
         """Walks the graph to produce elasticsearch json documents.
         Assumptions include:
 
         """
         self.g = psqlgraph_driver
         self.G = nx.Graph()
+        self.es = es
         self.patch_trees()
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
@@ -46,7 +50,9 @@ class PsqlGraph2JSON(object):
         pbar.update(0)
         return pbar
 
-    def es_bulk_upload(self, es, index, doc_type, docs, batch_size=256):
+    def es_bulk_upload(self, index, doc_type, docs, batch_size=256):
+        if not self.es:
+            log.error('No elasticsearch driver initialized')
         instruction = {"index": {"_index": index, "_type": doc_type}}
         pbar, results = self.pbar('Batch upload ', len(docs)), []
 
@@ -57,13 +63,54 @@ class PsqlGraph2JSON(object):
                 yield doc
                 pbar.update(pbar.currval+1)
         while pbar.currval < len(docs):
-            results.append(es.bulk(body=body()))
+            results.append(self.es.bulk(body=body()))
         pbar.finish()
         return results
 
-    def patch_trees(self):
-        file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_subtype')
+    def es_put_mappings(self, index):
+        if not self.es:
+            log.error('No elasticsearch driver initialized')
+        return [
+            self.es.indices.put_mapping(
+                index=index,
+                doc_type="project",
+                body=get_project_es_mapping()),
+            self.es.indices.put_mapping(
+                index=index,
+                doc_type="file",
+                body=get_file_es_mapping()),
+            self.es.indices.put_mapping(
+                index=index,
+                doc_type="participant",
+                body=get_participant_es_mapping()),
+        ]
 
+    def es_index_create_and_populate(self, index):
+        self.es.indices.create(index=index, body=index_settings())
+        self.es_put_mappings(index)
+        participants = list(self.nodes_labeled('participant'))[:100]
+        # project_docs = self.denormalize_projects()
+        part_docs, file_docs = self.denormalize_participants(participants)
+        # self.es_bulk_upload(index, 'project', project_docs)
+
+    def es_replace_index(self, old, new, alias):
+        self.es_index_create_and_populate(new)
+        self.es.update_alias({'actions': [
+            {'remove': {'index': old, 'alias': alias}},
+            {'add': {'index': new, 'alias': alias}}]})
+        self.es.indices.delete(index=old)
+
+    def increment_alias(self, alias):
+        old_index = self.es.indices.get_alias(alias).keys()[0]
+        match = re.match('(.*)_(\d+)$', old_index)
+        assert match, \
+            "Index found doesn't fit scheme name_#: {}".format(old_index)
+        name = match.group(1)
+        count = int(match.group(2))
+        new_index = '{name}_{count}'.format(name=name, count=count+1)
+        self.es_replace_index(old_index, new_index, alias)
+
+    def patch_trees(self):
         # Include files only attached to biospecimen pathway via another file
         participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
 
@@ -168,7 +215,7 @@ class PsqlGraph2JSON(object):
             *[self.walk_path(node, path, whole=whole)
               for path in paths])}
 
-    def cache_data_types(self):
+    def _cache_data_types(self):
         if len(self.data_types):
             return
         print('Caching data types')
@@ -176,7 +223,7 @@ class PsqlGraph2JSON(object):
             self.data_types[data_type] = set(self.walk_path(
                 data_type, ['data_subtype', 'file']))
 
-    def cache_experimental_strategies(self):
+    def _cache_experimental_strategies(self):
         if len(self.experimental_strategies):
             return
         print('Caching expertimental strategies')
@@ -185,7 +232,7 @@ class PsqlGraph2JSON(object):
                 exp_strat, ['file']))
 
     def get_exp_strats(self, files):
-        self.cache_experimental_strategies()
+        self._cache_experimental_strategies()
         for exp_strat, file_list in self.experimental_strategies.iteritems():
             intersection = (file_list & files)
             if intersection:
@@ -193,7 +240,7 @@ class PsqlGraph2JSON(object):
                        'file_count': len(intersection)}
 
     def get_data_types(self, files):
-        self.cache_data_types()
+        self._cache_data_types()
         for data_type, file_list in self.data_types.iteritems():
             intersection = (file_list & files)
             if intersection:
@@ -215,9 +262,6 @@ class PsqlGraph2JSON(object):
             sample['portions'] = sample.get('portions', [])
             for aliquot in sample.pop('aliquots', []):
                 sample['portions'].append({'portion': {'analyte': {aliquot}}})
-
-    # def get_metadata_files(self):
-
 
     def denormalize_participant(self, node):
         # Walk graph naturally for tree of node objects
@@ -285,7 +329,7 @@ class PsqlGraph2JSON(object):
 
         # Get data type
         if 'data_subtype' in doc.keys():
-            self.cache_data_types()
+            self._cache_data_types()
             for data_type, _files in self.data_types.iteritems():
                 if node not in _files:
                     continue
@@ -355,25 +399,27 @@ class PsqlGraph2JSON(object):
 
         # Get data types
         exp_strat_summaries = []
+        self._cache_experimental_strategies()
         for exp_strat in self.nodes_labeled('experimental_strategy'):
             log.debug('{} {}'.format(exp_strat, exp_strat['name']))
-            dt_files = set(self.walk_path(exp_strat, ['file']))
-            if not len(dt_files & files):
+            exp_files = self.experimental_strategies[exp_strat]
+            if not len(exp_files & files):
                 continue
             participant_count = len(
                 {p for p, p_files in part_files.iteritems()
-                 if len(dt_files & p_files)})
+                 if len(exp_files & p_files)})
             exp_strat_summaries.append({
                 'participant_count': participant_count,
                 'experimental_strategy': exp_strat['name'],
-                'file_count': len(dt_files),
+                'file_count': len(exp_files),
             })
 
         # Get data types
         data_type_summaries = []
+        self._cache_data_types()
         for data_type in self.nodes_labeled('data_type'):
             log.debug('{} {}'.format(data_type, data_type['name']))
-            dt_files = set(self.walk_path(data_type, ['data_subtype', 'file']))
+            dt_files = self.data_types[data_type]
             if not len(dt_files & files):
                 continue
             participant_count = len(
