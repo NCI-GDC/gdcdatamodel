@@ -1,4 +1,5 @@
 from gdcdatamodel import node_avsc_json
+import re
 from mapped_entities import (
     file_tree, file_traversal,
     participant_tree, participant_traversal,
@@ -6,6 +7,12 @@ from mapped_entities import (
     project_tree, annotation_tree,
     ONE_TO_MANY, ONE_TO_ONE
 )
+
+
+MULTIFIELDS = re.compile("|".join([
+    "submitter_id", "name", "code", "primary_site",
+    "disease_type", "project_name"
+]))
 
 
 def _get_es_type(_type):
@@ -20,14 +27,33 @@ def _munge_properties(source):
     if not a:
         return
     fields = [b['type'] for b in a[0] if b['name'] == 'properties']
-    fields[0][0]['fields'].append({
-        'name': '{}_id'.format(source),
-        'type': 'string'
-    })
-    return {b['name']: {
-        'type': _get_es_type(b['type']),
-        'index': 'not_analyzed'
-    } for b in fields[0][0]['fields']}
+    doc = _multfield_template('{}_id'.format(source))
+    for field in fields[0][0]['fields']:
+        name = field['name']
+        if MULTIFIELDS.match(name):
+            doc[name] = _multfield_template(name)
+        else:
+            _type = _get_es_type(
+                [c['type'] if isinstance(c['type'], (unicode, str))
+                 else 'string' for c in b['type'][0]['fields']
+                 if c['name'] == name])
+            doc[name] = {'type': _type}
+            if _type == 'string':
+                doc['index'] = 'not_analyzed'
+    return doc
+
+
+def _multfield_template(name):
+    return {
+        "type": "string", "fields": {
+            "raw": {
+                "index": "not_analyzed", "store": "yes", "type": "string"},
+            "analyzed": {
+                "index": "analyzed", "index_analyzer": "id_index",
+                "search_analyzer": "id_search", "type": "string"},
+            "search": {
+                "index": "analyzed", "analyzer": "id_search", "type": "string"
+            }}}
 
 
 def _walk_tree(tree, mapping):
@@ -82,6 +108,9 @@ def get_project_es_mapping():
     project = {"_id": {"path": "project_id"}}
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
+    project['properties']['name'] = project['properties'].pop('project_name')
+    project['properties']['code'] = project['properties'].pop('name')
+    project['properties']['disease_types'] = _multfield_template('disease_types')
     project["properties"]["summary"] = {"properties": {
         "data_file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
