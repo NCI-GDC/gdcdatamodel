@@ -89,9 +89,11 @@ class PsqlGraph2JSON(object):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
         participants = list(self.nodes_labeled('participant'))[:100]
-        # project_docs = self.denormalize_projects()
+        project_docs = self.denormalize_projects()
         part_docs, file_docs = self.denormalize_participants(participants)
-        # self.es_bulk_upload(index, 'project', project_docs)
+        self.es_bulk_upload(index, 'project', project_docs)
+        self.es_bulk_upload(index, 'participant', part_docs)
+        self.es_bulk_upload(index, 'file', file_docs)
 
     def es_replace_index(self, old, new, alias):
         self.es_index_create_and_populate(new)
@@ -100,19 +102,36 @@ class PsqlGraph2JSON(object):
             {'add': {'index': new, 'alias': alias}}]})
         self.es.indices.delete(index=old)
 
-    def increment_alias(self, alias):
-        old_index = self.es.indices.get_alias(alias).keys()[0]
-        match = re.match('(.*)_(\d+)$', old_index)
-        assert match, \
-            "Index found doesn't fit scheme name_#: {}".format(old_index)
-        name = match.group(1)
-        count = int(match.group(2))
-        new_index = '{name}_{count}'.format(name=name, count=count+1)
-        self.es_replace_index(old_index, new_index, alias)
+    def deploy_alias(self, alias):
+        try:
+            aliases = self.es.indices.get_alias(alias)
+            old_index = aliases.keys()[0]
+            match = re.match('(.*)_(\d+)$', old_index)
+        except:
+            print('new alias: {}'.format(alias))
+            old_index = None
+
+        if old_index:
+            assert match, \
+                "Index found doesn't fit scheme name_#: {}".format(old_index)
+            name = match.group(1)
+            count = int(match.group(2))
+            new_index = '{name}_{count}'.format(name=name, count=count+1)
+            print "Deploying index: '{}'->'{}' under alias '{}'".format(
+                old_index, new_index, alias)
+            self.es_replace_index(old_index, new_index, alias)
+        else:
+            new_index = '{name}_0'.format(name=alias)
+            print "Deploying new index: '{}' under alias '{}'".format(
+                new_index, alias)
+            self.es_index_create_and_populate(new_index)
+            self.es.indices.put_alias(index=new_index, name=alias)
 
     def patch_trees(self):
         # Include files only attached to biospecimen pathway via another file
         participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
+        if ('file',) not in participant_traversal['file']:
+            participant_traversal['file'].append(('file',))
 
         # Add leaves to root for things like target
         participant_tree.aliquot = participant_tree.sample\
