@@ -13,6 +13,7 @@ import re
 import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
+from elasticsearch import NotFoundError
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -35,6 +36,7 @@ class PsqlGraph2JSON(object):
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
+        self.index_pattern = 'index_{base}_{n}'
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
             ('archive', 'member_of', 'file'),
@@ -54,7 +56,8 @@ class PsqlGraph2JSON(object):
         if not self.es:
             log.error('No elasticsearch driver initialized')
         instruction = {"index": {"_index": index, "_type": doc_type}}
-        pbar, results = self.pbar('Batch upload ', len(docs)), []
+        pbar, results = self.pbar(
+            '{} upload '.format(doc_type), len(docs)), []
 
         def body():
             start = pbar.currval
@@ -98,36 +101,31 @@ class PsqlGraph2JSON(object):
         self.es_bulk_upload(index, 'participant', part_docs)
         self.es_bulk_upload(index, 'file', file_docs)
 
-    def es_replace_index(self, old, new, alias, **kwargs):
-        self.es_index_create_and_populate(new, **kwargs)
+    def swap_index(self, old_index, new_index, alias):
         self.es.indices.update_aliases({'actions': [
-            {'remove': {'index': old, 'alias': alias}},
-            {'add': {'index': new, 'alias': alias}}]})
-        self.es.indices.delete(index=old)
+            {'remove': {'index': old_index, 'alias': alias}},
+            {'add': {'index': new_index, 'alias': alias}}]})
 
-    def deploy_alias(self, alias, **kwargs):
+    def get_next_index(self, base):
+        indices = set(self.es.indices.get_aliases().keys())
+        p = re.compile(self.index_pattern.format(base=base, n='(\d+)')+'$')
+        matches = [p.match(index) for index in indices if p.match(index)]
+        next_n = max(sorted([int(m.group(1)) for m in matches]+[0]))+1
+        return self.index_pattern.format(base=base, n=next_n)
+
+    def lookup_index_by_alias(self, alias):
         try:
-            aliases = self.es.indices.get_alias(alias)
-            old_index = aliases.keys()[0]
-            match = re.match('(.*)_(\d+)$', old_index)
-        except:
-            print('new alias: {}'.format(alias))
-            old_index = None
+            return self.es.indices.get_alias(alias).keys()[0]
+        except NotFoundError:
+            return None
 
+    def deploy_alias(self, alias, rollback_count=5, **kwargs):
+        new_index = self.get_next_index(alias)
+        self.es_index_create_and_populate(new_index, **kwargs)
+        old_index = self.lookup_index_by_alias(alias)
         if old_index:
-            assert match, \
-                "Index found doesn't fit scheme name_#: {}".format(old_index)
-            name = match.group(1)
-            count = int(match.group(2))
-            new_index = '{name}_{count}'.format(name=name, count=count+1)
-            print "Deploying index: [{}]->[{}] under alias [{}]".format(
-                old_index, new_index, alias)
-            self.es_replace_index(old_index, new_index, alias, **kwargs)
+            self.swap_index(old_index, new_index, alias)
         else:
-            new_index = '{name}_0'.format(name=alias)
-            print "Deploying new index: [{}] under alias [{}]".format(
-                new_index, alias)
-            self.es_index_create_and_populate(new_index, **kwargs)
             self.es.indices.put_alias(index=new_index, name=alias)
 
     def patch_trees(self):
