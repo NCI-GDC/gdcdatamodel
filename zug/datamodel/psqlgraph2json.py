@@ -32,11 +32,11 @@ class PsqlGraph2JSON(object):
         self.g = psqlgraph_driver
         self.G = nx.Graph()
         self.es = es
+        self.index_pattern = '{base}_{n}'
         self.patch_trees()
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
-        self.index_pattern = 'index_{base}_{n}'
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
             ('archive', 'member_of', 'file'),
