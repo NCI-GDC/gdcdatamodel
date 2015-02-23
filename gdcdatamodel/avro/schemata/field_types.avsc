@@ -1,7 +1,7 @@
 [
   {
     "name": "shipment_reason_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "TBD"
     ],
@@ -10,7 +10,7 @@
   },
   {
     "name": "analyte_type_id_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "D",
       "G",
@@ -25,7 +25,7 @@
   },
   {
     "name": "analyte_type_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "DNA",
       "EBV Immortalized Normal",
@@ -40,7 +40,7 @@
   },
   {
     "name": "sample_type_id_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "01",
       "02",
@@ -67,7 +67,7 @@
   },
   {
     "name": "sample_type_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "Blood Derived Normal",
       "Buccal Cell Normal",
@@ -101,7 +101,7 @@
   },
   {
     "name": "freezing_method",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "LIQUID N2 VAPOR",
       "DRY ICE",
@@ -113,7 +113,7 @@
   },
   {
     "name": "file_state_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "submitted",
       "uploading",
@@ -130,7 +130,7 @@
   },
   {
     "name": "gender_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "male",
       "female"
@@ -140,7 +140,7 @@
   },
   {
     "name": "race_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "not reported",
       "white",
@@ -154,7 +154,7 @@
   },
   {
     "name": "ethnicity_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "hispanic or latino",
       "not hispanic or latino"
@@ -164,7 +164,7 @@
   },
   {
     "name": "vital_status_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "alive",
       "dead",
@@ -175,14 +175,14 @@
   },
   {
     "name": "fixed16",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "type": "fixed",
     "size": 16,
     "doc": "16 byte fixed field "
   },
   {
     "name": "annotation_classification_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "Observation",
       "CenterNotification",
@@ -194,7 +194,7 @@
   },
   {
     "name": "annotation_category_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "Acceptable treatment for TCGA tumor",
       "Administrative Compliance",

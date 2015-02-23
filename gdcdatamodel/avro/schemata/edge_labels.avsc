@@ -1,7 +1,7 @@
 [
   {
     "name": "derived_from_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "derived_from"
     ],
@@ -10,7 +10,7 @@
   },
   {
     "name": "related_to_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "related_to"
     ],
@@ -19,7 +19,7 @@
   },
   {
     "name": "member_of_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "member_of"
     ],
@@ -28,7 +28,7 @@
   },
   {
     "name": "processed_at_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "processed_at"
     ],
@@ -37,7 +37,7 @@
   },
   {
     "name": "generated_from_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "generated_from"
     ],
@@ -46,7 +46,7 @@
   },
   {
     "name": "data_from_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "data_from"
     ],
@@ -55,7 +55,7 @@
   },
   {
     "name": "describes_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "describes"
     ],
@@ -64,7 +64,7 @@
   },
   {
     "name": "annotates_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "annotates"
     ],
@@ -73,7 +73,7 @@
   },
   {
     "name": "shipped_to_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "shipped_to"
     ],
@@ -82,7 +82,7 @@
   },
   {
     "name": "submitted_by_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "submitted_by"
     ],

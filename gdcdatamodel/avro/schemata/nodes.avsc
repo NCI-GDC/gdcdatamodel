@@ -2,7 +2,7 @@
   {
     "type": "record",
     "name": "aliquot",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "Pertaining to a portion of the whole; any one of two or more samples of something, of the same volume or weight.",
     "fields": [
       {
@@ -29,7 +29,7 @@
   {
     "type": "record",
     "name": "analyte",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -53,7 +53,7 @@
   {
     "type": "record",
     "name": "portion",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -77,7 +77,7 @@
   {
     "type": "record",
     "name": "sample",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -101,7 +101,7 @@
   {
     "type": "record",
     "name": "participant",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -125,7 +125,7 @@
   {
     "type": "record",
     "name": "project",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -149,7 +149,7 @@
   {
     "type": "record",
     "name": "program",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -173,7 +173,7 @@
   {
     "type": "record",
     "name": "center",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -197,7 +197,7 @@
   {
     "type": "record",
     "name": "platform",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -221,7 +221,7 @@
   {
     "type": "record",
     "name": "data_type",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -245,7 +245,7 @@
   {
     "type": "record",
     "name": "data_subtype",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -269,7 +269,7 @@
   {
     "type": "record",
     "name": "tag",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -293,7 +293,7 @@
   {
     "type": "record",
     "name": "experimental_strategy",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -317,7 +317,7 @@
   {
     "type": "record",
     "name": "data_format",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -341,7 +341,7 @@
   {
     "type": "record",
     "name": "file",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -365,7 +365,7 @@
   {
     "type": "record",
     "name": "archive",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -389,7 +389,7 @@
   {
     "type": "record",
     "name": "annotation",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -413,7 +413,7 @@
   {
     "type": "record",
     "name": "clinical",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -437,7 +437,7 @@
   {
     "type": "record",
     "name": "slide",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
@@ -461,7 +461,7 @@
   {
     "type": "record",
     "name": "tissue_source_site",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
       {
