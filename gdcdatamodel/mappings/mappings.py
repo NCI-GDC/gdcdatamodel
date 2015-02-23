@@ -112,7 +112,6 @@ def _multfield_template(name):
 def _walk_tree(tree, mapping, level=0):
     for k, v in [(k, v) for k, v in tree.items() if k != 'corr']:
         corr, name = v['corr']
-        # print '|--'*level, name
         if name not in mapping:
             mapping[name] = {'properties': {}}
         mapping[name]['properties'].update(_munge_properties(k))
