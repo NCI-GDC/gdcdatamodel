@@ -3,7 +3,7 @@
     "type": "record",
     "name": "aliquot",
     "namespace": "edu.uchicago.cdis",
-    "doc": "Pertaining to a portion of the whole; any one of two or more samples of something, of the same volume or weight.",
+    "doc": "Pertaining to a portion of the whole; any one of two or more samples of something, of the same volume or weight. (NCIt C25414)",
     "fields": [
       {
         "name": "id",
@@ -30,7 +30,7 @@
     "type": "record",
     "name": "analyte",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A liquid bulk product produced according to specified lab protocols, from a sample or portion, intended for further analysis. (GDC)",
     "fields": [
       {
         "name": "id",
@@ -54,7 +54,7 @@
     "type": "record",
     "name": "portion",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A physical sub-part of any sample. (GDC)",
     "fields": [
       {
         "name": "id",
@@ -78,7 +78,7 @@
     "type": "record",
     "name": "sample",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "Any material sample taken from a biological entity for testing, diagnostic, propagation, treatment or research purposes, including a sample obtained from a living organism or taken from the biological object after halting of all its life functions. Biospecimen can contain one or more components including but not limited to cellular molecules, cells, tissues, organs, body fluids, embryos, and body excretory products. (GDC Synonym of NCIt C70699)",
     "fields": [
       {
         "name": "id",
@@ -102,7 +102,7 @@
     "type": "record",
     "name": "participant",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "Someone who takes part in an activity. (NCIt C29867)",
     "fields": [
       {
         "name": "id",
@@ -126,7 +126,7 @@
     "type": "record",
     "name": "project",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "Any specifically defined piece of work that is undertaken or attempted to meet a single requirement. (NCIt C47885)",
     "fields": [
       {
         "name": "id",
@@ -150,7 +150,7 @@
     "type": "record",
     "name": "program",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A broad framework of goals to be achieved. (NCIt C52647)",
     "fields": [
       {
         "name": "id",
@@ -174,7 +174,7 @@
     "type": "record",
     "name": "center",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A Professional Organization or Group which has or is able to submit data to the GDC that are valid with respect to GDC prescribed or defined data formats. (GDC subclass of NCIt C19711)",
     "fields": [
       {
         "name": "id",
@@ -198,7 +198,7 @@
     "type": "record",
     "name": "platform",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "Any distinct technology (laboratory or computational) from which data may be obtained as files. (GDC)",
     "fields": [
       {
         "name": "id",
@@ -342,7 +342,7 @@
     "type": "record",
     "name": "file",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A set of related records (either written or electronic) kept together. (NCIt C42883)",
     "fields": [
       {
         "name": "id",
@@ -366,7 +366,8 @@
     "type": "record",
     "name": "archive",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A group of files containing program or project related data ingested by the GDC. Archives may be submitted directly to GDC by a center, assembled by the GDC, or obtained by another route.
+(GDC subclass of NCIt C114463)",
     "fields": [
       {
         "name": "id",
@@ -390,7 +391,7 @@
     "type": "record",
     "name": "annotation",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "An explanatory or critical comment, or other in-context information (e.g., pattern, motif, link), that has been associated with data or other types of information. (NCIt C44272)",
     "fields": [
       {
         "name": "id",
@@ -414,7 +415,7 @@
     "type": "record",
     "name": "clinical",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "Data obtained through patient examination or treatment. (GDC synonym for NCIt C15783)",
     "fields": [
       {
         "name": "id",
@@ -438,7 +439,7 @@
     "type": "record",
     "name": "slide",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A digital image, microscopic or otherwise, of any sample, portion, or sub-part thereof. (GDC)",
     "fields": [
       {
         "name": "id",
@@ -462,7 +463,7 @@
     "type": "record",
     "name": "tissue_source_site",
     "namespace": "edu.uchicago.cdis",
-    "doc": "TODO: document",
+    "doc": "A clinical site that collects and provides patient samples and clinical metadata for research use. (NCIt C103264)",
     "fields": [
       {
         "name": "id",
