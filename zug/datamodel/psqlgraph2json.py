@@ -283,6 +283,14 @@ class PsqlGraph2JSON(object):
             for aliquot in sample.pop('aliquots', []):
                 sample['portions'].append({'portion': {'analyte': {aliquot}}})
 
+    def get_metadata_files(self, participant):
+        neighbors = self.G[participant]
+        files = []
+        for n in neighbors:
+            if self.G[participant][n].get('label', None) == 'describes':
+                files.append(self._get_base_doc(n))
+        return files
+
     def denormalize_participant(self, node):
         # Walk graph naturally for tree of node objects
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
@@ -294,6 +302,8 @@ class PsqlGraph2JSON(object):
         participant['summary'] = self.get_participant_summary(node, files)
         # Take any out of place nodes and put then in correct place in tree
         self.reconstruct_biospecimen_paths(participant)
+        # Get the metadatafiles that generated the participant
+        participant['metadata_files'] = self.get_metadata_files(node)
 
         project = participant.get('project', None)
         if project:
@@ -468,10 +478,12 @@ class PsqlGraph2JSON(object):
             doc['summary']['data_types'] = data_type_summaries
         return doc
 
-    def denormalize_participants(self, nodes):
+    def denormalize_participants(self, participants=None):
         total_part_docs, total_file_docs = [], []
-        pbar = self.pbar('Denormalizing participants ', len(nodes))
-        for n in nodes:
+        if not participants:
+            participants = list(self.nodes_labeled('participants'))
+        pbar = self.pbar('Denormalizing participants ', len(participants))
+        for n in participants:
             part_doc, file_docs = self.denormalize_participant(n)
             total_part_docs.append(part_doc)
             total_file_docs += file_docs
