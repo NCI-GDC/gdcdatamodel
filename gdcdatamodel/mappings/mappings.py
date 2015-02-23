@@ -141,6 +141,10 @@ def get_participant_es_mapping(include_file=True):
     participant["properties"] = _walk_tree(
         participant_tree, _munge_properties("participant"))
     participant["properties"].pop('file', None)
+    participant['properties']['metadata_files'] = {
+        'type': 'nested',
+        'properties': _munge_properties("file"),
+    }
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
