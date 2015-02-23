@@ -1,7 +1,7 @@
 [
   {
     "name": "aliquot_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "aliquot"
     ],
@@ -10,7 +10,7 @@
   },
   {
     "name": "tissue_source_site_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "tissue_source_site"
     ],
@@ -19,7 +19,7 @@
   },
   {
     "name": "analyte_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "analyte"
     ],
@@ -27,7 +27,7 @@
   },
   {
     "name": "portion_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "portion"
     ],
@@ -35,7 +35,7 @@
   },
   {
     "name": "sample_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "sample"
     ],
@@ -43,7 +43,7 @@
   },
   {
     "name": "participant_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "participant"
     ],
@@ -51,7 +51,7 @@
   },
   {
     "name": "project_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "project"
     ],
@@ -59,7 +59,7 @@
   },
   {
     "name": "program_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "program"
     ],
@@ -67,7 +67,7 @@
   },
   {
     "name": "center_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "center"
     ],
@@ -75,7 +75,7 @@
   },
   {
     "name": "platform_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "platform"
     ],
@@ -83,7 +83,7 @@
   },
   {
     "name": "data_type_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "data_type"
     ],
@@ -91,7 +91,7 @@
   },
   {
     "name": "data_subtype_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "data_subtype"
     ],
@@ -99,7 +99,7 @@
   },
   {
     "name": "tag_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "tag"
     ],
@@ -107,7 +107,7 @@
   },
   {
     "name": "experimental_strategy_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "experimental_strategy"
     ],
@@ -115,7 +115,7 @@
   },
   {
     "name": "data_format_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "data_format"
     ],
@@ -123,7 +123,7 @@
   },
   {
     "name": "file_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "file"
     ],
@@ -131,7 +131,7 @@
   },
   {
     "name": "archive_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "archive"
     ],
@@ -139,7 +139,7 @@
   },
   {
     "name": "annotation_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "annotation"
     ],
@@ -147,7 +147,7 @@
   },
   {
     "name": "clinical_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "clinical"
     ],
@@ -155,7 +155,7 @@
   },
   {
     "name": "slide_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "slide"
     ],

@@ -2,7 +2,7 @@
   {
     "type": "record",
     "name": "src_dst_nodes",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_id",
@@ -17,7 +17,7 @@
   {
     "type": "record",
     "name": "aliquot:analyte",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -32,7 +32,7 @@
   {
     "type": "record",
     "name": "participant:tissue_source_site",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -47,7 +47,7 @@
   {
     "type": "record",
     "name": "aliquot:sample",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -62,7 +62,7 @@
   {
     "type": "record",
     "name": "analyte:portion",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -77,7 +77,7 @@
   {
     "type": "record",
     "name": "portion:sample",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -92,7 +92,7 @@
   {
     "type": "record",
     "name": "sample:participant",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -107,7 +107,7 @@
   {
     "type": "record",
     "name": "participant:project",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -122,7 +122,7 @@
   {
     "type": "record",
     "name": "project:program",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -137,7 +137,7 @@
   {
     "type": "record",
     "name": "archive:project",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -152,7 +152,7 @@
   {
     "type": "record",
     "name": "file:archive",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -167,7 +167,7 @@
   {
     "type": "record",
     "name": "archive:file",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -182,7 +182,7 @@
   {
     "type": "record",
     "name": "annotation:aliquot",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -197,7 +197,7 @@
   {
     "type": "record",
     "name": "annotation:analyte",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -212,7 +212,7 @@
   {
     "type": "record",
     "name": "annotation:portion",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -227,7 +227,7 @@
   {
     "type": "record",
     "name": "annotation:sample",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -242,7 +242,7 @@
   {
     "type": "record",
     "name": "annotation:slide",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -257,7 +257,7 @@
   {
     "type": "record",
     "name": "annotation:participant",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -272,7 +272,7 @@
   {
     "type": "record",
     "name": "annotation:file",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -287,7 +287,7 @@
   {
     "type": "record",
     "name": "file:data_subtype",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -302,7 +302,7 @@
   {
     "type": "record",
     "name": "file:tag",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -317,7 +317,7 @@
   {
     "type": "record",
     "name": "file:experimental_strategy",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -332,7 +332,7 @@
   {
     "type": "record",
     "name": "file:data_format",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -347,7 +347,7 @@
   {
     "type": "record",
     "name": "experimental_strategy:data_subtype",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -362,7 +362,7 @@
   {
     "type": "record",
     "name": "data_subtype:data_type",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -377,7 +377,7 @@
   {
     "type": "record",
     "name": "file:platform",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -392,7 +392,7 @@
   {
     "type": "record",
     "name": "file:aliquot",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -407,7 +407,7 @@
   {
     "type": "record",
     "name": "file:analyte",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -422,7 +422,7 @@
   {
     "type": "record",
     "name": "file:portion",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -437,7 +437,7 @@
   {
     "type": "record",
     "name": "file:sample",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -452,7 +452,7 @@
   {
     "type": "record",
     "name": "file:participant",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -467,7 +467,7 @@
   {
     "type": "record",
     "name": "file:file",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -482,7 +482,7 @@
   {
     "type": "record",
     "name": "clinical:participant",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -497,7 +497,7 @@
   {
     "type": "record",
     "name": "aliquot:center",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -512,7 +512,7 @@
   {
     "type": "record",
     "name": "portion:center",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -527,7 +527,7 @@
   {
     "type": "record",
     "name": "slide:portion",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -542,7 +542,7 @@
   {
     "type": "record",
     "name": "file:slide",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
@@ -557,7 +557,7 @@
   {
     "type": "record",
     "name": "file:center",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
