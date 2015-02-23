@@ -173,11 +173,11 @@ def get_project_es_mapping():
     project["_id"] = {"path": "project_id"}
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
-    project['properties']['name'] = project['properties'].pop('project_name')
     project['properties']['code'] = project['properties'].pop('name')
+    project['properties']['name'] = project['properties'].pop('project_name')
     project['properties'].update(_multfield_template('disease_types'))
     project["properties"]["summary"] = {"properties": {
-        "data_file_count": {u'index': u'not_analyzed', u'type': u'long'},
+        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
         "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
         "experimental_strategies": {"properties": {
