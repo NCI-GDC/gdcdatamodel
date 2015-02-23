@@ -109,13 +109,13 @@ def _multfield_template(name):
             }}}}
 
 
-def _walk_tree(tree, mapping, level=0):
+def _walk_tree(tree, mapping):
     for k, v in [(k, v) for k, v in tree.items() if k != 'corr']:
         corr, name = v['corr']
         if name not in mapping:
             mapping[name] = {'properties': {}}
         mapping[name]['properties'].update(_munge_properties(k))
-        _walk_tree(tree[k], mapping[name]['properties'], level+1)
+        _walk_tree(tree[k], mapping[name]['properties'])
         if corr == ONE_TO_MANY:
             mapping[name]['type'] = 'nested'
     return mapping
