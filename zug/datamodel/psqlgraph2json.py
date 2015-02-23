@@ -93,7 +93,7 @@ class PsqlGraph2JSON(object):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
         if not part_docs:
-            participants = list(self.nodes_labeled('participant'))[:100]
+            participants = list(self.nodes_labeled('participant'))
             part_docs, file_docs = self.denormalize_participants(participants)
         if not project_docs:
             project_docs = self.denormalize_projects()
@@ -246,7 +246,7 @@ class PsqlGraph2JSON(object):
     def _cache_experimental_strategies(self):
         if len(self.experimental_strategies):
             return
-        print('Caching expertimental strategies')
+        print('Caching experitmental strategies')
         for exp_strat in self.nodes_labeled('experimental_strategy'):
             self.experimental_strategies[exp_strat] = set(self.walk_path(
                 exp_strat, ['file']))
@@ -256,7 +256,7 @@ class PsqlGraph2JSON(object):
         for exp_strat, file_list in self.experimental_strategies.iteritems():
             intersection = (file_list & files)
             if intersection:
-                yield {'expertimental_strategy': exp_strat['name'],
+                yield {'experimental_strategy': exp_strat['name'],
                        'file_count': len(intersection)}
 
     def get_data_types(self, files):
@@ -269,9 +269,9 @@ class PsqlGraph2JSON(object):
 
     def get_participant_summary(self, node, files):
         return {
-            'data_file_count': len(files),
+            'file_count': len(files),
             'file_size': sum([f['file_size'] for f in files]),
-            'expertimental_strategies': list(self.get_exp_strats(files)),
+            'experimental_strategies': list(self.get_exp_strats(files)),
             'data_types': list(self.get_data_types(files)),
         }
 
@@ -294,6 +294,11 @@ class PsqlGraph2JSON(object):
         participant['summary'] = self.get_participant_summary(node, files)
         # Take any out of place nodes and put then in correct place in tree
         self.reconstruct_biospecimen_paths(participant)
+
+        project = participant.get('project', None)
+        if project:
+            project['code'] = project.pop('name')
+            project['name'] = project.pop('project_name')
 
         # Denormalize the participants files
         def get_file(f):
