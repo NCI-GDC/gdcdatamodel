@@ -366,8 +366,7 @@
     "type": "record",
     "name": "archive",
     "namespace": "edu.uchicago.cdis",
-    "doc": "A group of files containing program or project related data ingested by the GDC. Archives may be submitted directly to GDC by a center, assembled by the GDC, or obtained by another route.
-(GDC subclass of NCIt C114463)",
+    "doc": "A group of files containing program or project related data ingested by the GDC. Archives may be submitted directly to GDC by a center, assembled by the GDC, or obtained by another route. (GDC subclass of NCIt C114463)",
     "fields": [
       {
         "name": "id",
