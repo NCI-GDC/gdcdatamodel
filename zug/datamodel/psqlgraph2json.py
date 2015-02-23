@@ -402,6 +402,8 @@ class PsqlGraph2JSON(object):
 
         """
         doc = self._get_base_doc(p)
+        doc['code'] = doc.pop('name')
+        doc['name'] = doc.pop('project_name')
 
         # Get programs
         program = self.neighbors_labeled(p, 'program').next()
