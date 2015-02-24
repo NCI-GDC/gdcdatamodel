@@ -45,16 +45,7 @@ def index_settings():
 
 def _get_header():
     return {
-        "dynamic": "true",
-        "dynamic_templates": [{
-            "template_1": {
-                "mapping": {
-                    "index": "not_analyzed"
-                },
-                "match": "*",
-                "match_mapping_type": "string"
-            }
-        }],
+        "dynamic": "strict",
         "_all": {
             "enabled": False
         },
