@@ -483,7 +483,8 @@ class PsqlGraph2JSON(object):
     def denormalize_participants(self, participants=None):
         total_part_docs, total_file_docs = [], []
         if not participants:
-            participants = list(self.nodes_labeled('participants'))
+            participants = list(self.nodes_labeled('participant'))
+        print len(participants)
         pbar = self.pbar('Denormalizing participants ', len(participants))
         for n in participants:
             part_doc, file_docs = self.denormalize_participant(n)
