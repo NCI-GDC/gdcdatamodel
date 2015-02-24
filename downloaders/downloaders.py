@@ -450,8 +450,9 @@ class Downloader(object):
         return True
 
     def get_free_space(self, dir):
-        stat = os.statvfs(dir)
-        return stat.f_frsize * stat.f_bfree
+        output = subprocess.check_output(["df", dir])
+        device, size, used, available, percent, mountpoint = output.split("\n")[1].split()
+        return 1000 * int(available)  # 1000 because df reports in kB
 
     def download(self):
         """download with genetorrent"""
