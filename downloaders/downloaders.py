@@ -403,7 +403,7 @@ class Downloader(object):
         results = self.graph.cypher.execute("""
             MATCH (n:file) WHERE n.import_state="NOT_STARTED"
             AND n.access_group[0] =~ "{a_group}"
-            AND right(n.file_name, 4) = ".bam" {extra}
+            AND right(n.file_name, 4) <> ".bai" {extra}
             WITH n LIMIT 1 RETURN n
         """.format(a_group=self.access_group, extra=self.extra_cypher))
         if not len(results):
@@ -495,7 +495,6 @@ class Downloader(object):
         files = [f for f in listdir(directory) if isfile(join(directory, f))]
         self.files = [
             os.path.join(directory, f) for f in files
-            if f.endswith('.bam') or f.endswith('.bai')
         ]
 
         if len(self.files) < 1:
