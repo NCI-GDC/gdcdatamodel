@@ -334,7 +334,9 @@ class PsqlGraph2JSON(object):
         doc = self._get_base_doc(node)
 
         # Walk to neighbors
-        auto_neighbors = (dict(file_tree).pop('archive')).keys()
+
+        auto_neighbors = [n for n in dict(file_tree).keys()
+                          if n not in ['archive']]
         for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
             corr, label = file_tree[neighbor.label]['corr']
             if corr == ONE_TO_ONE:
@@ -483,7 +485,7 @@ class PsqlGraph2JSON(object):
     def denormalize_participants(self, participants=None):
         total_part_docs, total_file_docs = [], []
         if not participants:
-            participants = list(self.nodes_labeled('participants'))
+            participants = list(self.nodes_labeled('participant'))
         pbar = self.pbar('Denormalizing participants ', len(participants))
         for n in participants:
             part_doc, file_docs = self.denormalize_participant(n)
