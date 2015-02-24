@@ -110,8 +110,6 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
 
                 # Upload this segment
                 logging.info("Posting part {}".format(index))
-                # logging.info("bytes is %s", bytes)
-                # logging.info("bytes mod pagesize is %s", bytes % PAGESIZE)
                 if bytes % PAGESIZE == 0:
                     logging.info("chunk size is %s, mmaping chunk", bytes)
                     f = open(path, "r+b")
@@ -132,11 +130,10 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                 logging.info("Posted part {} {} MBps".format(
                     index, (bytes/float(1024*1024))/els))
                 return
-        except e:
-            logging.exception(e)
-            if not isinstance(e, TimeoutError):
-                raise
-
+        except Exception as e:
+            logging.exception("Caught exception while uploading, retrying")
+    logging.error("Exhausted 30 retries, failing upload")
+    raise RuntimeError("Retries exhausted, upload failed")
 
 def no_proxy(func):
     def wrapped(*args, **kwargs):
