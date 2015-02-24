@@ -5,6 +5,7 @@ from gdcdatamodel.mappings import (
     file_tree, file_traversal,
     ONE_TO_ONE, ONE_TO_MANY
 )
+import json
 import logging
 from cdisutils.log import get_logger
 import networkx as nx
@@ -64,8 +65,7 @@ class PsqlGraph2JSON(object):
         if not self.es:
             log.error('No elasticsearch driver initialized')
         instruction = {"index": {"_index": index, "_type": doc_type}}
-        pbar, results = self.pbar(
-            '{} upload '.format(doc_type), len(docs)), []
+        pbar = self.pbar('{} upload '.format(doc_type), len(docs))
 
         def body():
             start = pbar.currval
@@ -74,9 +74,12 @@ class PsqlGraph2JSON(object):
                 yield doc
                 pbar.update(pbar.currval+1)
         while pbar.currval < len(docs):
-            results.append(self.es.bulk(body=body()))
+            res = self.es.bulk(body=body())
+            if res['errors']:
+                raise RuntimeError(json.dumps([
+                    d for d in res['items'] if d['index']['status'] != 100
+                ], indent=2))
         pbar.finish()
-        return results
 
     def es_put_mappings(self, index):
         if not self.es:
@@ -299,6 +302,10 @@ class PsqlGraph2JSON(object):
                 files.append(self._get_base_doc(n))
         return files
 
+    def fix_project_keys(self, root):
+        root['code'] = root.pop('name')
+        root['name'] = root.pop('project_name')
+
     def denormalize_participant(self, node):
         # Walk graph naturally for tree of node objects
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
@@ -315,8 +322,7 @@ class PsqlGraph2JSON(object):
 
         project = participant.get('project', None)
         if project:
-            project['code'] = project.pop('name')
-            project['name'] = project.pop('project_name')
+            self.fix_project_keys(project)
 
         # Denormalize the participants files
         def get_file(f):
@@ -390,6 +396,10 @@ class PsqlGraph2JSON(object):
         doc['participants'] = map(
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
+        for participant in doc['participants']:
+            project = participant.get('project', None)
+            if project:
+                self.fix_project_keys(project)
 
         # Get annotations
         annotations = doc.pop('annotations', [])
