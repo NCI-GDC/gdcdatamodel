@@ -128,7 +128,7 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                 chunk_file.close()
                 els = stop - start
                 logging.info("Posted part {} {} MBps".format(
-                    index, (bytes/float(1024*1024))/els))
+                    index, (bytes/float(1024*1024))/(els+0.001)))  # sometimes this gives division by zero?
                 return
         except Exception as e:
             logging.exception("Caught exception while uploading, retrying")
@@ -326,6 +326,14 @@ class Downloader(object):
                 traceback.print_exc()
             logging.error('Downloader errored while executing {f}'.format(
                 f=func))
+            self.logger.info("Deleting scratch on disk after catching error")
+            for f in self.files:
+                try:
+                    self.logger.info("trying to delete %s", f)
+                    self.delete_scratch(f)
+                except:
+                    self.logger.error("Unable to delete scratch.  Will likely run "
+                                      "out of space in the future")
             self.check_error(msg)
             time.sleep(3)
             return False
@@ -441,6 +449,10 @@ class Downloader(object):
             return False
         return True
 
+    def get_free_space(self, dir):
+        stat = os.statvfs(dir)
+        return stat.f_frsize * stat.f_bfree
+
     def download(self):
         """download with genetorrent"""
 
@@ -448,6 +460,13 @@ class Downloader(object):
         if self.work is None:
             raise Exception('download() was called with no work')
         directory = self.download_path
+        self.logger.info("Checking free space")
+        free = self.get_free_space(self.download_path)
+        file_size = self.work.get('file_size', 0)
+        self.logger.info("%s bytes free, file size is %s", free, file_size)
+        if free < 1.5 * file_size:
+            self.logger.critical("Not enough space to download file! File size is %s, free space is %s", file_size, free)
+            exit(1)
 
         self.logger.info("Downloading file: {0} GB".format(
             self.work.get('file_size', 0)/1e9))
