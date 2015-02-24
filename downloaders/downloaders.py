@@ -131,7 +131,8 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                     index, (bytes/float(1024*1024))/(els+0.001)))  # sometimes this gives division by zero?
                 return
         except Exception as e:
-            logging.exception("Caught exception while uploading, retrying")
+            logging.exception("Caught exception while uploading, retrying in a second")
+            time.sleep(1)
     logging.error("Exhausted 30 retries, failing upload")
     raise RuntimeError("Retries exhausted, upload failed")
 
