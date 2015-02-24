@@ -1,6 +1,6 @@
 from gdcdatamodel.mappings import (
     get_project_es_mapping, get_participant_es_mapping, get_file_es_mapping,
-    index_settings,
+    index_settings, annotation_tree,
     participant_tree, participant_traversal,
     file_tree, file_traversal,
     ONE_TO_ONE, ONE_TO_MANY
@@ -37,6 +37,12 @@ class PsqlGraph2JSON(object):
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
+        self.flatten = {
+            'tag': 'name',
+            'platform': 'name',
+            'data_format': 'name',
+            'data_subtype': 'name',
+        }
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
             ('archive', 'member_of', 'file'),
@@ -143,6 +149,7 @@ class PsqlGraph2JSON(object):
         # Format tree in way that allows uniform walking
         self.ptree_mapping = {'participant': participant_tree.to_dict()}
         self.ftree_mapping = {'file': file_tree.to_dict()}
+        self.atree_mapping = {'annotation': annotation_tree.to_dict()}
 
     def cache_database(self):
         pbar = self.pbar('Caching Database: ', self.g.edges().count())
@@ -339,13 +346,17 @@ class PsqlGraph2JSON(object):
                           if n not in ['archive']]
         for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
             corr, label = file_tree[neighbor.label]['corr']
+            if neighbor.label in self.flatten:
+                base = neighbor[self.flatten[neighbor.label]]
+            else:
+                base = self._get_base_doc(neighbor)
             if corr == ONE_TO_ONE:
                 assert label not in doc
-                doc[label] = self._get_base_doc(neighbor)
+                doc[label] = base
             else:
                 if label not in doc:
                     doc[label] = []
-                doc[label].append(self._get_base_doc(neighbor))
+                doc[label].append(base)
 
         # Get related_files
         related_files = list(self.neighbors_labeled(node, 'file'))
@@ -370,7 +381,7 @@ class PsqlGraph2JSON(object):
             for data_type, _files in self.data_types.iteritems():
                 if node not in _files:
                     continue
-                doc['data_subtype']['data_type'] = self._get_base_doc(data_type)
+                doc['data_type'] = data_type['name']
 
         relevant = self.walk_paths(node, file_traversal.participant, True)
         self.prune_participant(relevant, ptree, [
@@ -384,7 +395,8 @@ class PsqlGraph2JSON(object):
         for parent in relevant:
             for p_annotation in self.neighbors_labeled(parent, 'annotation'):
                 ann_doc = self._get_base_doc(p_annotation)
-                ann_doc[parent.label] = self._get_base_doc(parent)
+                ann_doc['item_type'] = parent.label
+                ann_doc['item_id'] = parent.node_id
                 annotations.append(ann_doc)
         if annotations:
             doc['annotations'] = annotations
@@ -395,9 +407,6 @@ class PsqlGraph2JSON(object):
             doc['access'] = 'protected'
 
         return doc
-
-    def denormalize_annotation(self, a):
-        raise NotImplementedError()
 
     def denormalize_project(self, p):
         """Summarize a project.
@@ -505,12 +514,18 @@ class PsqlGraph2JSON(object):
         pbar.finish()
         return project_docs
 
-    def denormalize_projects(self):
-        projects = list(self.nodes_labeled('project'))
-        project_docs = []
-        pbar = self.pbar('Denormalizing projects ', len(projects))
-        for project in projects:
-            project_docs.append(self.denormalize_project(project))
+    def denormalize_annotation(self, node):
+        atree = {node: self.create_tree(node, self.atree_mapping, {})}
+        annotation = self.walk_tree(node, atree, self.atree_mapping, [])[0]
+        return annotation
+
+    def denormalize_annotations(self, annotations=None):
+        if not annotations:
+            annotations = list(self.nodes_labeled('annotation'))[:100]
+        annotation_docs = []
+        pbar = self.pbar('Denormalizing annotations ', len(annotations))
+        for annotation in annotations:
+            annotation_docs.append(self.denormalize_annotation(annotation))
             pbar.update(pbar.currval+1)
         pbar.finish()
-        return project_docs
+        return annotation_docs
