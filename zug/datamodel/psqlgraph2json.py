@@ -340,15 +340,7 @@ class PsqlGraph2JSON(object):
             if node.label in keys and node not in relevant_nodes:
                 ptree.pop(node)
 
-    def denormalize_file(self, node, ptree):
-        """Given a participants tree and a file node, create the file json
-        document.
-
-        """
-        doc = self._get_base_doc(node)
-
-        # Walk to neighbors
-
+    def add_file_neighbors(self, node, doc):
         auto_neighbors = [n for n in dict(file_tree).keys()
                           if n not in ['archive']]
         for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
@@ -365,12 +357,13 @@ class PsqlGraph2JSON(object):
                     doc[label] = []
                 doc[label].append(base)
 
+    def add_related_files(self, node, doc):
         # Get related_files
         related_files = list(self.neighbors_labeled(node, 'file'))
         if related_files:
             doc['related_files'] = map(self._get_base_doc, related_files)
 
-        # Get archives
+    def add_archives(self, node, doc):
         archives, related_archives = [], []
         for archive in set(self.neighbors_labeled(node, 'archive')):
             if self.G[node][archive].get('label') == 'member_of':
@@ -382,7 +375,7 @@ class PsqlGraph2JSON(object):
         if related_archives:
             doc['related_archives'] = related_archives
 
-        # Get data type
+    def add_data_type(self, node, doc):
         if 'data_subtype' in doc.keys():
             self._cache_data_types()
             for data_type, _files in self.data_types.iteritems():
@@ -390,6 +383,7 @@ class PsqlGraph2JSON(object):
                     continue
                 doc['data_type'] = data_type['name']
 
+    def add_participants(self, node, ptree, doc):
         relevant = self.walk_paths(node, file_traversal.participant, True)
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
@@ -400,8 +394,9 @@ class PsqlGraph2JSON(object):
             project = participant.get('project', None)
             if project:
                 self.fix_project_keys(project)
+        return relevant
 
-        # Get annotations
+    def add_annotations(self, node, relevant, doc):
         annotations = doc.pop('annotations', [])
         for parent in relevant:
             for p_annotation in self.neighbors_labeled(parent, 'annotation'):
@@ -409,11 +404,25 @@ class PsqlGraph2JSON(object):
         if annotations:
             doc['annotations'] = annotations
 
+    def add_acl(self, node, doc):
         if node.acl == ['open']:
             doc['access'] = 'open'
         else:
             doc['access'] = 'protected'
 
+    def denormalize_file(self, node, ptree):
+        """Given a participants tree and a file node, create the file json
+        document.
+
+        """
+        doc = self._get_base_doc(node)
+        self.add_file_neighbors(node, doc)
+        self.add_related_files(node, doc)
+        self.add_archives(node, doc)
+        self.add_data_type(node, doc)
+        relevant = self.add_participants(node, ptree, doc)
+        self.add_annotations(node, relevant, doc)
+        self.add_acl(node, doc)
         return doc
 
     def denormalize_project(self, p):
