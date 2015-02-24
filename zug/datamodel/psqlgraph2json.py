@@ -504,3 +504,13 @@ class PsqlGraph2JSON(object):
             pbar.update(pbar.currval+1)
         pbar.finish()
         return project_docs
+
+    def denormalize_projects(self):
+        projects = list(self.nodes_labeled('project'))
+        project_docs = []
+        pbar = self.pbar('Denormalizing projects ', len(projects))
+        for project in projects:
+            project_docs.append(self.denormalize_project(project))
+            pbar.update(pbar.currval+1)
+        pbar.finish()
+        return project_docs
