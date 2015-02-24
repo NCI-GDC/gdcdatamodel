@@ -101,8 +101,7 @@ class PsqlGraph2JSON(object):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
         if not part_docs:
-            participants = list(self.nodes_labeled('participant'))
-            part_docs, file_docs = self.denormalize_participants(participants)
+            part_docs, file_docs = self.denormalize_participants()
         if not project_docs:
             project_docs = self.denormalize_projects()
         self.es_bulk_upload(index, 'project', project_docs)
@@ -503,8 +502,9 @@ class PsqlGraph2JSON(object):
         pbar.finish()
         return total_part_docs, total_file_docs
 
-    def denormalize_projects(self):
-        projects = list(self.nodes_labeled('project'))
+    def denormalize_projects(self, projects=None):
+        if not projects:
+            projects = list(self.nodes_labeled('project'))
         project_docs = []
         pbar = self.pbar('Denormalizing projects ', len(projects))
         for project in projects:
