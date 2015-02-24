@@ -15,6 +15,9 @@ MULTIFIELDS = re.compile("|".join([
 ]))
 
 
+FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
+
+
 def index_settings():
     return {"settings":
             {"analysis":
@@ -114,10 +117,13 @@ def _walk_tree(tree, mapping, level=0):
         corr, name = v['corr']
         if name not in mapping:
             mapping[name] = {'properties': {}}
-        mapping[name]['properties'].update(_munge_properties(k))
-        _walk_tree(tree[k], mapping[name]['properties'], level+1)
-        if corr == ONE_TO_MANY:
-            mapping[name]['type'] = 'nested'
+        if k in FLATTEN:
+            mapping.update(_multfield_template(name))
+        else:
+            mapping[name]['properties'].update(_munge_properties(k))
+            _walk_tree(tree[k], mapping[name]['properties'], level+1)
+            if corr == ONE_TO_MANY:
+                mapping[name]['type'] = 'nested'
     return mapping
 
 
@@ -131,6 +137,9 @@ def get_file_es_mapping(include_participant=True):
     }
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
     files["properties"].pop('participant', None)
+    files["properties"].pop('data_subtype', None)
+    files["properties"].update(_multfield_template('data_subtype'))
+    files["properties"].update(_multfield_template('data_type'))
     if include_participant:
         files["properties"]["participants"] = get_participant_es_mapping(False)
         files["properties"]["participants"]["type"] = "nested"
