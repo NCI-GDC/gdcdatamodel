@@ -396,10 +396,7 @@ class PsqlGraph2JSON(object):
         annotations = doc.pop('annotations', [])
         for parent in relevant:
             for p_annotation in self.neighbors_labeled(parent, 'annotation'):
-                ann_doc = self._get_base_doc(p_annotation)
-                ann_doc['item_type'] = parent.label
-                ann_doc['item_id'] = parent.node_id
-                annotations.append(ann_doc)
+                annotations.append(self.denormalize_annotation(p_annotation))
         if annotations:
             doc['annotations'] = annotations
 
@@ -517,9 +514,12 @@ class PsqlGraph2JSON(object):
         return project_docs
 
     def denormalize_annotation(self, node):
-        atree = {node: self.create_tree(node, self.atree_mapping, {})}
-        annotation = self.walk_tree(node, atree, self.atree_mapping, [])[0]
-        return annotation
+        ann_doc = self._get_base_doc(node)
+        items = self.G.neighbors(node)
+        assert len(items) == 1
+        ann_doc['item_type'] = items[0].label
+        ann_doc['item_id'] = items[0].node_id
+        return ann_doc
 
     def denormalize_annotations(self, annotations=None):
         if not annotations:
