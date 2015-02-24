@@ -149,6 +149,7 @@ def get_participant_es_mapping(include_file=True):
         'type': 'nested',
         'properties': _munge_properties("file"),
     }
+
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
@@ -168,11 +169,10 @@ def get_participant_es_mapping(include_file=True):
 
 
 def get_annotation_es_mapping(include_file=True):
-    annotation = _walk_tree(annotation_tree, _munge_properties("annotation"))
+    annotation = _get_header()
     annotation["_id"] = {"path": "annotation_id"}
-    if include_file:
-        annotation['files'] = get_file_es_mapping(False)
-        annotation["files"]["type"] = "nested"
+    annotation["properties"] = _walk_tree(
+        annotation_tree, _munge_properties("annotation"))
     return annotation
 
 
