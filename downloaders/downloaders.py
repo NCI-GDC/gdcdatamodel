@@ -99,6 +99,7 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                     aws_access_key_id=s3_info["s3_access_key"],
                     aws_secret_access_key=s3_info["s3_secret_key"],
                     host=s3_info["s3_url"],
+                    port=s3_info["s3_port"],
                     is_secure=False,
                     calling_format=boto.s3.connection.OrdinaryCallingFormat(),
                 )
@@ -169,7 +170,7 @@ class Downloader(object):
                  signpost_port, s3_auth_path, s3_url, s3_bucket,
                  download_path, access_group, cghub_key, name,
                  extra_cypher='', no_work_delay=900, resume=True,
-                 force_resume_id=None):
+                 force_resume_id=None, s3_port=80):
 
         self.state = 'IDLE'
         self.work = None
@@ -189,6 +190,7 @@ class Downloader(object):
         self.load_name(name)
         self.load_logger()
         self.load_s3_settings(s3_auth_path, s3_url, s3_bucket)
+        self.s3_port = s3_port
         self.load_signpost_settings(signpost_host, signpost_port)
         self.load_neo4j_settings(neo4j_host, neo4j_port)
 
@@ -263,7 +265,7 @@ class Downloader(object):
 
     def check_s3(self):
         self.logger.info('Checking that s3 is reachable')
-        r = requests.get('http://{}'.format(self.s3_url))
+        r = requests.get('http://{}:{}'.format(self.s3_url, self.s3_port))
         if r.status_code != 200:
             logging.error('Status: {}'.format(r.status_code))
             raise Exception('s3 unreachable at {}'.format(
@@ -596,6 +598,7 @@ class Downloader(object):
                 aws_access_key_id=self.s3_access_key,
                 aws_secret_access_key=self.s3_secret_key,
                 host=self.s3_url,
+                port=self.s3_port,
                 is_secure=False,
                 calling_format=boto.s3.connection.OrdinaryCallingFormat(),
             )
@@ -625,7 +628,8 @@ class Downloader(object):
                 "s3_access_key": self.s3_access_key,
                 "s3_secret_key": self.s3_secret_key,
                 "s3_url": self.s3_url,
-                "s3_bucket": self.s3_bucket
+                "s3_bucket": self.s3_bucket,
+                "s3_port": self.s3_port
             }
             for i in range(chunk_amount):
                 # compute offset and bytes
