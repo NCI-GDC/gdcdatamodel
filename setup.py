@@ -31,7 +31,7 @@ setup(
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@edaed3388daf7981df567f731623c8cc9936bf31#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@afb438067934403cf660d6b88cc9b98381f3b93b#egg=gdcdatamodel',
+        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@9af3a6dfae27376130b2c56268f0605230de5be8#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@381e41d09dd7a0f9cd5f1ea5abea5bb1f34e9e70#egg=signpostclient',
     ]
 )
