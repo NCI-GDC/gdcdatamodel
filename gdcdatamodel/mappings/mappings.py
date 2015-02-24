@@ -126,6 +126,10 @@ def get_file_es_mapping(include_participant=True):
         'type': 'nested',
         'properties': _munge_properties("file"),
     }
+    files["properties"]['related_archives'] = {
+        'type': 'nested',
+        'properties': _munge_properties("archive"),
+    }
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
     files["properties"].pop('participant', None)
     files["properties"].pop('data_subtype', None)
