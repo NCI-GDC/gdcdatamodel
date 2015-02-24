@@ -630,6 +630,7 @@ class Downloader(object):
                 self.logger.info("Completing multipart upload")
                 mp.complete_upload()
             else:
+                self.logger.error("Multipart upload failed, expected %s parts, found %s", chunk_amount, part_count)
                 mp.cancel_upload()
                 raise RuntimeError(
                     "Multipart upload failure. Expected {} parts, found {}".format(
