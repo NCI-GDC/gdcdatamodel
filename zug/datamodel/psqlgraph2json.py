@@ -42,6 +42,8 @@ class PsqlGraph2JSON(object):
             'platform': 'name',
             'data_format': 'name',
             'data_subtype': 'name',
+            'experimental_strategy': 'name',
+            'data_level': 'name',
         }
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
