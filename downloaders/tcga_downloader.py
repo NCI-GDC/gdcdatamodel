@@ -19,6 +19,8 @@ if __name__ == '__main__':
                         help='the id to try and force the downloader to resume with')
     parser.add_argument('--resume', default=False, type=bool,
                         help='try and resume a file')
+    parser.add_argument('-p', '--port', default=80, type=int,
+                        help='the s3 port to connect to')
     args = parser.parse_args()
 
     downloader = Downloader(
@@ -47,5 +49,6 @@ if __name__ == '__main__':
         s3_auth_path=os.path.expanduser('~/authorization/ceph.yaml'),
         s3_url=args.gateway,
         s3_bucket='tcga_cghub_protected',
+        s3_port=args.port,
     )
     downloader.start()

@@ -99,6 +99,7 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                     aws_access_key_id=s3_info["s3_access_key"],
                     aws_secret_access_key=s3_info["s3_secret_key"],
                     host=s3_info["s3_url"],
+                    port=s3_info["s3_port"],
                     is_secure=False,
                     calling_format=boto.s3.connection.OrdinaryCallingFormat(),
                 )
@@ -110,8 +111,6 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
 
                 # Upload this segment
                 logging.info("Posting part {}".format(index))
-                # logging.info("bytes is %s", bytes)
-                # logging.info("bytes mod pagesize is %s", bytes % PAGESIZE)
                 if bytes % PAGESIZE == 0:
                     logging.info("chunk size is %s, mmaping chunk", bytes)
                     f = open(path, "r+b")
@@ -130,13 +129,13 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                 chunk_file.close()
                 els = stop - start
                 logging.info("Posted part {} {} MBps".format(
-                    index, (bytes/float(1024*1024))/els))
+                    index, (bytes/float(1024*1024))/(els+0.001)))  # sometimes this gives division by zero?
                 return
-        except e:
-            logging.exception(e)
-            if not isinstance(e, TimeoutError):
-                raise
-
+        except Exception as e:
+            logging.exception("Caught exception while uploading, retrying in a second")
+            time.sleep(1)
+    logging.error("Exhausted 30 retries, failing upload")
+    raise RuntimeError("Retries exhausted, upload failed")
 
 def no_proxy(func):
     def wrapped(*args, **kwargs):
@@ -171,7 +170,7 @@ class Downloader(object):
                  signpost_port, s3_auth_path, s3_url, s3_bucket,
                  download_path, access_group, cghub_key, name,
                  extra_cypher='', no_work_delay=900, resume=True,
-                 force_resume_id=None):
+                 force_resume_id=None, s3_port=80):
 
         self.state = 'IDLE'
         self.work = None
@@ -191,6 +190,7 @@ class Downloader(object):
         self.load_name(name)
         self.load_logger()
         self.load_s3_settings(s3_auth_path, s3_url, s3_bucket)
+        self.s3_port = s3_port
         self.load_signpost_settings(signpost_host, signpost_port)
         self.load_neo4j_settings(neo4j_host, neo4j_port)
 
@@ -265,7 +265,7 @@ class Downloader(object):
 
     def check_s3(self):
         self.logger.info('Checking that s3 is reachable')
-        r = requests.get('http://{}'.format(self.s3_url))
+        r = requests.get('http://{}:{}'.format(self.s3_url, self.s3_port))
         if r.status_code != 200:
             logging.error('Status: {}'.format(r.status_code))
             raise Exception('s3 unreachable at {}'.format(
@@ -329,6 +329,14 @@ class Downloader(object):
                 traceback.print_exc()
             logging.error('Downloader errored while executing {f}'.format(
                 f=func))
+            self.logger.info("Deleting scratch on disk after catching error")
+            for f in self.files:
+                try:
+                    self.logger.info("trying to delete %s", f)
+                    self.delete_scratch(f)
+                except:
+                    self.logger.error("Unable to delete scratch.  Will likely run "
+                                      "out of space in the future")
             self.check_error(msg)
             time.sleep(3)
             return False
@@ -398,7 +406,7 @@ class Downloader(object):
         results = self.graph.cypher.execute("""
             MATCH (n:file) WHERE n.import_state="NOT_STARTED"
             AND n.access_group[0] =~ "{a_group}"
-            AND right(n.file_name, 4) = ".bam" {extra}
+            AND right(n.file_name, 4) <> ".bai" {extra}
             WITH n LIMIT 1 RETURN n
         """.format(a_group=self.access_group, extra=self.extra_cypher))
         if not len(results):
@@ -444,6 +452,11 @@ class Downloader(object):
             return False
         return True
 
+    def get_free_space(self, dir):
+        output = subprocess.check_output(["df", dir])
+        device, size, used, available, percent, mountpoint = output.split("\n")[1].split()
+        return 1000 * int(available)  # 1000 because df reports in kB
+
     def download(self):
         """download with genetorrent"""
 
@@ -451,6 +464,13 @@ class Downloader(object):
         if self.work is None:
             raise Exception('download() was called with no work')
         directory = self.download_path
+        self.logger.info("Checking free space")
+        free = self.get_free_space(self.download_path)
+        file_size = self.work.get('file_size', 0)
+        self.logger.info("%s bytes free, file size is %s", free, file_size)
+        if free < 1.5 * file_size:
+            self.logger.critical("Not enough space to download file! File size is %s, free space is %s", file_size, free)
+            exit(1)
 
         self.logger.info("Downloading file: {0} GB".format(
             self.work.get('file_size', 0)/1e9))
@@ -479,7 +499,6 @@ class Downloader(object):
         files = [f for f in listdir(directory) if isfile(join(directory, f))]
         self.files = [
             os.path.join(directory, f) for f in files
-            if f.endswith('.bam') or f.endswith('.bai')
         ]
 
         if len(self.files) < 1:
@@ -579,6 +598,7 @@ class Downloader(object):
                 aws_access_key_id=self.s3_access_key,
                 aws_secret_access_key=self.s3_secret_key,
                 host=self.s3_url,
+                port=self.s3_port,
                 is_secure=False,
                 calling_format=boto.s3.connection.OrdinaryCallingFormat(),
             )
@@ -608,7 +628,8 @@ class Downloader(object):
                 "s3_access_key": self.s3_access_key,
                 "s3_secret_key": self.s3_secret_key,
                 "s3_url": self.s3_url,
-                "s3_bucket": self.s3_bucket
+                "s3_bucket": self.s3_bucket,
+                "s3_port": self.s3_port
             }
             for i in range(chunk_amount):
                 # compute offset and bytes
@@ -633,6 +654,7 @@ class Downloader(object):
                 self.logger.info("Completing multipart upload")
                 mp.complete_upload()
             else:
+                self.logger.error("Multipart upload failed, expected %s parts, found %s", chunk_amount, part_count)
                 mp.cancel_upload()
                 raise RuntimeError(
                     "Multipart upload failure. Expected {} parts, found {}".format(
