@@ -15,6 +15,9 @@ MULTIFIELDS = re.compile("|".join([
 ]))
 
 
+FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
+
+
 def index_settings():
     return {"settings":
             {"analysis":
@@ -42,16 +45,7 @@ def index_settings():
 
 def _get_header():
     return {
-        "dynamic": "true",
-        "dynamic_templates": [{
-            "template_1": {
-                "mapping": {
-                    "index": "not_analyzed"
-                },
-                "match": "*",
-                "match_mapping_type": "string"
-            }
-        }],
+        "dynamic": "strict",
         "_all": {
             "enabled": False
         },
@@ -114,11 +108,27 @@ def _walk_tree(tree, mapping):
         corr, name = v['corr']
         if name not in mapping:
             mapping[name] = {'properties': {}}
-        mapping[name]['properties'].update(_munge_properties(k))
-        _walk_tree(tree[k], mapping[name]['properties'])
-        if corr == ONE_TO_MANY:
-            mapping[name]['type'] = 'nested'
+        if k in FLATTEN:
+            mapping.update(_multfield_template(name))
+        elif k == 'annotation':
+            mapping['annotations'] = annotation_body()
+        else:
+            mapping[name]['properties'].update(_munge_properties(k))
+            _walk_tree(tree[k], mapping[name]['properties'])
+            if corr == ONE_TO_MANY:
+                mapping[name]['type'] = 'nested'
     return mapping
+
+
+def _munge_project(root):
+    root['properties']['code'] = root['properties'].pop('name')
+    root['properties']['name'] = root['properties'].pop('project_name')
+
+
+def flatten_data_type(root):
+    root.pop('data_subtype', None)
+    root.update(_multfield_template('data_subtype'))
+    root.update(_multfield_template('data_type'))
 
 
 def get_file_es_mapping(include_participant=True):
@@ -127,8 +137,11 @@ def get_file_es_mapping(include_participant=True):
     files["properties"] = _walk_tree(file_tree, _munge_properties("file"))
     files["properties"]['related_files'] = {
         'type': 'nested',
-        'properties': _munge_properties("file"),
-    }
+        'properties': _munge_properties("file")}
+    files["properties"]['related_archives'] = {
+        'type': 'nested',
+        'properties': _munge_properties("archive")}
+    flatten_data_type(files['properties'])
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
     files["properties"].pop('participant', None)
     if include_participant:
@@ -142,13 +155,12 @@ def get_participant_es_mapping(include_file=True):
     participant["_id"] = {"path": "participant_id"}
     participant["properties"] = _walk_tree(
         participant_tree, _munge_properties("participant"))
-    participant['properties']['project']['properties']['code'] = participant['properties']['project']['properties'].pop('name')
-    participant['properties']['project']['properties']['name'] = participant['properties']['project']['properties'].pop('project_name')
     participant["properties"].pop('file', None)
     participant['properties']['metadata_files'] = {
         'type': 'nested',
         'properties': _munge_properties("file"),
     }
+    _munge_project(participant['properties']['project'])
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
@@ -167,12 +179,19 @@ def get_participant_es_mapping(include_file=True):
     return participant
 
 
+def annotation_body():
+    annotation = {}
+    annotation["properties"] = _munge_properties("annotation")
+    annotation["properties"]["item_type"] = {
+        'index': 'not_analyzed', 'type': 'string'}
+    annotation["properties"].update(_multfield_template('item_id'))
+    return annotation
+
+
 def get_annotation_es_mapping(include_file=True):
-    annotation = _walk_tree(annotation_tree, _munge_properties("annotation"))
+    annotation = _get_header()
     annotation["_id"] = {"path": "annotation_id"}
-    if include_file:
-        annotation['files'] = get_file_es_mapping(False)
-        annotation["files"]["type"] = "nested"
+    annotation.update(annotation_body())
     return annotation
 
 
@@ -181,8 +200,7 @@ def get_project_es_mapping():
     project["_id"] = {"path": "project_id"}
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
-    project['properties']['code'] = project['properties'].pop('name')
-    project['properties']['name'] = project['properties'].pop('project_name')
+    _munge_project(project)
     project['properties'].update(_multfield_template('disease_types'))
     project["properties"]["summary"] = {"properties": {
         "file_count": {u'index': u'not_analyzed', u'type': u'long'},

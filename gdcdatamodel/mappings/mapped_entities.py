@@ -68,9 +68,17 @@ participant_traversal.file = [
 
 # Annotation hierarchy
 annotation_tree = Dict()
+annotation_tree.corr = (ONE_TO_MANY, 'participants')
 annotation_tree.project.corr = (ONE_TO_ONE, 'project')
 annotation_tree.project.program.corr = (ONE_TO_ONE, 'program')
-annotation_tree.item.corr = (ONE_TO_ONE, 'item')
+annotation_tree.participant.corr = (ONE_TO_ONE, 'participant')
+annotation_tree.sample.corr = (ONE_TO_ONE, 'sample')
+annotation_tree.portion.corr = (ONE_TO_ONE, 'portion')
+annotation_tree.analyte.corr = (ONE_TO_ONE, 'analyte')
+annotation_tree.aliquot.corr = (ONE_TO_ONE, 'aliquot')
+annotation_tree.slide.corr = (ONE_TO_ONE, 'slide')
+annotation_tree.file.corr = (ONE_TO_ONE, 'file')
+
 
 annotation_traversal = Dict()
 annotation_traversal.file = [
