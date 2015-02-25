@@ -184,7 +184,8 @@ class TestPsqlgraph2JSON(unittest.TestCase):
         doc_conv = PsqlGraph2JSON(g)
         with g.session_scope():
             doc_conv.cache_database()
-        self.part_docs, self.file_docs = doc_conv.denormalize_participants()
+        self.part_docs, self.file_docs, self.ann_docs = (
+            doc_conv.denormalize_participants())
         self.part_doc = self.part_docs[0]
 
     def tearDown(self):
