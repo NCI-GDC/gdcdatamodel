@@ -31,6 +31,10 @@ TCGA,THCA,legacy,Thyroid Carcinoma,Thyroid
 TCGA,UCS,legacy,Uterine Carcinosarcoma,Uterus
 TCGA,UCEC,legacy,Uterine Corpus Endometrial Carcinoma,Uterus
 TCGA,UVM,legacy,Uveal Melanoma,Eye
+TCGA,MISC,legacy,Miscellaneous,N/A
+TCGA,LCML,legacy,Chronic Myelogenous Leukemia,Blood
+TCGA,FPPP,legacy,FFPE Pilot Phase II,TBD
+TCGA,CNTL,legacy,Controls,N/A
 TARGET,ALL-P1,legacy,Acute Lymphoblastic Leukemia,Blood
 TARGET,ALL-P2,legacy,Acute Lymphoblastic Leukemia,Blood
 TARGET,AML,legacy,Acute Myeloid Leukemia,Blood
