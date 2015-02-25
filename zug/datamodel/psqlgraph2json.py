@@ -105,19 +105,17 @@ class PsqlGraph2JSON(object):
 
     def es_index_create_and_populate(self, index, part_docs=None,
                                      file_docs=None, project_docs=None,
-                                     annotation_docs=None):
+                                     ann_docs=None):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
-        # if not part_docs:
-        #     part_docs, file_docs = self.denormalize_participants()
-        # if not project_docs:
-        #     project_docs = self.denormalize_projects()
-        if not annotation_docs:
-            annotation_docs = self.denormalize_annotations()
-        self.es_bulk_upload(index, 'annotation', annotation_docs)
-        # self.es_bulk_upload(index, 'project', project_docs)
-        # self.es_bulk_upload(index, 'participant', part_docs)
-        # self.es_bulk_upload(index, 'file', file_docs)
+        if not part_docs:
+            part_docs, file_docs, ann_docs = self.denormalize_participants()
+        if not project_docs:
+            project_docs = self.denormalize_projects()
+        self.es_bulk_upload(index, 'annotation', ann_docs)
+        self.es_bulk_upload(index, 'project', project_docs)
+        self.es_bulk_upload(index, 'participant', part_docs)
+        self.es_bulk_upload(index, 'file', file_docs)
 
     def swap_index(self, old_index, new_index, alias):
         self.es.indices.update_aliases({'actions': [
@@ -339,7 +337,12 @@ class PsqlGraph2JSON(object):
         def get_file(f):
             return self.denormalize_file(f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
-        return participant, participant['files']
+
+        annotations = [a for f in participant['files']
+                       for a in f.get('annotations', [])]
+        for a in annotations:
+            a['project'] = project
+        return participant, participant['files'], annotations
 
     def prune_participant(self, relevant_nodes, ptree, keys):
         """Start with whole participant tree and remove any nodes that did not
@@ -520,17 +523,18 @@ class PsqlGraph2JSON(object):
         return doc
 
     def denormalize_participants(self, participants=None):
-        total_part_docs, total_file_docs = [], []
+        total_part_docs, total_file_docs, total_ann_docs = [], [], []
         if not participants:
             participants = list(self.nodes_labeled('participant'))
         pbar = self.pbar('Denormalizing participants ', len(participants))
         for n in participants:
-            part_doc, file_docs = self.denormalize_participant(n)
+            part_doc, file_docs, ann_docs = self.denormalize_participant(n)
             total_part_docs.append(part_doc)
             total_file_docs += file_docs
+            total_ann_docs += ann_docs
             pbar.update(pbar.currval+1)
         pbar.finish()
-        return total_part_docs, total_file_docs
+        return total_part_docs, total_file_docs, total_ann_docs
 
     def denormalize_projects(self, projects=None):
         if not projects:
