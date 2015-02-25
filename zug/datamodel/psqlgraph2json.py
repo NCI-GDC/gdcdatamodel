@@ -1,8 +1,8 @@
 from gdcdatamodel.mappings import (
-    get_project_es_mapping, get_participant_es_mapping, get_file_es_mapping,
-    index_settings, annotation_tree,
-    participant_tree, participant_traversal,
-    file_tree, file_traversal,
+    get_project_es_mapping, index_settings,
+    annotation_tree, get_annotation_es_mapping,
+    participant_tree, participant_traversal, get_participant_es_mapping,
+    file_tree, file_traversal, get_file_es_mapping,
     ONE_TO_ONE, ONE_TO_MANY
 )
 import json
@@ -97,19 +97,27 @@ class PsqlGraph2JSON(object):
                 index=index,
                 doc_type="participant",
                 body=get_participant_es_mapping()),
+            self.es.indices.put_mapping(
+                index=index,
+                doc_type="annotation",
+                body=get_annotation_es_mapping()),
         ]
 
     def es_index_create_and_populate(self, index, part_docs=None,
-                                     file_docs=None, project_docs=None):
+                                     file_docs=None, project_docs=None,
+                                     annotation_docs=None):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
-        if not part_docs:
-            part_docs, file_docs = self.denormalize_participants()
-        if not project_docs:
-            project_docs = self.denormalize_projects()
-        self.es_bulk_upload(index, 'project', project_docs)
-        self.es_bulk_upload(index, 'participant', part_docs)
-        self.es_bulk_upload(index, 'file', file_docs)
+        # if not part_docs:
+        #     part_docs, file_docs = self.denormalize_participants()
+        # if not project_docs:
+        #     project_docs = self.denormalize_projects()
+        if not annotation_docs:
+            annotation_docs = self.denormalize_annotations()
+        self.es_bulk_upload(index, 'annotation', annotation_docs)
+        # self.es_bulk_upload(index, 'project', project_docs)
+        # self.es_bulk_upload(index, 'participant', part_docs)
+        # self.es_bulk_upload(index, 'file', file_docs)
 
     def swap_index(self, old_index, new_index, alias):
         self.es.indices.update_aliases({'actions': [
@@ -125,7 +133,10 @@ class PsqlGraph2JSON(object):
 
     def lookup_index_by_alias(self, alias):
         try:
-            return self.es.indices.get_alias(alias).keys()[0]
+            keys = self.es.indices.get_alias(alias).keys()
+            if not keys:
+                return None
+            return keys[0]
         except NotFoundError:
             return None
 
