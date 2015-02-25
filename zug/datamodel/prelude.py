@@ -209,6 +209,7 @@ def insert_classification_nodes(driver):
             idempotent_insert(driver, "data_format", format, session)
 
         idempotent_insert(driver, "program", "TCGA", session)
+        idempotent_insert(driver, "program", "TARGET", session)
 
 
 def create_prelude_nodes(driver):
