@@ -144,195 +144,6 @@ PLATFORMS = [
     "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM"
 ]
 
-PROJECTS = [
-    {
-        "name": "ACC",
-        "project_name": "Adrenocortical carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "BLCA",
-        "project_name": "Bladder Urothelial Carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "BRCA",
-        "project_name": "Breast invasive carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "CESC",
-        "project_name": "Cervical squamous cell carcinoma and endocervical adenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "CHOL",
-        "project_name": "Cholangiocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "CNTL",
-        "project_name": "Controls",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "COAD",
-        "project_name": "Colon adenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "DLBC",
-        "project_name": "Lymphoid Neoplasm Diffuse Large B-cell Lymphoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "ESCA",
-        "project_name": "Esophageal carcinoma ",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "FPPP",
-        "project_name": "FFPE Pilot Phase II",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "GBM",
-        "project_name": "Glioblastoma multiforme",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "HNSC",
-        "project_name": "Head and Neck squamous cell carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "KICH",
-        "project_name": "Kidney Chromophobe",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "KIRC",
-        "project_name": "Kidney renal clear cell carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "KIRP",
-        "project_name": "Kidney renal papillary cell carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "LAML",
-        "project_name": "Acute Myeloid Leukemia",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "LCML",
-        "project_name": "Chronic Myelogenous Leukemia",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "LGG",
-        "project_name": "Brain Lower Grade Glioma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "LIHC",
-        "project_name": "Liver hepatocellular carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "LUAD",
-        "project_name": "Lung adenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "LUSC",
-        "project_name": "Lung squamous cell carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "MESO",
-        "project_name": "Mesothelioma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "MISC",
-        "project_name": "Miscellaneous",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "OV",
-        "project_name": "Ovarian serous cystadenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "PAAD",
-        "project_name": "Pancreatic adenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "PCPG",
-        "project_name": "Pheochromocytoma and Paraganglioma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "PRAD",
-        "project_name": "Prostate adenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "READ",
-        "project_name": "Rectum adenocarcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "SARC",
-        "project_name": "Sarcoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "SKCM",
-        "project_name": "Skin Cutaneous Melanoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "STAD",
-        "project_name": "carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "TGCT",
-        "project_name": "Testicular Germ Cell Tumors",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "THCA",
-        "project_name": "Thyroid carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "THYM",
-        "project_name": "Thymoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "UCEC",
-        "project_name": "Uterine Corpus Endometrial Carcinoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "UCS",
-        "project_name": "Uterine Carcinosarcoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    }, {
-        "name": "UVM",
-        "project_name": "Uveal Melanoma",
-        "state": "legacy",
-        "primary_site": "TBD"
-    },
-]
-
 
 def idempotent_insert(driver, label, name, session):
         return driver.node_merge(node_id=str(uuid5(GDC_NAMESPACES[label], name)),
@@ -341,19 +152,32 @@ def idempotent_insert(driver, label, name, session):
                                  session=session)
 
 
-def insert_project_nodes(driver):
-    tcga_id = str(uuid5(GDC_NAMESPACES['program'], 'TCGA'))
+def insert_project_nodes(driver, path):
+    programs = {
+        'TCGA': str(uuid5(GDC_NAMESPACES['program'], 'TCGA')),
+        'TARGET': str(uuid5(GDC_NAMESPACES['program'], 'TARGET')),
+    }
     with driver.session_scope():
-        for project in PROJECTS:
-            node_id = str(uuid5(GDC_NAMESPACES['project'], project['name']))
-            driver.node_merge(
-                node_id=node_id, label='project', properties=project)
-            if driver.edge_lookup_one(
-                    src_id=node_id, dst_id=tcga_id, label="member_of"):
-                continue
-            driver.edge_insert(
-                PsqlEdge(src_id=node_id, dst_id=tcga_id, label="member_of"),
-                max_retries=4)
+        with open(path, 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                program, name, state, project_name, primary_site = row
+                node_id = str(uuid5(GDC_NAMESPACES['project'], name))
+                driver.node_merge(
+                    node_id=node_id, label='project', properties={
+                        'name': name,
+                        'state': state,
+                        'project_name': project_name,
+                        'primary_site': primary_site,
+                    })
+                program_id = programs[program]
+                if not driver.edge_lookup_one(src_id=node_id,
+                                              dst_id=program_id,
+                                              label="member_of"):
+                    driver.edge_insert(PsqlEdge(
+                        src_id=node_id,
+                        dst_id=program_id,
+                        label="member_of"), max_retries=4)
 
 
 def insert_classification_nodes(driver):
@@ -385,10 +209,11 @@ def insert_classification_nodes(driver):
             idempotent_insert(driver, "data_format", format, session)
 
         idempotent_insert(driver, "program", "TCGA", session)
+        idempotent_insert(driver, "program", "TARGET", session)
 
 
 def create_prelude_nodes(driver):
     import_center_codes(driver, os.path.join(PKG_DIR, "centerCode.csv"))
     import_tissue_source_site_codes(driver, os.path.join(PKG_DIR, "tissueSourceSite.csv"))
     insert_classification_nodes(driver)
-    insert_project_nodes(driver)
+    insert_project_nodes(driver, os.path.join(PKG_DIR, "projects.csv"))

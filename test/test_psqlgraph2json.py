@@ -68,13 +68,14 @@ aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
                  'concentration', 'source_center', 'annotations'}
 annotation_props = {'category', 'status', 'classification',
                     'creator', 'created_datetime', 'notes',
-                    'submitter_id', 'annotation_id'}
+                    'submitter_id', 'annotation_id', 'item_id',
+                    'item_type', 'project'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
               'file_name', 'md5sum', 'participants',
               'submitter_id', 'access', 'platform', 'state',
               'data_subtype', 'file_id', 'file_size',
               'experimental_strategy', 'state_comment',
-              'annotations', 'archives'}
+              'annotations', 'archives', 'related_archives', 'data_type'}
 
 
 class TestElasticsearchMappings(unittest.TestCase):
@@ -223,8 +224,7 @@ class TestPsqlgraph2JSON(unittest.TestCase):
     def test_participant_portions(self):
         props = self.part_doc
         self.assertTrue('portions' in props['samples'][0])
-        portion = [p for p in props['samples'][0]['portions']
-                   if 'slides' in p][0]
+        portion = [p for p in props['samples'][0]['portions']][0]
         self.assertEqual(portion_props.symmetric_difference(
             set(portion.keys())), set(['center', 'annotations']))
 
@@ -249,4 +249,4 @@ class TestPsqlgraph2JSON(unittest.TestCase):
             set(props['files'][0].keys())
         ), set(['related_files', 'center', 'tags', 'data_format', 'platform',
                 'archives', 'annotations', 'experimental_strategy',
-                'data_subtype']))
+                'data_subtype', 'related_archives', 'data_type']))
