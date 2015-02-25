@@ -185,6 +185,9 @@ def annotation_body():
     annotation["properties"]["item_type"] = {
         'index': 'not_analyzed', 'type': 'string'}
     annotation["properties"].update(_multfield_template('item_id'))
+    annotation["properties"]["project"] = {
+        "properties": _munge_properties("project")}
+    _munge_project(annotation['properties']['project'])
     return annotation
 
 
