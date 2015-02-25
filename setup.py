@@ -12,6 +12,7 @@ setup(
             "datamodel/bcr.yaml",
             "datamodel/cghub.yaml",
             "datamodel/clinical.yaml",
+            "datamodel/projects.csv",
             "datamodel/cghub_file_categorization.yaml",
         ]
     },
