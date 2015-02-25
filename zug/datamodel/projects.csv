@@ -1,0 +1,42 @@
+TCGA,LAML,legacy,Acute Myeloid Leukemia,Blood
+TCGA,ACC,legacy,Adrenocortical Carcinoma,Adrenal Gland
+TCGA,BLCA,legacy,Bladder Urothelial Carcinoma,Bladder
+TCGA,LGG,legacy,Brain Lower Grade Glioma,Brain
+TCGA,BRCA,legacy,Breast Invasive Carcinoma,Breast
+TCGA,CESC,legacy,Cervical Squamous Cell Carcinoma and Endocervical Adenocarcinoma,Cervix
+TCGA,CHOL,legacy,Cholangiocarcinoma ,Bile Duct
+TCGA,COAD,legacy,Colon Adenocarcinoma,Colon
+TCGA,ESCA,legacy,Esophageal Carcinoma,Esophagus
+TCGA,GBM,legacy,Glioblastoma Multiforme,Brain
+TCGA,HNSC,legacy,Head and Neck Squamous Cell Carcinoma,Upper Aerodigestive Tract
+TCGA,KICH,legacy,Kidney Chromophobe,Kidney
+TCGA,KIRC,legacy,Kidney Renal Clear Cell Carcinoma,Kidney
+TCGA,KIRP,legacy,Kidney Renal Papillary Cell Carcinoma,Kidney
+TCGA,LIHC,legacy,Liver Hepatocellular Carcinoma,Liver
+TCGA,LUAD,legacy,Lung Adenocarcinoma,Lung
+TCGA,LUSC,legacy,Lung Squamous Cell Carcinoma,Lung
+TCGA,DLBC,legacy,Lymphoid Neoplasm Diffuse Large B-cell Lymphoma,Lymph Nodes
+TCGA,MESO,legacy,Mesothelioma,Mesothelium
+TCGA,OV,legacy,Ovarian Serous Cystadenocarcinoma,Ovary
+TCGA,PAAD,legacy,Pancreatic Adenocarcinoma,Pancreas
+TCGA,PCPG,legacy,Pheochromocytoma and Paraganglioma,Andrenal Gland and Other
+TCGA,PRAD,legacy,Prostate Adenocarcinoma,Prostate
+TCGA,READ,legacy,Rectum Adenocarcinoma,Colorectal
+TCGA,SARC,legacy,Sarcoma,Mesenchymal
+TCGA,SKCM,legacy,Skin Cutaneous Melanoma,Skin
+TCGA,STAD,legacy,Stomach Adenocarcinoma,Stomach
+TCGA,TGCT,legacy,Testicular Germ Cell Tumors,Testis
+TCGA,THYM,legacy,Thymoma ,Thymus
+TCGA,THCA,legacy,Thyroid Carcinoma,Thyroid
+TCGA,UCS,legacy,Uterine Carcinosarcoma,Uterus
+TCGA,UCEC,legacy,Uterine Corpus Endometrial Carcinoma,Uterus
+TCGA,UVM,legacy,Uveal Melanoma,Eye
+TARGET,ALL-P1,legacy,Acute Lymphoblastic Leukemia,Blood
+TARGET,ALL-P2,legacy,Acute Lymphoblastic Leukemia,Blood
+TARGET,AML,legacy,Acute Myeloid Leukemia,Blood
+TARGET,AML-IF,legacy,Acute Myeloid Leukemia Induction Failure,Blood
+TARGET,WT,legacy,High-Risk Wilms Tumor ,Kidney
+TARGET,CCSK,legacy,Clear Cell Sarcoma of the Kidney,Kidney
+TARGET,RT,legacy,Rhabdoid Tumor,Kidney
+TARGET,NBL,legacy,Neuroblastoma ,Neuroendocrine
+TARGET,OS,legacy,Osteosarcoma,Bone
