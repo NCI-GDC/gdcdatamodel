@@ -15,6 +15,7 @@ import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from elasticsearch import NotFoundError
+from copy import copy
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -62,6 +63,9 @@ class PsqlGraph2JSON(object):
         return pbar
 
     def es_bulk_upload(self, index, doc_type, docs, batch_size=256):
+        if not docs:
+            log.warning('No {} docs to bulk upload'.format(doc_type))
+            return
         if not self.es:
             log.error('No elasticsearch driver initialized')
         instruction = {"index": {"_index": index, "_type": doc_type}}
@@ -103,9 +107,9 @@ class PsqlGraph2JSON(object):
                 body=get_annotation_es_mapping()),
         ]
 
-    def es_index_create_and_populate(self, index, part_docs=None,
-                                     file_docs=None, project_docs=None,
-                                     ann_docs=None):
+    def es_index_create_and_populate(self, index, part_docs=[],
+                                     file_docs=[], project_docs=[],
+                                     ann_docs=[]):
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
         if not part_docs:
@@ -338,7 +342,7 @@ class PsqlGraph2JSON(object):
             return self.denormalize_file(f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
 
-        annotations = [a for f in participant['files']
+        annotations = [copy(a) for f in participant['files']
                        for a in f.get('annotations', [])]
         for a in annotations:
             a['project'] = project
