@@ -112,6 +112,7 @@ def _walk_tree(tree, mapping):
             mapping.update(_multfield_template(name))
         elif k == 'annotation':
             mapping['annotations'] = annotation_body()
+            mapping['annotations']['type'] = 'nested'
         else:
             mapping[name]['properties'].update(_munge_properties(k))
             _walk_tree(tree[k], mapping[name]['properties'])
@@ -169,11 +170,11 @@ def get_participant_es_mapping(include_file=True):
     participant["properties"]["summary"] = {"properties": {
         "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
-        "experimental_strategies": {"properties": {
+        "experimental_strategies": {"type": "nested", "properties": {
             "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         }},
-        "data_types": {"properties": {
+        "data_types": {"type": "nested", "properties": {
             "data_type": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         }},
