@@ -143,6 +143,7 @@ def get_file_es_mapping(include_participant=True):
         'properties': _munge_properties("archive")}
     flatten_data_type(files['properties'])
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
+    files['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
     files["properties"].pop('participant', None)
     if include_participant:
         files["properties"]["participants"] = get_participant_es_mapping(False)
@@ -161,6 +162,7 @@ def get_participant_es_mapping(include_file=True):
         'properties': _munge_properties("file"),
     }
     _munge_project(participant['properties']['project'])
+    participant['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
@@ -185,9 +187,6 @@ def annotation_body():
     annotation["properties"]["item_type"] = {
         'index': 'not_analyzed', 'type': 'string'}
     annotation["properties"].update(_multfield_template('item_id'))
-    annotation["properties"]["project"] = {
-        "properties": _munge_properties("project")}
-    _munge_project(annotation['properties']['project'])
     return annotation
 
 
@@ -195,6 +194,11 @@ def get_annotation_es_mapping(include_file=True):
     annotation = _get_header()
     annotation["_id"] = {"path": "annotation_id"}
     annotation.update(annotation_body())
+    annotation['properties'].update({
+        'project': {'properties': _munge_properties("project")}})
+    _munge_project(annotation['properties']['project'])
+    annotation['properties']['project']['properties']['program'] = (
+        {'properties': _munge_properties("program")})
     return annotation
 
 
