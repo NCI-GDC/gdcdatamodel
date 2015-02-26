@@ -112,6 +112,7 @@ def _walk_tree(tree, mapping):
             mapping.update(_multfield_template(name))
         elif k == 'annotation':
             mapping['annotations'] = annotation_body()
+            mapping['type'] = 'nested'
         else:
             mapping[name]['properties'].update(_munge_properties(k))
             _walk_tree(tree[k], mapping[name]['properties'])
