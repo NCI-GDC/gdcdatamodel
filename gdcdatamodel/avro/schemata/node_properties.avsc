@@ -245,12 +245,17 @@
       {
         "name": "name",
         "type": "string",
+        "doc": "TOREVIEW: full name for the project"
+      },
+      {
+        "name": "code",
+        "type": "string",
         "doc": "TOREVIEW: display name for the project"
       },
       {
-        "name": "project_name",
+        "name": "disease_type",
         "type": "string",
-        "doc": "TOREVIEW: full name for the project"
+        "doc": "TODO: define"
       },
       {
         "name": "state",
