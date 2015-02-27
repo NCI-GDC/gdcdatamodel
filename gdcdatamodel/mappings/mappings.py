@@ -11,7 +11,7 @@ from mapped_entities import (
 
 MULTIFIELDS = re.compile("|".join([
     "submitter_id", "name", "code", "primary_site",
-    "disease_type", "project_name"
+    "disease_type", "project_name", "file_name"
 ]))
 
 
