@@ -125,8 +125,18 @@ class TestCGHubFileImporter(unittest.TestCase):
             base.path_end(['experimental_strategy']).props({'name': 'RNA-Seq'}).one()
 
     def test_idempotency(self):
+        graph = self.converter.graph
         for i in range(5):
             self.test_simple_parse()
+            with graph.session_scope() as s:
+                f = graph.nodes().labels('file').first()
+                f['state'] = 'live'
+                graph.node_merge(node_id=f.node_id, properties=f.properties)
+                s.commit()
+            self.test_simple_parse()
+            with graph.session_scope():
+                self.assertEqual(
+                    graph.nodes().ids(f.node_id).one()['state'], 'live')
             self.test_related_to()
             self.test_categorization()
 
