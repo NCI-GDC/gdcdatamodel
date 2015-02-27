@@ -152,6 +152,7 @@ class PsqlGraph2JSON(object):
         :param list project_docs: The project docs to upload.
 
         """
+
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
         if not part_docs:
@@ -172,6 +173,7 @@ class PsqlGraph2JSON(object):
         :param str alias: Alias name to swap
 
         """
+
         self.es.indices.update_aliases({'actions': [
             {'remove': {'index': old_index, 'alias': alias}},
             {'add': {'index': new_index, 'alias': alias}}]})
@@ -181,6 +183,7 @@ class PsqlGraph2JSON(object):
         matching bases (2) take the maximum
 
         """
+
         indices = set(self.es.indices.get_aliases().keys())
         p = re.compile(self.index_pattern.format(base=base, n='(\d+)')+'$')
         matches = [p.match(index) for index in indices if p.match(index)]
@@ -192,6 +195,7 @@ class PsqlGraph2JSON(object):
         None if the index doesn't exist.
 
         """
+
         try:
             keys = self.es.indices.get_alias(alias).keys()
             if not keys:
@@ -206,6 +210,7 @@ class PsqlGraph2JSON(object):
         alias to point to the new index
 
         """
+
         new_index = self.get_next_index(alias)
         self.es_index_create_and_populate(new_index, **kwargs)
         old_index = self.lookup_index_by_alias(alias)
@@ -219,6 +224,7 @@ class PsqlGraph2JSON(object):
         trees work with the graph walking code
 
         """
+
         # Include files only attached to biospecimen pathway via another file
         participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
         if ('file',) not in participant_traversal['file']:
@@ -240,6 +246,7 @@ class PsqlGraph2JSON(object):
         will need to distinguish later.
 
         """
+
         pbar = self.pbar('Caching Database: ', self.g.edges().count())
         for e in self.g.edges().options(joinedload(Edge.src))\
                                .options(joinedload(Edge.dst))\
@@ -624,6 +631,7 @@ class PsqlGraph2JSON(object):
             doc['access'] = 'open'
         else:
             doc['access'] = 'protected'
+        doc['acl'] = node.acl
 
     def denormalize_file(self, node, ptree):
         """Given a participants tree and a file node, create the file json
@@ -682,8 +690,8 @@ class PsqlGraph2JSON(object):
         self._cache_experimental_strategies()
         for exp_strat in self.nodes_labeled('experimental_strategy'):
             log.debug('{} {}'.format(exp_strat, exp_strat['name']))
-            exp_files = self.experimental_strategies[exp_strat]
-            if not len(exp_files & files):
+            exp_files = (self.experimental_strategies[exp_strat] & files)
+            if not len(exp_files):
                 continue
             participant_count = len(
                 {p for p, p_files in part_files.iteritems()
@@ -699,8 +707,8 @@ class PsqlGraph2JSON(object):
         self._cache_data_types()
         for data_type in self.nodes_labeled('data_type'):
             log.debug('{} {}'.format(data_type, data_type['name']))
-            dt_files = self.data_types[data_type]
-            if not len(dt_files & files):
+            dt_files = (self.data_types[data_type] & files)
+            if not len(dt_files):
                 continue
             participant_count = len(
                 {p for p, p_files in part_files.iteritems()
