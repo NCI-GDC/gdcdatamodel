@@ -28,7 +28,6 @@ class PsqlGraph2JSON(object):
 
     def __init__(self, psqlgraph_driver, es=None):
         """Walks the graph to produce elasticsearch json documents.
-        Assumptions include:
 
         """
         self.g = psqlgraph_driver
@@ -39,6 +38,9 @@ class PsqlGraph2JSON(object):
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
+
+        # The body of these nested documents will be flattened into
+        # the parent document using the given key's value
         self.flatten = {
             'tag': 'name',
             'platform': 'name',
@@ -47,6 +49,9 @@ class PsqlGraph2JSON(object):
             'experimental_strategy': 'name',
             'data_level': 'name',
         }
+
+        # The edges below will maintain labels in the in memory graph,
+        # all others will be discarded
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
             ('archive', 'member_of', 'file'),
@@ -55,6 +60,12 @@ class PsqlGraph2JSON(object):
         ]
 
     def pbar(self, title, maxval):
+        """Create and initialize a custom progressbar
+
+        :param str title: The text of the progress bar
+        "param int maxva': The maximumum value of the progress bar
+
+        """
         pbar = ProgressBar(widgets=[
             title, Percentage(), ' ',
             Bar(marker='#', left='[', right=']'), ' ',
@@ -63,6 +74,16 @@ class PsqlGraph2JSON(object):
         return pbar
 
     def es_bulk_upload(self, index, doc_type, docs, batch_size=256):
+        """Chunk and upload docs to Elasticsearch.  This function will raise
+        an exception of there were errors inserting any of the
+        documents
+
+        :param str index: The index to upload documents to
+        :param str doc_type: The type of document to pload as
+        :param list docs: The documents to upload
+        :param int batch_size: The number of docs per batch
+
+        """
         if not docs:
             log.warning('No {} docs to bulk upload'.format(doc_type))
             return
@@ -86,6 +107,11 @@ class PsqlGraph2JSON(object):
         pbar.finish()
 
     def es_put_mappings(self, index):
+        """Add mappings to index.
+
+        :param str index: The elasticsearch index
+
+        """
         if not self.es:
             log.error('No elasticsearch driver initialized')
         return [
@@ -108,8 +134,24 @@ class PsqlGraph2JSON(object):
         ]
 
     def es_index_create_and_populate(self, index, part_docs=[],
-                                     file_docs=[], project_docs=[],
-                                     ann_docs=[]):
+                                     file_docs=[], ann_docs=[],
+                                     project_docs=[]):
+        """Create a new index with name `index` and add given documents to it.
+        `part_docs` or `project_docs` are empty, the will be generated
+        automatically.
+
+        :param list part_docs: The participant docs to upload.
+        :param list file_docs:
+            The file docs to upload. If part_docs is empty,
+            `file_docs` will be overwritten when part_docs are
+            produced.
+        :param list ann_docs:
+            The annotation docs to upload. If part_docs is empty,
+            `ann_docs` will be overwritten when part_docs are
+            produced.
+        :param list project_docs: The project docs to upload.
+
+        """
         self.es.indices.create(index=index, body=index_settings())
         self.es_put_mappings(index)
         if not part_docs:
@@ -122,11 +164,23 @@ class PsqlGraph2JSON(object):
         self.es_bulk_upload(index, 'file', file_docs)
 
     def swap_index(self, old_index, new_index, alias):
+        """Atomically switch the resolution of `alias` from `old_index` to
+        `new_index`
+
+        :param str old_index: Old resolution
+        :param str new_index: New resolution. `alias` will point here.
+        :param str alias: Alias name to swap
+
+        """
         self.es.indices.update_aliases({'actions': [
             {'remove': {'index': old_index, 'alias': alias}},
             {'add': {'index': new_index, 'alias': alias}}]})
 
     def get_next_index(self, base):
+        """Using this class's `index_pattern` (1) find any old indices with
+        matching bases (2) take the maximum
+
+        """
         indices = set(self.es.indices.get_aliases().keys())
         p = re.compile(self.index_pattern.format(base=base, n='(\d+)')+'$')
         matches = [p.match(index) for index in indices if p.match(index)]
@@ -134,6 +188,10 @@ class PsqlGraph2JSON(object):
         return self.index_pattern.format(base=base, n=next_n)
 
     def lookup_index_by_alias(self, alias):
+        """Find the index that an Elasticsearch alias is poiting to. Return
+        None if the index doesn't exist.
+
+        """
         try:
             keys = self.es.indices.get_alias(alias).keys()
             if not keys:
@@ -143,6 +201,11 @@ class PsqlGraph2JSON(object):
             return None
 
     def deploy_alias(self, alias, rollback_count=5, **kwargs):
+        """Create a new index with an incremented name, populate it with
+        :func es_index_create_and_populate: and atomically switch the
+        alias to point to the new index
+
+        """
         new_index = self.get_next_index(alias)
         self.es_index_create_and_populate(new_index, **kwargs)
         old_index = self.lookup_index_by_alias(alias)
@@ -152,6 +215,10 @@ class PsqlGraph2JSON(object):
             self.es.indices.put_alias(index=new_index, name=alias)
 
     def patch_trees(self):
+        """This is a hack on top of the source of truth mappings to make the
+        trees work with the graph walking code
+
+        """
         # Include files only attached to biospecimen pathway via another file
         participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
         if ('file',) not in participant_traversal['file']:
@@ -169,6 +236,10 @@ class PsqlGraph2JSON(object):
         self.atree_mapping = {'annotation': annotation_tree.to_dict()}
 
     def cache_database(self):
+        """Load the database into memory and remember only edge labels that we
+        will need to distinguish later.
+
+        """
         pbar = self.pbar('Caching Database: ', self.g.edges().count())
         for e in self.g.edges().options(joinedload(Edge.src))\
                                .options(joinedload(Edge.dst))\
@@ -189,17 +260,32 @@ class PsqlGraph2JSON(object):
         print('Cached {} nodes'.format(self.G.number_of_nodes()))
 
     def nodes_labeled(self, label):
+        """Returns an iterator over the edges in the graph with label `label`
+
+        """
+
         for n, p in self.G.nodes_iter(data=True):
             if n.label == label:
                 yield n
 
     def neighbors_labeled(self, node, labels):
+        """For a given node, return an iterator with generates neighbors to
+        that node that are in a list of labels.  `label` can be either a
+        string or list of strings.
+
+        """
+
         labels = labels if hasattr(labels, '__iter__') else [labels]
         for n in self.G.neighbors(node):
             if n.label in labels:
                 yield n
 
     def parse_tree(self, tree, result):
+        """Recursively walk a mapping tree and generate a simpler tree with
+        just node labels and not correspondences.
+
+        """
+
         for key in tree:
             if key != 'corr':
                 result[key] = {}
@@ -207,11 +293,21 @@ class PsqlGraph2JSON(object):
         return result
 
     def _get_base_doc(self, node):
+        """This is the basic document generator.  Take all the properties of a
+        node and add it the the result.  The result doc will have *_id
+        where * is the node type.
+
+        """
+
         base = {'{}_id'.format(node.label): node.node_id}
         base.update(node.properties)
         return base
 
     def create_tree(self, node, mapping, tree):
+        """Recursively walk a mapping to create a walkable tree.
+
+        """
+
         if node.label in self.leaf_nodes:
             return {}
         submap = mapping[node.label]
@@ -224,6 +320,11 @@ class PsqlGraph2JSON(object):
         return tree
 
     def walk_tree(self, node, tree, mapping, doc, level=0):
+        """Recursively walk from a node to all possible neighbors that are
+        allowed in the tree structure.  Add the node's properties to the doc.
+
+        """
+
         corr, plural = mapping[node.label]['corr']
         subdoc = self._get_base_doc(node)
         for child in tree[node]:
@@ -241,12 +342,22 @@ class PsqlGraph2JSON(object):
         return doc
 
     def copy_tree(self, original, new):
+        """Recursively copy the tree so that it can later be pruned per file.
+
+        """
+
         for node in original:
             new[node] = {}
             self.copy_tree(original[node], new[node])
         return new
 
     def walk_path(self, node, path, whole=False):
+        """Given a list of strings, treat it as a path, and yield the end of
+        possible traversals.  If `whole` is true, return every node
+        along the traversal.
+
+        """
+
         if path:
             for neighbor in self.neighbors_labeled(node, path[0]):
                 if whole or (len(path) == 1 and path[0] == neighbor.label):
@@ -255,11 +366,21 @@ class PsqlGraph2JSON(object):
                     yield n
 
     def walk_paths(self, node, paths, whole=False):
+        """Given a list of paths, yield the result of walking each path. If
+        `whole` is true, return every node along each traversal.
+
+        """
+
         return {n for n in itertools.chain(
             *[self.walk_path(node, path, whole=whole)
               for path in paths])}
 
     def _cache_data_types(self):
+        """Looking up the files that are classified in each data_type is a
+        common computation.  Here we cache this information for easy retrieval.
+
+        """
+
         if len(self.data_types):
             return
         print('Caching data types')
@@ -268,6 +389,12 @@ class PsqlGraph2JSON(object):
                 data_type, ['data_subtype', 'file']))
 
     def _cache_experimental_strategies(self):
+        """Looking up the files that are classified in each
+        experimental_strategy is a common computation.  Here we cache
+        this information for easy retrieval.
+
+        """
+
         if len(self.experimental_strategies):
             return
         print('Caching experitmental strategies')
@@ -276,6 +403,11 @@ class PsqlGraph2JSON(object):
                 exp_strat, ['file']))
 
     def get_exp_strats(self, files):
+        """Get the set of experimental_strategies where intersection of the
+        set `files` and the set of files that relate to that
+        experimental_strategy is non-null
+
+        """
         self._cache_experimental_strategies()
         for exp_strat, file_list in self.experimental_strategies.iteritems():
             intersection = (file_list & files)
@@ -284,6 +416,11 @@ class PsqlGraph2JSON(object):
                        'file_count': len(intersection)}
 
     def get_data_types(self, files):
+        """Get the set of data_types where intersection of the
+        set `files` and the set of files that relate to that
+        data_type is non-null
+
+        """
         self._cache_data_types()
         for data_type, file_list in self.data_types.iteritems():
             intersection = (file_list & files)
@@ -292,6 +429,10 @@ class PsqlGraph2JSON(object):
                        'file_count': len(intersection)}
 
     def get_participant_summary(self, node, files):
+        """Generate a dictionary containing a summary of a particiants files
+        and file classifications
+
+        """
         return {
             'file_count': len(files),
             'file_size': sum([f['file_size'] for f in files]),
@@ -300,7 +441,9 @@ class PsqlGraph2JSON(object):
         }
 
     def reconstruct_biospecimen_paths(self, participant):
-        """For each sample.aliquot, reconstruct entire path"""
+        """For each sample.aliquot, reconstruct entire path
+
+        """
 
         for sample in participant.get('samples', []):
             sample['portions'] = sample.get('portions', [])
@@ -308,6 +451,11 @@ class PsqlGraph2JSON(object):
                 sample['portions'].append({'portion': {'analyte': {aliquot}}})
 
     def get_metadata_files(self, participant):
+        """Return the biospecimen.xml and clinical.xml files that contain a
+        participants biospecimen and clinical information.
+
+        """
+
         neighbors = self.G[participant]
         files = []
         for n in neighbors:
@@ -316,10 +464,22 @@ class PsqlGraph2JSON(object):
         return files
 
     def fix_project_keys(self, root):
+        """Fix the project keys for now.  This is necessary because changing
+        it in the schema now would break backward compatibility with legacy
+        import code.
+
+        """
+
         root['code'] = root.pop('name')
         root['name'] = root.pop('project_name')
 
     def denormalize_participant(self, node):
+        """Given a participant node, return the entire participant document,
+        the files belonging to that participant, and the annotations
+        that were aggregated to those files.
+
+        """
+
         # Walk graph naturally for tree of node objects
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
         # Use tree to create nested json
@@ -351,6 +511,7 @@ class PsqlGraph2JSON(object):
     def prune_participant(self, relevant_nodes, ptree, keys):
         """Start with whole participant tree and remove any nodes that did not
         contribute the the creation of this file.
+
         """
         for node in ptree.keys():
             if ptree[node]:
@@ -359,6 +520,11 @@ class PsqlGraph2JSON(object):
                 ptree.pop(node)
 
     def add_file_neighbors(self, node, doc):
+        """Given a file, walk to all of it's neighbors specified by the schema
+        and add them to the document.
+
+        """
+
         auto_neighbors = [n for n in dict(file_tree).keys()
                           if n not in ['archive']]
         for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
@@ -376,12 +542,23 @@ class PsqlGraph2JSON(object):
                 doc[label].append(base)
 
     def add_related_files(self, node, doc):
+        """Given a file, walk to any neighboring files and add them to the
+        related_files section of the document.
+
+        """
+
         # Get related_files
         related_files = list(self.neighbors_labeled(node, 'file'))
         if related_files:
             doc['related_files'] = map(self._get_base_doc, related_files)
 
     def add_archives(self, node, doc):
+        """For each archive attached to a given file node, multixplex on
+        whether it is a containing or related archive and add it to the
+        respective places in the doc.
+
+        """
+
         archives, related_archives = [], []
         for archive in set(self.neighbors_labeled(node, 'archive')):
             if self.G[node][archive].get('label') == 'member_of':
@@ -394,6 +571,10 @@ class PsqlGraph2JSON(object):
             doc['related_archives'] = related_archives
 
     def add_data_type(self, node, doc):
+        """Add the data_subtype to the file document with child data_type
+
+        """
+
         if 'data_subtype' in doc.keys():
             self._cache_data_types()
             for data_type, _files in self.data_types.iteritems():
@@ -402,6 +583,12 @@ class PsqlGraph2JSON(object):
                 doc['data_type'] = data_type['name']
 
     def add_participants(self, node, ptree, doc):
+        """Given a file and a participant tree, re-insert the participant as a
+        child of file with only the biospecimen entities that are
+        direct ancestors of the file.
+
+        """
+
         relevant = self.walk_paths(node, file_traversal.participant, True)
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
@@ -415,6 +602,12 @@ class PsqlGraph2JSON(object):
         return relevant
 
     def add_annotations(self, node, relevant, doc):
+        """Given a file node, aggregate all of the annotations from a pruned
+        participant tree and insert them at the root level of the file
+        document.
+
+        """
+
         annotations = doc.pop('annotations', [])
         for parent in relevant:
             for p_annotation in self.neighbors_labeled(parent, 'annotation'):
@@ -423,6 +616,10 @@ class PsqlGraph2JSON(object):
             doc['annotations'] = annotations
 
     def add_acl(self, node, doc):
+        """Add the protection status of a file to the file document.
+
+        """
+
         if node.acl == ['open']:
             doc['access'] = 'open'
         else:
@@ -527,6 +724,15 @@ class PsqlGraph2JSON(object):
         return doc
 
     def denormalize_participants(self, participants=None):
+        """If participants is not specified, denormalize all participants in
+        the graph.  If participants is specified, denormalize only those
+        given.
+
+        :returns:
+            Tuple containing (participant docs, file docs, annotation docs)
+
+        """
+
         total_part_docs, total_file_docs, total_ann_docs = [], [], []
         if not participants:
             participants = list(self.nodes_labeled('participant'))
@@ -541,6 +747,11 @@ class PsqlGraph2JSON(object):
         return total_part_docs, total_file_docs, total_ann_docs
 
     def denormalize_projects(self, projects=None):
+        """If projects is not specified, denormalize all projects in
+        the graph.  If projects is specified, denormalize only those
+        given.
+
+        """
         if not projects:
             projects = list(self.nodes_labeled('project'))
         project_docs = []
@@ -552,6 +763,12 @@ class PsqlGraph2JSON(object):
         return project_docs
 
     def denormalize_annotation(self, node):
+        """Denormalize a specific annotation.
+
+        .. note: The project of an annotation will be injected during
+        participant denormalization.
+
+        """
         ann_doc = self._get_base_doc(node)
         items = self.G.neighbors(node)
         assert len(items) == 1
@@ -559,13 +776,11 @@ class PsqlGraph2JSON(object):
         ann_doc['item_id'] = items[0].node_id
         return ann_doc
 
-    def denormalize_annotations(self, annotations=None):
-        if not annotations:
-            annotations = list(self.nodes_labeled('annotation'))[:100]
-        annotation_docs = []
-        pbar = self.pbar('Denormalizing annotations ', len(annotations))
-        for annotation in annotations:
-            annotation_docs.append(self.denormalize_annotation(annotation))
-            pbar.update(pbar.currval+1)
-        pbar.finish()
-        return annotation_docs
+    def denormalize_all(self):
+        """Return an entire index worth of participant, file, annotation, and
+        project documents
+
+        """
+        parts, files, annotations = self.denormalize_participants()
+        projects = self.denormalize_projects()
+        return parts, files, annotations, projects
