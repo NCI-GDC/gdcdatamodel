@@ -48,7 +48,7 @@ if __name__ == '__main__':
         # s3 settings
         s3_auth_path=os.path.expanduser('~/authorization/cleversafe.yaml'),
         s3_url=args.gateway,
-        s3_bucket='target_cghub_protected',
+        s3_bucket='target_cghub_protected_2',
         s3_port=args.port,
     )
     downloader.start()
