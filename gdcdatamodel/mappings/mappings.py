@@ -17,6 +17,13 @@ MULTIFIELDS = re.compile("|".join([
 
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
 
+"""
+Logic for multifields
+1) no nested entries
+2) top levels that match MULTIFIELDS above
+
+"""
+
 
 def index_settings():
     return {"settings":
@@ -63,15 +70,25 @@ def _get_es_type(_type):
         return 'string'
 
 
-def _munge_properties(source):
+def _munge_properties(source, nested=True):
+
+    # Get properties from schema
     a = [n['fields'] for n in node_avsc_json if n['name'] == source]
     if not a:
         return
     fields = [b['type'] for b in a[0] if b['name'] == 'properties']
-    doc = _multfield_template('{}_id'.format(source))
+
+    # Add id to document
+    id_name = '{}_id'.format(source)
+    if nested:
+        doc = {id_name: {'index': 'not_analyzed', 'type': 'string'}}
+    else:
+        doc = _multfield_template(id_name)
+
+    # Add all properties to document
     for field in fields[0][0]['fields']:
         name = field['name']
-        if MULTIFIELDS.match(name):
+        if not nested and MULTIFIELDS.match(name):
             doc.update(_multfield_template(name))
         else:
             _type = _get_es_type(
@@ -114,9 +131,11 @@ def _walk_tree(tree, mapping):
             mapping['annotations'] = annotation_body()
             mapping['annotations']['type'] = 'nested'
         else:
-            mapping[name]['properties'].update(_munge_properties(k))
+            nested = (corr == ONE_TO_MANY)
+            mapping[name]['properties'].update(
+                _munge_properties(k, nested))
             _walk_tree(tree[k], mapping[name]['properties'])
-            if corr == ONE_TO_MANY:
+            if nested:
                 mapping[name]['type'] = 'nested'
     return mapping
 
@@ -182,19 +201,21 @@ def get_participant_es_mapping(include_file=True):
     return participant
 
 
-def annotation_body():
+def annotation_body(nested=True):
     annotation = {}
-    annotation["properties"] = _munge_properties("annotation")
+    annotation["properties"] = _munge_properties("annotation", nested)
     annotation["properties"]["item_type"] = {
         'index': 'not_analyzed', 'type': 'string'}
-    annotation["properties"].update(_multfield_template('item_id'))
+    annotation["properties"]["item_id"] = {
+        'index': 'not_analyzed', 'type': 'string'}
     return annotation
 
 
 def get_annotation_es_mapping(include_file=True):
     annotation = _get_header()
     annotation["_id"] = {"path": "annotation_id"}
-    annotation.update(annotation_body())
+    annotation.update(annotation_body(nested=False))
+    annotation["properties"].update(_multfield_template('item_id'))
     annotation['properties'].update({
         'project': {'properties': _munge_properties("project")}})
     _munge_project(annotation['properties']['project'])
