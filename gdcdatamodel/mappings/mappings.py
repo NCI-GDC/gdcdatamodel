@@ -11,11 +11,18 @@ from mapped_entities import (
 
 MULTIFIELDS = re.compile("|".join([
     "submitter_id", "name", "code", "primary_site",
-    "disease_type", "project_name", "file_name"
+    "disease_type", "name", "file_name",
 ]))
 
 
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
+
+"""
+Logic for multifields
+1) no nested entries
+2) top levels that match MULTIFIELDS above
+
+"""
 
 
 def index_settings():
@@ -63,15 +70,25 @@ def _get_es_type(_type):
         return 'string'
 
 
-def _munge_properties(source):
+def _munge_properties(source, nested=True):
+
+    # Get properties from schema
     a = [n['fields'] for n in node_avsc_json if n['name'] == source]
     if not a:
         return
     fields = [b['type'] for b in a[0] if b['name'] == 'properties']
-    doc = _multfield_template('{}_id'.format(source))
+
+    # Add id to document
+    id_name = '{}_id'.format(source)
+    if nested:
+        doc = {id_name: {'index': 'not_analyzed', 'type': 'string'}}
+    else:
+        doc = _multfield_template(id_name)
+
+    # Add all properties to document
     for field in fields[0][0]['fields']:
         name = field['name']
-        if MULTIFIELDS.match(name):
+        if not nested and MULTIFIELDS.match(name):
             doc.update(_multfield_template(name))
         else:
             _type = _get_es_type(
@@ -114,9 +131,11 @@ def _walk_tree(tree, mapping):
             mapping['annotations'] = annotation_body()
             mapping['annotations']['type'] = 'nested'
         else:
-            mapping[name]['properties'].update(_munge_properties(k))
+            nested = (corr == ONE_TO_MANY)
+            mapping[name]['properties'].update(
+                _munge_properties(k, nested))
             _walk_tree(tree[k], mapping[name]['properties'])
-            if corr == ONE_TO_MANY:
+            if nested:
                 mapping[name]['type'] = 'nested'
     return mapping
 
@@ -131,15 +150,27 @@ def get_file_es_mapping(include_participant=True):
     files = _get_header()
     files["_id"] = {"path": "file_id"}
     files["properties"] = _walk_tree(file_tree, _munge_properties("file"))
+    flatten_data_type(files['properties'])
+
+    # Related files/archives
     files["properties"]['related_files'] = {
         'type': 'nested',
         'properties': _munge_properties("file")}
+    files['properties']['related_files']['properties']['data_type'] = (
+        _munge_properties("file"))
     files["properties"]['related_archives'] = {
         'type': 'nested',
         'properties': _munge_properties("archive")}
-    flatten_data_type(files['properties'])
+
+    # Temporary until datetimes are backported
+    files['properties']['uploaded_datetime'] = {'type': 'long'}
+    files['properties']['published_datetime'] = {'type': 'long'}
+
+    # File access
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
     files['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
+
+    # Participant
     files["properties"].pop('participant', None)
     if include_participant:
         files["properties"]["participants"] = get_participant_es_mapping(False)
@@ -176,19 +207,21 @@ def get_participant_es_mapping(include_file=True):
     return participant
 
 
-def annotation_body():
+def annotation_body(nested=True):
     annotation = {}
-    annotation["properties"] = _munge_properties("annotation")
+    annotation["properties"] = _munge_properties("annotation", nested)
     annotation["properties"]["item_type"] = {
         'index': 'not_analyzed', 'type': 'string'}
-    annotation["properties"].update(_multfield_template('item_id'))
+    annotation["properties"]["item_id"] = {
+        'index': 'not_analyzed', 'type': 'string'}
     return annotation
 
 
 def get_annotation_es_mapping(include_file=True):
     annotation = _get_header()
     annotation["_id"] = {"path": "annotation_id"}
-    annotation.update(annotation_body())
+    annotation.update(annotation_body(nested=False))
+    annotation["properties"].update(_multfield_template('item_id'))
     annotation['properties'].update({
         'project': {'properties': _munge_properties("project")}})
     annotation['properties']['project']['properties']['program'] = (
@@ -201,7 +234,6 @@ def get_project_es_mapping():
     project["_id"] = {"path": "project_id"}
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
-    project['properties'].update(_multfield_template('disease_types'))
     project["properties"]["summary"] = {"properties": {
         "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
@@ -210,11 +242,11 @@ def get_project_es_mapping():
             "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
             "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        }},
+        }, 'type': 'nested'},
         "data_types": {"properties": {
             "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
             "data_type": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        }},
+        }, 'type': 'nested'},
     }}
     return project
