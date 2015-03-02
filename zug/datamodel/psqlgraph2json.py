@@ -470,16 +470,6 @@ class PsqlGraph2JSON(object):
                 files.append(self._get_base_doc(n))
         return files
 
-    def fix_project_keys(self, root):
-        """Fix the project keys for now.  This is necessary because changing
-        it in the schema now would break backward compatibility with legacy
-        import code.
-
-        """
-
-        root['code'] = root.pop('name')
-        root['name'] = root.pop('project_name')
-
     def denormalize_participant(self, node):
         """Given a participant node, return the entire participant document,
         the files belonging to that participant, and the annotations
@@ -501,8 +491,6 @@ class PsqlGraph2JSON(object):
         participant['metadata_files'] = self.get_metadata_files(node)
 
         project = participant.get('project', None)
-        if project:
-            self.fix_project_keys(project)
 
         # Denormalize the participants files
         def get_file(f):
@@ -602,10 +590,6 @@ class PsqlGraph2JSON(object):
         doc['participants'] = map(
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
-        for participant in doc['participants']:
-            project = participant.get('project', None)
-            if project:
-                self.fix_project_keys(project)
         return relevant
 
     def add_annotations(self, node, relevant, doc):
@@ -653,8 +637,6 @@ class PsqlGraph2JSON(object):
 
         """
         doc = self._get_base_doc(p)
-        doc['code'] = doc.pop('name')
-        doc['name'] = doc.pop('project_name')
 
         # Get programs
         program = self.neighbors_labeled(p, 'program').next()
