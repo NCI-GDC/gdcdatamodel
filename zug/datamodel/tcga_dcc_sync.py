@@ -319,7 +319,7 @@ class TCGADCCArchiveSyncer(object):
         )
         project_node = self.pg_driver.node_lookup_one(
             label="project",
-            property_matches={"name": self.archive["disease_code"]},
+            property_matches={"code": self.archive["disease_code"]},
             session=session
         )
         maybe_edge_to_project = self.pg_driver.edge_lookup_one(

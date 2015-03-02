@@ -77,7 +77,7 @@ class TCGADCCArchiveSyncTest(TestCase):
        # make sure archive gets tied to project
         with self.pg_driver.session_scope():
             # make sure the files get ties to center
-            
+
             file = self.pg_driver.node_lookup(
                 label="file",
                 property_matches={"file_name":"TCGA-BT-A0S7-01A-11D-A10R-02_AC1927ACXX---TCGA-BT-A0S7-10A-01D-A10R-02_AC1927ACXX---Segment.tsv"}
@@ -108,7 +108,7 @@ class TCGADCCArchiveSyncTest(TestCase):
         assert file["state"] == "live"
         # make sure archive gets tied to project
         with self.pg_driver.session_scope():
-            self.pg_driver.node_lookup(label="project", property_matches={"name": "PAAD"})\
+            self.pg_driver.node_lookup(label="project", property_matches={"code": "PAAD"})\
                           .with_edge_from_node("member_of", archive_node).one()
             # make sure the files get tied to classification stuff
             self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
@@ -172,7 +172,7 @@ class TCGADCCArchiveSyncTest(TestCase):
         assert file["state"] == "submitted"  # since it wasn't uploaded to object store
         # make sure archive gets tied to project
         with self.pg_driver.session_scope():
-            self.pg_driver.node_lookup(label="project", property_matches={"name": "PAAD"})\
+            self.pg_driver.node_lookup(label="project", property_matches={"code": "PAAD"})\
                           .with_edge_from_node("member_of", archive_node).one()
             # make sure the files get tied to classification stuff
             self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
