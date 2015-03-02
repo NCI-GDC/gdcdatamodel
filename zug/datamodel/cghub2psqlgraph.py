@@ -123,6 +123,7 @@ class cghub2psqlgraph(object):
         if existing is not None:
             log.debug('Merging {}'.format(file_key))
             node_id = existing.node_id
+            node['state'] = existing['state']
             self.graph.node_update(
                 node=existing,
                 properties=node.properties,

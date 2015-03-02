@@ -161,13 +161,14 @@ def insert_project_nodes(driver, path):
         with open(path, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                program, name, state, project_name, primary_site = row
+                program, code, state, name, disease_type, primary_site = row
                 node_id = str(uuid5(GDC_NAMESPACES['project'], name))
                 driver.node_merge(
                     node_id=node_id, label='project', properties={
-                        'name': name,
+                        'code': code,
                         'state': state,
-                        'project_name': project_name,
+                        'name': name,
+                        'disease_type': disease_type,
                         'primary_site': primary_site,
                     })
                 program_id = programs[program]
