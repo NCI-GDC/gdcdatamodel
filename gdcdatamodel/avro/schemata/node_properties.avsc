@@ -128,12 +128,12 @@
       },
       {
         "name": "tumor_code_id",
-        "type": "tumor_code_id_enum",
+        "type": ["null", "tumor_code_id_enum"],
         "doc": "TODO: define"
       },
       {
         "name": "tumor_code",
-        "type": "tumor_code_enum",
+        "type": ["null", "tumor_code_enum"],
         "doc": "TODO: define"
       },
       {
