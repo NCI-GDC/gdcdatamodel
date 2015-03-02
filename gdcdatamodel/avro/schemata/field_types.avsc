@@ -165,7 +165,7 @@
       "NHL, anaplastic large cell lymphoma",
       "NHL, Burkitt lymphoma (BL)",
       "Rhabdomyosarcoma",
-      "Soft tissue sarcoma, non-rhabdomyosarcoma",
+      "Soft tissue sarcoma, non-rhabdomyosarcoma"
     ],
     "type": "enum",
     "doc": "Allowed tumor codes"
