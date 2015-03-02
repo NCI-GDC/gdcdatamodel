@@ -108,7 +108,7 @@ class TCGADCCArchiveSyncTest(TestCase):
         assert file["state"] == "live"
         # make sure archive gets tied to project
         with self.pg_driver.session_scope():
-            self.pg_driver.node_lookup(label="project", property_matches={"name": "PAAD"})\
+            self.pg_driver.node_lookup(label="project", property_matches={"code": "PAAD"})\
                           .with_edge_from_node("member_of", archive_node).one()
             # make sure the files get tied to classification stuff
             self.pg_driver.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
