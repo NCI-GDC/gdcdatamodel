@@ -165,7 +165,7 @@ def insert_project_nodes(driver, path):
                 node_id = str(uuid5(GDC_NAMESPACES['project'], name))
                 driver.node_merge(
                     node_id=node_id, label='project', properties={
-                        'code': name,
+                        'code': code,
                         'state': state,
                         'name': name,
                         'disease_type': disease_type,

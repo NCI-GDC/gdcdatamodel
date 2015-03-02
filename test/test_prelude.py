@@ -39,7 +39,7 @@ class TestPrelude(unittest.TestCase):
             ).one()
             self.driver.node_lookup(
                 label="project",
-                property_matches={"name": "ACC"}
+                property_matches={"code": "ACC"}
             ).with_edge_to_node("member_of", tcga).one()
             clinical = self.driver.node_lookup(
                 label="data_type",
