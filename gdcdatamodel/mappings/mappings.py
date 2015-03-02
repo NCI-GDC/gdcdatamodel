@@ -11,7 +11,7 @@ from mapped_entities import (
 
 MULTIFIELDS = re.compile("|".join([
     "submitter_id", "name", "code", "primary_site",
-    "disease_type", "project_name", "file_name"
+    "disease_type", "name", "file_name",
 ]))
 
 
@@ -229,8 +229,6 @@ def get_project_es_mapping():
     project["_id"] = {"path": "project_id"}
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
-    _munge_project(project)
-    project['properties'].update(_multfield_template('disease_types'))
     project["properties"]["summary"] = {"properties": {
         "file_count": {u'index': u'not_analyzed', u'type': u'long'},
         "file_size": {u'index': u'not_analyzed', u'type': u'long'},
@@ -239,11 +237,11 @@ def get_project_es_mapping():
             "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
             "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        }},
+        }, 'type': 'nested'},
         "data_types": {"properties": {
             "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
             "data_type": {u'index': u'not_analyzed', u'type': u'string'},
             "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        }},
+        }, 'type': 'nested'},
     }}
     return project
