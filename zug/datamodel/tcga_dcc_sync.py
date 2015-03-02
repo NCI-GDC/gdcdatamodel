@@ -183,7 +183,7 @@ class TCGADCCEdgeBuilder(object):
         for val in value:
             attr_node = self.pg_driver.node_lookup_one(
                 label=attr,
-                property_matches={"name": val},
+                property_matches={"code": val},
                 session=session
             )
             if not attr_node:
@@ -319,7 +319,7 @@ class TCGADCCArchiveSyncer(object):
         )
         project_node = self.pg_driver.node_lookup_one(
             label="project",
-            property_matches={"name": self.archive["disease_code"]},
+            property_matches={"code": self.archive["disease_code"]},
             session=session
         )
         maybe_edge_to_project = self.pg_driver.edge_lookup_one(
