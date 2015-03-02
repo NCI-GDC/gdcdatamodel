@@ -183,7 +183,7 @@ class TCGADCCEdgeBuilder(object):
         for val in value:
             attr_node = self.pg_driver.node_lookup_one(
                 label=attr,
-                property_matches={"code": val},
+                property_matches={"name": val},
                 session=session
             )
             if not attr_node:
