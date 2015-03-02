@@ -536,6 +536,10 @@ class PsqlGraph2JSON(object):
                     doc[label] = []
                 doc[label].append(base)
 
+    def patch_file_datetimes(self, doc):
+        doc['published_datetime'] = None
+        doc['uploaded_datetime'] = 1425340539
+
     def add_related_files(self, node, doc):
         """Given a file, walk to any neighboring files and add them to the
         related_files section of the document.
@@ -545,7 +549,14 @@ class PsqlGraph2JSON(object):
         # Get related_files
         related_files = list(self.neighbors_labeled(node, 'file'))
         if related_files:
-            doc['related_files'] = map(self._get_base_doc, related_files)
+            doc['related_files'] = []
+        for related_file in related_files:
+            rf_doc = self._get_base_doc(related_file)
+            for dst in self.neighbors_labeled(related_file, 'data_subtype'):
+                rf_doc['data_subtype'] = self._get_base_doc(dst)
+                self.add_data_type(related_file, rf_doc)
+            self.patch_file_datetimes(rf_doc)
+            doc['related_files'].append(rf_doc)
 
     def add_archives(self, node, doc):
         """For each archive attached to a given file node, multixplex on
@@ -623,10 +634,11 @@ class PsqlGraph2JSON(object):
 
         """
         doc = self._get_base_doc(node)
+        self.patch_file_datetimes(doc)
         self.add_file_neighbors(node, doc)
+        self.add_data_type(node, doc)
         self.add_related_files(node, doc)
         self.add_archives(node, doc)
-        self.add_data_type(node, doc)
         relevant = self.add_participants(node, ptree, doc)
         self.add_annotations(node, relevant, doc)
         self.add_acl(node, doc)
