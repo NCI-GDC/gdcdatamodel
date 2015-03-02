@@ -140,11 +140,6 @@ def _walk_tree(tree, mapping):
     return mapping
 
 
-def _munge_project(root):
-    root['properties']['code'] = root['properties'].pop('name')
-    root['properties']['name'] = root['properties'].pop('project_name')
-
-
 def flatten_data_type(root):
     root.pop('data_subtype', None)
     root.update(_multfield_template('data_subtype'))
@@ -181,7 +176,6 @@ def get_participant_es_mapping(include_file=True):
         'type': 'nested',
         'properties': _munge_properties("file"),
     }
-    _munge_project(participant['properties']['project'])
     participant['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
@@ -218,7 +212,6 @@ def get_annotation_es_mapping(include_file=True):
     annotation["properties"].update(_multfield_template('item_id'))
     annotation['properties'].update({
         'project': {'properties': _munge_properties("project")}})
-    _munge_project(annotation['properties']['project'])
     annotation['properties']['project']['properties']['program'] = (
         {'properties': _munge_properties("program")})
     return annotation
