@@ -150,15 +150,27 @@ def get_file_es_mapping(include_participant=True):
     files = _get_header()
     files["_id"] = {"path": "file_id"}
     files["properties"] = _walk_tree(file_tree, _munge_properties("file"))
+    flatten_data_type(files['properties'])
+
+    # Related files/archives
     files["properties"]['related_files'] = {
         'type': 'nested',
         'properties': _munge_properties("file")}
+    files['properties']['related_files']['properties']['data_type'] = (
+        _munge_properties("file"))
     files["properties"]['related_archives'] = {
         'type': 'nested',
         'properties': _munge_properties("archive")}
-    flatten_data_type(files['properties'])
+
+    # Temporary until datetimes are backported
+    files['properties']['uploaded_datetime'] = {'type': 'long'}
+    files['properties']['published_datetime'] = {'type': 'long'}
+
+    # File access
     files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
     files['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
+
+    # Participant
     files["properties"].pop('participant', None)
     if include_participant:
         files["properties"]["participants"] = get_participant_es_mapping(False)
