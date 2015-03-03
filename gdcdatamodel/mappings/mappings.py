@@ -248,25 +248,24 @@ def get_annotation_es_mapping(include_file=True):
 
 def get_project_es_mapping():
     project = _get_header('project')
-    project['properties'] = _walk_tree(
-        project_tree, _munge_properties('project'))
-    project['properties']['summary'] = {'properties': {
-        'file_count': LONG,
-        'file_size': LONG,
-        'participant_count': LONG,
-        'experimental_strategies': {
-            'type': 'nested',
-            'properties': {
-                'participant_count': LONG,
-                'experimental_strategy': STRING,
-                'file_count': LONG,
-            }},
-        'data_types': {
-            'type': 'nested',
-            'properties': {
-                'participant_count': LONG,
-                'data_type': STRING,
-                'file_count': LONG,
-            }},
-    }}
-    return project
+    project.properties = _walk_tree(project_tree, _munge_properties('project'))
+
+    # Summary
+    summary = project.properties.summary.properties
+    summary.file_count = LONG
+    summary.file_size = LONG
+    summary.participant_count = LONG
+
+    # Summary experimental strategies
+    summary.experimental_strategies.type = 'nested'
+    summary.experimental_strategies.properties.participant_count = LONG
+    summary.experimental_strategies.properties.experimental_strategy = STRING
+    summary.experimental_strategies.properties.file_count = LONG
+
+    # Summary data types
+    summary.data_types.type = 'nested'
+    summary.data_types.properties.participant_count = LONG
+    summary.data_types.properties.experimental_strategy = STRING
+    summary.data_types.properties.file_count = LONG
+
+    return project.to_dict()
