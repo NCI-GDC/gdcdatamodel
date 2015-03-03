@@ -183,7 +183,7 @@ def get_file_es_mapping(include_participant=True):
     if include_participant:
         files.properties.participants = get_participant_es_mapping(False)
         files.properties.participants.type = 'nested'
-    return files
+    return files.to_dict()
 
 
 def get_participant_es_mapping(include_file=True):
@@ -191,8 +191,12 @@ def get_participant_es_mapping(include_file=True):
     participant = _get_header('participant')
     participant.properties = _walk_tree(
         participant_tree, _munge_properties('participant'))
+
+    # Metadata files
     participant.properties.metadata_files = nested('file')
-    participant.properties.acl = STRING
+    participant.properties.metadata_files.properties.data_type = STRING
+    participant.properties.metadata_files.properties.data_subtype = STRING
+    participant.properties.metadata_files.properties.acl = STRING
 
     # Add pop whatever file is present and add correct files
     participant.properties.pop('file', None)
@@ -200,16 +204,22 @@ def get_participant_es_mapping(include_file=True):
         participant.properties.files = get_file_es_mapping(True)
         participant.properties.files.type = 'nested'
 
+    # Summary
     summary = participant.properties.summary.properties
     summary.file_count = LONG
     summary.file_size = LONG
+
+    # Summary experimental strategies
     summary.experimental_strategies.type = 'nested'
     summary.experimental_strategies.properties.experimental_strategy = STRING
     summary.experimental_strategies.properties.file_count = LONG
+
+    # Summary data types
     summary.data_types.type = 'nested'
     summary.data_types.properties.data_type = STRING
     summary.data_types.properties.file_count = LONG
-    return participant
+
+    return participant.to_dict()
 
 
 def annotation_body(nested=True):
@@ -223,12 +233,17 @@ def annotation_body(nested=True):
 def get_annotation_es_mapping(include_file=True):
     annotation = _get_header('annotation')
     annotation.update(annotation_body(nested=False))
+
+    # Make the id a multifield for the root annotation mapping
     annotation.properties.update(_multfield_template('item_id'))
+
+    # Add the project and program
     annotation.properties.update({
         'project': {'properties': _munge_properties('project')}})
     annotation.properties.project.properties.program = {
         'properties': _munge_properties('program')}
-    return annotation
+
+    return annotation.to_dict()
 
 
 def get_project_es_mapping():
