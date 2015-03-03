@@ -553,7 +553,7 @@ class PsqlGraph2JSON(object):
         for related_file in related_files:
             rf_doc = self._get_base_doc(related_file)
             for dst in self.neighbors_labeled(related_file, 'data_subtype'):
-                rf_doc['data_subtype'] = self._get_base_doc(dst)
+                rf_doc['data_subtype'] = dst['name']
                 self.add_data_type(related_file, rf_doc)
             self.patch_file_datetimes(rf_doc)
             doc['related_files'].append(rf_doc)
