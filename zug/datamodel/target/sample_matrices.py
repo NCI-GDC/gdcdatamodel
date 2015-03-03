@@ -103,7 +103,7 @@ def filter_pending(aliquots):
             if not re.search("\[P-[A-Z]{2}\]", aliquot)]
 
 
-class TARGETSampleMatrixImporter(object):
+class TARGETSampleMatrixSyncer(object):
 
     def __init__(self, project, graph=None, dcc_auth=None):
         self.project = project
