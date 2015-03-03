@@ -13,7 +13,8 @@ MULTIFIELDS = re.compile("|".join([
     "submitter_id", "name", "code", "primary_site",
     "disease_type", "name", "file_name",
 ]))
-
+STRING = {'index': 'not_analyzed', 'type': 'string'}
+LONG = {'type': 'long'}
 
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
 
@@ -81,7 +82,7 @@ def _munge_properties(source, nested=True):
     # Add id to document
     id_name = '{}_id'.format(source)
     if nested:
-        doc = {id_name: {'index': 'not_analyzed', 'type': 'string'}}
+        doc = {id_name: STRING}
     else:
         doc = _multfield_template(id_name)
 
@@ -146,63 +147,73 @@ def flatten_data_type(root):
     root.update(_multfield_template('data_type'))
 
 
+def patch_file_timestamps(doc):
+    doc['properties']['uploaded_datetime'] = LONG
+    doc['properties']['published_datetime'] = LONG
+
+
+def nested(source):
+    return {'type': 'nested', 'properties': _munge_properties(source)}
+
+
 def get_file_es_mapping(include_participant=True):
     files = _get_header()
-    files["_id"] = {"path": "file_id"}
     files["properties"] = _walk_tree(file_tree, _munge_properties("file"))
     flatten_data_type(files['properties'])
+    files["_id"] = {"path": "file_id"}
 
-    # Related files/archives
-    files["properties"]['related_files'] = {
-        'type': 'nested',
-        'properties': _munge_properties("file")}
-    files['properties']['related_files']['properties']['data_type'] = {
-        'type': 'nested',
-        'properties': (_munge_properties("file"))}
-    files["properties"]['related_archives'] = {
-        'type': 'nested',
-        'properties': _munge_properties("archive")}
+    # Related files
+    related_files = nested('file')
+    related_files['properties']['data_type'] = STRING
+    related_files['properties']['data_subtype'] = STRING
+    patch_file_timestamps(related_files)
+    files["properties"]['related_files'] = related_files
+
+    # Related archives
+    files["properties"]['related_archives'] = nested('archive')
 
     # Temporary until datetimes are backported
-    files['properties']['uploaded_datetime'] = {'type': 'long'}
-    files['properties']['published_datetime'] = {'type': 'long'}
+    patch_file_timestamps(files)
 
     # File access
-    files['properties']['access'] = {'index': 'not_analyzed', 'type': 'string'}
-    files['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
+    files['properties']['access'] = STRING
+    files['properties']['acl'] = STRING
 
     # Participant
     files["properties"].pop('participant', None)
     if include_participant:
+        files["type"] = 'nested'
         files["properties"]["participants"] = get_participant_es_mapping(False)
         files["properties"]["participants"]["type"] = "nested"
     return files
 
 
 def get_participant_es_mapping(include_file=True):
+    # participant body
     participant = _get_header()
     participant["_id"] = {"path": "participant_id"}
     participant["properties"] = _walk_tree(
         participant_tree, _munge_properties("participant"))
+    participant['properties']['metadata_files'] = nested('file')
+    participant['properties']['acl'] = STRING
+
+    # Add pop whatever file is present and add correct files
     participant["properties"].pop('file', None)
-    participant['properties']['metadata_files'] = {
-        'type': 'nested',
-        'properties': _munge_properties("file"),
-    }
-    participant['properties']['acl'] = {'index': 'not_analyzed', 'type': 'string'}
     if include_file:
         participant["properties"]['files'] = get_file_es_mapping(True)
         participant["properties"]["files"]["type"] = "nested"
+
+    # Summary
     participant["properties"]["summary"] = {"properties": {
-        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        "file_size": {u'index': u'not_analyzed', u'type': u'long'},
+        "file_count": LONG,
+        "file_size": LONG,
         "experimental_strategies": {"type": "nested", "properties": {
-            "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
-            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+            "experimental_strategy": STRING,
+            "file_count": LONG,
         }},
         "data_types": {"type": "nested", "properties": {
-            "data_type": {u'index': u'not_analyzed', u'type': u'string'},
-            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
+            "data_type": STRING,
+            "file_count": LONG,
         }},
     }}
     return participant
@@ -211,10 +222,8 @@ def get_participant_es_mapping(include_file=True):
 def annotation_body(nested=True):
     annotation = {}
     annotation["properties"] = _munge_properties("annotation", nested)
-    annotation["properties"]["item_type"] = {
-        'index': 'not_analyzed', 'type': 'string'}
-    annotation["properties"]["item_id"] = {
-        'index': 'not_analyzed', 'type': 'string'}
+    annotation["properties"]["item_type"] = STRING
+    annotation["properties"]["item_id"] = STRING
     return annotation
 
 
@@ -236,18 +245,22 @@ def get_project_es_mapping():
     project["properties"] = _walk_tree(
         project_tree, _munge_properties("project"))
     project["properties"]["summary"] = {"properties": {
-        "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        "file_size": {u'index': u'not_analyzed', u'type': u'long'},
-        "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
-        "experimental_strategies": {"properties": {
-            "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
-            "experimental_strategy": {u'index': u'not_analyzed', u'type': u'string'},
-            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        }, 'type': 'nested'},
-        "data_types": {"properties": {
-            "participant_count": {u'index': u'not_analyzed', u'type': u'long'},
-            "data_type": {u'index': u'not_analyzed', u'type': u'string'},
-            "file_count": {u'index': u'not_analyzed', u'type': u'long'},
-        }, 'type': 'nested'},
+        "file_count": LONG,
+        "file_size": LONG,
+        "participant_count": LONG,
+        "experimental_strategies": {
+            'type': 'nested',
+            "properties": {
+                "participant_count": LONG,
+                "experimental_strategy": STRING,
+                "file_count": LONG,
+            }},
+        "data_types": {
+            'type': 'nested',
+            "properties": {
+                "participant_count": LONG,
+                "data_type": STRING,
+                "file_count": LONG,
+            }},
     }}
     return project
