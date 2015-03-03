@@ -226,9 +226,10 @@ class TestPsqlgraph2JSON(unittest.TestCase):
     def test_participant_portions(self):
         props = self.part_doc
         self.assertTrue('portions' in props['samples'][0])
-        portion = [p for p in props['samples'][0]['portions']][0]
+        portion = [p for s in props['samples'] for p in s['portions']
+                   if 'slides' not in p][0]
         self.assertEqual(portion_props.symmetric_difference(
-            set(portion.keys())), set(['center', 'annotations']))
+            set(portion.keys())), set(['center', 'annotations', 'slides']))
 
     def test_participant_analytes(self):
         props = self.part_doc
