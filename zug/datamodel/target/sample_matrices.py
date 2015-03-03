@@ -9,6 +9,7 @@ from lxml import html
 from collections import defaultdict
 from cdisutils.log import get_logger
 from uuid import UUID, uuid5
+from datetime import datetime
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -131,7 +132,7 @@ class TARGETSampleMatrixSyncer(object):
             maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
             if maybe_match:
                 self.url = urljoin(search_url, link.attrib["href"])
-                self.version = int(maybe_match.group(1))
+                self.version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
                 return
         raise RuntimeError("Could not find sample matrix at url {}".format(search_url))
 
