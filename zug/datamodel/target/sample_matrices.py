@@ -10,6 +10,8 @@ from collections import defaultdict
 from cdisutils.log import get_logger
 from uuid import UUID, uuid5
 
+from zugs.datamodel.target import barcode_to_aliquot_id_dict
+
 PROJECTS = ["ALL-P1", "ALL-P2", "AML", "AML-IF", "CCSK", "NBL", "OS", "RT", "WT"]
 
 NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb'),
@@ -223,31 +225,6 @@ class TARGETSampleMatrixImporter(object):
         self.sanity_check(mapping)
         return mapping
 
-    def get_aliquots_from_cghub(self, mapping):
-        aliquots = []
-        for participant, samples in mapping.iteritems():
-            for sample, contents in samples.iteritems():
-                for aliquot in contents["aliquots"]:
-                    aliquots.append(aliquot)
-        results = {}
-        for group in split_seq(aliquots, 200):
-            query_string = "(" + " OR ".join(group) +  ")"
-            resp = requests.get(
-                "https://cghub.ucsc.edu/cghub/metadata/analysisDetail",
-                params={"legacy_sample_id": query_string},
-                headers={"accept": "application/json"},
-            )
-            resp.raise_for_status()
-            for result in resp.json()["result_set"]["results"]:
-                if results.get(result["legacy_sample_id"]):
-                    assert results[result["legacy_sample_id"]] == result["aliquot_id"]
-                else:
-                    results[result["legacy_sample_id"]] = result["aliquot_id"]
-        for aliquot in aliquots:
-            if not results.get(aliquot):
-                results[aliquot] = None
-        return results
-
     def create_edge(self, label, src, dst):
         maybe_edge = self.graph.edge_lookup(
             label=label,
@@ -266,7 +243,7 @@ class TARGETSampleMatrixImporter(object):
         self.create_edge("member_of", part_node, project_node)
 
     def put_mapping_in_pg(self, mapping):
-        aliquot_id_map = self.get_aliquots_from_cghub(mapping)
+        aliquot_id_map = barcode_to_aliquot_id_dict()
         sysans = {
             "source": "target_sample_matrices",
             "group_id": self.project,
