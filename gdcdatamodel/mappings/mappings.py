@@ -238,8 +238,8 @@ def get_annotation_es_mapping(include_file=True):
     annotation.properties.update(_multfield_template('item_id'))
 
     # Add the project and program
-    annotation.properties.update({
-        'project': {'properties': _munge_properties('project')}})
+    annotation.properties.update(Dict({
+        'project': {'properties': _munge_properties('project')}}))
     annotation.properties.project.properties.program = {
         'properties': _munge_properties('program')}
 
