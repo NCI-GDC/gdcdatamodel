@@ -173,6 +173,7 @@ def get_file_es_mapping(include_participant=True):
     # Participant
     files["properties"].pop('participant', None)
     if include_participant:
+        files['type'] = 'nested'
         files["properties"]["participants"] = get_participant_es_mapping(False)
         files["properties"]["participants"]["type"] = "nested"
     return files
