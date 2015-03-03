@@ -2,7 +2,7 @@ import csv
 from uuid import uuid5, UUID
 import os
 
-from psqlgraph import PsqlEdge
+from psqlgraph import PsqlEdge, PsqlNode
 from sqlalchemy.exc import IntegrityError
 
 from zug.datamodel import PKG_DIR
@@ -173,7 +173,7 @@ def insert_project_nodes(driver, path):
                 if driver.nodes().ids(node_id).scalar():
                     driver.node_clobber(node_id=node_id, properties=properties)
                 else:
-                    driver.node_insert(Node(
+                    driver.node_insert(PsqlNode(
                         node_id=node_id,
                         label='project',
                         properties=properties))
