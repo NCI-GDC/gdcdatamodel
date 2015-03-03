@@ -1,7 +1,12 @@
 from gdcdatamodel import node_avsc_json
 import re
 from mapped_entities import (
-    file_tree, participant_tree, project_tree, ONE_TO_MANY)
+    file_tree, file_traversal,
+    participant_tree, participant_traversal,
+    annotation_tree, annotation_traversal,
+    project_tree, annotation_tree,
+    ONE_TO_MANY, ONE_TO_ONE
+)
 from addict import Dict
 
 MULTIFIELDS = re.compile("|".join([
