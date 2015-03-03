@@ -27,7 +27,8 @@ setup(
         'requests==2.5.1',
         'apache-libcloud==0.15.1',
         'cssselect==0.9.1',
-        'pandas==0.15.2'
+        'pandas==0.15.2',
+        'xlrd==0.9.3'
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@0caa0a8ea98e8dee88fe6c7a8a6e15c2d9da999e#egg=psqlgraph',
