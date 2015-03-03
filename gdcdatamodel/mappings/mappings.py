@@ -156,8 +156,9 @@ def get_file_es_mapping(include_participant=True):
     files["properties"]['related_files'] = {
         'type': 'nested',
         'properties': _munge_properties("file")}
-    files['properties']['related_files']['properties']['data_type'] = (
-        _munge_properties("file"))
+    files['properties']['related_files']['properties']['data_type'] = {
+        'type': 'nested',
+        'properties': (_munge_properties("file"))}
     files["properties"]['related_archives'] = {
         'type': 'nested',
         'properties': _munge_properties("archive")}
