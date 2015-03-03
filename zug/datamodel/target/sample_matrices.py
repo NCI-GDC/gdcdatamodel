@@ -10,11 +10,11 @@ from collections import defaultdict
 from cdisutils.log import get_logger
 from uuid import UUID, uuid5
 
-from zugs.datamodel.target import barcode_to_aliquot_id_dict
+from zug.datamodel.target import barcode_to_aliquot_id_dict
 
 PROJECTS = ["ALL-P1", "ALL-P2", "AML", "AML-IF", "CCSK", "NBL", "OS", "RT", "WT"]
 
-NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb'),
+NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
 NAMESPACE_SAMPLES = UUID('90383d9f-5124-4087-8d13-5548da118d68')
 
 TUMOR_CODE_TO_DESCRIPTION = {
@@ -228,13 +228,13 @@ class TARGETSampleMatrixImporter(object):
     def create_edge(self, label, src, dst):
         maybe_edge = self.graph.edge_lookup(
             label=label,
-            srd_id=src.node_id,
+            src_id=src.node_id,
             dst_id=dst.node_id,
         )
         if not maybe_edge:
             self.graph.edge_insert(
                 label="derived_from",
-                srd_id=src.node_id,
+                src_id=src.node_id,
                 dst_id=dst.node_id,
             )
 
@@ -252,7 +252,7 @@ class TARGETSampleMatrixImporter(object):
         with self.graph.session_scope():
             for participant, samples in mapping.iteritems():
                 part_node = self.graph.node_merge(
-                    node_id=str(uuid5(NAMESPACE_PARTICIPANTS, participant)),
+                    node_id=str(uuid5(NAMESPACE_PARTICIPANTS, str(participant))),
                     label="participant",
                     system_annotations=sysans,
                     properties={
@@ -260,10 +260,12 @@ class TARGETSampleMatrixImporter(object):
                         "days_to_index": None,
                     }
                 )
+                self.log.info("inserted participant %s as %s", participant, part_node)
+                self.log.info("tieing %s to project", part_node)
                 self.tie_to_project(part_node)
                 for sample, contents in samples.iteritems():
                     sample_node = self.graph.node_merge(
-                        node_id=str(uuid5(NAMESPACE_SAMPLES, sample)),
+                        node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
                         label="sample",
                         system_annotations=sysans,
                         properties={
@@ -287,6 +289,8 @@ class TARGETSampleMatrixImporter(object):
                             "pathology_report_uuid": None,
                         }
                     )
+                    self.log.info("inserted sample %s as %s", sample, sample_node)
+                    self.log.info("tieing %s to participant %s", sample_node, part_node)
                     self.create_edge("derived_from", sample_node, part_node)
                     for aliquot in contents["aliquots"]:
                         if not aliquot_id_map.get(aliquot):
@@ -298,4 +302,6 @@ class TARGETSampleMatrixImporter(object):
                                 system_annotations=sysans,
                                 properties={"submitter_id": aliquot}
                             )
+                            self.log.info("inserting aliquot %s as %s", aliquot, aliquot_node)
+                            self.log.info("tieing aliquot %s to sample %s", aliquot_node, sample_node)
                             self.create_edge("derived_from", aliquot_node, sample_node)

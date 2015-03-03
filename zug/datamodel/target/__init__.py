@@ -1,6 +1,5 @@
 import pandas as pd
-from sample_matrices import *
-
+import os
 
 BARCODE_DF = pd.read_table(os.path.join(os.path.dirname(__file__), "barcodes.tsv"),
                            low_memory=False)
