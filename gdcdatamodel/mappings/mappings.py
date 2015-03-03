@@ -57,7 +57,7 @@ def _get_header(source):
     header._all.enabled = False
     header._source.compress = True
     header._source.excludes = ["__comment__"]
-    header._id = '{}_id'.format(source)
+    header._id = {'path': '{}_id'.format(source)}
     return header
 
 
@@ -82,7 +82,7 @@ def _munge_properties(source, nested=True):
 
     # Add all properties to document
     for field in fields[0][0]['fields']:
-        name = field['name']
+        name = str(field['name'])
         if not nested and MULTIFIELDS.match(name):
             doc.update(_multfield_template(name))
         else:
@@ -262,7 +262,7 @@ def get_project_es_mapping():
     # Summary data types
     summary.data_types.type = 'nested'
     summary.data_types.properties.participant_count = LONG
-    summary.data_types.properties.experimental_strategy = STRING
+    summary.data_types.properties.data_type = STRING
     summary.data_types.properties.file_count = LONG
 
     return project.to_dict()
