@@ -1,21 +1,16 @@
 from gdcdatamodel import node_avsc_json
 import re
 from mapped_entities import (
-    file_tree, file_traversal,
-    participant_tree, participant_traversal,
-    annotation_tree, annotation_traversal,
-    project_tree, annotation_tree,
-    ONE_TO_MANY, ONE_TO_ONE
-)
+    file_tree, participant_tree, project_tree, ONE_TO_MANY)
 from addict import Dict
 
 MULTIFIELDS = re.compile("|".join([
     "submitter_id", "name", "code", "primary_site",
     "disease_type", "name", "file_name",
 ]))
+
 STRING = {'index': 'not_analyzed', 'type': 'string'}
 LONG = {'type': 'long'}
-
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
 
 """
@@ -78,10 +73,7 @@ def _munge_properties(source, nested=True):
 
     # Add id to document
     id_name = '{}_id'.format(source)
-    if nested:
-        doc = {id_name: STRING}
-    else:
-        doc = _multfield_template(id_name)
+    doc = {id_name: STRING} if nested else _multfield_template(id_name)
 
     # Add all properties to document
     for field in fields[0][0]['fields']:
