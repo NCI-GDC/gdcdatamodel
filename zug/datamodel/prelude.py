@@ -2,7 +2,7 @@ import csv
 from uuid import uuid5, UUID
 import os
 
-from psqlgraph import PsqlEdge
+from psqlgraph import PsqlEdge, PsqlNode
 from sqlalchemy.exc import IntegrityError
 
 from zug.datamodel import PKG_DIR
@@ -162,15 +162,21 @@ def insert_project_nodes(driver, path):
             reader = csv.reader(f)
             for row in reader:
                 program, code, state, name, disease_type, primary_site = row
-                node_id = str(uuid5(GDC_NAMESPACES['project'], name))
-                driver.node_merge(
-                    node_id=node_id, label='project', properties={
-                        'code': code,
-                        'state': state,
-                        'name': name,
-                        'disease_type': disease_type,
-                        'primary_site': primary_site,
-                    })
+                node_id = str(uuid5(GDC_NAMESPACES['project'], code))
+                properties = {
+                    'code': code,
+                    'state': state,
+                    'name': name,
+                    'disease_type': disease_type,
+                    'primary_site': primary_site,
+                }
+                if driver.nodes().ids(node_id).scalar():
+                    driver.node_clobber(node_id=node_id, properties=properties)
+                else:
+                    driver.node_insert(PsqlNode(
+                        node_id=node_id,
+                        label='project',
+                        properties=properties))
                 program_id = programs[program]
                 if not driver.edge_lookup_one(src_id=node_id,
                                               dst_id=program_id,
