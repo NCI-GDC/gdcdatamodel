@@ -9,6 +9,8 @@ from lxml import html
 from collections import defaultdict
 from cdisutils.log import get_logger
 from uuid import UUID, uuid5
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 
@@ -105,6 +107,8 @@ class TARGETSampleMatrixImporter(object):
 
     def __init__(self, project, graph=None, dcc_auth=None):
         self.project = project
+        graph.node_validator = AvroNodeValidator(node_avsc_object)
+        graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.graph = graph
         self.dcc_auth = dcc_auth
         self.log = get_logger("target_sample_matrix_import_{}_{}".format(os.getpid(), self.project))
