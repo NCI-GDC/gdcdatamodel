@@ -10,6 +10,9 @@ from collections import defaultdict
 from cdisutils.log import get_logger
 from uuid import UUID, uuid5
 from datetime import datetime
+
+from sqlalchemy import Integer
+from psqlgraph import PsqlNode
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -247,66 +250,90 @@ class TARGETSampleMatrixSyncer(object):
         project_node = self.graph.nodes().props({"code": self.project}).one()
         self.create_edge("member_of", part_node, project_node)
 
+    def sync(self):
+        self.log.info("Fetching and extracting info from sample matrix.")
+        mapping = self.compute_mapping()
+        self.log.info("Storing sample matrix data in database.")
+        with self.graph.session_scope():
+            self.put_mapping_in_pg(mapping)
+            self.log.info("Removing old versions of data from this matrix.")
+            self.remove_old_versions()
+
+    def remove_old_versions(self):
+        old_nodes = self.graph.nodes()\
+                              .labels(["aliquot", "participant", "sample"])\
+                              .props({"group_id": self.project})\
+                              .filter(PsqlNode.system_annotations["version"].cast(Integer) < self.version).all()
+        self.log.info("Found %s old nodes to remove.", len(old_nodes))
+        for node in old_nodes:
+            self.log.info("Deleting node %s", node)
+            self.graph.node_delete(node=node)
+
     def put_mapping_in_pg(self, mapping):
+        self.log.info("Constructing dict from aliquot barcode -> cghub uuid")
         aliquot_id_map = barcode_to_aliquot_id_dict()
         sysans = {
             "source": "target_sample_matrices",
             "group_id": self.project,
             "version": self.version,
         }
-        with self.graph.session_scope():
-            for participant, samples in mapping.iteritems():
-                part_node = self.graph.node_merge(
-                    node_id=str(uuid5(NAMESPACE_PARTICIPANTS, str(participant))),
-                    label="participant",
+        for participant, samples in mapping.iteritems():
+            part_node = self.graph.node_merge(
+                node_id=str(uuid5(NAMESPACE_PARTICIPANTS, str(participant))),
+                label="participant",
+                system_annotations=sysans,
+                properties={
+                    "submitter_id": participant,
+                    "days_to_index": None,
+                }
+            )
+            self.log.info("inserted participant %s as %s", participant, part_node)
+            self.log.info("tieing %s to project", part_node)
+            self.tie_to_project(part_node)
+            for sample, contents in samples.iteritems():
+                sample_node = self.graph.node_merge(
+                    node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
+                    label="sample",
                     system_annotations=sysans,
                     properties={
-                        "submitter_id": participant,
-                        "days_to_index": None,
+                        "submitter_id": sample,
+                        "sample_type_id": contents["tissue_code"],
+                        "sample_type": contents["tissue_desc"],
+                        "tumor_code_id": contents["tumor_code"],
+                        "tumor_code": contents["tumor_desc"],
+                        "longest_dimension": None,
+                        "intermediate_dimension": None,
+                        "shortest_dimension": None,
+                        "initial_weight": None,
+                        "current_weight": None,
+                        "freezing_method": None,
+                        "oct_embedded": None,
+                        "time_between_clamping_and_freezing": None,
+                        "time_between_excision_and_freezing": None,
+                        "days_to_collection": None,
+                        "days_to_sample_procurement": None,
+                        "is_ffpe": None,
+                        "pathology_report_uuid": None,
                     }
                 )
-                self.log.info("inserted participant %s as %s", participant, part_node)
-                self.log.info("tieing %s to project", part_node)
-                self.tie_to_project(part_node)
-                for sample, contents in samples.iteritems():
-                    sample_node = self.graph.node_merge(
-                        node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
-                        label="sample",
-                        system_annotations=sysans,
-                        properties={
-                            "submitter_id": sample,
-                            "sample_type_id": contents["tissue_code"],
-                            "sample_type": contents["tissue_desc"],
-                            "tumor_code_id": contents["tumor_code"],
-                            "tumor_code": contents["tumor_desc"],
-                            "longest_dimension": None,
-                            "intermediate_dimension": None,
-                            "shortest_dimension": None,
-                            "initial_weight": None,
-                            "current_weight": None,
-                            "freezing_method": None,
-                            "oct_embedded": None,
-                            "time_between_clamping_and_freezing": None,
-                            "time_between_excision_and_freezing": None,
-                            "days_to_collection": None,
-                            "days_to_sample_procurement": None,
-                            "is_ffpe": None,
-                            "pathology_report_uuid": None,
-                        }
-                    )
-                    self.log.info("inserted sample %s as %s", sample, sample_node)
-                    self.log.info("tieing %s to participant %s", sample_node, part_node)
-                    self.create_edge("derived_from", sample_node, part_node)
-                    for aliquot in contents["aliquots"]:
-                        if not aliquot_id_map.get(aliquot):
-                            self.log.info("Not inserting aliquot %s because it doesn't have an id in cghub", aliquot)
-                        else:
-                            aliquot_node = self.graph.node_merge(
-                                node_id=aliquot_id_map[aliquot],
-                                label="aliquot",
-                                system_annotations=sysans,
-                                properties={"submitter_id": aliquot}
-                            )
-                            self.log.info("inserting aliquot %s as %s", aliquot, aliquot_node)
-                            self.log.info("tieing aliquot %s to sample %s", aliquot_node, sample_node)
-                            self.create_edge("derived_from", aliquot_node, sample_node)
+                self.log.info("inserted sample %s as %s", sample, sample_node)
+                self.log.info("tieing %s to participant %s", sample_node, part_node)
+                self.create_edge("derived_from", sample_node, part_node)
+                for aliquot in contents["aliquots"]:
+                    if not aliquot_id_map.get(aliquot):
+                        self.log.info("Not inserting aliquot %s because it doesn't have an id in cghub", aliquot)
+                    else:
+                        aliquot_node = self.graph.node_merge(
+                            node_id=aliquot_id_map[aliquot],
+                            label="aliquot",
+                            system_annotations=sysans,
+                            properties={
+                                "submitter_id": aliquot,
+                                "source_center": None,
+                                "amount": None,
+                                "concentration": None,
+                            }
+                        )
+                        self.log.info("inserting aliquot %s as %s", aliquot, aliquot_node)
+                        self.log.info("tieing aliquot %s to sample %s", aliquot_node, sample_node)
+                        self.create_edge("derived_from", aliquot_node, sample_node)
