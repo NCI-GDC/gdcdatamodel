@@ -7,7 +7,7 @@ from mapped_entities import (
     project_tree, annotation_tree,
     ONE_TO_MANY, ONE_TO_ONE
 )
-
+from addict import Dict
 
 MULTIFIELDS = re.compile("|".join([
     "submitter_id", "name", "code", "primary_site",
@@ -51,17 +51,14 @@ def index_settings():
                   }}}}}
 
 
-def _get_header():
-    return {
-        "dynamic": "strict",
-        "_all": {
-            "enabled": False
-        },
-        "_source": {
-            "compress": True,
-            "excludes": ["__comment__"]
-        },
-    }
+def _get_header(source):
+    header = Dict()
+    header.dynamic = 'strict'
+    header._all.enabled = False
+    header._source.compress = True
+    header._source.excludes = ["__comment__"]
+    header._id = '{}_id'.format(source)
+    return header
 
 
 def _get_es_type(_type):
@@ -103,22 +100,25 @@ def _munge_properties(source, nested=True):
 
 
 def _multfield_template(name):
-    return {name: {
-        "type": "string", "fields": {
-            "raw": {
-                "index": "not_analyzed",
-                "store": "yes",
-                "type": "string"
-            }, "analyzed": {
-                "index": "analyzed",
-                "index_analyzer": "id_index",
-                "search_analyzer": "id_search",
-                "type": "string"
-            }, "search": {
-                "index": "analyzed",
-                "analyzer": "id_search",
-                "type": "string"
-            }}}}
+    doc = Dict()
+    doc.type = 'string'
+
+    # Raw
+    doc.fields.raw.index = 'not_analyzed'
+    doc.fields.raw.store = 'yes'
+    doc.fields.raw.type = 'string'
+
+    # Analyzed
+    doc.fields.analyzed.index = "analyzed"
+    doc.fields.analyzed.index_analyzer = "id_index"
+    doc.fields.analyzed.search_analyzer = "id_search"
+    doc.fields.analyzed.type = "string"
+
+    # Search
+    doc.fields.search.index = 'analyzed'
+    doc.fields.search.analyzer = 'id_search'
+    doc.fields.search.type = 'string'
+    return Dict({name: doc})
 
 
 def _walk_tree(tree, mapping):
@@ -148,100 +148,91 @@ def flatten_data_type(root):
 
 
 def patch_file_timestamps(doc):
-    doc['properties']['uploaded_datetime'] = LONG
-    doc['properties']['published_datetime'] = LONG
+    doc.properties.uploaded_datetime = LONG
+    doc.properties.published_datetime = LONG
 
 
 def nested(source):
-    return {'type': 'nested', 'properties': _munge_properties(source)}
+    return Dict(type='nested', properties=_munge_properties(source))
 
 
 def get_file_es_mapping(include_participant=True):
-    files = _get_header()
-    files['properties'] = _walk_tree(file_tree, _munge_properties('file'))
-    flatten_data_type(files['properties'])
-    files['_id'] = {'path': 'file_id'}
+    files = _get_header('file')
+    files.properties = _walk_tree(file_tree, _munge_properties('file'))
+    flatten_data_type(files.properties)
 
     # Related files
     related_files = nested('file')
-    related_files['properties']['data_type'] = STRING
-    related_files['properties']['data_subtype'] = STRING
+    related_files.properties.data_type = STRING
+    related_files.properties.data_subtype = STRING
     patch_file_timestamps(related_files)
-    files['properties']['related_files'] = related_files
+    files.properties.related_files = related_files
 
     # Related archives
-    files['properties']['related_archives'] = nested('archive')
+    files.properties.related_archives = nested('archive')
 
     # Temporary until datetimes are backported
     patch_file_timestamps(files)
 
     # File access
-    files['properties']['access'] = STRING
-    files['properties']['acl'] = STRING
+    files.properties.access = STRING
+    files.properties.acl = STRING
 
     # Participant
-    files['properties'].pop('participant', None)
+    files.properties.pop('participant', None)
     if include_participant:
-        files['type'] = 'nested'
-        files['properties']['participants'] = get_participant_es_mapping(False)
-        files['properties']['participants']['type'] = 'nested'
+        files.properties.participants = get_participant_es_mapping(False)
+        files.properties.participants.type = 'nested'
     return files
 
 
 def get_participant_es_mapping(include_file=True):
     # participant body
-    participant = _get_header()
-    participant['_id'] = {'path': 'participant_id'}
-    participant['properties'] = _walk_tree(
+    participant = _get_header('participant')
+    participant.properties = _walk_tree(
         participant_tree, _munge_properties('participant'))
-    participant['properties']['metadata_files'] = nested('file')
-    participant['properties']['acl'] = STRING
+    participant.properties.metadata_files = nested('file')
+    participant.properties.acl = STRING
 
     # Add pop whatever file is present and add correct files
-    participant['properties'].pop('file', None)
+    participant.properties.pop('file', None)
     if include_file:
-        participant['properties']['files'] = get_file_es_mapping(True)
-        participant['properties']['files']['type'] = 'nested'
+        participant.properties.files = get_file_es_mapping(True)
+        participant.properties.files.type = 'nested'
 
-    # Summary
-    participant['properties']['summary'] = {'properties': {
-        'file_count': LONG,
-        'file_size': LONG,
-        'experimental_strategies': {'type': 'nested', 'properties': {
-            'experimental_strategy': STRING,
-            'file_count': LONG,
-        }},
-        'data_types': {'type': 'nested', 'properties': {
-            'data_type': STRING,
-            'file_count': LONG,
-        }},
-    }}
+    summary = participant.properties.summary.properties
+    summary.file_count = LONG
+    summary.file_size = LONG
+    summary.experimental_strategies.type = 'nested'
+    summary.experimental_strategies.properties.experimental_strategy = STRING
+    summary.experimental_strategies.properties.file_count = LONG
+    summary.data_types.type = 'nested'
+    summary.data_types.properties.data_type = STRING
+    summary.data_types.properties.file_count = LONG
     return participant
 
 
 def annotation_body(nested=True):
-    annotation = {}
-    annotation['properties'] = _munge_properties('annotation', nested)
-    annotation['properties']['item_type'] = STRING
-    annotation['properties']['item_id'] = STRING
+    annotation = Dict()
+    annotation.properties = _munge_properties('annotation', nested)
+    annotation.properties.item_type = STRING
+    annotation.properties.item_id = STRING
     return annotation
 
 
 def get_annotation_es_mapping(include_file=True):
-    annotation = _get_header()
-    annotation['_id'] = {'path': 'annotation_id'}
+    annotation = _get_header('annotation')
     annotation.update(annotation_body(nested=False))
-    annotation['properties'].update(_multfield_template('item_id'))
-    annotation['properties'].update({
+    annotation.properties.update(_multfield_template('item_id'))
+    annotation.properties.update({
         'project': {'properties': _munge_properties('project')}})
-    annotation['properties']['project']['properties']['program'] = (
-        {'properties': _munge_properties('program')})
+    annotation.properties.project.properties.program = {
+        'properties': _munge_properties('program')}
     return annotation
 
 
 def get_project_es_mapping():
-    project = _get_header()
-    project['_id'] = {'path': 'project_id'}
+    project = _get_header('project')
     project['properties'] = _walk_tree(
         project_tree, _munge_properties('project'))
     project['properties']['summary'] = {'properties': {
