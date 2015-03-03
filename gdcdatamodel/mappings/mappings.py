@@ -158,19 +158,19 @@ def nested(source):
 
 def get_file_es_mapping(include_participant=True):
     files = _get_header()
-    files["properties"] = _walk_tree(file_tree, _munge_properties("file"))
+    files['properties'] = _walk_tree(file_tree, _munge_properties('file'))
     flatten_data_type(files['properties'])
-    files["_id"] = {"path": "file_id"}
+    files['_id'] = {'path': 'file_id'}
 
     # Related files
     related_files = nested('file')
     related_files['properties']['data_type'] = STRING
     related_files['properties']['data_subtype'] = STRING
     patch_file_timestamps(related_files)
-    files["properties"]['related_files'] = related_files
+    files['properties']['related_files'] = related_files
 
     # Related archives
-    files["properties"]['related_archives'] = nested('archive')
+    files['properties']['related_archives'] = nested('archive')
 
     # Temporary until datetimes are backported
     patch_file_timestamps(files)
@@ -180,40 +180,40 @@ def get_file_es_mapping(include_participant=True):
     files['properties']['acl'] = STRING
 
     # Participant
-    files["properties"].pop('participant', None)
+    files['properties'].pop('participant', None)
     if include_participant:
-        files["type"] = 'nested'
-        files["properties"]["participants"] = get_participant_es_mapping(False)
-        files["properties"]["participants"]["type"] = "nested"
+        files['type'] = 'nested'
+        files['properties']['participants'] = get_participant_es_mapping(False)
+        files['properties']['participants']['type'] = 'nested'
     return files
 
 
 def get_participant_es_mapping(include_file=True):
     # participant body
     participant = _get_header()
-    participant["_id"] = {"path": "participant_id"}
-    participant["properties"] = _walk_tree(
-        participant_tree, _munge_properties("participant"))
+    participant['_id'] = {'path': 'participant_id'}
+    participant['properties'] = _walk_tree(
+        participant_tree, _munge_properties('participant'))
     participant['properties']['metadata_files'] = nested('file')
     participant['properties']['acl'] = STRING
 
     # Add pop whatever file is present and add correct files
-    participant["properties"].pop('file', None)
+    participant['properties'].pop('file', None)
     if include_file:
-        participant["properties"]['files'] = get_file_es_mapping(True)
-        participant["properties"]["files"]["type"] = "nested"
+        participant['properties']['files'] = get_file_es_mapping(True)
+        participant['properties']['files']['type'] = 'nested'
 
     # Summary
-    participant["properties"]["summary"] = {"properties": {
-        "file_count": LONG,
-        "file_size": LONG,
-        "experimental_strategies": {"type": "nested", "properties": {
-            "experimental_strategy": STRING,
-            "file_count": LONG,
+    participant['properties']['summary'] = {'properties': {
+        'file_count': LONG,
+        'file_size': LONG,
+        'experimental_strategies': {'type': 'nested', 'properties': {
+            'experimental_strategy': STRING,
+            'file_count': LONG,
         }},
-        "data_types": {"type": "nested", "properties": {
-            "data_type": STRING,
-            "file_count": LONG,
+        'data_types': {'type': 'nested', 'properties': {
+            'data_type': STRING,
+            'file_count': LONG,
         }},
     }}
     return participant
@@ -221,46 +221,46 @@ def get_participant_es_mapping(include_file=True):
 
 def annotation_body(nested=True):
     annotation = {}
-    annotation["properties"] = _munge_properties("annotation", nested)
-    annotation["properties"]["item_type"] = STRING
-    annotation["properties"]["item_id"] = STRING
+    annotation['properties'] = _munge_properties('annotation', nested)
+    annotation['properties']['item_type'] = STRING
+    annotation['properties']['item_id'] = STRING
     return annotation
 
 
 def get_annotation_es_mapping(include_file=True):
     annotation = _get_header()
-    annotation["_id"] = {"path": "annotation_id"}
+    annotation['_id'] = {'path': 'annotation_id'}
     annotation.update(annotation_body(nested=False))
-    annotation["properties"].update(_multfield_template('item_id'))
+    annotation['properties'].update(_multfield_template('item_id'))
     annotation['properties'].update({
-        'project': {'properties': _munge_properties("project")}})
+        'project': {'properties': _munge_properties('project')}})
     annotation['properties']['project']['properties']['program'] = (
-        {'properties': _munge_properties("program")})
+        {'properties': _munge_properties('program')})
     return annotation
 
 
 def get_project_es_mapping():
     project = _get_header()
-    project["_id"] = {"path": "project_id"}
-    project["properties"] = _walk_tree(
-        project_tree, _munge_properties("project"))
-    project["properties"]["summary"] = {"properties": {
-        "file_count": LONG,
-        "file_size": LONG,
-        "participant_count": LONG,
-        "experimental_strategies": {
+    project['_id'] = {'path': 'project_id'}
+    project['properties'] = _walk_tree(
+        project_tree, _munge_properties('project'))
+    project['properties']['summary'] = {'properties': {
+        'file_count': LONG,
+        'file_size': LONG,
+        'participant_count': LONG,
+        'experimental_strategies': {
             'type': 'nested',
-            "properties": {
-                "participant_count": LONG,
-                "experimental_strategy": STRING,
-                "file_count": LONG,
+            'properties': {
+                'participant_count': LONG,
+                'experimental_strategy': STRING,
+                'file_count': LONG,
             }},
-        "data_types": {
+        'data_types': {
             'type': 'nested',
-            "properties": {
-                "participant_count": LONG,
-                "data_type": STRING,
-                "file_count": LONG,
+            'properties': {
+                'participant_count': LONG,
+                'data_type': STRING,
+                'file_count': LONG,
             }},
     }}
     return project
