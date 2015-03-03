@@ -49,7 +49,7 @@ sample_props = {'sample_type_id',
                 'sample_type', 'days_to_collection', 'initial_weight',
                 'current_weight', 'annotations', 'longest_dimension'}
 project_props = {'code', 'name', 'state', 'program', 'primary_site',
-                 'project_id'}
+                 'project_id', 'disease_type'}
 summary_props = {'data_types', 'file_count',
                  'experimental_strategies', 'file_size'}
 tss_props = {'project', 'bcr_id', 'code', 'tissue_source_site_id',
@@ -75,7 +75,8 @@ file_props = {'data_format', 'related_files', 'center', 'tags',
               'submitter_id', 'access', 'platform', 'state',
               'data_subtype', 'file_id', 'file_size',
               'experimental_strategy', 'state_comment',
-              'annotations', 'archives', 'related_archives', 'data_type'}
+              'annotations', 'archives', 'related_archives', 'data_type',
+              'uploaded_datetime', 'published_datetime', 'acl'}
 
 
 class TestElasticsearchMappings(unittest.TestCase):
@@ -134,7 +135,7 @@ class TestElasticsearchMappings(unittest.TestCase):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('annotations' in props)
         self.assertEqual(annotation_props.symmetric_difference(
-            set(props['annotations']['properties'])), set([]))
+            set(props['annotations']['properties'])), set(['project']))
 
     def test_participant_files(self):
         props = get_participant_es_mapping()['properties']
