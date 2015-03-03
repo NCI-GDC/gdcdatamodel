@@ -157,8 +157,9 @@ class TestPsqlgraph2JSON(unittest.TestCase):
                      properties={'name': 'BRCA', 'bcr_id': 'id', 'code': 'AR',
                                  'name': u"name", 'project': 'Mesothelioma'})
         g.node_merge(node_id='project', label='project', properties={
-            'name': 'BRCA', 'primary_site': 'primary site',
-            'project_name': 'project name', 'state': 'legacy'})
+            'code': 'BRCA', 'primary_site': 'primary site',
+            'name': 'project name', 'state': 'legacy',
+            'disease_type': 'disease type'})
 
     def add_file_nodes(self):
         g.node_merge(node_id='file1', label='file', properties={
