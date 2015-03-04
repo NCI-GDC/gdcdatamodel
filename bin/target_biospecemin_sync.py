@@ -7,15 +7,15 @@ from psqlgraph import PsqlGraphDriver
 
 
 PROJECTS_TO_IMPORT = [
-    "ALL-P1",
-    # still has conflicting information between participant / aliquot in some rows
+    # we are only doing WT for now
+    # "ALL-P1",
     # "ALL-P2",
-    "AML",
-    "AML-IF",
-    "CCSK",
-    "NBL",
-    "OS",
-    "RT",
+    # "AML",
+    # "AML-IF",
+    # "CCSK",
+    # "NBL",
+    # "OS",
+    # "RT",
     "WT"
 ]
 
