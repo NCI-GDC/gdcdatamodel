@@ -116,11 +116,11 @@ def multifield(name):
 def _walk_tree(tree, mapping):
     for k, v in [(k, v) for k, v in tree.items() if k != 'corr']:
         corr, name = v['corr']
-        if k in FLATTEN:
-            mapping[name] = STRING
-        elif name not in mapping:
+        if name not in mapping:
             mapping[name] = {'properties': {}}
-        elif k == 'annotation':
+        elif k in FLATTEN:
+            mapping[name] = STRING
+        if k == 'annotation':
             mapping.annotations = annotation_body()
             mapping.annotations.type = 'nested'
         else:
