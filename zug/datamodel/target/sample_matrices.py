@@ -12,7 +12,7 @@ from uuid import UUID, uuid5
 from datetime import datetime
 
 from sqlalchemy import Integer
-from psqlgraph import PsqlNode
+from psqlgraph import PsqlNode, PsqlEdge
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -139,10 +139,9 @@ class TARGETSampleMatrixSyncer(object):
                 return
         raise RuntimeError("Could not find sample matrix at url {}".format(search_url))
 
-    def load_sample_matrix(self, url):
+    def load_sample_matrix(self, data):
         """Given a url, load a sample matrix from it into a pandas DataFrame"""
-        resp = requests.get(url, auth=self.dcc_auth)
-        book = xlrd.open_workbook(file_contents=resp.content)
+        book = xlrd.open_workbook(file_contents=data)
         sheet_names = [sheet.name for sheet in book.sheets()]
         if "Sample Names" in sheet_names:
             SHEET = "Sample Names"
@@ -228,7 +227,8 @@ class TARGETSampleMatrixSyncer(object):
 
     def compute_mapping(self):
         self.locate_sample_matrix()
-        df = self.load_sample_matrix(self.url)
+        resp = requests.get(self.url, auth=self.dcc_auth)
+        df = self.load_sample_matrix(resp.content)
         mapping = self.compute_mapping_from_df(df)
         self.sanity_check(mapping)
         return mapping
@@ -238,13 +238,13 @@ class TARGETSampleMatrixSyncer(object):
             label=label,
             src_id=src.node_id,
             dst_id=dst.node_id,
-        )
+        ).scalar()
         if not maybe_edge:
-            self.graph.edge_insert(
-                label="derived_from",
+            self.graph.edge_insert(PsqlEdge(
+                label=label,
                 src_id=src.node_id,
                 dst_id=dst.node_id,
-            )
+            ))
 
     def tie_to_project(self, part_node):
         project_node = self.graph.nodes().props({"code": self.project}).one()
@@ -262,7 +262,7 @@ class TARGETSampleMatrixSyncer(object):
     def remove_old_versions(self):
         old_nodes = self.graph.nodes()\
                               .labels(["aliquot", "participant", "sample"])\
-                              .props({"group_id": self.project})\
+                              .sysan({"group_id": self.project})\
                               .filter(PsqlNode.system_annotations["version"].cast(Integer) < self.version).all()
         self.log.info("Found %s old nodes to remove.", len(old_nodes))
         for node in old_nodes:
