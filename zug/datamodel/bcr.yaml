@@ -202,6 +202,8 @@ sample:
       sample_type:
         path: ./bio:sample_type
         type: str
+      tumor_code_id: null
+      tumor_code: null
       longest_dimension:
         path: ./bio:longest_dimension
         type: str

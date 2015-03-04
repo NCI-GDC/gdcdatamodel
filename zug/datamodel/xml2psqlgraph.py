@@ -384,6 +384,9 @@ class xml2psqlgraph(object):
 
         props = {}
         for prop, args in params.properties.items():
+            if args is None:
+                props[prop] = None
+                continue
             path, _type = args['path'], args['type']
             if not path:
                 continue
