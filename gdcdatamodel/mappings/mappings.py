@@ -232,6 +232,7 @@ def annotation_body(nested=True):
     annotation = Dict()
     annotation.properties = _munge_properties('annotation', nested)
     annotation.properties.item_type = STRING
+    annotation.properties.item_id = STRING
     return annotation
 
 
