@@ -9,22 +9,16 @@ from mapped_entities import (
 )
 from addict import Dict
 
-MULTIFIELDS = re.compile("|".join([
-    "submitter_id", "name", "code", "primary_site",
-    "disease_type", "name", "file_name",
-]))
-
 STRING = {'index': 'not_analyzed', 'type': 'string'}
 LONG = {'type': 'long'}
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
 
-"""
-Logic for multifields
-1) no nested entries
-2) top levels that match MULTIFIELDS above
-
-"""
-
+MULTIFIELDS = {
+    'project': ['code', 'disease_type', 'name', 'primary_site'],
+    'annotation': ['annotation_id', 'item_id'],
+    'files': ['file_id', 'file_name'],
+    'participant': ['participant_id', 'submitter_id'],
+}
 
 def index_settings():
     return {"settings":
@@ -78,25 +72,26 @@ def _munge_properties(source, nested=True):
 
     # Add id to document
     id_name = '{}_id'.format(source)
-    doc = {id_name: STRING} if nested else _multfield_template(id_name)
+    doc = Dict({id_name: STRING})
 
     # Add all properties to document
     for field in fields[0][0]['fields']:
         name = str(field['name'])
-        if not nested and MULTIFIELDS.match(name):
-            doc.update(_multfield_template(name))
-        else:
-            _type = _get_es_type(
-                [c['type'] if isinstance(c['type'], (unicode, str))
-                 else 'string' for c in b['type'][0]['fields']
-                 if c['name'] == name])
-            doc[name] = {'type': _type}
-            if str(_type) == 'string':
-                doc[name]['index'] = 'not_analyzed'
+        _type = _get_es_type(
+            # search for scalar entries to extract the type
+            [c['type'] if isinstance(c['type'], (unicode, str))
+             # if it's non-scalar, it's an enum which is a string
+             else 'string' for c in b['type'][0]['fields']
+             # filter on those with the right name
+             if c['name'] == name])
+        # assign the type
+        doc[name] = {'type': _type}
+        if str(_type) == 'string':
+            doc[name]['index'] = 'not_analyzed'
     return doc
 
 
-def _multfield_template(name):
+def multifield(name):
     doc = Dict()
     doc.type = 'string'
 
@@ -121,16 +116,16 @@ def _multfield_template(name):
 def _walk_tree(tree, mapping):
     for k, v in [(k, v) for k, v in tree.items() if k != 'corr']:
         corr, name = v['corr']
-        if name not in mapping:
-            mapping[name] = {'properties': {}}
         if k in FLATTEN:
-            mapping.update(_multfield_template(name))
+            mapping[name] = STRING
+        elif name not in mapping:
+            mapping[name] = {'properties': {}}
         elif k == 'annotation':
-            mapping['annotations'] = annotation_body()
-            mapping['annotations']['type'] = 'nested'
+            mapping.annotations = annotation_body()
+            mapping.annotations.type = 'nested'
         else:
             nested = (corr == ONE_TO_MANY)
-            mapping[name]['properties'].update(
+            mapping[name].properties.update(
                 _munge_properties(k, nested))
             _walk_tree(tree[k], mapping[name]['properties'])
             if nested:
@@ -140,8 +135,8 @@ def _walk_tree(tree, mapping):
 
 def flatten_data_type(root):
     root.pop('data_subtype', None)
-    root.update(_multfield_template('data_subtype'))
-    root.update(_multfield_template('data_type'))
+    root.update.data_subtype = STRING
+    root.update.data_type = STRING
 
 
 def patch_file_timestamps(doc):
@@ -153,10 +148,22 @@ def nested(source):
     return Dict(type='nested', properties=_munge_properties(source))
 
 
+def add_multifields(doc, source):
+    for key in MULTIFIELDS[source]:
+        doc.properties.update(multifield(key))
+
+
 def get_file_es_mapping(include_participant=True):
     files = _get_header('file')
     files.properties = _walk_tree(file_tree, _munge_properties('file'))
     flatten_data_type(files.properties)
+
+    # Specify the entity the file was derived from
+    files.properties.item_type = STRING
+    files.properties.item_id = STRING
+
+    # Patch file mutlifields
+    add_multifields(files, 'files')
 
     # Related files
     related_files = nested('file')
@@ -188,6 +195,9 @@ def get_participant_es_mapping(include_file=True):
     participant = _get_header('participant')
     participant.properties = _walk_tree(
         participant_tree, _munge_properties('participant'))
+
+    # Patch participant mutlifields
+    add_multifields(participant, 'participant')
 
     # Metadata files
     participant.properties.metadata_files = nested('file')
@@ -223,7 +233,6 @@ def annotation_body(nested=True):
     annotation = Dict()
     annotation.properties = _munge_properties('annotation', nested)
     annotation.properties.item_type = STRING
-    annotation.properties.item_id = STRING
     return annotation
 
 
@@ -231,8 +240,8 @@ def get_annotation_es_mapping(include_file=True):
     annotation = _get_header('annotation')
     annotation.update(annotation_body(nested=False))
 
-    # Make the id a multifield for the root annotation mapping
-    annotation.properties.update(_multfield_template('item_id'))
+    # Patch annotation mutlifields
+    add_multifields(annotation, 'annotation')
 
     # Add the project and program
     annotation.properties.update(Dict({
@@ -246,6 +255,9 @@ def get_annotation_es_mapping(include_file=True):
 def get_project_es_mapping():
     project = _get_header('project')
     project.properties = _walk_tree(project_tree, _munge_properties('project'))
+
+    # Patch annotation mutlifields
+    add_multifields(project, 'project')
 
     # Summary
     summary = project.properties.summary.properties
