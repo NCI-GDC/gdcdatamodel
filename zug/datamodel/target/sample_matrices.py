@@ -247,7 +247,7 @@ class TARGETSampleMatrixSyncer(object):
             ))
 
     def tie_to_project(self, part_node):
-        project_node = self.graph.nodes().props({"code": self.project}).one()
+        project_node = self.graph.nodes().labels("project").props({"code": self.project}).one()
         self.create_edge("member_of", part_node, project_node)
 
     def sync(self):
