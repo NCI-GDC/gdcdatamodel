@@ -30,13 +30,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Get graph driver
-    g = PsqlGraphDriver(host=args.host, user=args.user,
-                        password=args.password, database=args.database)
+    g = PsqlGraphDriver(
+        host=args.host,
+        user=args.user,
+        password=args.password,
+        database=args.database)
 
     # Get graph to json converter and load the database
     p2j = PsqlGraph2JSON(g)
     p2j.cache_database()
 
     # Get json to elasticsearch exporter and deploy the index
-    es = GDCElasticsearch(Elasticsearch(hosts=[args.es_host]), p2j)
+    es = GDCElasticsearch(
+        Elasticsearch(hosts=[args.es_host], timeout=9999),
+        p2j)
     es.deploy_alias(args.alias)
