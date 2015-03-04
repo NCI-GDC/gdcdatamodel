@@ -118,9 +118,9 @@ def _walk_tree(tree, mapping):
         corr, name = v['corr']
         if name not in mapping:
             mapping[name] = {'properties': {}}
-        elif k in FLATTEN:
+        if k in FLATTEN:
             mapping[name] = STRING
-        if k == 'annotation':
+        elif k == 'annotation':
             mapping.annotations = annotation_body()
             mapping.annotations.type = 'nested'
         else:
