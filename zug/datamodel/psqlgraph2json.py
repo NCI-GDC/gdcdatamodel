@@ -97,24 +97,24 @@ class PsqlGraph2JSON(object):
         will need to distinguish later.
 
         """
-
-        pbar = self.pbar('Caching Database: ', self.g.edges().count())
-        for e in self.g.edges().options(joinedload(Edge.src))\
-                               .options(joinedload(Edge.dst))\
-                               .yield_per(int(1e5)):
-            pbar.update(pbar.currval+1)
-            needs_differentiation = ((e.src.label, e.label, e.dst.label)
-                                     in self.differentiated_edges)
-            if needs_differentiation and e.properties:
-                self.G.add_edge(
-                    e.src, e.dst, label=e.label, props=e.properties)
-            elif needs_differentiation and not e.properties:
-                self.G.add_edge(e.src, e.dst, label=e.label)
-            elif e.properties:
-                self.G.add_edge(e.src, e.dst, props=e.properties)
-            else:
-                self.G.add_edge(e.src, e.dst)
-        pbar.finish()
+        with self.g.session_scope():
+            pbar = self.pbar('Caching Database: ', self.g.edges().count())
+            for e in self.g.edges().options(joinedload(Edge.src))\
+                                   .options(joinedload(Edge.dst))\
+                                   .yield_per(int(1e5)):
+                pbar.update(pbar.currval+1)
+                needs_differentiation = ((e.src.label, e.label, e.dst.label)
+                                         in self.differentiated_edges)
+                if needs_differentiation and e.properties:
+                    self.G.add_edge(
+                        e.src, e.dst, label=e.label, props=e.properties)
+                elif needs_differentiation and not e.properties:
+                    self.G.add_edge(e.src, e.dst, label=e.label)
+                elif e.properties:
+                    self.G.add_edge(e.src, e.dst, props=e.properties)
+                else:
+                    self.G.add_edge(e.src, e.dst)
+            pbar.finish()
         print('Cached {} nodes'.format(self.G.number_of_nodes()))
 
     def nodes_labeled(self, label):
