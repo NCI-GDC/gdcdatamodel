@@ -134,9 +134,8 @@ def _walk_tree(tree, mapping):
 
 
 def flatten_data_type(root):
-    root.pop('data_subtype', None)
-    root.update.data_subtype = STRING
-    root.update.data_type = STRING
+    root.data_subtype = STRING
+    root.data_type = STRING
 
 
 def patch_file_timestamps(doc):
