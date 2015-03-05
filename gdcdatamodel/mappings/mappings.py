@@ -173,9 +173,6 @@ def get_file_es_mapping(include_participant=True):
     patch_file_timestamps(related_files)
     files.properties.related_files = related_files
 
-    # Related archives
-    files.properties.related_archives = nested('archive')
-
     # Temporary until datetimes are backported
     patch_file_timestamps(files)
 
