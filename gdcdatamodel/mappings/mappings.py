@@ -159,8 +159,8 @@ def get_file_es_mapping(include_participant=True):
 
     # Specify the entity the file was derived from
     files.properties.associated_entities.type = 'nested'
-    files.properties.associated_entities.properties.item_type = STRING
-    files.properties.associated_entities.properties.item_id = STRING
+    files.properties.associated_entities.properties.entity_type = STRING
+    files.properties.associated_entities.properties.entity_id = STRING
     files.properties.associated_entities.properties.participant_id = STRING
 
     # Patch file mutlifields
