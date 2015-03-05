@@ -159,8 +159,8 @@ def get_file_es_mapping(include_participant=True):
 
     # Specify the entity the file was derived from
     files.properties.associated_entities.type = 'nested'
-    files.properties.associated_entities.properties.item_type = STRING
-    files.properties.associated_entities.properties.item_id = STRING
+    files.properties.associated_entities.properties.entity_type = STRING
+    files.properties.associated_entities.properties.entity_id = STRING
     files.properties.associated_entities.properties.participant_id = STRING
 
     # Patch file mutlifields
@@ -168,13 +168,11 @@ def get_file_es_mapping(include_participant=True):
 
     # Related files
     related_files = nested('file')
+    related_files.properties.type = STRING
     related_files.properties.data_type = STRING
     related_files.properties.data_subtype = STRING
     patch_file_timestamps(related_files)
     files.properties.related_files = related_files
-
-    # Related archives
-    files.properties.related_archives = nested('archive')
 
     # Temporary until datetimes are backported
     patch_file_timestamps(files)
