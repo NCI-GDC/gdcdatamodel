@@ -168,6 +168,7 @@ def get_file_es_mapping(include_participant=True):
 
     # Related files
     related_files = nested('file')
+    related_files.properties.type = STRING
     related_files.properties.data_type = STRING
     related_files.properties.data_subtype = STRING
     patch_file_timestamps(related_files)
