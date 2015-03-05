@@ -14,6 +14,7 @@ setup(
             "datamodel/clinical.yaml",
             "datamodel/projects.csv",
             "datamodel/cghub_file_categorization.yaml",
+            "datamodel/target/barcodes.tsv",
         ]
     },
     install_requires=[
