@@ -33,7 +33,7 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'annotations', 'experimental_strategy', 'data_type',
                       'tags', 'uploaded_datetime', 'file_id', 'related_files',
                       'state_comment', 'published_datetime', 'center',
-                      'md5sum', 'data_format', 'acl', 'item_id', 'item_type'}
+                      'md5sum', 'data_format', 'acl', 'associated_entities'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_participant_mapping_top_level(self):
