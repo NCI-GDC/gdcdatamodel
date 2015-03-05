@@ -27,13 +27,14 @@ class TestElasticsearchMappings(unittest.TestCase):
 
     def test_file_mapping_top_level(self):
         m = get_file_es_mapping()['properties']
-        properties = {'file_name', 'submitter_id', 'related_archives',
-                      'file_size', 'state', 'access', 'platform',
-                      'participants', 'data_subtype', 'archives',
-                      'annotations', 'experimental_strategy', 'data_type',
-                      'tags', 'uploaded_datetime', 'file_id', 'related_files',
+        properties = {'file_name', 'submitter_id', 'file_size',
+                      'state', 'access', 'platform', 'participants',
+                      'data_subtype', 'archive', 'annotations',
+                      'experimental_strategy', 'data_type', 'tags',
+                      'uploaded_datetime', 'file_id', 'related_files',
                       'state_comment', 'published_datetime', 'center',
-                      'md5sum', 'data_format', 'acl', 'associated_entities'}
+                      'md5sum', 'data_format', 'acl',
+                      'associated_entities'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_participant_mapping_top_level(self):
