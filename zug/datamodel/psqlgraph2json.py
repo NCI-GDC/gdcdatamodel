@@ -411,15 +411,7 @@ class PsqlGraph2JSON(object):
             else:
                 rf_doc['type'] = None
             rf_docs.append(rf_doc)
-
-        # Merge related archives into related files
-        for archive in set(self.neighbors_labeled(node, 'archive')):
-            if self.G[node][archive].get('label') != 'member_of':
-                subdoc = self._get_base_doc(archive)
-                subdoc['type'] = 'archive'
-                rf_docs.append(subdoc)
-
-        if related_files:
+        if rf_docs:
             doc['related_files'] = rf_docs
 
     def add_archives(self, node, doc):

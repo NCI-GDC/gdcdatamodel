@@ -130,16 +130,18 @@ class GDCElasticsearch(object):
         self.es.indices.create(index=index, body=index_settings())
         self.put_mappings(index)
         if not part_docs:
-            assert self.p2j, ('There were no participant docs passed to '
-            'populate with. Furthermore, this class was not instantiated with '
-            'an instance of the PsqlGraph2JSON class, so it cannot create '
-            'those docs.')
+            assert self.p2j, (
+                """There were no participant docs passed to populate
+            with. Furthermore, this class was not instantiated with an
+            instance of the PsqlGraph2JSON class, so it cannot create
+            those docs.""")
             part_docs, file_docs, ann_docs = self.p2j.denormalize_participants()
         if not project_docs:
-            assert self.p2j, ('There were no project docs passed to '
-            'populate with. Furthermore, this class was not instantiated with '
-            'an instance of the PsqlGraph2JSON class, so it cannot create '
-            'those docs.')
+            assert self.p2j, (
+                """There were no project docs passed to populate
+            with. Furthermore, this class was not instantiated with an
+            instance of the PsqlGraph2JSON class, so it cannot create
+            those docs.""")
             project_docs = self.p2j.denormalize_projects()
         self.bulk_upload(index, 'project', project_docs)
         self.bulk_upload(index, 'annotation', ann_docs)
