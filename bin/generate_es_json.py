@@ -42,6 +42,5 @@ if __name__ == '__main__':
 
     # Get json to elasticsearch exporter and deploy the index
     es = GDCElasticsearch(
-        Elasticsearch(hosts=[args.es_host], timeout=9999),
-        p2j)
+        Elasticsearch(hosts=[args.es_host], timeout=9999), p2j)
     es.deploy_alias(args.alias)

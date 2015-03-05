@@ -399,15 +399,28 @@ class PsqlGraph2JSON(object):
 
         # Get related_files
         related_files = list(self.neighbors_labeled(node, 'file'))
-        if related_files:
-            doc['related_files'] = []
+        rf_docs = []
         for related_file in related_files:
             rf_doc = self._get_base_doc(related_file)
             for dst in self.neighbors_labeled(related_file, 'data_subtype'):
                 rf_doc['data_subtype'] = dst['name']
                 self.add_data_type(related_file, rf_doc)
             self.patch_file_datetimes(rf_doc)
-            doc['related_files'].append(rf_doc)
+            if related_file['file_name'].endswith('.bai'):
+                rf_doc['type'] = 'bai'
+            else:
+                rf_doc['type'] = None
+            rf_docs.append(rf_doc)
+
+        # Merge related archives into related files
+        for archive in set(self.neighbors_labeled(node, 'archive')):
+            if self.G[node][archive].get('label') != 'member_of':
+                subdoc = self._get_base_doc(archive)
+                subdoc['type'] = 'archive'
+                rf_docs.append(subdoc)
+
+        if related_files:
+            doc['related_files'] = rf_docs
 
     def add_archives(self, node, doc):
         """For each archive attached to a given file node, multixplex on
@@ -416,16 +429,12 @@ class PsqlGraph2JSON(object):
 
         """
 
-        archives, related_archives = [], []
+        archives = []
         for archive in set(self.neighbors_labeled(node, 'archive')):
             if self.G[node][archive].get('label') == 'member_of':
                 archives.append(self._get_base_doc(archive))
-            else:
-                related_archives.append(self._get_base_doc(archive))
         if archives:
             doc['archives'] = archives
-        if related_archives:
-            doc['related_archives'] = related_archives
 
     def add_data_type(self, node, doc):
         """Add the data_subtype to the file document with child data_type
@@ -479,11 +488,22 @@ class PsqlGraph2JSON(object):
             doc['access'] = 'protected'
         doc['acl'] = node.acl
 
+    def add_file_derived_from_entities(self, node, doc, participant_id):
+        entities = self.neighbors_labeled(node, ['participant', 'sample',
+                                                 'portion', 'slide', 'analyte',
+                                                 'aliquot'])
+        doc['associated_entities'] = [{
+            'entity_type': e.label,
+            'entity_id': e.node_id,
+            'participant_id': participant_id,
+        } for e in entities]
+
     def denormalize_file(self, node, ptree):
         """Given a participants tree and a file node, create the file json
         document.
 
         """
+        participant_id = ptree.keys()[0].node_id if ptree.keys() else None
         doc = self._get_base_doc(node)
         self.patch_file_datetimes(doc)
         self.add_file_neighbors(node, doc)
@@ -491,6 +511,7 @@ class PsqlGraph2JSON(object):
         self.add_related_files(node, doc)
         self.add_archives(node, doc)
         relevant = self.add_participants(node, ptree, doc)
+        self.add_file_derived_from_entities(node, doc, participant_id)
         self.add_annotations(node, relevant, doc)
         self.add_acl(node, doc)
         return doc

@@ -141,8 +141,8 @@ class GDCElasticsearch(object):
             'an instance of the PsqlGraph2JSON class, so it cannot create '
             'those docs.')
             project_docs = self.p2j.denormalize_projects()
-        self.bulk_upload(index, 'annotation', ann_docs)
         self.bulk_upload(index, 'project', project_docs)
+        self.bulk_upload(index, 'annotation', ann_docs)
         self.bulk_upload(index, 'participant', part_docs)
         self.bulk_upload(index, 'file', file_docs)
 
@@ -186,7 +186,7 @@ class GDCElasticsearch(object):
         except NotFoundError:
             return None
 
-    def deploy_alias(self, alias, rollback_count=5, **kwargs):
+    def deploy_alias(self, alias, **kwargs):
         """Create a new index with an incremented name, populate it with
         :func index_create_and_populate: and atomically switch the
         alias to point to the new index
