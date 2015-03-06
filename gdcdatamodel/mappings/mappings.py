@@ -152,6 +152,10 @@ def add_multifields(doc, source):
         doc.properties.update(multifield(key))
 
 
+def patch_project(doc):
+    doc.pop('code', None)
+
+
 def get_file_es_mapping(include_participant=True):
     files = _get_header('file')
     files.properties = _walk_tree(file_tree, _munge_properties('file'))
@@ -195,6 +199,9 @@ def get_participant_es_mapping(include_file=True):
     participant.properties = _walk_tree(
         participant_tree, _munge_properties('participant'))
 
+    # Patch project
+    patch_project(participant.properties.project)
+
     # Patch participant mutlifields
     add_multifields(participant, 'participant')
 
@@ -231,6 +238,7 @@ def get_participant_es_mapping(include_file=True):
 def annotation_body(nested=True):
     annotation = Dict()
     annotation.properties = _munge_properties('annotation', nested)
+    annotation.properties.participant_id = STRING
     annotation.properties.item_type = STRING
     annotation.properties.item_id = STRING
     return annotation

@@ -57,13 +57,9 @@ participant_tree.file.corr = (ONE_TO_MANY, 'files')
 participant_traversal = Dict()
 participant_traversal.file = [
     ('sample', 'file'),
-    ('sample', 'file', 'file'),
     ('sample', 'aliquot', 'file'),
-    ('sample', 'aliquot', 'file', 'file'),
     ('sample', 'portion', 'analyte', 'file'),
-    ('sample', 'portion', 'analyte', 'file', 'file'),
     ('sample', 'portion', 'analyte', 'aliquot', 'file'),
-    ('sample', 'portion', 'analyte', 'aliquot', 'file', 'file'),
 ]
 
 # Annotation hierarchy
