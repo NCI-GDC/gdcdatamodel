@@ -19,13 +19,10 @@ password = 'test'
 database = 'automated_test'
 
 
-def initialize(validated=False):
+def initialize():
 
-    if validated:
-        node_validator = AvroNodeValidator(node_avsc_object)
-        edge_validator = AvroEdgeValidator(edge_avsc_object)
-    else:
-        node_validator, edge_validator = None, None
+    node_validator = AvroNodeValidator(node_avsc_object)
+    edge_validator = AvroEdgeValidator(edge_avsc_object)
 
     parser = latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'},

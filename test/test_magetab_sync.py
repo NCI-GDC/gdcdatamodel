@@ -7,7 +7,7 @@ import pandas as pd
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
-FIXTURES_DIR = os.path.join(TEST_DIR, "magetab_fixtures")
+FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "magetabs")
 
 
 class TestTCGAMAGETASync(unittest.TestCase):
