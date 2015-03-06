@@ -12,7 +12,7 @@
       },
       {
         "name": "source_center",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define, from BCR"
       },
       {
@@ -124,6 +124,16 @@
       {
         "name": "sample_type",
         "type": "sample_type_enum",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "tumor_code_id",
+        "type": ["null", "tumor_code_id_enum"],
+        "doc": "TODO: define"
+      },
+      {
+        "name": "tumor_code",
+        "type": ["null", "tumor_code_enum"],
         "doc": "TODO: define"
       },
       {
