@@ -32,8 +32,8 @@ setup(
         'cssselect==0.9.1',
         'elasticsearch==1.4.0',
         'pandas==0.15.2',
-        'gdcapi'
-        'xlrd==0.9.3'
+        'gdcapi',
+        'xlrd==0.9.3',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@0caa0a8ea98e8dee88fe6c7a8a6e15c2d9da999e#egg=psqlgraph',
