@@ -1,13 +1,12 @@
 import logging
 import unittest
 import os
-from zug.datamodel.prelude import create_prelude_nodes
 from zug.datamodel import xml2psqlgraph, bcr_xml_mapping
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import (
     node_avsc_object, edge_avsc_object,
-    get_participant_es_mapping, get_file_es_mapping
+    get_participant_es_mapping,
 )
 from psqlgraph import PsqlGraphDriver, Edge
 
@@ -141,7 +140,8 @@ class TestElasticsearchMappings(unittest.TestCase):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('files' in props)
         self.assertEqual(file_props.symmetric_difference(
-            set(props['files']['properties'])), set([]))
+            set(props['files']['properties'])), set([
+                'uploaded_datetime', 'published_datetime']))
 
 
 class TestPsqlgraph2JSON(unittest.TestCase):
