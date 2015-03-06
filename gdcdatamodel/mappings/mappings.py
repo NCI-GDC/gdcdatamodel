@@ -270,7 +270,7 @@ def get_project_es_mapping():
 
     # Patch project
     patch_project(project.properties)
-    project.properties.project_id = multifield('project')
+    project.properties.update(multifield('project_id'))
 
     # Summary
     summary = project.properties.summary.properties
