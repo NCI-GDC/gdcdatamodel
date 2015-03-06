@@ -670,12 +670,12 @@ class PsqlGraph2JSON(object):
         projects = self.denormalize_projects()
         return parts, files, annotations, projects
 
-    def denormalize_sample(self):
+    def denormalize_sample(self, k=10):
         """Return an entire index worth of participant, file, annotation, and
         project documents
 
         """
-        parts = random.sample(list(self.nodes_labeled('participant')), 10)
+        parts = random.sample(list(self.nodes_labeled('participant')), k)
         parts, files, annotations = self.denormalize_participants(parts)
         projs = random.sample(list(self.nodes_labeled('project')), 1)
         projects = self.denormalize_projects(projs)

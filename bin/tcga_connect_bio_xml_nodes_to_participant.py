@@ -11,10 +11,13 @@ from sqlalchemy.orm import joinedload
 log = get_logger("tcga_connect_bio_xml_nodes_to_participant")
 logging.root.setLevel(level=logging.ERROR)
 
-PREFIX = '(genome.wustl.edu|nationwidechildrens.org)'
-biospecimen_base = PREFIX + '_biospecimen.{barcode}.xml'
-control_base = PREFIX + '_control.{barcode}.xml'
-clinical_base = PREFIX + '_clinical.{barcode}.xml'
+biospecimen_base = 'nationwidechildrens.org_biospecimen.{barcode}.xml'
+control_base = 'nationwidechildrens.org_control.{barcode}.xml'
+clinical_base = 'nationwidechildrens.org_clinical.{barcode}.xml'
+
+biospecimen_base2 = 'genome.wustl.edu_biospecimen.{barcode}.xml'
+control_base2 = 'genome.wustl.edu_control.{barcode}.xml'
+clinical_base2 = 'genome.wustl.edu_clinical.{barcode}.xml'
 
 args = None
 
@@ -62,18 +65,26 @@ def connect_all(g):
         biospecimen_name = biospecimen_base.format(barcode=barcode)
         control_name = control_base.format(barcode=barcode)
         clinical_name = clinical_base.format(barcode=barcode)
+        biospecimen_name2 = biospecimen_base2.format(barcode=barcode)
+        control_name2 = control_base2.format(barcode=barcode)
+        clinical_name2 = clinical_base2.format(barcode=barcode)
 
         clinical = xmls.get(clinical_name, None)
-        biospecimen = xmls.get(biospecimen_name, None)
-        if not biospecimen:
-            biospecimen = xmls.get(control_name, None)
-
+        clinical = clinical if clinical else xmls.get(clinical_name2, None)
         if clinical:
             if clinical.node_id not in p_neighbor_ids:
                 g.edge_insert(Edge(
                     src_id=clinical.node_id,
                     dst_id=participant.node_id,
                     label='describes'))
+
+        biospecimen = xmls.get(biospecimen_name, None)
+        biospecimen = biospecimen if biospecimen else xmls.get(
+            biospecimen_name2, None)
+        biospecimen = biospecimen if biospecimen else xmls.get(
+            control_name, None)
+        biospecimen = biospecimen if biospecimen else xmls.get(
+            control_name2, None)
 
         if biospecimen:
             if biospecimen.node_id not in p_neighbor_ids:
@@ -82,8 +93,8 @@ def connect_all(g):
                     dst_id=participant.node_id,
                     label='describes'))
         else:
-            log.warn('Missing biospecimen file for {} {}'.format(
-                participant, participant.system_annotations))
+            log.warn('Missing biospecimen file for {} {} {}'.format(
+                participant, participant.system_annotations, barcode))
         pbar.update(pbar.currval+1)
     pbar.finish()
 
