@@ -11,9 +11,10 @@ from sqlalchemy.orm import joinedload
 log = get_logger("tcga_connect_bio_xml_nodes_to_participant")
 logging.root.setLevel(level=logging.ERROR)
 
-biospecimen_base = 'nationwidechildrens.org_biospecimen.{barcode}.xml'
-control_base = 'nationwidechildrens.org_control.{barcode}.xml'
-clinical_base = 'nationwidechildrens.org_clinical.{barcode}.xml'
+PREFIX = '(genome.wustl.edu|nationwidechildrens.org)'
+biospecimen_base = PREFIX + '_biospecimen.{barcode}.xml'
+control_base = PREFIX + '_control.{barcode}.xml'
+clinical_base = PREFIX + '_clinical.{barcode}.xml'
 
 args = None
 

@@ -32,7 +32,6 @@ setup(
         'cssselect==0.9.1',
         'elasticsearch==1.4.0',
         'pandas==0.15.2',
-        'gdcapi',
         'xlrd==0.9.3',
     ],
     dependency_links=[
