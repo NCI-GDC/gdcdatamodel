@@ -20,6 +20,7 @@ MULTIFIELDS = {
     'participant': ['participant_id', 'submitter_id'],
 }
 
+
 def index_settings():
     return {"settings":
             {"analysis":
@@ -153,7 +154,7 @@ def add_multifields(doc, source):
 
 
 def patch_project(doc):
-    doc.pop('code', None)
+    doc.pop('code')
 
 
 def get_file_es_mapping(include_participant=True):
@@ -200,7 +201,7 @@ def get_participant_es_mapping(include_file=True):
         participant_tree, _munge_properties('participant'))
 
     # Patch project
-    patch_project(participant.properties.project)
+    patch_project(participant.properties.project.properties)
 
     # Patch participant mutlifields
     add_multifields(participant, 'participant')
@@ -266,6 +267,10 @@ def get_project_es_mapping():
 
     # Patch annotation mutlifields
     add_multifields(project, 'project')
+
+    # Patch project
+    patch_project(project.properties)
+    project.properties.project_id = multifield('project')
 
     # Summary
     summary = project.properties.summary.properties
