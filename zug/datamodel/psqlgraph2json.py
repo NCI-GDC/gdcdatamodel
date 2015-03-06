@@ -5,12 +5,11 @@ from gdcdatamodel.mappings import (
     file_tree, file_traversal, get_file_es_mapping,
     ONE_TO_ONE, ONE_TO_MANY
 )
-import json
+import random
 import logging
 from cdisutils.log import get_logger
 import networkx as nx
 from psqlgraph import Edge
-import re
 import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
@@ -75,11 +74,6 @@ class PsqlGraph2JSON(object):
         trees work with the graph walking code
 
         """
-
-        # Include files only attached to biospecimen pathway via another file
-        participant_tree.file.file.corr = (ONE_TO_MANY, 'files')
-        if ('file',) not in participant_traversal['file']:
-            participant_traversal['file'].append(('file',))
 
         # Add leaves to root for things like target
         participant_tree.aliquot = participant_tree.sample\
@@ -321,6 +315,12 @@ class PsqlGraph2JSON(object):
                 files.append(self._get_base_doc(n))
         return files
 
+    def patch_project(self, project_doc):
+        code = project_doc.pop('code')
+        program = project_doc['program']['name']
+        project_id = '{}-{}'.format(program, code)
+        project_doc['project_id'] = project_id
+
     def denormalize_participant(self, node):
         """Given a participant node, return the entire participant document,
         the files belonging to that participant, and the annotations
@@ -341,17 +341,25 @@ class PsqlGraph2JSON(object):
         # Get the metadatafiles that generated the participant
         participant['metadata_files'] = self.get_metadata_files(node)
 
-        project = participant.get('project', None)
+        self.patch_project(participant['project'])
+        project = participant['project']
 
         # Denormalize the participants files
         def get_file(f):
             return self.denormalize_file(f, self.copy_tree(ptree, {}))
         participant['files'] = map(get_file, files)
 
+        # Add properties to all annotations
+        for a in [copy(a) for f in participant['files']
+                  for a in f.get('annotations', [])]:
+            a['participant_id'] = node.node_id
+
+        # Create copy of annotations and add properties
         annotations = [copy(a) for f in participant['files']
                        for a in f.get('annotations', [])]
         for a in annotations:
             a['project'] = project
+
         return participant, participant['files'], annotations
 
     def prune_participant(self, relevant_nodes, ptree, keys):
@@ -411,6 +419,16 @@ class PsqlGraph2JSON(object):
             else:
                 rf_doc['type'] = None
             rf_docs.append(rf_doc)
+
+        for archive in set(self.neighbors_labeled(node, 'archive')):
+            if self.G[node][archive].get('label') != 'member_of':
+                name = '{}.{}.0'.format(
+                    archive['submitter_id'], archive['revision'])
+                rf_docs.append({
+                    'file_id': archive.node_id,
+                    'file_name': name,
+                })
+
         if rf_docs:
             doc['related_files'] = rf_docs
 
@@ -421,12 +439,9 @@ class PsqlGraph2JSON(object):
 
         """
 
-        archives = []
         for archive in set(self.neighbors_labeled(node, 'archive')):
             if self.G[node][archive].get('label') == 'member_of':
-                archives.append(self._get_base_doc(archive))
-        if archives:
-            doc['archives'] = archives
+                doc['archive'] = self._get_base_doc(archive)
 
     def add_data_type(self, node, doc):
         """Add the data_subtype to the file document with child data_type
@@ -518,6 +533,9 @@ class PsqlGraph2JSON(object):
         program = self.neighbors_labeled(p, 'program').next()
         log.debug('Program: {}'.format(program))
         doc['program'] = self._get_base_doc(program)
+
+        # project_id <- program.name-project.code
+        self.patch_project(doc)
 
         log.debug('Finding participants')
         parts = list(self.neighbors_labeled(p, 'participant'))
@@ -649,4 +667,15 @@ class PsqlGraph2JSON(object):
         """
         parts, files, annotations = self.denormalize_participants()
         projects = self.denormalize_projects()
+        return parts, files, annotations, projects
+
+    def denormalize_sample(self):
+        """Return an entire index worth of participant, file, annotation, and
+        project documents
+
+        """
+        parts = random.sample(list(self.nodes_labeled('participant')), 10)
+        parts, files, annotations = self.denormalize_participants(parts)
+        projs = random.sample(list(self.nodes_labeled('project')), 1)
+        projects = self.denormalize_projects(projs)
         return parts, files, annotations, projects
