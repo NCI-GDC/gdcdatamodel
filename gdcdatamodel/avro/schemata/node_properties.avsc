@@ -430,7 +430,7 @@
       {
         "name": "submitter_id",
         "type": "string",
-        "doc": "Unique identifier of this archive in the DCC."
+        "doc": "Unique identifier of this archive in the DCC; usually the original archive filename."
       }
     ]
   },
