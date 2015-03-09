@@ -96,6 +96,9 @@ def classify(archive, filename):
         match = re.match(possibility["pattern"], filename)
         if match:
             result = copy.deepcopy(possibility["category"])
+            # if the classification doesn't have a platform
+            if not result.get("platform"):
+                result["platform"] = platform
             result["data_format"] = possibility["data_format"]
             if possibility.get("captured_fields"):
                 for i, field in enumerate(possibility["captured_fields"]):
@@ -130,7 +133,6 @@ class TCGADCCEdgeBuilder(object):
         with self.pg_driver.session_scope() as session:
             self.classify(self.file_node, session)
             self.tie_file_to_center(self.file_node, session)
-
 
     def tie_file_to_center(self,file_node,session):
         center_type = self.archive['center_type']
