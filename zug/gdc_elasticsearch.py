@@ -188,7 +188,8 @@ class GDCElasticsearch(object):
         except NotFoundError:
             return None
 
-    def deploy_alias(self, alias, **kwargs):
+    def deploy_alias(self, alias, part_docs=[], file_docs=[],
+                     ann_docs=[], project_docs=[]):
         """Create a new index with an incremented name, populate it with
         :func index_create_and_populate: and atomically switch the
         alias to point to the new index
@@ -196,7 +197,9 @@ class GDCElasticsearch(object):
         """
 
         new_index = self.get_next_index(alias)
-        self.index_create_and_populate(new_index, **kwargs)
+        self.index_create_and_populate(new_index, part_docs,
+                                       file_docs, ann_docs,
+                                       project_docs)
         old_index = self.lookup_index_by_alias(alias)
         if old_index:
             self.swap_index(old_index, new_index, alias)

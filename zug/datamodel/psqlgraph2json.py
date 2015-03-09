@@ -74,7 +74,7 @@ class PsqlGraph2JSON(object):
         trees work with the graph walking code
 
         """
-
+        participant_traversal.file.append(('file',))
         # Add leaves to root for things like target
         participant_tree.aliquot = participant_tree.sample\
                                                    .portion\
@@ -227,6 +227,9 @@ class PsqlGraph2JSON(object):
             *[self.walk_path(node, path, whole=whole)
               for path in paths])}
 
+    def remove_bam_index_files(self, files):
+        return {f for f in files if not f['file_name'].endswith('.bai')}
+
     def _cache_data_types(self):
         """Looking up the files that are classified in each data_type is a
         common computation.  Here we cache this information for easy retrieval.
@@ -237,8 +240,8 @@ class PsqlGraph2JSON(object):
             return
         print('Caching data types')
         for data_type in self.nodes_labeled('data_type'):
-            self.data_types[data_type] = set(self.walk_path(
-                data_type, ['data_subtype', 'file']))
+            self.data_types[data_type] = self.remove_bam_index_files(
+                set(self.walk_path(data_type, ['data_subtype', 'file'])))
 
     def _cache_experimental_strategies(self):
         """Looking up the files that are classified in each
@@ -321,6 +324,25 @@ class PsqlGraph2JSON(object):
         project_id = '{}-{}'.format(program, code)
         project_doc['project_id'] = project_id
 
+    def verify_data_type_count(self, participant, data_type):
+        calc = len([f for f in participant['files']
+                    if f['data_type'] == data_type])
+        act = ([d['file_count'] for d in participant['summary']['data_types']
+                if d['data_type'] == data_type][:1] or [0])[0]
+        assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
+
+    def participant_qa(self, node, participant):
+        # Assert file count = summary.file_count
+        assert len(participant['files'])\
+            == participant['summary']['file_count'],\
+            '{}: {} != {}'.format(node.node_id, len(participant['files']),
+                                  participant['summary']['file_count'])
+
+        # Verify data_type counts
+        # map(lambda dt: self.verify_data_type_count(participant, dt),
+        #     ['Clinical', 'Raw microarray data', 'Raw sequencing data',
+        #      'Copy number variation'])
+
     def denormalize_participant(self, node):
         """Given a participant node, return the entire participant document,
         the files belonging to that participant, and the annotations
@@ -333,9 +355,12 @@ class PsqlGraph2JSON(object):
         # Use tree to create nested json
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
         # Walk from participant to all file leaves
-        files = self.walk_paths(node, participant_traversal['file'])
+        files = self.remove_bam_index_files(
+            self.walk_paths(node, participant_traversal['file']))
+
         # Create participant summary
         participant['summary'] = self.get_participant_summary(node, files)
+
         # Take any out of place nodes and put then in correct place in tree
         self.reconstruct_biospecimen_paths(participant)
         # Get the metadatafiles that generated the participant
@@ -350,7 +375,7 @@ class PsqlGraph2JSON(object):
         participant['files'] = map(get_file, files)
 
         # Add properties to all annotations
-        for a in [copy(a) for f in participant['files']
+        for a in [a for f in participant['files']
                   for a in f.get('annotations', [])]:
             a['participant_id'] = node.node_id
 
@@ -359,6 +384,9 @@ class PsqlGraph2JSON(object):
                        for a in f.get('annotations', [])]
         for a in annotations:
             a['project'] = project
+
+        # Check for obvious errors
+        self.participant_qa(node, participant)
 
         return participant, participant['files'], annotations
 
@@ -449,12 +477,13 @@ class PsqlGraph2JSON(object):
 
         """
 
-        if 'data_subtype' in doc.keys():
-            self._cache_data_types()
-            for data_type, _files in self.data_types.iteritems():
-                if node not in _files:
-                    continue
-                doc['data_type'] = data_type['name']
+        self._cache_data_types()
+        data_types = [dt['name'] for dt, _files in self.data_types.items()
+                      if node in _files]
+        if data_types:
+            # assert len(data_types) <= 1,\
+            #     'data_type not one-to-one: {}'.format(data_types)
+            doc['data_type'] = data_types[0]
 
     def add_participants(self, node, ptree, doc):
         """Given a file and a participant tree, re-insert the participant as a
@@ -469,6 +498,8 @@ class PsqlGraph2JSON(object):
         doc['participants'] = map(
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
+        for p in doc['participants']:
+            self.patch_project(p['project'])
         return relevant
 
     def add_annotations(self, node, relevant, doc):
