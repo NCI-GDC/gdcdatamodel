@@ -1,8 +1,6 @@
 from gdcdatamodel.mappings import (
-    get_project_es_mapping, index_settings,
-    annotation_tree, get_annotation_es_mapping,
-    participant_tree, participant_traversal, get_participant_es_mapping,
-    file_tree, file_traversal, get_file_es_mapping,
+    annotation_tree, participant_tree,
+    file_tree, file_traversal,
     ONE_TO_ONE, ONE_TO_MANY
 )
 import random
@@ -14,6 +12,8 @@ import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy
+import json
+
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -55,6 +55,15 @@ class PsqlGraph2JSON(object):
             ('participant', 'describes', 'file')
         ]
 
+        self.part_to_file_paths = [
+            ['file'],
+            # ['sample', 'file'],
+            # ['sample', 'aliquot', 'file'],
+            ['sample', 'portion', 'file'],
+            # ['sample', 'portion', 'analyte', 'file'],
+            ['sample', 'portion', 'analyte', 'aliquot', 'file'],
+        ]
+
     def pbar(self, title, maxval):
         """Create and initialize a custom progressbar
 
@@ -74,7 +83,6 @@ class PsqlGraph2JSON(object):
         trees work with the graph walking code
 
         """
-        participant_traversal.file.append(('file',))
         # Add leaves to root for things like target
         participant_tree.aliquot = participant_tree.sample\
                                                    .portion\
@@ -110,6 +118,29 @@ class PsqlGraph2JSON(object):
                     self.G.add_edge(e.src, e.dst)
             pbar.finish()
         print('Cached {} nodes'.format(self.G.number_of_nodes()))
+
+    def save_database(self, path):
+        node_path = path + '.nodes'
+        edge_path = path + '.edges'
+        pbar = self.pbar('Saving Nodes: ', self.G.number_of_nodes())
+        with open(node_path, 'w') as f:
+            for node in self.G.nodes():
+                f.write(json.dumps({
+                    'node_id': node.node_id,
+                    'label': node.label,
+                    'properties': node.properties}))
+                f.write('\n')
+                pbar.update(pbar.currval+1)
+        pbar.finish()
+        pbar = self.pbar('Saving edges: ', self.G.number_of_nodes())
+        with open(edge_path, 'w') as f:
+            for edge in self.G.edges():
+                src, dst = edge
+                edge = {'src_id': src.node_id, 'dst_id': dst.node_id}
+                edge.update(self.G[src][dst])
+                f.write(json.dumps(edge))
+                f.write('\n')
+                pbar.update(pbar.currval+1)
 
     def nodes_labeled(self, label):
         """Returns an iterator over the edges in the graph with label `label`
@@ -338,11 +369,6 @@ class PsqlGraph2JSON(object):
             '{}: {} != {}'.format(node.node_id, len(participant['files']),
                                   participant['summary']['file_count'])
 
-        # Verify data_type counts
-        # map(lambda dt: self.verify_data_type_count(participant, dt),
-        #     ['Clinical', 'Raw microarray data', 'Raw sequencing data',
-        #      'Copy number variation'])
-
     def denormalize_participant(self, node):
         """Given a participant node, return the entire participant document,
         the files belonging to that participant, and the annotations
@@ -356,7 +382,7 @@ class PsqlGraph2JSON(object):
         participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
         # Walk from participant to all file leaves
         files = self.remove_bam_index_files(
-            self.walk_paths(node, participant_traversal['file']))
+            self.walk_paths(node, self.part_to_file_paths))
 
         # Create participant summary
         participant['summary'] = self.get_participant_summary(node, files)
@@ -386,7 +412,7 @@ class PsqlGraph2JSON(object):
             a['project'] = project
 
         # Check for obvious errors
-        self.participant_qa(node, participant)
+        # self.participant_qa(node, participant)
 
         return participant, participant['files'], annotations
 
@@ -481,8 +507,6 @@ class PsqlGraph2JSON(object):
         data_types = [dt['name'] for dt, _files in self.data_types.items()
                       if node in _files]
         if data_types:
-            # assert len(data_types) <= 1,\
-            #     'data_type not one-to-one: {}'.format(data_types)
             doc['data_type'] = data_types[0]
 
     def add_participants(self, node, ptree, doc):
@@ -573,22 +597,13 @@ class PsqlGraph2JSON(object):
         parts = list(self.neighbors_labeled(p, 'participant'))
         log.debug('Got {} participants'.format(len(parts)))
 
-        # Construct paths
-        paths = [
-            ['file'],
-            ['sample', 'file'],
-            ['sample', 'aliquot', 'file'],
-            ['sample', 'portion', 'file'],
-            ['sample', 'portion', 'analyte', 'file'],
-            ['sample', 'portion', 'analyte', 'aliquot', 'file'],
-        ]
-
         # Get files
         log.debug('Getting files')
         files = set()
         part_files = {}
         for part in parts:
-            part_files[part] = self.walk_paths(part, paths)
+            part_files[part] = self.remove_bam_index_files(
+                self.walk_paths(part, self.part_to_file_paths))
             files = files.union(part_files[part])
         log.debug('Got {} files from {} participants'.format(
             len(files), len(part_files)))
@@ -639,6 +654,13 @@ class PsqlGraph2JSON(object):
             doc['summary']['data_types'] = data_type_summaries
         return doc
 
+    def upsert_file_into_dict(self, files, f):
+        did = f['file_id']
+        if did not in files:
+            files[did] = f
+        else:
+            files[did]['participants'] += f['participants']
+
     def denormalize_participants(self, participants=None):
         """If participants is not specified, denormalize all participants in
         the graph.  If participants is specified, denormalize only those
@@ -649,18 +671,20 @@ class PsqlGraph2JSON(object):
 
         """
 
-        total_part_docs, total_file_docs, total_ann_docs = [], [], []
+        total_part_docs, total_ann_docs = [], []
         if not participants:
             participants = list(self.nodes_labeled('participant'))
         pbar = self.pbar('Denormalizing participants ', len(participants))
+        files = {}
         for n in participants:
             part_doc, file_docs, ann_docs = self.denormalize_participant(n)
             total_part_docs.append(part_doc)
-            total_file_docs += file_docs
             total_ann_docs += ann_docs
+            for f in file_docs:
+                self.upsert_file_into_dict(files, f)
             pbar.update(pbar.currval+1)
         pbar.finish()
-        return total_part_docs, total_file_docs, total_ann_docs
+        return total_part_docs, files.values(), total_ann_docs
 
     def denormalize_projects(self, projects=None):
         """If projects is not specified, denormalize all projects in
@@ -688,8 +712,8 @@ class PsqlGraph2JSON(object):
         ann_doc = self._get_base_doc(node)
         items = self.G.neighbors(node)
         assert len(items) == 1
-        ann_doc['item_type'] = items[0].label
-        ann_doc['item_id'] = items[0].node_id
+        ann_doc['entity_type'] = items[0].label
+        ann_doc['entity_id'] = items[0].node_id
         return ann_doc
 
     def denormalize_all(self):
@@ -701,13 +725,24 @@ class PsqlGraph2JSON(object):
         projects = self.denormalize_projects()
         return parts, files, annotations, projects
 
+    def denormalize_sample_parts(self, k=10):
+        """Return an entire index worth of participant, file, annotation
+         documents
+
+        """
+        parts = random.sample(list(self.nodes_labeled('participant')), k)
+        parts, files, annotations = self.denormalize_participants(parts)
+        return parts, files, annotations
+
     def denormalize_sample(self, k=10):
         """Return an entire index worth of participant, file, annotation, and
         project documents
 
         """
-        parts = random.sample(list(self.nodes_labeled('participant')), k)
-        parts, files, annotations = self.denormalize_participants(parts)
+        parts, files, annotations = self.denormalize_sample_parts(k)
         projs = random.sample(list(self.nodes_labeled('project')), 1)
         projects = self.denormalize_projects(projs)
         return parts, files, annotations, projects
+
+    def validate_docs(self, part_docs, file_docs, ann_docs, project_docs):
+        pass
