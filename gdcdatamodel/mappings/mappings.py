@@ -15,7 +15,7 @@ FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
 
 MULTIFIELDS = {
     'project': ['code', 'disease_type', 'name', 'primary_site'],
-    'annotation': ['annotation_id', 'item_id'],
+    'annotation': ['annotation_id', 'entity_id'],
     'files': ['file_id', 'file_name'],
     'participant': ['participant_id', 'submitter_id'],
 }
@@ -240,8 +240,9 @@ def annotation_body(nested=True):
     annotation = Dict()
     annotation.properties = _munge_properties('annotation', nested)
     annotation.properties.participant_id = STRING
-    annotation.properties.item_type = STRING
-    annotation.properties.item_id = STRING
+    annotation.properties.entity_type = STRING
+    annotation.properties.entity_id = STRING
+    annotation.properties.pop('item_id', None)
     return annotation
 
 
