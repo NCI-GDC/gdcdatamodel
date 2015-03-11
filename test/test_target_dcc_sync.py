@@ -3,7 +3,7 @@ from multiprocessing import Process
 import random
 import time
 import tempfile
-import requests
+from multiprocessing import Pool
 
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
@@ -15,6 +15,7 @@ from signpostclient import SignpostClient
 from zug.datamodel.prelude import create_prelude_nodes
 from zug.datamodel.target.dcc_sync import TARGETDCCProjectSyncer
 
+from httmock import urlmatch, HTTMock
 from mock import patch
 
 
@@ -23,11 +24,11 @@ def run_signpost(port):
                                                                   port=port)
 
 
-def fake_requests_get(url, **kwargs):
-    if url == "https://target-data.nci.nih.gov/WT/Discovery/WXS/L3/mutation/BCM/target-wt-snp-indel.mafplus.txt":
-        return "fake test content for this file"
-    else:
-        return requests.get(url, **kwargs)
+@urlmatch(netloc='target-data.nci.nih.gov')
+def target_file_mock(url, request):
+    content = 'this is some fake test content for this file'
+    return {'content': content,
+            'headers': {'Content-Length': str(len(content))}}
 
 
 def fake_tree_walk(url, **kwargs):
@@ -73,7 +74,6 @@ class TARGETDCCSyncTest(TestCase):
                 obj.delete()
 
     @patch("zug.datamodel.target.dcc_sync.tree_walk", fake_tree_walk)
-    @patch("requests.get", fake_requests_get)
     def test_basic_sync(self):
         syncer = TARGETDCCProjectSyncer(
             "WT",
@@ -81,6 +81,12 @@ class TARGETDCCSyncTest(TestCase):
             graph=self.graph,
             storage_client=self.storage_client,
         )
-        syncer.sync()
-        file = self.graph.nodes().labels("file").sysan({"source": "target_dcc"}).one()
-        self.assertEqual(file["file_name"], "target-wt-snp-indel.mafplus.txt")
+        with HTTMock(target_file_mock):
+            syncer.sync()
+            with self.graph.session_scope():
+                file = self.graph.nodes()\
+                                 .labels("file")\
+                                 .sysan({"source": "target_dcc"}).one()
+            self.assertEqual(file["file_name"], "target-wt-snp-indel.mafplus.txt")
+            self.assertEqual(file.acl, ["phs000218", "phs000471"])
+            self.assertEqual(file["md5sum"], '5a7146f821d11c8fa91a0f5865f7b6f8')
