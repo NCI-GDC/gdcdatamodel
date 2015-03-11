@@ -1,7 +1,6 @@
 from gdcdatamodel.mappings import (
     annotation_tree, participant_tree,
-    file_tree, file_traversal,
-    ONE_TO_ONE, ONE_TO_MANY
+    file_tree, ONE_TO_ONE, ONE_TO_MANY
 )
 import random
 import logging
@@ -13,10 +12,19 @@ from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy
 import json
+from cdisutils.pool import AsyncProcessPool
+import sys
+import time
 
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
+
+# Module level variables for multiprocessing
+GRAPH = None
+PARTICIPANTS = None
+DATA_TYPES = None
+EXPERIMENTAL_STRATEGIES = None
 
 
 class PsqlGraph2JSON(object):
@@ -34,6 +42,9 @@ class PsqlGraph2JSON(object):
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
+        self.popular_nodes = {}
+        self.participants = None
+        self.projects = None
 
         # The body of these nested documents will be flattened into
         # the parent document using the given key's value
@@ -56,12 +67,13 @@ class PsqlGraph2JSON(object):
         ]
 
         self.part_to_file_paths = [
-            ['file'],
-            # ['sample', 'file'],
-            # ['sample', 'aliquot', 'file'],
             ['sample', 'portion', 'file'],
-            # ['sample', 'portion', 'analyte', 'file'],
             ['sample', 'portion', 'analyte', 'aliquot', 'file'],
+        ]
+
+        self.file_to_part_paths = [
+            list(reversed(l))[1:]+['participant']
+            for l in self.part_to_file_paths
         ]
 
     def pbar(self, title, maxval):
@@ -117,7 +129,18 @@ class PsqlGraph2JSON(object):
                 else:
                     self.G.add_edge(e.src, e.dst)
             pbar.finish()
+        self._cache_all()
         print('Cached {} nodes'.format(self.G.number_of_nodes()))
+
+    def _cache_all(self):
+        self._cache_experimental_strategies()
+        self._cache_data_types()
+        if not self.participants:
+            print 'Caching participants...'
+            self.participants = list(self.nodes_labeled('participant'))
+        if not self.projects:
+            print 'Caching projects...'
+            self.projects = list(self.nodes_labeled('project'))
 
     def save_database(self, path):
         node_path = path + '.nodes'
@@ -151,17 +174,36 @@ class PsqlGraph2JSON(object):
             if n.label == label:
                 yield n
 
+    def _cache_popular_neighbor(self, node, neighbors, labels):
+        if node not in self.popular_nodes:
+            self.popular_nodes[node] = {}
+        self.popular_nodes[node][labels] = {
+            n for n in neighbors if n.label in labels}
+        return self.popular_nodes[node][labels]
+
     def neighbors_labeled(self, node, labels):
         """For a given node, return an iterator with generates neighbors to
         that node that are in a list of labels.  `label` can be either a
         string or list of strings.
 
         """
+        labels = tuple(labels) if hasattr(labels, '__iter__') else (labels,)
 
-        labels = labels if hasattr(labels, '__iter__') else [labels]
-        for n in self.G.neighbors(node):
-            if n.label in labels:
-                yield n
+        if node in self.popular_nodes:
+            if labels not in self.popular_nodes[node]:
+                neighbors = self._cache_popular_neighbor(
+                    node, self.G.neighbors(node), labels)
+            else:
+                neighbors = self.popular_nodes[node][labels]
+        else:
+            temp = self.G.neighbors(node)
+            if len(temp) > 200:
+                neighbors = self._cache_popular_neighbor(node, temp, labels)
+            else:
+                neighbors = {n for n in temp if n.label in labels}
+
+        for n in neighbors:
+            yield n
 
     def parse_tree(self, tree, result):
         """Recursively walk a mapping tree and generate a simpler tree with
@@ -434,7 +476,7 @@ class PsqlGraph2JSON(object):
         """
 
         auto_neighbors = [n for n in dict(file_tree).keys()
-                          if n not in ['archive']]
+                          if n not in ['archive', 'portion']]
         for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
             corr, label = file_tree[neighbor.label]['corr']
             if neighbor.label in self.flatten:
@@ -516,7 +558,7 @@ class PsqlGraph2JSON(object):
 
         """
 
-        relevant = self.walk_paths(node, file_traversal.participant, True)
+        relevant = self.walk_paths(node, self.file_to_part_paths, whole=True)
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
         doc['participants'] = map(
@@ -583,6 +625,7 @@ class PsqlGraph2JSON(object):
         """Summarize a project.
 
         """
+        self._cache_all()
         doc = self._get_base_doc(p)
 
         # Get programs
@@ -611,7 +654,7 @@ class PsqlGraph2JSON(object):
         # Get data types
         exp_strat_summaries = []
         self._cache_experimental_strategies()
-        for exp_strat in self.nodes_labeled('experimental_strategy'):
+        for exp_strat in self.experimental_strategies.keys():
             log.debug('{} {}'.format(exp_strat, exp_strat['name']))
             exp_files = (self.experimental_strategies[exp_strat] & files)
             if not len(exp_files):
@@ -628,7 +671,7 @@ class PsqlGraph2JSON(object):
         # Get data types
         data_type_summaries = []
         self._cache_data_types()
-        for data_type in self.nodes_labeled('data_type'):
+        for data_type in self.data_types.keys():
             log.debug('{} {}'.format(data_type, data_type['name']))
             dt_files = (self.data_types[data_type] & files)
             if not len(dt_files):
@@ -654,12 +697,17 @@ class PsqlGraph2JSON(object):
             doc['summary']['data_types'] = data_type_summaries
         return doc
 
-    def upsert_file_into_dict(self, files, f):
-        did = f['file_id']
+    def upsert_file_into_dict(self, files, file_doc):
+        did = file_doc['file_id']
         if did not in files:
-            files[did] = f
+            files[did] = file_doc
         else:
-            files[did]['participants'] += f['participants']
+            for part in file_doc['participants']:
+                part_id = part['participant_id']
+                existing_ids = {
+                    p['participant_id'] for p in files[did]['participants']}
+                if part_id not in existing_ids:
+                    files[did]['participants'] += file_doc['participants']
 
     def denormalize_participants(self, participants=None):
         """If participants is not specified, denormalize all participants in
@@ -671,9 +719,10 @@ class PsqlGraph2JSON(object):
 
         """
 
+        self._cache_all()
         total_part_docs, total_ann_docs = [], []
         if not participants:
-            participants = list(self.nodes_labeled('participant'))
+            participants = self.participants
         pbar = self.pbar('Denormalizing participants ', len(participants))
         files = {}
         for n in participants:
@@ -692,8 +741,10 @@ class PsqlGraph2JSON(object):
         given.
 
         """
+
+        self._cache_all()
         if not projects:
-            projects = list(self.nodes_labeled('project'))
+            projects = self.projects()
         project_docs = []
         pbar = self.pbar('Denormalizing projects ', len(projects))
         for project in projects:
@@ -730,7 +781,8 @@ class PsqlGraph2JSON(object):
          documents
 
         """
-        parts = random.sample(list(self.nodes_labeled('participant')), k)
+        self._cache_all()
+        parts = random.sample(self.participants, k)
         parts, files, annotations = self.denormalize_participants(parts)
         return parts, files, annotations
 
@@ -740,9 +792,73 @@ class PsqlGraph2JSON(object):
 
         """
         parts, files, annotations = self.denormalize_sample_parts(k)
-        projs = random.sample(list(self.nodes_labeled('project')), 1)
+        projs = random.sample(self.projects, 1)
         projects = self.denormalize_projects(projs)
         return parts, files, annotations, projects
 
+    def validate_project_file_counts(self, project_doc, file_docs):
+        print 'Validating {}'.format(project_doc['project_id'])
+        actual = len([f for f in file_docs
+                      if project_doc['project_id']
+                      in {p['project']['project_id']
+                          for p in f['participants']}])
+        expected = project_doc['summary']['file_count']
+        assert actual == expected, '{} file count mismatch: {} != {}'.format(
+            project_doc['project_id'], actual, expected)
+
     def validate_docs(self, part_docs, file_docs, ann_docs, project_docs):
-        pass
+        for project_doc in project_docs:
+            self.validate_project_file_counts(project_doc, file_docs)
+
+    def parallel_denorm_participants(self, processes, sample_size=None):
+        global GRAPH, EXPERIMENTAL_STRATEGIES, DATA_TYPES, PARTICIPANTS
+
+        self._cache_all()
+
+        if sample_size:
+            # participants = random.sample(self.participants, sample_size)
+            participants = self.participants[:sample_size]
+        else:
+            participants = self.participants
+
+        part_count = len(participants)
+        part_docs, ann_docs, file_docs = [], {}, {}
+
+        # Set global variables
+        GRAPH = self.G
+        EXPERIMENTAL_STRATEGIES = self.experimental_strategies
+        DATA_TYPES = self.data_types
+        PARTICIPANTS = {p.node_id: p for p in participants}
+
+        print 'Denormalizing {} participants'.format(part_count)
+        print 'Time\tPerc\tParts\tLeft\tFiles\tAnn'
+
+        # Create pool, enqueue all participants, parse them as the return
+        pool = AsyncProcessPool(processes)
+        pool.start(denorm_participant_worker, participants)
+        for pa, fi, an in pool:
+            print '--> ', len(pa), len(fi), len(an)
+            for f in fi:
+                self.upsert_file_into_dict(file_docs, f)
+            for a in an:
+                ann_docs[a['annotation_id']] = a
+            part_docs.append(pa)
+            print '{}\t{}%\t{}\t{}\t{}\t{}'.format(
+                int(time.time()) % 10000, len(part_docs)*100/part_count,
+                len(part_docs), part_count - len(part_docs),
+                len(file_docs), len(ann_docs))
+            sys.stdout.flush()
+
+        pool.terminate()
+        return part_docs, file_docs.values(), ann_docs.values()
+
+
+def denorm_participant_worker(participant):
+    c = PsqlGraph2JSON(None)
+    c.G = GRAPH
+    c.experimental_strategies = EXPERIMENTAL_STRATEGIES
+    c.data_types = DATA_TYPES
+
+    node = PARTICIPANTS[participant.node_id]
+    part_doc, file_docs, ann_docs = c.denormalize_participant(node)
+    return part_doc, file_docs, ann_docs
