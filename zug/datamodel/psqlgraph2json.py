@@ -45,6 +45,9 @@ class PsqlGraph2JSON(object):
         self.popular_nodes = {}
         self.participants = None
         self.projects = None
+        self.relevant_nodes = None
+        self.annotations = None
+        self.annotation_entities = None
 
         # The body of these nested documents will be flattened into
         # the parent document using the given key's value
@@ -135,6 +138,7 @@ class PsqlGraph2JSON(object):
     def _cache_all(self):
         self._cache_experimental_strategies()
         self._cache_data_types()
+        self._cache_annotations()
         if not self.participants:
             print 'Caching participants...'
             self.participants = list(self.nodes_labeled('participant'))
@@ -142,28 +146,31 @@ class PsqlGraph2JSON(object):
             print 'Caching projects...'
             self.projects = list(self.nodes_labeled('project'))
 
-    def save_database(self, path):
-        node_path = path + '.nodes'
-        edge_path = path + '.edges'
-        pbar = self.pbar('Saving Nodes: ', self.G.number_of_nodes())
-        with open(node_path, 'w') as f:
-            for node in self.G.nodes():
-                f.write(json.dumps({
-                    'node_id': node.node_id,
-                    'label': node.label,
-                    'properties': node.properties}))
-                f.write('\n')
-                pbar.update(pbar.currval+1)
-        pbar.finish()
-        pbar = self.pbar('Saving edges: ', self.G.number_of_nodes())
-        with open(edge_path, 'w') as f:
-            for edge in self.G.edges():
-                src, dst = edge
-                edge = {'src_id': src.node_id, 'dst_id': dst.node_id}
-                edge.update(self.G[src][dst])
-                f.write(json.dumps(edge))
-                f.write('\n')
-                pbar.update(pbar.currval+1)
+    def _cache_relevant_nodes(self):
+        if self.relevant_nodes:
+            return
+        files = list(self.nodes_labeled('file'))
+        self.relevant_nodes = {}
+        pbar = self.pbar('Caching file paths: ', len(files))
+        for f in files:
+            self.relevant_nodes[f] = self.walk_paths(
+                f, self.file_to_part_paths, whole=True)
+            pbar.update(pbar.currval+1)
+        pbar.finish
+
+    def _cache_annotations(self):
+        if not self.annotations:
+            self.annotations = list(self.nodes_labeled('annotation'))
+        pbar = self.pbar('Caching annotations: ', len(self.annotations))
+        self.annotation_entities = {}
+        for a in self.annotations:
+            for n in self.G.neighbors(a):
+                if n not in self.annotation_entities:
+                    self.annotation_entities[n] = {}
+                a_doc = self.denormalize_annotation(a)
+                self.annotation_entities[n][a.node_id] = a_doc
+            pbar.update(pbar.currval+1)
+        pbar.finish
 
     def nodes_labeled(self, label):
         """Returns an iterator over the edges in the graph with label `label`
@@ -448,15 +455,13 @@ class PsqlGraph2JSON(object):
             a['participant_id'] = node.node_id
 
         # Create copy of annotations and add properties
-        annotations = [copy(a) for f in participant['files']
-                       for a in f.get('annotations', [])]
-        for a in annotations:
+        annotations = {a['annotation_id']: copy(a)
+                       for f in participant['files']
+                       for a in f.get('annotations', [])}
+        for a in annotations.itervalues():
             a['project'] = project
 
-        # Check for obvious errors
-        # self.participant_qa(node, participant)
-
-        return participant, participant['files'], annotations
+        return participant, participant['files'], annotations.values()
 
     def prune_participant(self, relevant_nodes, ptree, keys):
         """Start with whole participant tree and remove any nodes that did not
@@ -558,7 +563,7 @@ class PsqlGraph2JSON(object):
 
         """
 
-        relevant = self.walk_paths(node, self.file_to_part_paths, whole=True)
+        relevant = self.relevant_nodes[node]
         self.prune_participant(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
         doc['participants'] = map(
@@ -576,9 +581,9 @@ class PsqlGraph2JSON(object):
         """
 
         annotations = doc.pop('annotations', [])
-        for parent in relevant:
-            for p_annotation in self.neighbors_labeled(parent, 'annotation'):
-                annotations.append(self.denormalize_annotation(p_annotation))
+        for r in relevant:
+            for a_doc in self.annotation_entities.get(r, {}).itervalues():
+                annotations.append(a_doc)
         if annotations:
             doc['annotations'] = annotations
 
@@ -608,6 +613,7 @@ class PsqlGraph2JSON(object):
         document.
 
         """
+
         participant_id = ptree.keys()[0].node_id if ptree.keys() else None
         doc = self._get_base_doc(node)
         self.patch_file_datetimes(doc)
@@ -615,6 +621,7 @@ class PsqlGraph2JSON(object):
         self.add_data_type(node, doc)
         self.add_related_files(node, doc)
         self.add_archives(node, doc)
+        doc['participants'] = []
         relevant = self.add_participants(node, ptree, doc)
         self.add_file_derived_from_entities(node, doc, participant_id)
         self.add_annotations(node, relevant, doc)
@@ -816,11 +823,11 @@ class PsqlGraph2JSON(object):
         self._cache_all()
 
         if sample_size:
-            # participants = random.sample(self.participants, sample_size)
             participants = self.participants[:sample_size]
         else:
             participants = self.participants
 
+        pbar = self.pbar('Denormalizing participants ', len(participants))
         part_count = len(participants)
         part_docs, ann_docs, file_docs = [], {}, {}
 
@@ -835,18 +842,21 @@ class PsqlGraph2JSON(object):
 
         # Create pool, enqueue all participants, parse them as the return
         pool = AsyncProcessPool(processes)
-        pool.start(denorm_participant_worker, participants)
+        # pool.start(denorm_participant_worker, participants)
+        pool.start(lambda x: (x, x, x), participants)
         for pa, fi, an in pool:
-            print '--> ', len(pa), len(fi), len(an)
-            for f in fi:
-                self.upsert_file_into_dict(file_docs, f)
-            for a in an:
-                ann_docs[a['annotation_id']] = a
+            # print '--> {}\t{}\t{}\t'.format(len(pa), len(fi), len(an)),
+            # for f in fi:
+            #     self.upsert_file_into_dict(file_docs, f)
+            # for a in an:
+            #     ann_docs[a['annotation_id']] = a
             part_docs.append(pa)
-            print '{}\t{}%\t{}\t{}\t{}\t{}'.format(
+            # pbar.update(len(part_docs))
+            print '\n{}\t{}%\t{}\t{}\t{}\t{}'.format(
                 int(time.time()) % 10000, len(part_docs)*100/part_count,
                 len(part_docs), part_count - len(part_docs),
                 len(file_docs), len(ann_docs))
+
             sys.stdout.flush()
 
         pool.terminate()
