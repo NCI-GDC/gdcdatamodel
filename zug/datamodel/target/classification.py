@@ -3,7 +3,7 @@ CLASSIFICATION = {
     "l3": {
       ".+(isoform|mirna).quantification.txt": {
         "platform": "Illumina HiSeq",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "miRNA quantification",
         "data_type": "Gene expression",
         "experimental_strategy": "miRNA-Seq"
@@ -14,7 +14,7 @@ CLASSIFICATION = {
     "l3": {
       ".+fractional.bw": {
         "platform": "Illumina HiSeq",
-        "format": "BW",
+        "data_format": "BW",
         "data_subtype": "Methylation beta value",
         "data_type": "DNA methylation",
         "experimental_strategy": "WGBS"
@@ -24,7 +24,7 @@ CLASSIFICATION = {
   "gwas": {
     ".+hh550.+txt": {
       "platform": "Illumina HumanHap550",
-      "format": "TXT",
+      "data_format": "TXT",
       "data_subtype": "Genotypes",
       "data_type": "Simple nucleotide variation",
       "experimental_strategy": "Genotyping array"
@@ -34,7 +34,7 @@ CLASSIFICATION = {
     "l4": {
       ".+txt": {
         "platform": "Complete Genomics",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Simple nucleotide variation",
         "data_type": "Simple nucleotide variation",
         "experimental_strategy": "DNA-Seq"
@@ -44,7 +44,7 @@ CLASSIFICATION = {
       "copy_number": {
         ".+sif": {
           "data_type": "Copy number variation",
-          "format": "SIF",
+          "data_format": "SIF",
           "platform": "Complete Genomics",
           "tag": "summary",
           "data_subtype": "Copy number variation",
@@ -52,14 +52,14 @@ CLASSIFICATION = {
         },
         ".+copy_number_segments.zip": {
           "platform": "Complete Genomics",
-          "format": "ZIP",
+          "data_format": "ZIP",
           "data_subtype": "Copy number segmentation",
           "data_type": "Copy number variation",
           "experimental_strategy": "DNA-Seq"
         },
         ".+seg.txt": {
           "platform": "Complete Genomics",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Copy number segmentation",
           "data_type": "Copy number variation",
           "experimental_strategy": "DNA-Seq"
@@ -67,14 +67,14 @@ CLASSIFICATION = {
         "mss": {
           ".+zip": {
             "platform": "Complete Genomics",
-            "format": "PNG",
+            "data_format": "PNG",
             "data_subtype": "LOH",
             "data_type": "Copy number variation",
             "experimental_strategy": "DNA-Seq"
           },
           ".+txt": {
             "platform": "Complete Genomics",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "LOH",
             "data_type": "Copy number variation",
             "experimental_strategy": "DNA-Seq"
@@ -85,21 +85,21 @@ CLASSIFICATION = {
         "bcm": {
           ".+mafplus.xlsx": {
             "platform": "Complete Genomics",
-            "format": "xlsx",
+            "data_format": "xlsx",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
           },
           ".+mafplus.txt": {
             "platform": "Complete Genomics",
-            "format": "xlsx",
+            "data_format": "xlsx",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
           },
           ".+txt": {
             "platform": "Complete Genomics",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Simple nucleotide variation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
@@ -107,7 +107,7 @@ CLASSIFICATION = {
         },
         ".+mafplus.xlsx": {
           "platform": "Complete Genomics",
-          "format": "xlsx",
+          "data_format": "xlsx",
           "data_subtype": "Simple somatic mutation",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "DNA-Seq"
@@ -115,7 +115,7 @@ CLASSIFICATION = {
         "stjude": {
           ".+somatic.maf.txt": {
             "platform": "Complete Genomics",
-            "format": "MAF",
+            "data_format": "MAF",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
@@ -124,21 +124,21 @@ CLASSIFICATION = {
         "broad": {
           "target_nbl_wxs_somatic_calls.maf.txt": {
             "platform": "Complete Genomics",
-            "format": "MAF",
+            "data_format": "MAF",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
           },
           "nb170_200lines.txt": {
             "platform": "Complete Genomics",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Simple nucleotide variation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
           },
           ".+vcf(.gz)?": {
             "platform": "Complete Genomics",
-            "format": "VCF",
+            "data_format": "VCF",
             "data_subtype": "Simple nucleotide variation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
@@ -147,7 +147,7 @@ CLASSIFICATION = {
         "nci": {
           ".+somatic.exonic.bcmmaf.txt": {
             "platform": "Complete Genomics",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
@@ -159,7 +159,7 @@ CLASSIFICATION = {
   "targeted_sequencing": {
     ".+": {
       "platform": "ABI capillary sequencer",
-      "format": "TXT",
+      "data_format": "TXT",
       "data_subtype": "ABI sequence trace",
       "data_type": "Other",
       "experimental_strategy": "Capillary sequencing"
@@ -167,7 +167,7 @@ CLASSIFICATION = {
     "l3": {
       ".+maf.txt": {
         "platform": "Illumina HiSeq",
-        "format": "MAF",
+        "data_format": "MAF",
         "data_subtype": "Simple nucleotide variation",
         "data_type": "Simple nucleotide variation",
         "experimental_strategy": "DNA-Seq"
@@ -175,7 +175,7 @@ CLASSIFICATION = {
       "non-wt": {
         ".+maf.txt": {
           "platform": "Illumina HiSeq",
-          "format": "MAF",
+          "data_format": "MAF",
           "data_subtype": "Simple nucleotide variation",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "DNA-Seq"
@@ -183,7 +183,7 @@ CLASSIFICATION = {
       },
       ".+vcf": {
         "platform": "Illumina HiSeq",
-        "format": "VCF",
+        "data_format": "VCF",
         "data_subtype": "Simple nucleotide variation",
         "data_type": "Simple nucleotide variation",
         "experimental_strategy": "DNA-Seq"
@@ -195,28 +195,28 @@ CLASSIFICATION = {
       "expression": {
         ".+gene.quantification.txt": {
           "platform": "Illumina HiSeq",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Gene expression quantification",
           "data_type": "Gene expression",
           "experimental_strategy": "RNA-Seq"
         },
         ".+exon.quantification.txt": {
           "platform": "Illumina HiSeq",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Exon quantification",
           "data_type": "Gene expression",
           "experimental_strategy": "RNA-Seq"
         },
         ".+spljxn.quantification.txt": {
           "platform": "Illumina HiSeq",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Exon junction quantification",
           "data_type": "Gene expression",
           "experimental_strategy": "RNA-Seq"
         },
         ".+isoform.quantification.txt": {
           "platform": "Illumina HiSeq",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Isoform expression quantification",
           "data_type": "Gene expression",
           "experimental_strategy": "RNA-Seq"
@@ -225,14 +225,14 @@ CLASSIFICATION = {
       "mutation": {
         ".+maf.txt": {
           "platform": "Illumina HiSeq",
-          "format": "MAF",
+          "data_format": "MAF",
           "data_subtype": "Simple nucleotide variation",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "RNA-Seq"
         },
         ".+vcf": {
           "platform": "Illumina HiSeq",
-          "format": "VCF",
+          "data_format": "VCF",
           "data_subtype": "Simple nucleotide variation",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "RNA-Seq"
@@ -241,7 +241,7 @@ CLASSIFICATION = {
       "structural": {
         ".+vcf": {
           "platform": "Illumina HiSeq",
-          "format": "VCF",
+          "data_format": "VCF",
           "data_subtype": "Structural variation",
           "data_type": "Structural rearrangement",
           "experimental_strategy": "RNA-Seq"
@@ -253,14 +253,14 @@ CLASSIFICATION = {
     "l4": {
       ".+pdf": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "PDF",
+        "data_format": "PDF",
         "data_subtype": "Copy number summary",
         "data_type": "Copy number variation",
         "experimental_strategy": "Genotyping array"
       },
       ".+txt": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Copy number summary",
         "data_type": "Copy number variation",
         "experimental_strategy": "Genotyping array"
@@ -270,7 +270,7 @@ CLASSIFICATION = {
       "logr": {
         ".+txt": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Copy number estimate",
           "data_type": "Copy number variation",
           "experimental_strategy": "Genotyping array"
@@ -279,7 +279,7 @@ CLASSIFICATION = {
       "genotype": {
         ".+txt": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Genotypes",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "Genotyping array"
@@ -287,14 +287,14 @@ CLASSIFICATION = {
       },
       ".+-(n|t)-d.txt": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Genotypes",
         "data_type": "Simple nucleotide variation",
         "experimental_strategy": "Genotyping array"
       },
       ".+chp": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "CHP",
+        "data_format": "CHP",
         "data_subtype": "Probeset summary",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Genotyping array"
@@ -302,14 +302,14 @@ CLASSIFICATION = {
       "chp": {
         ".+birdseed-v2.+txt": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Genotypes",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "Genotyping array"
         },
         ".+chp": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "CHP",
+          "data_format": "CHP",
           "data_subtype": "Probeset summary",
           "data_type": "Raw microarray data",
           "experimental_strategy": "Genotyping array"
@@ -317,7 +317,7 @@ CLASSIFICATION = {
       },
       ".+(knsp|ksty).+txt": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Genotypes",
         "data_type": "Simple nucleotide variation",
         "experimental_strategy": "Genotyping array"
@@ -325,7 +325,7 @@ CLASSIFICATION = {
       "cnmz": {
         ".+cnmz.txt": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Probeset call",
           "data_type": "Copy number variation",
           "experimental_strategy": "Genotyping array"
@@ -334,7 +334,7 @@ CLASSIFICATION = {
       "txt": {
         ".+txt": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Genotypes",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "Genotyping array"
@@ -343,7 +343,7 @@ CLASSIFICATION = {
       "signal": {
         ".+txt": {
           "platform": "Affymetrix SNP Array 6.0",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Copy number estimate",
           "data_type": "Copy number variation",
           "experimental_strategy": "Genotyping array"
@@ -351,14 +351,14 @@ CLASSIFICATION = {
       },
       ".+cn_level2_log2.+txt": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Copy number estimate",
         "data_type": "Copy number variation",
         "experimental_strategy": "Genotyping array"
       },
       "target-\\w{2}-\\w{6}-\\w{3}-\\w{3}.txt": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Genotypes",
         "data_type": "Simple nucleotide variation",
         "experimental_strategy": "Genotyping array"
@@ -367,7 +367,7 @@ CLASSIFICATION = {
     "l3": {
       ".+txt": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Copy number segmentation",
         "data_type": "Copy number variation",
         "experimental_strategy": "Genotyping array"
@@ -376,14 +376,14 @@ CLASSIFICATION = {
     "l1": {
       ".+cel": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "CEL",
+        "data_format": "CEL",
         "data_subtype": "Raw intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Genotyping array"
       },
       ".+idat": {
         "platform": "Affymetrix SNP Array 6.0",
-        "format": "idat",
+        "data_format": "idat",
         "data_subtype": "Raw intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Genotyping array"
@@ -395,7 +395,7 @@ CLASSIFICATION = {
       "platform": "Hospital Record",
       "data_subtype": "Clinical data",
       "data_type": "Clinical",
-      "format": "xlsx"
+      "data_format": "xlsx"
     },
     "harmonized": {
       ".+harmonized.(xls|xlsx)": {
@@ -403,7 +403,7 @@ CLASSIFICATION = {
         "tag": "harmonized",
         "data_subtype": "Clinical data",
         "data_type": "Clinical",
-        "format": "xlsx"
+        "data_format": "xlsx"
       }
     }
   },
@@ -411,7 +411,7 @@ CLASSIFICATION = {
     "l2": {
       ".+txt": {
         "data_type": "Gene expression",
-        "format": "TXT",
+        "data_format": "TXT",
         "platform": "MegaPlex TaqMan",
         "tag": "summary",
         "data_subtype": "miRNA quantification",
@@ -421,14 +421,14 @@ CLASSIFICATION = {
     "l1": {
       ".+(xls|xlsx)": {
         "platform": "MegaPlex TaqMan",
-        "format": "xlsx",
+        "data_format": "xlsx",
         "data_subtype": "miRNA quantification",
         "data_type": "Gene expression",
         "experimental_strategy": "RT-PCR"
       },
       ".+txt": {
         "platform": "MegaPlex TaqMan",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "miRNA quantification",
         "data_type": "Gene expression",
         "experimental_strategy": "RT-PCR"
@@ -441,7 +441,7 @@ CLASSIFICATION = {
         "circos": {
           "somaticcircos.+png": {
             "platform": "Complete Genomics",
-            "format": "PNG",
+            "data_format": "PNG",
             "data_subtype": "Structural variation",
             "data_type": "Structural rearrangement",
             "experimental_strategy": "DNA-Seq"
@@ -454,7 +454,7 @@ CLASSIFICATION = {
         "cgi": {
           ".+tsv": {
             "platform": "Complete Genomics",
-            "format": "TSV",
+            "data_format": "TSV",
             "data_subtype": "Copy number segmentation",
             "data_type": "Copy number variation",
             "experimental_strategy": "DNA-Seq"
@@ -466,14 +466,14 @@ CLASSIFICATION = {
           "fullmafsvcfs": {
             ".+maf.txt": {
               "platform": "Complete Genomics",
-              "format": "MAF",
+              "data_format": "MAF",
               "data_subtype": "Simple somatic mutation",
               "data_type": "Simple nucleotide variation",
               "experimental_strategy": "DNA-Seq"
             },
             ".+vcf.bz2": {
               "platform": "Complete Genomics",
-              "format": "VCF",
+              "data_format": "VCF",
               "data_subtype": "Simple nucleotide variation",
               "data_type": "Simple nucleotide variation",
               "experimental_strategy": "DNA-Seq"
@@ -481,7 +481,7 @@ CLASSIFICATION = {
             "illumina": {
               ".+vcf.bz2": {
                 "platform": "Illumina HiSeq",
-                "format": "VCF",
+                "data_format": "VCF",
                 "data_subtype": "Simple nucleotide variation",
                 "data_type": "Simple nucleotide variation",
                 "experimental_strategy": "DNA-Seq"
@@ -491,7 +491,7 @@ CLASSIFICATION = {
           "somaticfilteredmafs": {
             "somatic.+maf.txt": {
               "platform": "Complete Genomics",
-              "format": "MAF",
+              "data_format": "MAF",
               "data_subtype": "Simple somatic mutation",
               "data_type": "Simple nucleotide variation",
               "experimental_strategy": "DNA-Seq"
@@ -500,14 +500,14 @@ CLASSIFICATION = {
           "analysis": {
             ".*variant.+tsv": {
               "platform": "Complete Genomics",
-              "format": "TSV",
+              "data_format": "TSV",
               "data_subtype": "Simple nucleotide variation",
               "data_type": "Simple nucleotide variation",
               "experimental_strategy": "DNA-Seq"
             },
             ".+somatic.+xlsx": {
               "platform": "Complete Genomics",
-              "format": "xlsx",
+              "data_format": "xlsx",
               "data_subtype": "Simple somatic mutation",
               "data_type": "Simple nucleotide variation",
               "experimental_strategy": "DNA-Seq"
@@ -517,7 +517,7 @@ CLASSIFICATION = {
         "bcca": {
           ".+maf.txt": {
             "platform": "Complete Genomics",
-            "format": "MAF",
+            "data_format": "MAF",
             "data_subtype": "Simple nucleotide variation",
             "data_type": "Simple nucleotide variation",
             "experimental_strategy": "DNA-Seq"
@@ -525,14 +525,14 @@ CLASSIFICATION = {
         },
         ".+dna_(tumor|normal).maf.txt": {
           "platform": "Complete Genomics",
-          "format": "MAF",
+          "data_format": "MAF",
           "data_subtype": "Simple nucleotide variation",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "DNA-Seq"
         },
         ".+somatic.maf.txt": {
           "platform": "Complete Genomics",
-          "format": "MAF",
+          "data_format": "MAF",
           "data_subtype": "Simple somatic mutation",
           "data_type": "Simple nucleotide variation",
           "experimental_strategy": "DNA-Seq"
@@ -543,14 +543,14 @@ CLASSIFICATION = {
           "junctions": {
             "concatenatedjunctionfile.+txt": {
               "platform": "Complete Genomics",
-              "format": "TXT",
+              "data_format": "TXT",
               "data_subtype": "Structual junction",
               "data_type": "Structural rearrangement",
               "experimental_strategy": "DNA-Seq"
             },
             "concatenatedjunctionfile.+xlsx": {
               "platform": "Complete Genomics",
-              "format": "xlsx",
+              "data_format": "xlsx",
               "data_subtype": "Structual junction",
               "data_type": "Structural rearrangement",
               "experimental_strategy": "DNA-Seq"
@@ -559,7 +559,7 @@ CLASSIFICATION = {
         },
         ".+vcf": {
           "platform": "Complete Genomics",
-          "format": "VCF",
+          "data_format": "VCF",
           "data_subtype": "Structural variation",
           "data_type": "Structural rearrangement",
           "experimental_strategy": "DNA-Seq"
@@ -571,14 +571,14 @@ CLASSIFICATION = {
     "l4": {
       ".+xlsx": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "xlsx",
+        "data_format": "xlsx",
         "data_subtype": "Gene expression summary",
         "data_type": "Gene expression",
         "experimental_strategy": "Gene expression array"
       },
       ".+pdf": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "PDF",
+        "data_format": "PDF",
         "data_subtype": "Gene expression summary",
         "data_type": "Gene expression",
         "experimental_strategy": "Gene expression array"
@@ -587,7 +587,7 @@ CLASSIFICATION = {
     "l2": {
       ".+txt": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Normalized intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Gene expression array"
@@ -595,7 +595,7 @@ CLASSIFICATION = {
       "chp": {
         ".+chp": {
           "platform": "Affymetrix U133 Plus 2",
-          "format": "CHP",
+          "data_format": "CHP",
           "data_subtype": "Probeset summary",
           "data_type": "Raw microarray data",
           "experimental_strategy": "Gene expression array"
@@ -604,7 +604,7 @@ CLASSIFICATION = {
       "raw": {
         ".+exon.+txt": {
           "platform": "Affymetrix U133 Plus 2",
-          "format": "TXT",
+          "data_format": "TXT",
           "data_subtype": "Normalized intensities",
           "data_type": "Raw microarray data",
           "experimental_strategy": "Gene expression array"
@@ -613,7 +613,7 @@ CLASSIFICATION = {
       "ber": {
         ".+exon.+batcheffectremoved.+txt": {
           "data_type": "Raw microarray data",
-          "format": "TXT",
+          "data_format": "TXT",
           "platform": "Affymetrix U133 Plus 2",
           "tag": "batch_effect_removed",
           "data_subtype": "Normalized intensities",
@@ -622,14 +622,14 @@ CLASSIFICATION = {
       },
       "exon.+txt": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Exon quantification",
         "data_type": "Gene expression",
         "experimental_strategy": "Gene expression array"
       },
       ".+gct": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "GCT",
+        "data_format": "GCT",
         "data_subtype": "Normalized intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Gene expression array"
@@ -638,7 +638,7 @@ CLASSIFICATION = {
     "l3": {
       ".+gct": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "GCT",
+        "data_format": "GCT",
         "data_subtype": "Gene expression quantification",
         "data_type": "Gene expression",
         "experimental_strategy": "Gene expression array"
@@ -647,7 +647,7 @@ CLASSIFICATION = {
         "core": {
           ".+core_gene.+txt": {
             "platform": "Affymetrix U133 Plus 2",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Gene expression quantification",
             "data_type": "Gene expression",
             "experimental_strategy": "Gene expression array"
@@ -656,7 +656,7 @@ CLASSIFICATION = {
         "extended": {
           ".+extended_gene.+txt": {
             "platform": "Affymetrix U133 Plus 2",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Gene expression quantification",
             "data_type": "Gene expression",
             "experimental_strategy": "Gene expression array"
@@ -665,7 +665,7 @@ CLASSIFICATION = {
         "full": {
           ".+full_gene.+txt": {
             "platform": "Affymetrix U133 Plus 2",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Gene expression quantification",
             "data_type": "Gene expression",
             "experimental_strategy": "Gene expression array"
@@ -676,7 +676,7 @@ CLASSIFICATION = {
         "core": {
           ".+core_transcript.+txt": {
             "platform": "Affymetrix U133 Plus 2",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Normalized intensities",
             "data_type": "Raw microarray data",
             "experimental_strategy": "Gene expression array"
@@ -685,7 +685,7 @@ CLASSIFICATION = {
         "extended": {
           ".+extended_transcript.+txt": {
             "platform": "Affymetrix U133 Plus 2",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Normalized intensities",
             "data_type": "Raw microarray data",
             "experimental_strategy": "Gene expression array"
@@ -694,7 +694,7 @@ CLASSIFICATION = {
         "full": {
           ".+full_transcript.+txt": {
             "platform": "Affymetrix U133 Plus 2",
-            "format": "TXT",
+            "data_format": "TXT",
             "data_subtype": "Normalized intensities",
             "data_type": "Raw microarray data",
             "experimental_strategy": "Gene expression array"
@@ -703,7 +703,7 @@ CLASSIFICATION = {
       },
       ".+txt": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Gene expression quantification",
         "data_type": "Gene expression",
         "experimental_strategy": "Gene expression array"
@@ -712,7 +712,7 @@ CLASSIFICATION = {
     "l1": {
       ".+cel": {
         "platform": "Affymetrix U133 Plus 2",
-        "format": "CEL",
+        "data_format": "CEL",
         "data_subtype": "Raw intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Gene expression array"
@@ -722,7 +722,7 @@ CLASSIFICATION = {
   "kinome": {
     ".+kinomelinkingtable.+txt": {
       "platform": "ABI capillary sequencer",
-      "format": "TXT",
+      "data_format": "TXT",
       "data_subtype": "ABI sequence trace",
       "data_type": "Other",
       "experimental_strategy": "Capillary sequencing"
@@ -732,7 +732,7 @@ CLASSIFICATION = {
     "l2": {
       ".+txt": {
         "platform": "Illumina Human Methylation 450",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Methylation array"
@@ -741,7 +741,7 @@ CLASSIFICATION = {
     "l3": {
       ".+txt": {
         "platform": "Illumina Human Methylation 450",
-        "format": "TXT",
+        "data_format": "TXT",
         "data_subtype": "Methylation beta value",
         "data_type": "DNA methylation",
         "experimental_strategy": "Methylation array"
@@ -750,14 +750,14 @@ CLASSIFICATION = {
     "l1": {
       ".+idat": {
         "platform": "Illumina Human Methylation 450",
-        "format": "idat",
+        "data_format": "idat",
         "data_subtype": "Raw intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Methylation array"
       },
       ".+pair": {
         "platform": "Illumina Human Methylation 450",
-        "format": "PAIR",
+        "data_format": "PAIR",
         "data_subtype": "Raw intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Methylation array"

@@ -60,7 +60,8 @@ DATA_TYPES = {
     "Copy number variation": [
         "Copy number segmentation", "Copy number estimate",
         "Normalized copy numbers", "Copy number germline variation",
-        "LOH", "Copy number QC metrics", "Copy number variation"
+        "LOH", "Copy number QC metrics", "Copy number variation",
+        "Copy number summary", "Probeset call"
     ],
     "Simple nucleotide variation": [
         "Simple germline variation", "Genotypes", "Simple somatic mutation",
@@ -69,7 +70,7 @@ DATA_TYPES = {
     "Gene expression": [
         "Gene expression quantification", "miRNA quantification",
         "Isoform expression quantification", "Exon junction quantification",
-        "Exon quantification"
+        "Exon quantification", "Gene expression summary"
     ],
     "Protein expression": [
         "Protein expression quantification", "Protein expression control"
@@ -77,7 +78,7 @@ DATA_TYPES = {
     "Raw microarray data": [
         "Raw intensities", "Normalized intensities", "CGH array QC",
         "Intensities Log2Ratio", "Expression control", "Intensities",
-        "Methylation array QC metrics"
+        "Methylation array QC metrics", "Probeset summary"
     ],
     "DNA methylation": [
         "Methylation beta value", "Bisulfite sequence alignment",
@@ -88,7 +89,7 @@ DATA_TYPES = {
         "Diagnostic image", "Pathology report"
     ],
     "Structural rearrangement": [
-        "Structural germline variation", "Structural variation"
+        "Structural germline variation", "Structural variation", "Structual junction"
     ],
     "Raw sequencing data": [
         "Coverage WIG", "Sequencing tag", "Sequencing tag counts",
@@ -119,7 +120,8 @@ DATA_FORMATS = [
     "TXT", "VCF", "SVS", "idat", "CEL", "XML", "WIG",
     "PDF", "TIF", "TSV", "FSA", "SIF", "JPG", "PNG",
     "dat", "Biotab", "FA", "TR", "MAF", "BED", "DGE-Tag",
-    "HTML", "MAGE-Tab", "GAF", "sdf", "BAM", "TAR", "TARGZ"
+    "HTML", "MAGE-Tab", "GAF", "sdf", "BAM", "TAR", "TARGZ",
+    "BW", "CHP", "GCT", "PAIR", "ZIP", "xlsx"
 ]
 
 EXPERIMENTAL_STRATEGIES = [

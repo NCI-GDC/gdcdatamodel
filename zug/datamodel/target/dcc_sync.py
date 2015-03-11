@@ -11,12 +11,12 @@ from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from signpostclient import SignpostClient
 
-from psqlgraph import PsqlNode, PsqlGraphDriver
+from psqlgraph import PsqlNode, PsqlEdge, PsqlGraphDriver
 
 from zug.datamodel.target.classification import CLASSIFICATION
 from zug.datamodel.target import PROJECTS
 
-from zug.datamodel.tcga_dcc_sync import url_for  # TODO put this somewhere else
+from zug.datamodel.tcga_dcc_sync import url_for, CLASSIFICATION_ATTRS  # TODO put this somewhere else
 
 import libcloud.storage.drivers.s3
 # upload in 500MB chunks
@@ -68,10 +68,13 @@ def get_in(data_dict, keys):
 
 def classify(path):
     filename = path.pop()
-    # TODO need to downcase
-    potential_classifications = get_in(CLASSIFICATION, path)
+    path = [d.lower() for d in path]
+    try:
+        potential_classifications = get_in(CLASSIFICATION, path)
+    except KeyError:
+        return None
     for regex, classification in potential_classifications.iteritems():
-        if re.match(regex, filename):
+        if re.match(regex, filename, re.IGNORECASE):
             return classification
 
 
@@ -94,6 +97,63 @@ class MD5SummingStream(object):
 
     def hexdigest(self):
         return self.md5.hexdigest()
+
+
+class TARGETDCCEdgeBuilder(object):
+
+    def __init__(self, file_node, graph, logger):
+        self.file_node = file_node
+        self.graph = graph
+        self.log = logger
+
+    def tie_file_to_attribute(self, file_node, attr, value):
+        LABEL_MAP = {
+            "platform": "generated_from",
+            "data_subtype": "member_of",
+            "data_format": "member_of",
+            "tag": "member_of",
+            "experimental_strategy": "member_of"
+        }
+        if not isinstance(value, list):
+            # this is to handle the thing where tag is
+            # sometimes a list and sometimes a string
+            value = [value]
+        for val in value:
+            attr_node = self.graph.node_lookup_one(
+                label=attr,
+                property_matches={"name": val},
+            )
+            if not attr_node:
+                self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
+            maybe_edge_to_attr_node = self.graph.edge_lookup_one(
+                label=LABEL_MAP[attr],
+                src_id=file_node.node_id,
+                dst_id=attr_node.node_id
+            )
+            if not maybe_edge_to_attr_node:
+                edge_to_attr_node = PsqlEdge(
+                    label=LABEL_MAP[attr],
+                    src_id=file_node.node_id,
+                    dst_id=attr_node.node_id
+                )
+                self.graph.edge_insert(edge_to_attr_node)
+
+    def build(self):
+        self.classify()
+
+    def classify(self):
+        url = self.file_node.system_annotations["url"]
+        project = url.split("/")[3]
+        path = re.sub(".*\/{}\/((Discovery)|(Validation)|(Model_Systems))\/".format(project), "", url).split("/")
+        self.log.info("classifying with path %s", path)
+        classification = classify(path)
+        self.log.info("classified as %s", classification)
+        if not classification:
+            self.log.warning("could not classify file %s", self.file_node)
+            return
+        for attr in CLASSIFICATION_ATTRS:
+            if classification.get(attr):  # some don't have tags
+                self.tie_file_to_attribute(self.file_node, attr, classification[attr])
 
 
 class TARGETDCCProjectSyncer(object):
@@ -178,41 +238,48 @@ class TARGETDCCFileSyncer(object):
                                         .labels("file")\
                                         .sysan({"source": "target_dcc", "url": self.url}).scalar()
             if maybe_this_file:
-                self.log.info("Skipping file %s, since it was found in database as %s", self.url, maybe_this_file)
-                return
-            # the first thing we try to do is upload it to the object store,
-            # since we need to get an md5sum before putting it in the database
-            key = self.url.replace("https://target-data.nci.nih.gov/", "")
-            self.log.info("requesting file %s from target dcc", key)
-            resp = requests.get(self.url, auth=self.dcc_auth, stream=True)
-            resp.raise_for_status()
-            self.log.info("streaming %s from target into object store", key)
-            stream = MD5SummingStream(resp.iter_content(1024 * 1024))
-            obj = self.container.upload_object_via_stream(stream, key)
-            # sanity check on length
-            assert int(resp.headers["content-length"]) == int(obj.size)
-            # ok, now we can allocate an id
-            self.log.info("allocating id for %s from signpost", key)
-            doc = self.signpost.create(urls=[url_for(obj)])
-            file_node = PsqlNode(
-                node_id=doc.did,
-                label="file",
-                acl=self.acl,
-                properties={
-                    "file_name": self.filename,
-                    "md5sum": stream.hexdigest(),
-                    "file_size": int(obj.size),
-                    "submitter_id": None,
-                    "state": "live",
-                    "state_comment": None,
-                },
-                system_annotations={
-                    "source": "target_dcc",
-                    "md5_source": "gdc_import_process",
-                    "url": self.url
-                }
-            )
-            doc.refresh()
-            assert doc.urls
-            self.log.info("inserting %s in graph as %s", key, file_node)
-            self.graph.node_insert(file_node)
+                file_node = maybe_this_file
+                self.log.info("Not downloading file %s, since it was found in database as %s", self.url, maybe_this_file)
+            else:
+                # the first thing we try to do is upload it to the object store,
+                # since we need to get an md5sum before putting it in the database
+                key = self.url.replace("https://target-data.nci.nih.gov/", "")
+                self.log.info("requesting file %s from target dcc", key)
+                resp = requests.get(self.url, auth=self.dcc_auth, stream=True)
+                resp.raise_for_status()
+                self.log.info("streaming %s from target into object store", key)
+                stream = MD5SummingStream(resp.iter_content(1024 * 1024))
+                obj = self.container.upload_object_via_stream(stream, key)
+                # sanity check on length
+                assert int(resp.headers["content-length"]) == int(obj.size)
+                # ok, now we can allocate an id
+                self.log.info("allocating id for %s from signpost", key)
+                doc = self.signpost.create(urls=[url_for(obj)])
+                file_node = PsqlNode(
+                    node_id=doc.did,
+                    label="file",
+                    acl=self.acl,
+                    properties={
+                        "file_name": self.filename,
+                        "md5sum": stream.hexdigest(),
+                        "file_size": int(obj.size),
+                        "submitter_id": None,
+                        "state": "live",
+                        "state_comment": None,
+                    },
+                    system_annotations={
+                        "source": "target_dcc",
+                        "md5_source": "gdc_import_process",
+                        "url": self.url
+                    }
+                )
+                doc.refresh()
+                assert doc.urls
+                self.log.info("inserting %s in graph as %s", key, file_node)
+                self.graph.node_insert(file_node)
+            self.log.info("attempting to classify %s", file_node)
+            builder = TARGETDCCEdgeBuilder(file_node, self.graph, self.log)
+            try:
+                builder.build()
+            except Exception:
+                self.log.exception("failed to classify %s", file_node)
