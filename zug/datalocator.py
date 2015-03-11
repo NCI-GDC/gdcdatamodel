@@ -38,10 +38,14 @@ class DataLocator(object):
                     file_node = self.graph.nodes().props({"file_name": name})\
                                                   .sysan({"analysis_id": analysis_id}).one()
                 doc = self.signpost.get(file_node.node_id)
-                url = url_for(obj)
-                doc.urls = [url]
-                self.log.info("patching node %s with url %s", file_node, url)
-                doc.patch()
+                if not doc.urls:  # only set the url if it doesn't have one already
+                    url = url_for(obj)
+                    doc.urls = [url]
+                    self.log.info("patching node %s with url %s", file_node, url)
+                    doc.patch()
+                else:
+                    self.log.info("document already has urls: %s, not changing", doc.urls)
+                self.graph.node_update(node=file_node, properties={"state": "live"})
             except:
                 self.log.exception("couldn't sync %s/%s", analysis_id, name)
                 continue

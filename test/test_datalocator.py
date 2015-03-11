@@ -60,7 +60,8 @@ class DataLocatorTest(unittest.TestCase):
         doc = self.signpost_client.create()
         self.graph.node_insert(node=PsqlNode(node_id=doc.did,
                                              label='file',
-                                             properties={"file_name": "baz.txt"},
+                                             properties={"file_name": "baz.txt",
+                                                         "state": "submitted"},
                                              system_annotations={"analysis_id": "abc123"}))
         cont = self.storage_client.get_container("test")
         self.storage_client.upload_object_via_stream("data", cont, "abc123/baz.txt")
@@ -70,3 +71,6 @@ class DataLocatorTest(unittest.TestCase):
         self.locator.sync("test")
         doc.refresh()
         self.assertEqual(doc.urls, ["file://local/test/abc123/baz.txt"])
+        with self.graph.session_scope():
+            node = self.graph.nodes().ids(doc.did).one()
+            self.assertEqual(node["state"], "live")
