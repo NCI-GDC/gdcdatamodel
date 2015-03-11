@@ -25,6 +25,9 @@ GRAPH = None
 PARTICIPANTS = None
 DATA_TYPES = None
 EXPERIMENTAL_STRATEGIES = None
+RELEVANT_NODES = None
+ANNOTATIONS = None
+ANNOTATION_ENTITIES = None
 
 
 class PsqlGraph2JSON(object):
@@ -161,6 +164,8 @@ class PsqlGraph2JSON(object):
     def _cache_annotations(self):
         if not self.annotations:
             self.annotations = list(self.nodes_labeled('annotation'))
+        if self.annotation_entities:
+            return
         pbar = self.pbar('Caching annotations: ', len(self.annotations))
         self.annotation_entities = {}
         for a in self.annotations:
@@ -727,20 +732,21 @@ class PsqlGraph2JSON(object):
         """
 
         self._cache_all()
-        total_part_docs, total_ann_docs = [], []
+        part_docs, ann_docs, file_docs = [], {}, {}
         if not participants:
             participants = self.participants
         pbar = self.pbar('Denormalizing participants ', len(participants))
-        files = {}
         for n in participants:
-            part_doc, file_docs, ann_docs = self.denormalize_participant(n)
-            total_part_docs.append(part_doc)
-            total_ann_docs += ann_docs
+            pa, fi, an = self.denormalize_participant(n)
+            part_docs.append(pa)
+            for a in an:
+                if a['annotation_id'] not in ann_docs:
+                    ann_docs[a['annotation_id']] = a
             for f in file_docs:
-                self.upsert_file_into_dict(files, f)
+                self.upsert_file_into_dict(file_docs, f)
             pbar.update(pbar.currval+1)
         pbar.finish()
-        return total_part_docs, files.values(), total_ann_docs
+        return part_docs, file_docs.values(), ann_docs.values()
 
     def denormalize_projects(self, projects=None):
         """If projects is not specified, denormalize all projects in
@@ -751,7 +757,7 @@ class PsqlGraph2JSON(object):
 
         self._cache_all()
         if not projects:
-            projects = self.projects()
+            projects = self.projects
         project_docs = []
         pbar = self.pbar('Denormalizing projects ', len(projects))
         for project in projects:
@@ -817,8 +823,9 @@ class PsqlGraph2JSON(object):
         for project_doc in project_docs:
             self.validate_project_file_counts(project_doc, file_docs)
 
-    def parallel_denorm_participants(self, processes, sample_size=None):
-        global GRAPH, EXPERIMENTAL_STRATEGIES, DATA_TYPES, PARTICIPANTS
+    def parallel_denormalize_participants(self, processes, sample_size=None):
+        global GRAPH, EXPERIMENTAL_STRATEGIES, DATA_TYPES, PARTICIPANTS,\
+            RELEVANT_NODES, ANNOTATIONS, ANNOTATION_ENTITIES
 
         self._cache_all()
 
@@ -836,30 +843,30 @@ class PsqlGraph2JSON(object):
         EXPERIMENTAL_STRATEGIES = self.experimental_strategies
         DATA_TYPES = self.data_types
         PARTICIPANTS = {p.node_id: p for p in participants}
+        RELEVANT_NODES = self.relevant_nodes
+        ANNOTATIONS = self.annotations
+        ANNOTATION_ENTITIES = self.annotation_entities
 
         print 'Denormalizing {} participants'.format(part_count)
-        print 'Time\tPerc\tParts\tLeft\tFiles\tAnn'
+        # print 'Time\tPerc\tParts\tLeft\tFiles\tAnn'
 
         # Create pool, enqueue all participants, parse them as the return
         pool = AsyncProcessPool(processes)
-        # pool.start(denorm_participant_worker, participants)
-        pool.start(lambda x: (x, x, x), participants)
+        pool.start(denorm_participant_worker, participants)
         for pa, fi, an in pool:
-            # print '--> {}\t{}\t{}\t'.format(len(pa), len(fi), len(an)),
-            # for f in fi:
-            #     self.upsert_file_into_dict(file_docs, f)
-            # for a in an:
-            #     ann_docs[a['annotation_id']] = a
+            for f in fi:
+                self.upsert_file_into_dict(file_docs, f)
+            for a in an:
+                ann_docs[a['annotation_id']] = a
             part_docs.append(pa)
-            # pbar.update(len(part_docs))
-            print '\n{}\t{}%\t{}\t{}\t{}\t{}'.format(
-                int(time.time()) % 10000, len(part_docs)*100/part_count,
-                len(part_docs), part_count - len(part_docs),
-                len(file_docs), len(ann_docs))
-
-            sys.stdout.flush()
-
+            pbar.update(len(part_docs))
+            # print '{}\t{}%\t{}\t{}\t{}\t{}'.format(
+            #     int(time.time()) % 10000, len(part_docs)*100/part_count,
+            #     len(part_docs), part_count - len(part_docs),
+            #     len(file_docs), len(ann_docs))
+            # sys.stdout.flush()
         pool.terminate()
+        pbar.finish()
         return part_docs, file_docs.values(), ann_docs.values()
 
 
@@ -868,6 +875,9 @@ def denorm_participant_worker(participant):
     c.G = GRAPH
     c.experimental_strategies = EXPERIMENTAL_STRATEGIES
     c.data_types = DATA_TYPES
+    c.relevant_nodes = RELEVANT_NODES
+    c.annotations = ANNOTATIONS
+    c.annotation_entities = ANNOTATION_ENTITIES
 
     node = PARTICIPANTS[participant.node_id]
     part_doc, file_docs, ann_docs = c.denormalize_participant(node)
