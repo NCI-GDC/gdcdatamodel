@@ -242,6 +242,7 @@ def annotation_body(nested=True):
     annotation.properties.participant_id = STRING
     annotation.properties.entity_type = STRING
     annotation.properties.entity_id = STRING
+    annotation.properties.entity_submitter_id = STRING
     annotation.properties.pop('item_id', None)
     return annotation
 

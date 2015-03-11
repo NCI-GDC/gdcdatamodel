@@ -55,5 +55,6 @@ class TestElasticsearchMappings(unittest.TestCase):
         properties = {'category', 'status', 'classification',
                       'creator', 'created_datetime', 'notes',
                       'submitter_id', 'project', 'entity_type',
-                      'entity_id', 'annotation_id', 'participant_id'}
+                      'entity_id', 'annotation_id', 'participant_id',
+                      'entity_submitter_id'}
         self.assertEqual(properties, set(m.keys()))
