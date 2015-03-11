@@ -16,6 +16,8 @@ from elasticsearch import Elasticsearch
 log = get_logger("gdc_elasticsearch")
 log.setLevel(level=logging.INFO)
 
+BATCH_SIZE = 256
+
 
 class GDCElasticsearch(object):
 
@@ -47,7 +49,7 @@ class GDCElasticsearch(object):
         pbar.update(0)
         return pbar
 
-    def bulk_upload(self, index, doc_type, docs, batch_size=256):
+    def bulk_upload(self, index, doc_type, docs, batch_size=BATCH_SIZE):
         """Chunk and upload docs to Elasticsearch.  This function will raise
         an exception of there were errors inserting any of the
         documents
@@ -59,7 +61,6 @@ class GDCElasticsearch(object):
 
         """
         if not docs:
-            log.warning('No {} docs to bulk upload'.format(doc_type))
             return
         if not self.es:
             log.error('No elasticsearch driver initialized')
@@ -107,9 +108,17 @@ class GDCElasticsearch(object):
                 body=get_annotation_es_mapping()),
         ]
 
+    def index_populate(self, index, part_docs=[], file_docs=[],
+                       ann_docs=[], project_docs=[],
+                       batch_size=BATCH_SIZE):
+        self.bulk_upload(index, 'project', project_docs, batch_size)
+        self.bulk_upload(index, 'annotation', ann_docs, batch_size)
+        self.bulk_upload(index, 'file', file_docs, batch_size)
+        self.bulk_upload(index, 'participant', part_docs, batch_size)
+
     def index_create_and_populate(self, index, part_docs=[],
-                                  file_docs=[], ann_docs=[],
-                                  project_docs=[]):
+                                  file_docs=[], ann_docs=[], project_docs=[],
+                                  batch_size=BATCH_SIZE):
         """Create a new index with name `index` and add given documents to it.
         `part_docs` or `project_docs` are empty, the will be generated
         automatically.
@@ -143,10 +152,7 @@ class GDCElasticsearch(object):
             instance of the PsqlGraph2JSON class, so it cannot create
             those docs.""")
             project_docs = self.p2j.denormalize_projects()
-        self.bulk_upload(index, 'project', project_docs)
-        self.bulk_upload(index, 'annotation', ann_docs)
-        self.bulk_upload(index, 'participant', part_docs)
-        self.bulk_upload(index, 'file', file_docs)
+        self.index_populate(index, batch_size)
 
     def swap_index(self, old_index, new_index, alias):
         """Atomically switch the resolution of `alias` from `old_index` to
@@ -189,7 +195,7 @@ class GDCElasticsearch(object):
             return None
 
     def deploy_alias(self, alias, part_docs=[], file_docs=[],
-                     ann_docs=[], project_docs=[]):
+                     ann_docs=[], project_docs=[], batch_size=BATCH_SIZE):
         """Create a new index with an incremented name, populate it with
         :func index_create_and_populate: and atomically switch the
         alias to point to the new index
@@ -199,7 +205,7 @@ class GDCElasticsearch(object):
         new_index = self.get_next_index(alias)
         self.index_create_and_populate(new_index, part_docs,
                                        file_docs, ann_docs,
-                                       project_docs)
+                                       project_docs, batch_size)
         old_index = self.lookup_index_by_alias(alias)
         if old_index:
             self.swap_index(old_index, new_index, alias)

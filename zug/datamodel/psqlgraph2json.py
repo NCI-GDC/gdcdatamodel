@@ -10,11 +10,8 @@ from psqlgraph import Edge
 import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
-from copy import copy
-import json
+from copy import copy, deepcopy
 from cdisutils.pool import AsyncProcessPool
-import sys
-import time
 
 
 log = get_logger("psqlgraph2json")
@@ -142,6 +139,7 @@ class PsqlGraph2JSON(object):
         self._cache_experimental_strategies()
         self._cache_data_types()
         self._cache_annotations()
+        self._cache_relevant_nodes()
         if not self.participants:
             print 'Caching participants...'
             self.participants = list(self.nodes_labeled('participant'))
@@ -466,7 +464,15 @@ class PsqlGraph2JSON(object):
         for a in annotations.itervalues():
             a['project'] = project
 
-        return participant, participant['files'], annotations.values()
+        # Copy the files with all participants
+        files = deepcopy(participant['files'])
+
+        # Trim other participants from fiels
+        for f in participant['files']:
+            f['participants'] = [p for p in f['participants']
+                                 if p['participant_id'] == node.node_id]
+
+        return participant, files, annotations.values()
 
     def prune_participant(self, relevant_nodes, ptree, keys):
         """Start with whole participant tree and remove any nodes that did not
@@ -742,7 +748,7 @@ class PsqlGraph2JSON(object):
             for a in an:
                 if a['annotation_id'] not in ann_docs:
                     ann_docs[a['annotation_id']] = a
-            for f in file_docs:
+            for f in fi:
                 self.upsert_file_into_dict(file_docs, f)
             pbar.update(pbar.currval+1)
         pbar.finish()
@@ -774,10 +780,13 @@ class PsqlGraph2JSON(object):
 
         """
         ann_doc = self._get_base_doc(node)
-        items = self.G.neighbors(node)
-        assert len(items) == 1
-        ann_doc['entity_type'] = items[0].label
-        ann_doc['entity_id'] = items[0].node_id
+        entities = self.G.neighbors(node)
+        assert len(entities) == 1
+        entity = entities[0]
+        ann_doc['entity_type'] = entity.label
+        ann_doc['entity_id'] = entity.node_id
+        if 'submitter_id' in entity.properties:
+            ann_doc['entity_submitter_id'] = entity['submitter_id']
         return ann_doc
 
     def denormalize_all(self):
@@ -824,6 +833,10 @@ class PsqlGraph2JSON(object):
             self.validate_project_file_counts(project_doc, file_docs)
 
     def parallel_denormalize_participants(self, processes, sample_size=None):
+        """DO NOT USE.  It's not tested to work
+
+        """
+
         global GRAPH, EXPERIMENTAL_STRATEGIES, DATA_TYPES, PARTICIPANTS,\
             RELEVANT_NODES, ANNOTATIONS, ANNOTATION_ENTITIES
 
@@ -848,7 +861,6 @@ class PsqlGraph2JSON(object):
         ANNOTATION_ENTITIES = self.annotation_entities
 
         print 'Denormalizing {} participants'.format(part_count)
-        # print 'Time\tPerc\tParts\tLeft\tFiles\tAnn'
 
         # Create pool, enqueue all participants, parse them as the return
         pool = AsyncProcessPool(processes)
@@ -860,11 +872,6 @@ class PsqlGraph2JSON(object):
                 ann_docs[a['annotation_id']] = a
             part_docs.append(pa)
             pbar.update(len(part_docs))
-            # print '{}\t{}%\t{}\t{}\t{}\t{}'.format(
-            #     int(time.time()) % 10000, len(part_docs)*100/part_count,
-            #     len(part_docs), part_count - len(part_docs),
-            #     len(file_docs), len(ann_docs))
-            # sys.stdout.flush()
         pool.terminate()
         pbar.finish()
         return part_docs, file_docs.values(), ann_docs.values()
