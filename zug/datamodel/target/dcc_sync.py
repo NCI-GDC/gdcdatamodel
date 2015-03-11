@@ -4,14 +4,24 @@ from urlparse import urljoin
 import requests
 import re
 import hashlib
+from functools import partial
 from lxml import html
 
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
+from signpostclient import SignpostClient
 
-from psqlgraph import PsqlNode
+from psqlgraph import PsqlNode, PsqlGraphDriver
 
 from zug.datamodel.target.classification import CLASSIFICATION
+from zug.datamodel.target import PROJECTS
+
+from zug.datamodel.tcga_dcc_sync import url_for  # TODO put this somewhere else
+
+import libcloud.storage.drivers.s3
+# upload in 500MB chunks
+libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
+
 
 # TODO sigh, yet another copy paste job (from the api this time), this
 # info should probably go in cdisutils
@@ -40,6 +50,8 @@ def tree_walk(url, **kwargs):
     links = [link for link in elem.cssselect("td a")
              if link.text != "Parent Directory"]
     for link in links:
+        if not url.endswith("/"):
+            url += "/"
         fulllink = urljoin(url, link.attrib["href"])
         if "CGI" in fulllink or "CBIIT" in fulllink:
             continue  # skip these for now
@@ -63,6 +75,12 @@ def classify(path):
             return classification
 
 
+def process_url(kwargs, url):
+    syncer = TARGETDCCFileSyncer(url, **kwargs)
+    syncer.log.info("syncing file %s", url)
+    syncer.sync()
+
+
 class MD5SummingStream(object):
 
     def __init__(self, stream):
@@ -80,22 +98,66 @@ class MD5SummingStream(object):
 
 class TARGETDCCProjectSyncer(object):
 
-    def __init__(self, project, signpost=None,
-                 graph=None, dcc_auth=None,
-                 storage_client=None, pool=None):
+    def __init__(self, project, signpost_url=None,
+                 graph_info=None, dcc_auth=None,
+                 storage_info=None, pool=None):
         self.project = project
-        # TODO this won't work for AML-P1 / P2
-        self.base_url = "https://target-data.nci.nih.gov/{}/".format(project)
-        self.signpost = signpost
-        self.graph = graph
-        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
-        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
-        self.pool = pool
         self.dcc_auth = dcc_auth
-        self.storage_client = storage_client
-        self.log = get_logger("taget_dcc_sync_" +
+        self.signpost_url = signpost_url
+        self.graph_info = graph_info
+        self.storage_info = storage_info
+        self.base_url = "https://target-data.nci.nih.gov/{}/".format(project)
+        self.pool = pool
+        self.log = get_logger("taget_dcc_project_sync_" +
                               str(os.getpid()) +
                               "_" + self.project)
+
+    def file_links(self):
+        """A generator for links to files in this project"""
+        for toplevel in ["Discovery", "Validation"]:
+            url = urljoin(self.base_url, toplevel)
+            for file in tree_walk(url, auth=self.dcc_auth):
+                yield file
+
+    def sync(self):
+        self.log.info("running prelude")
+        kwargs = {
+            "signpost_url": self.signpost_url,
+            "graph_info": self.graph_info,
+            "storage_info": self.storage_info,
+            "dcc_auth": self.dcc_auth,
+        }
+        if self.pool:
+            self.log.info("syncing files using process pool")
+            async_result = self.pool.map_async(partial(process_url, kwargs), self.file_links())
+            async_result.get(999999)
+        else:
+            self.log.info("syncing files serially")
+            for url in self.file_links():
+                process_url(kwargs, url)
+
+
+class TARGETDCCFileSyncer(object):
+
+    def __init__(self, url, signpost_url=None,
+                 graph_info=None, dcc_auth=None,
+                 storage_info=None):
+        assert url.startswith("https://target-data.nci.nih.gov")
+        self.url = url
+        self.project = url.split("/")[3]
+        self.filename = self.url.split("/")[-1]
+        assert self.project in PROJECTS
+        self.signpost = SignpostClient(signpost_url, version="v0")
+        self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
+                                     graph_info["pass"], graph_info["database"])
+        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
+        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
+        self.dcc_auth = dcc_auth
+        self.storage_client = storage_info["driver"](storage_info["access_key"],
+                                                     storage_info["secret_key"])
+        self.log = get_logger("taget_dcc_file_sync_" +
+                              str(os.getpid()) +
+                              "_" + self.filename)
 
     @property
     def acl(self):
@@ -105,14 +167,7 @@ class TARGETDCCProjectSyncer(object):
     def container(self):
             return self.storage_client.get_container("target_dcc_protected")
 
-    def file_links(self):
-        """A generator for links to files in this project"""
-        for toplevel in ["Discovery", "Validation"]:
-            url = urljoin(self.base_url, toplevel)
-            for file in tree_walk(url, auth=self.dcc_auth):
-                yield file
-
-    def process_url(self, url):
+    def sync(self):
         """Process a url to a target file, allocating an id for it, inserting
         in the database, classifying it, and uploading it from the
         target dcc to our object store
@@ -121,15 +176,15 @@ class TARGETDCCProjectSyncer(object):
             # we first look for this file and skip if it's already there
             maybe_this_file = self.graph.nodes()\
                                         .labels("file")\
-                                        .sysan({"source": "target_dcc", "url": url}).scalar()
+                                        .sysan({"source": "target_dcc", "url": self.url}).scalar()
             if maybe_this_file:
-                self.log.info("Skipping file %s, since it was found in database as %s", url, maybe_this_file)
+                self.log.info("Skipping file %s, since it was found in database as %s", self.url, maybe_this_file)
                 return
             # the first thing we try to do is upload it to the object store,
             # since we need to get an md5sum before putting it in the database
-            key = url.replace("https://target-data.nci.nih.gov/", "")
+            key = self.url.replace("https://target-data.nci.nih.gov/", "")
             self.log.info("requesting file %s from target dcc", key)
-            resp = requests.get(url, auth=self.dcc_auth, stream=True)
+            resp = requests.get(self.url, auth=self.dcc_auth, stream=True)
             resp.raise_for_status()
             self.log.info("streaming %s from target into object store", key)
             stream = MD5SummingStream(resp.iter_content(1024 * 1024))
@@ -137,14 +192,14 @@ class TARGETDCCProjectSyncer(object):
             # sanity check on length
             assert int(resp.headers["content-length"]) == int(obj.size)
             # ok, now we can allocate an id
-            filename = url.split("/")[-1]
-            doc = self.signpost.create()
+            self.log.info("allocating id for %s from signpost", key)
+            doc = self.signpost.create(urls=[url_for(obj)])
             file_node = PsqlNode(
                 node_id=doc.did,
                 label="file",
                 acl=self.acl,
                 properties={
-                    "file_name": filename,
+                    "file_name": self.filename,
                     "md5sum": stream.hexdigest(),
                     "file_size": int(obj.size),
                     "submitter_id": None,
@@ -154,17 +209,10 @@ class TARGETDCCProjectSyncer(object):
                 system_annotations={
                     "source": "target_dcc",
                     "md5_source": "gdc_import_process",
-                    "url": url
+                    "url": self.url
                 }
             )
+            doc.refresh()
+            assert doc.urls
+            self.log.info("inserting %s in graph as %s", key, file_node)
             self.graph.node_insert(file_node)
-            # TODO classify
-
-    def sync(self):
-        if self.pool:
-            async_result = self.pool.map_async(self.process_url, self.file_links())
-            async_result.get(999999)
-
-        else:
-            for url in self.file_links():
-                self.process_url(url)
