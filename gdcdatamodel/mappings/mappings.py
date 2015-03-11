@@ -186,6 +186,9 @@ def get_file_es_mapping(include_participant=True):
     files.properties.access = STRING
     files.properties.acl = STRING
 
+    # Other file properties
+    files.properties.origin = STRING
+
     # Participant
     files.properties.pop('participant', None)
     if include_participant:
