@@ -53,7 +53,3 @@ class TestPrelude(unittest.TestCase):
                 label="data_subtype",
                 property_matches={"name": "Diagnostic image"}
             ).with_edge_to_node("member_of", clinical).one()
-
-            # Test that mapping data_subtypes -> data_types is injective
-            for dst in self.driver.nodes().labels('data_subtype'):
-                self.assertEqual(len(dst.edges_out), 1)

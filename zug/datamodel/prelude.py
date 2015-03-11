@@ -59,7 +59,7 @@ def import_tissue_source_site_codes(graph, path):
 DATA_TYPES = {
     "Copy number variation": [
         "Copy number segmentation", "Copy number estimate",
-        "Normalized copy numbers", "Copy number germline variation",
+        "Normalized intensities", "Copy number germline variation",
         "LOH", "Copy number QC metrics", "Copy number variation"
     ],
     "Simple nucleotide variation": [
@@ -72,7 +72,7 @@ DATA_TYPES = {
         "Exon quantification"
     ],
     "Protein expression": [
-        "Protein expression quantification", "Protein expression control"
+        "Protein expression quantification", "Expression control"
     ],
     "Raw microarray data": [
         "Raw intensities", "Normalized intensities", "CGH array QC",
