@@ -249,7 +249,7 @@ class TARGETDCCFileSyncer(object):
                 resp.raise_for_status()
                 self.log.info("streaming %s from target into object store", key)
                 stream = MD5SummingStream(resp.iter_content(1024 * 1024))
-                obj = self.container.upload_object_via_stream(stream, key)
+                obj = self.container.upload_object_via_stream(iter(stream), key)
                 # sanity check on length
                 assert int(resp.headers["content-length"]) == int(obj.size)
                 # ok, now we can allocate an id
