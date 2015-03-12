@@ -441,7 +441,7 @@ snp:
         pattern: ^.+\.ismpolish.data.txt$
         category:
           data_type: Copy number variation
-          data_subtype: Normalized intensities
+          data_subtype: Normalized copy numbers
           experimental_strategy: Genotyping array
           data_level: Level_2
           data_access: protected
@@ -2436,7 +2436,7 @@ protein_exp:
         pattern: .+\.Control_.+\.txt$  # *.Control_Mixed-Lysate-7.txt
         category:
           data_type: Protein expression
-          data_subtype: Expression control
+          data_subtype: Protein expression control
           experimental_strategy: Protein expression array
           data_level: Level_3
           data_access: open
