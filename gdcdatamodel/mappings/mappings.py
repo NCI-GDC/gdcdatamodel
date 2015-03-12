@@ -186,6 +186,9 @@ def get_file_es_mapping(include_participant=True):
     files.properties.access = STRING
     files.properties.acl = STRING
 
+    # Other file properties
+    files.properties.origin = STRING
+
     # Participant
     files.properties.pop('participant', None)
     if include_participant:
@@ -218,6 +221,10 @@ def get_participant_es_mapping(include_file=True):
         participant.properties.files = get_file_es_mapping(True)
         participant.properties.files.type = 'nested'
 
+    # Adjust file properties
+    participant.properties.files.properties.pop('associated_entities', None)
+    participant.properties.files.properties.pop('annotations', None)
+
     # Summary
     summary = participant.properties.summary.properties
     summary.file_count = LONG
@@ -242,6 +249,7 @@ def annotation_body(nested=True):
     annotation.properties.participant_id = STRING
     annotation.properties.entity_type = STRING
     annotation.properties.entity_id = STRING
+    annotation.properties.entity_submitter_id = STRING
     annotation.properties.pop('item_id', None)
     return annotation
 
