@@ -4,6 +4,8 @@ import requests
 import pandas as pd
 from collections import defaultdict
 
+from sqlalchemy.orm.exc import NoResultFound
+from psqlgraph import PsqlEdge
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
@@ -92,3 +94,42 @@ class TARGETMAGETABSyncer(object):
                     else:
                         mapping[filename].add(aliquot)
         return mapping
+
+    def insert_mapping_in_graph(self, mapping):
+        with self.graph.session_scope():
+            for file_name, aliquot_barcodes in mapping.iteritems():
+                try:
+                    # note that for now this assumes filenames are
+                    # unique (this is the case in WT), it will blow up
+                    # with MultipleResultsFound exception and fail to
+                    # insert anything if this is not the case
+                    # presumably this will need to be revisited in the future
+                    file = self.graph.nodes().labels("file")\
+                                             .sysan({"source": "target_dcc"})\
+                                             .props({"file_name": file_name}).one()
+                    self.log.info("found file %s as %s", file_name, file)
+                except NoResultFound:
+                    self.log.warning("file %s not found in graph", file_name)
+                    continue
+                for barcode in aliquot_barcodes:
+                    self.log.info("attempting to tie file %s to aliquot %s", file_name, barcode)
+                    try:
+                        aliquot = self.graph.nodes().labels("aliquot")\
+                                                    .sysan({"source": "target_sample_matrices"})\
+                                                    .props({"submitter_id": barcode}).one()
+                        self.log.info("found aliquot %s", barcode)
+                    except NoResultFound:
+                        self.log.warning("aliquot %s not found in graph", barcode)
+                        continue
+                    self.tie_file_to_aliquot(file, aliquot)
+
+    def tie_file_to_aliquot(self, file, aliquot):
+        maybe_edge_to_aliquot = self.graph.edges().labels("data_from")\
+                                                  .src(file).dst(aliquot).scalar()
+        if not maybe_edge_to_aliquot:
+            edge_to_aliquot = PsqlEdge(
+                label="data_from",
+                src_id=file.node_id,
+                dst_id=aliquot.node_id
+            )
+            self.graph.edge_insert(edge_to_aliquot)
