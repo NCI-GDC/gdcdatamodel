@@ -32,6 +32,7 @@ PROJECTS_TO_SYNC = [
 def main():
     parser = ArgumentParser()
     parser.add_argument("--local", action="store_true", help="user local object store with tempdir rather than S3")
+    parser.add_argument("--pool", type=int, help="number of processes to use in process pool", default=0)
     args = parser.parse_args()
 
     graph = PsqlGraphDriver(environ["ZUGS_PG_HOST"], environ["ZUGS_PG_USER"],
@@ -49,11 +50,15 @@ def main():
             storage_info={
                 "driver": Local if args.local else S3,
                 "access_key": environ["ZUGS_CLEV_ACCESS_KEY"],
-                "secret_key": environ.get("ZUGS_CLEV_SECRET_KEY")
+                "kwargs": {
+                    "secret": environ.get("ZUGS_CLEV_SECRET_KEY"),
+                    "host": "cleversafe.service.consul",
+                    "secure": False
+                }
             },
             signpost_url=environ["ZUGS_SIGNPOST_URL"],
             dcc_auth=(environ["ZUGS_DCC_USER"], environ["ZUGS_DCC_PASS"]),
-            pool=Pool(5)
+            pool=Pool(args.pool) if args.pool else None
         )
         syncer.sync()
 

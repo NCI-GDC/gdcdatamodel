@@ -214,7 +214,7 @@ class TARGETDCCFileSyncer(object):
         self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.dcc_auth = dcc_auth
         self.storage_client = storage_info["driver"](storage_info["access_key"],
-                                                     storage_info["secret_key"])
+                                                     **storage_info["kwargs"])
         self.log = get_logger("taget_dcc_file_sync_" +
                               str(os.getpid()) +
                               "_" + self.filename)

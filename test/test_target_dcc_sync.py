@@ -66,7 +66,7 @@ class TARGETDCCSyncTest(TestCase):
         self.storage_info = {
             "driver": Local,
             "access_key": self.scratch_dir,
-            "secret_key": None
+            "kwargs": {}
         }
         self.signpost_url = "http://localhost:{}".format(self.port)
         self.signpost_client = SignpostClient(self.signpost_url,
