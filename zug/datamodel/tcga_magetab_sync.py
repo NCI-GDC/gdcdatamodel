@@ -324,7 +324,7 @@ class TCGAMAGETABSyncer(object):
                     continue
                 else:
                     result[(archive, file)].add(sample)
-        self. _mapping = result
+        self._mapping = result
         return result
 
     def get_file_node(self, archive_name, file_name, session):
