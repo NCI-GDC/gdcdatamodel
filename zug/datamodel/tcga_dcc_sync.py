@@ -34,6 +34,16 @@ import libcloud.storage.drivers.s3
 libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
 
 
+def run_edge_build(g, files):
+    logger = get_logger("tcga_edge_build")
+    logger.info("about to process %s nodes", len(files))
+    for node in files:
+        assert node.label == "file"
+        assert node.system_annotations["source"] == "tcga_dcc"
+        builder = TCGADCCEdgeBuilder(node, g, logger)
+        logger.info("building edges for %s", node)
+        builder.build()
+
 
 class InvalidChecksumException(Exception):
     pass
