@@ -52,7 +52,7 @@ def main():
                 "access_key": environ["ZUGS_CLEV_ACCESS_KEY"],
                 "kwargs": {
                     "secret": environ.get("ZUGS_CLEV_SECRET_KEY"),
-                    "host": "cleversafe.service.consul",
+                    "host": "gdc-accessor3.osdc.io",
                     "secure": False
                 }
             },
