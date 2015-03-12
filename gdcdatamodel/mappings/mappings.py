@@ -221,6 +221,10 @@ def get_participant_es_mapping(include_file=True):
         participant.properties.files = get_file_es_mapping(True)
         participant.properties.files.type = 'nested'
 
+    # Adjust file properties
+    participant.properties.files.properties.pop('associated_entities', None)
+    participant.properties.files.properties.pop('annotations', None)
+
     # Summary
     summary = participant.properties.summary.properties
     summary.file_count = LONG
