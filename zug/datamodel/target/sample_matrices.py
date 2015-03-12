@@ -17,8 +17,7 @@ from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
-
-PROJECTS = ["ALL-P1", "ALL-P2", "AML", "AML-IF", "CCSK", "NBL", "OS", "RT", "WT"]
+from zug.datamodel.target import PROJECTS
 
 NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
 NAMESPACE_SAMPLES = UUID('90383d9f-5124-4087-8d13-5548da118d68')

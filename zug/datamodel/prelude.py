@@ -60,7 +60,8 @@ DATA_TYPES = {
     "Copy number variation": [
         "Copy number segmentation", "Copy number estimate",
         "Normalized copy numbers", "Copy number germline variation",
-        "LOH", "Copy number QC metrics", "Copy number variation"
+        "LOH", "Copy number QC metrics", "Copy number variation",
+        "Copy number summary", "Probeset call"
     ],
     "Simple nucleotide variation": [
         "Simple germline variation", "Genotypes", "Simple somatic mutation",
@@ -69,7 +70,7 @@ DATA_TYPES = {
     "Gene expression": [
         "Gene expression quantification", "miRNA quantification",
         "Isoform expression quantification", "Exon junction quantification",
-        "Exon quantification"
+        "Exon quantification", "Gene expression summary"
     ],
     "Protein expression": [
         "Protein expression quantification", "Protein expression control"
@@ -77,7 +78,7 @@ DATA_TYPES = {
     "Raw microarray data": [
         "Raw intensities", "Normalized intensities", "CGH array QC",
         "Intensities Log2Ratio", "Expression control", "Intensities",
-        "Methylation array QC metrics"
+        "Methylation array QC metrics", "Probeset summary"
     ],
     "DNA methylation": [
         "Methylation beta value", "Bisulfite sequence alignment",
@@ -88,7 +89,7 @@ DATA_TYPES = {
         "Diagnostic image", "Pathology report"
     ],
     "Structural rearrangement": [
-        "Structural germline variation", "Structural variation"
+        "Structural germline variation", "Structural variation", "Structual junction"
     ],
     "Raw sequencing data": [
         "Coverage WIG", "Sequencing tag", "Sequencing tag counts",
@@ -112,14 +113,15 @@ TAGS = [
     "gene", "patient", "nte", "radiation", "drug", "B_Allele_Freq",
     "Delta_B_Allele_Freq", "Genotypes", "LOH", "Normal_LogR",
     "Paired_LogR", "seg", "segnormal", "Unpaired_LogR", "MSI", "hpv",
-    "cov"
+    "cov", "batch_effect_removed", "harmonized", "summary"
 ]
 
 DATA_FORMATS = [
     "TXT", "VCF", "SVS", "idat", "CEL", "XML", "WIG",
     "PDF", "TIF", "TSV", "FSA", "SIF", "JPG", "PNG",
     "dat", "Biotab", "FA", "TR", "MAF", "BED", "DGE-Tag",
-    "HTML", "MAGE-Tab", "GAF", "sdf", "BAM", "TAR", "TARGZ"
+    "HTML", "MAGE-Tab", "GAF", "sdf", "BAM", "TAR", "TARGZ",
+    "BW", "CHP", "GCT", "PAIR", "ZIP", "xlsx"
 ]
 
 EXPERIMENTAL_STRATEGIES = [
@@ -128,7 +130,8 @@ EXPERIMENTAL_STRATEGIES = [
     "Gene expression array", "MSI-Mono-Dinucleotide Assay", "miRNA expression array",
     "WXS", "WGS", "Exon array", "Total RNA-Seq", "Mixed strategies",
     "Capillary sequencing", "Bisulfite-Seq", 'RNA-Seq', "AMPLICON",
-    "Bisulfite-Seq", "miRNA-Seq", "RNA-Seq", "VALIDATION", "WGS", "WXS"
+    "Bisulfite-Seq", "miRNA-Seq", "RNA-Seq", "VALIDATION", "WGS", "WXS",
+    "RT-PCR", "WGBS"
 ]
 
 PLATFORMS = [
@@ -141,7 +144,9 @@ PLATFORMS = [
     "H-miRNA_8x15K", "AgilentG4502A_07_2", "HuEx-1_0-st-v2",
     "HG-U133_Plus_2", "Illumina DNA Methylation OMA003 CPI",
     "Illumina DNA Methylation OMA002 CPI", "AgilentG4502A_07_1", "ABI SOLiD",
-    "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM"
+    "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM",
+    "Affymetrix U133 Plus 2", "Complete Genomics", "Illumina HumanHap550",
+    "MegaPlex TaqMan",
 ]
 
 
