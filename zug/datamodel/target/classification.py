@@ -156,7 +156,7 @@ CLASSIFICATION = {
       }
     }
   },
-  "targeted_sequencing": {
+  "targeted_capture_sequencing": {
     ".+": {
       "platform": "ABI capillary sequencer",
       "data_format": "TXT",
