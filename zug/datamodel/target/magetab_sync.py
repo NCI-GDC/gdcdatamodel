@@ -122,7 +122,10 @@ class TARGETMAGETABSyncer(object):
     def insert_mapping_in_graph(self, sdrf_name, mapping):
         sdrf = self.graph.nodes().labels("file")\
                                  .sysan({"source": "target_dcc"})\
-                                 .props({"file_name": sdrf_name}).one()
+                                 .props({"file_name": sdrf_name}).scalar()
+        if not sdrf:
+            self.log.warning("sdrf %s not found", sdrf_name)
+            return
         for file_name, aliquot_barcodes in mapping.iteritems():
             try:
                 # note that for now this assumes filenames are
