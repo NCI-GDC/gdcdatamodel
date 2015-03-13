@@ -620,13 +620,16 @@ class PsqlGraph2JSON(object):
             'sample', 'portion', 'slide', 'analyte', 'aliquot'])
         docs = []
         for e in entities:
-            paths = [p for p in self.file_to_part_paths if p[0] == e.label]
-            print e.label, paths
-            docs += {
+            paths = [p[1:] for p in self.file_to_part_paths if p[0] == e.label]
+            participants = self.walk_paths(e, paths)
+            assert len(participants) == 1,\
+                '{}: Found {} participants: {}'.format(
+                    e, len(participants), paths)
+            docs.append({
                 'entity_type': e.label,
                 'entity_id': e.node_id,
-                'participant_id': participant_id,
-            }
+                'participant_id': participants.pop().node_id,
+            })
         if docs:
             doc['associated_entities'] = docs
 
