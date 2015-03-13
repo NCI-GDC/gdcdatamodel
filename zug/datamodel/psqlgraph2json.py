@@ -414,7 +414,7 @@ class PsqlGraph2JSON(object):
                 if d['data_type'] == data_type][:1] or [0])[0]
         assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
 
-    def participant_qa(self, node, participant):
+    def validate_participant(self, node, participant):
         # Assert file count = summary.file_count
         assert len(participant['files'])\
             == participant['summary']['file_count'],\
@@ -473,6 +473,8 @@ class PsqlGraph2JSON(object):
                                  if p['participant_id'] == node.node_id]
             f.pop('annotations', None)
             f.pop('associated_entities', None)
+
+        self.validate_participant(node, participant)
 
         return participant, files, annotations.values()
 
@@ -732,6 +734,9 @@ class PsqlGraph2JSON(object):
                     p['participant_id'] for p in files[did]['participants']}
                 if part_id not in existing_ids:
                     files[did]['participants'] += file_doc['participants']
+            for entity in file_doc['associated_entities']:
+                files[did]['associated_entities'] += (
+                    file_doc['associated_entities'])
 
     def denormalize_participants(self, participants=None):
         """If participants is not specified, denormalize all participants in
@@ -804,7 +809,7 @@ class PsqlGraph2JSON(object):
         projects = self.denormalize_projects()
         return parts, files, annotations, projects
 
-    def denormalize_sample_parts(self, k=10):
+    def denormalize_participants_sample(self, k=10):
         """Return an entire index worth of participant, file, annotation
          documents
 
