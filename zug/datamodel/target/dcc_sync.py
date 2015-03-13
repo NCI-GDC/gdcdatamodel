@@ -53,7 +53,7 @@ def tree_walk(url, **kwargs):
         if not url.endswith("/"):
             url += "/"
         fulllink = urljoin(url, link.attrib["href"])
-        if "CGI" in fulllink or "CBIIT" in fulllink:
+        if "/CGI/" in fulllink or "CBIIT" in fulllink:
             continue  # skip these for now
         if not fulllink.endswith("/"):
             yield fulllink
