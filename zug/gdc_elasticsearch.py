@@ -11,12 +11,11 @@ import logging
 from cdisutils.log import get_logger
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from elasticsearch import NotFoundError
-from elasticsearch import Elasticsearch
 
 log = get_logger("gdc_elasticsearch")
 log.setLevel(level=logging.INFO)
 
-BATCH_SIZE = 256
+BATCH_SIZE = 16
 
 
 class GDCElasticsearch(object):
@@ -24,16 +23,14 @@ class GDCElasticsearch(object):
     """
     """
 
-    def __init__(self, es=None, p2j=None):
+    def __init__(self, es=None):
         """Walks the graph to produce elasticsearch json documents.
 
         :param es: An instance of Elasticsearch class
-        :param p2j: An instance of PsqlGraph2JSON class
 
         """
         self.index_pattern = '{base}_{n}'
         self.es = es
-        self.p2j = p2j
 
     def pbar(self, title, maxval):
         """Create and initialize a custom progressbar
@@ -113,8 +110,8 @@ class GDCElasticsearch(object):
                        batch_size=BATCH_SIZE):
         self.bulk_upload(index, 'project', project_docs, batch_size)
         self.bulk_upload(index, 'annotation', ann_docs, batch_size)
-        self.bulk_upload(index, 'file', file_docs, batch_size)
         self.bulk_upload(index, 'participant', part_docs, batch_size)
+        self.bulk_upload(index, 'file', file_docs, batch_size)
 
     def index_create_and_populate(self, index, part_docs=[],
                                   file_docs=[], ann_docs=[], project_docs=[],
@@ -139,20 +136,11 @@ class GDCElasticsearch(object):
         self.es.indices.create(index=index, body=index_settings())
         self.put_mappings(index)
         if not part_docs:
-            assert self.p2j, (
-                """There were no participant docs passed to populate
-            with. Furthermore, this class was not instantiated with an
-            instance of the PsqlGraph2JSON class, so it cannot create
-            those docs.""")
-            part_docs, file_docs, ann_docs = self.p2j.denormalize_participants()
+            print("There were no participant docs passed to populate with!")
         if not project_docs:
-            assert self.p2j, (
-                """There were no project docs passed to populate
-            with. Furthermore, this class was not instantiated with an
-            instance of the PsqlGraph2JSON class, so it cannot create
-            those docs.""")
-            project_docs = self.p2j.denormalize_projects()
-        self.index_populate(index, batch_size)
+            print("There were no participant docs passed to populate with!")
+        self.index_populate(index, part_docs, file_docs, ann_docs,
+                            project_docs, batch_size)
 
     def swap_index(self, old_index, new_index, alias):
         """Atomically switch the resolution of `alias` from `old_index` to
@@ -170,6 +158,7 @@ class GDCElasticsearch(object):
 
     def get_next_index(self, base):
         """Using this class's `index_pattern` (1) find any old indices with
+
         matching bases (2) take the maximum
 
         """
@@ -201,7 +190,6 @@ class GDCElasticsearch(object):
         alias to point to the new index
 
         """
-
         new_index = self.get_next_index(alias)
         self.index_create_and_populate(new_index, part_docs,
                                        file_docs, ann_docs,

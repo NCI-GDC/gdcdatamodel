@@ -471,6 +471,8 @@ class PsqlGraph2JSON(object):
         for f in participant['files']:
             f['participants'] = [p for p in f['participants']
                                  if p['participant_id'] == node.node_id]
+            f.pop('annotations', None)
+            f.pop('associated_entities', None)
 
         return participant, files, annotations.values()
 
@@ -534,7 +536,7 @@ class PsqlGraph2JSON(object):
 
         for archive in set(self.neighbors_labeled(node, 'archive')):
             if self.G[node][archive].get('label') != 'member_of':
-                name = '{}.{}.0'.format(
+                name = '{}.{}.0.tar.gz'.format(
                     archive['submitter_id'], archive['revision'])
                 rf_docs.append({
                     'file_id': archive.node_id,
@@ -610,14 +612,17 @@ class PsqlGraph2JSON(object):
         doc['acl'] = node.acl
 
     def add_file_derived_from_entities(self, node, doc, participant_id):
-        entities = self.neighbors_labeled(node, ['participant', 'sample',
-                                                 'portion', 'slide', 'analyte',
-                                                 'aliquot'])
+        entities = self.neighbors_labeled(node, [
+            'participant', 'sample', 'portion',
+            'slide', 'analyte', 'aliquot'])
         doc['associated_entities'] = [{
             'entity_type': e.label,
             'entity_id': e.node_id,
             'participant_id': participant_id,
         } for e in entities]
+
+    def add_file_origin(self, node, doc):
+        doc['origin'] = 'migrated'
 
     def denormalize_file(self, node, ptree):
         """Given a participants tree and a file node, create the file json
@@ -628,6 +633,7 @@ class PsqlGraph2JSON(object):
         participant_id = ptree.keys()[0].node_id if ptree.keys() else None
         doc = self._get_base_doc(node)
         self.patch_file_datetimes(doc)
+        self.add_file_origin(node, doc)
         self.add_file_neighbors(node, doc)
         self.add_data_type(node, doc)
         self.add_related_files(node, doc)
@@ -847,9 +853,10 @@ class PsqlGraph2JSON(object):
         else:
             participants = self.participants
 
-        pbar = self.pbar('Denormalizing participants ', len(participants))
         part_count = len(participants)
+        print 'Denormalizing {} participants'.format(part_count)
         part_docs, ann_docs, file_docs = [], {}, {}
+        pbar = self.pbar('Denormalizing participants ', len(participants))
 
         # Set global variables
         GRAPH = self.G
@@ -859,8 +866,6 @@ class PsqlGraph2JSON(object):
         RELEVANT_NODES = self.relevant_nodes
         ANNOTATIONS = self.annotations
         ANNOTATION_ENTITIES = self.annotation_entities
-
-        print 'Denormalizing {} participants'.format(part_count)
 
         # Create pool, enqueue all participants, parse them as the return
         pool = AsyncProcessPool(processes)
