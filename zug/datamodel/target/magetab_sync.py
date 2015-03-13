@@ -3,6 +3,7 @@ from cStringIO import StringIO
 import requests
 import pandas as pd
 from collections import defaultdict
+from datetime import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
 from psqlgraph import PsqlEdge
@@ -38,12 +39,18 @@ def get_file(subrow):
     return ret
 
 
+def get_name_and_version(sdrf):
+    parts = sdrf.replace(".sdrf.txt", "").split("_")
+    date = parts.pop()
+    return "_".join(parts), datetime.strptime(date, "%Y%m%d").toordinal()
+
+
 class TARGETMAGETABSyncer(object):
 
-    def __init__(self, url, graph=None, dcc_auth=None):
-        assert url.startswith("https://target-data.nci.nih.gov")
-        self.url = url
-        self.project = url.split("/")[3]
+    def __init__(self, project, graph=None, dcc_auth=None):
+        self.project = project
+        self.url = "https://target-data.nci.nih.gov/{}/".format(project)
+        assert self.url.startswith("https://target-data.nci.nih.gov")
         self.dcc_auth = dcc_auth
         self.graph = graph
         if self.graph:
@@ -75,10 +82,16 @@ class TARGETMAGETABSyncer(object):
         assert aliquot.startswith(participant)
         return aliquot
 
-    def compute_mapping(self):
+    def compute_mappings(self):
+        """Returns a dict, the keys of which are names of sdrf files that
+        produced a mapping, the values ("mappings") are dicts from
+        filename to aliquot barcode
+        """
         self.log.info("computing mapping")
-        mapping = defaultdict(lambda: set())
+        ret = {}
         for link in self.magetab_links():
+            sdrf = link.split("/")[-1]
+            mapping = defaultdict(lambda: set())
             self.log.info("processing %s", link)
             df = self.df_for_link(link)
             for _, row in df.iterrows():
@@ -93,43 +106,86 @@ class TARGETMAGETABSyncer(object):
                         continue
                     else:
                         mapping[filename].add(aliquot)
-        return mapping
+            ret[sdrf] = mapping
+        return ret
 
-    def insert_mapping_in_graph(self, mapping):
+    def sync(self):
+        mappings = self.compute_mappings()
+        self.insert_mappings_in_graph(mappings)
+
+    def insert_mappings_in_graph(self, mappings):
         with self.graph.session_scope():
-            for file_name, aliquot_barcodes in mapping.iteritems():
-                try:
-                    # note that for now this assumes filenames are
-                    # unique (this is the case in WT), it will blow up
-                    # with MultipleResultsFound exception and fail to
-                    # insert anything if this is not the case
-                    # presumably this will need to be revisited in the future
-                    file = self.graph.nodes().labels("file")\
-                                             .sysan({"source": "target_dcc"})\
-                                             .props({"file_name": file_name}).one()
-                    self.log.info("found file %s as %s", file_name, file)
-                except NoResultFound:
-                    self.log.warning("file %s not found in graph", file_name)
-                    continue
-                for barcode in aliquot_barcodes:
-                    self.log.info("attempting to tie file %s to aliquot %s", file_name, barcode)
-                    try:
-                        aliquot = self.graph.nodes().labels("aliquot")\
-                                                    .sysan({"source": "target_sample_matrices"})\
-                                                    .props({"submitter_id": barcode}).one()
-                        self.log.info("found aliquot %s", barcode)
-                    except NoResultFound:
-                        self.log.warning("aliquot %s not found in graph", barcode)
-                        continue
-                    self.tie_file_to_aliquot(file, aliquot)
+            for sdrf, mapping in mappings.iteritems():
+                self.log.info("inserting mapping for %s", sdrf)
+                self.insert_mapping_in_graph(sdrf, mapping)
 
-    def tie_file_to_aliquot(self, file, aliquot):
+    def insert_mapping_in_graph(self, sdrf_name, mapping):
+        sdrf = self.graph.nodes().labels("file")\
+                                 .sysan({"source": "target_dcc"})\
+                                 .props({"file_name": sdrf_name}).one()
+        for file_name, aliquot_barcodes in mapping.iteritems():
+            try:
+                # note that for now this assumes filenames are
+                # unique (this is the case in WT), it will blow up
+                # with MultipleResultsFound exception and fail to
+                # insert anything if this is not the case.
+                # presumably this will need to be revisited in the future
+                file = self.graph.nodes().labels("file")\
+                                         .sysan({"source": "target_dcc"})\
+                                         .props({"file_name": file_name}).one()
+                self.log.info("found file %s as %s", file_name, file)
+            except NoResultFound:
+                self.log.warning("file %s not found in graph", file_name)
+                continue
+            self.tie_file_to_sdrf(file, sdrf)
+            for barcode in aliquot_barcodes:
+                self.log.info("attempting to tie file %s to aliquot %s", file_name, barcode)
+                try:
+                    aliquot = self.graph.nodes().labels("aliquot")\
+                                                .sysan({"source": "target_sample_matrices"})\
+                                                .props({"submitter_id": barcode}).one()
+                    self.log.info("found aliquot %s", barcode)
+                except NoResultFound:
+                    self.log.warning("aliquot %s not found in graph", barcode)
+                    continue
+                self.tie_file_to_aliquot(file, aliquot, sdrf)
+            # TODO add code to delete edges from old versions of this
+            # sdrf when we insert a new one
+
+    def tie_file_to_aliquot(self, file, aliquot, sdrf):
         maybe_edge_to_aliquot = self.graph.edges().labels("data_from")\
-                                                  .src(file).dst(aliquot).scalar()
+                                                  .src(file.node_id)\
+                                                  .dst(aliquot.node_id)\
+                                                  .scalar()
+        sdrf_name, sdrf_version = get_name_and_version(sdrf["file_name"])
         if not maybe_edge_to_aliquot:
             edge_to_aliquot = PsqlEdge(
                 label="data_from",
                 src_id=file.node_id,
-                dst_id=aliquot.node_id
+                dst_id=aliquot.node_id,
+                system_annotations={
+                    "source": "target_magetab",
+                    "sdrf_name": sdrf_name,
+                    "sdrf_version": sdrf_version,
+                }
             )
             self.graph.edge_insert(edge_to_aliquot)
+
+    def tie_file_to_sdrf(self, file, sdrf):
+        maybe_edge = self.graph.edges().labels("related_to")\
+                                       .src(sdrf.node_id)\
+                                       .dst(file.node_id)\
+                                       .scalar()
+        if not maybe_edge:
+            sdrf_name, sdrf_version = get_name_and_version(sdrf["file_name"])
+            edge = PsqlEdge(
+                label="related_to",
+                src_id=sdrf.node_id,
+                dst_id=file.node_id,
+                system_annotations={
+                    "source": "target_magetab",
+                    "sdrf_name": sdrf_name,
+                    "sdrf_version": sdrf_version,
+                }
+            )
+            self.graph.edge_insert(edge)
