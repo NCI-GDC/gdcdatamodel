@@ -83,14 +83,13 @@ class TARGETMAGETABSyncer(object):
         return aliquot
 
     def compute_mappings(self):
-        """Returns a dict, the keys of which are names of sdrf files that
+        """Returns a dict, the keys of which are links to sdrf files that
         produced a mapping, the values ("mappings") are dicts from
         filename to aliquot barcode
         """
         self.log.info("computing mapping")
         ret = {}
         for link in self.magetab_links():
-            sdrf = link.split("/")[-1]
             mapping = defaultdict(lambda: set())
             self.log.info("processing %s", link)
             df = self.df_for_link(link)
@@ -106,7 +105,7 @@ class TARGETMAGETABSyncer(object):
                         continue
                     else:
                         mapping[filename].add(aliquot)
-            ret[sdrf] = mapping
+            ret[link] = mapping
         return ret
 
     def sync(self):
@@ -115,11 +114,12 @@ class TARGETMAGETABSyncer(object):
 
     def insert_mappings_in_graph(self, mappings):
         with self.graph.session_scope():
-            for sdrf, mapping in mappings.iteritems():
-                self.log.info("inserting mapping for %s", sdrf)
-                self.insert_mapping_in_graph(sdrf, mapping)
+            for link, mapping in mappings.iteritems():
+                self.log.info("inserting mapping for %s", link)
+                self.insert_mapping_in_graph(link, mapping)
 
-    def insert_mapping_in_graph(self, sdrf_name, mapping):
+    def insert_mapping_in_graph(self, link, mapping):
+        sdrf_name = link.split("/")[-1]
         sdrf = self.graph.nodes().labels("file")\
                                  .sysan({"source": "target_dcc"})\
                                  .props({"file_name": sdrf_name}).scalar()
@@ -127,19 +127,32 @@ class TARGETMAGETABSyncer(object):
             self.log.warning("sdrf %s not found", sdrf_name)
             return
         for file_name, aliquot_barcodes in mapping.iteritems():
-            try:
-                # note that for now this assumes filenames are
-                # unique (this is the case in WT), it will blow up
-                # with MultipleResultsFound exception and fail to
-                # insert anything if this is not the case.
-                # presumably this will need to be revisited in the future
-                file = self.graph.nodes().labels("file")\
-                                         .sysan({"source": "target_dcc"})\
-                                         .props({"file_name": file_name}).one()
-                self.log.info("found file %s as %s", file_name, file)
-            except NoResultFound:
-                self.log.warning("file %s not found in graph", file_name)
+            files = self.graph.nodes().labels("file")\
+                                      .sysan({"source": "target_dcc"})\
+                                      .props({"file_name": file_name}).all()
+            if len(files) == 0:
+                self.log.warning("file %s not found", file_name)
                 continue
+            elif len(files) == 1:
+                file = files[0]
+                self.log.info("found file %s as %s", file_name, file)
+            elif len(files) > 1:
+                self.log.info("multiple files with name %s found, attempting to disambiguate based on url", file_name)
+                # a file that has the url
+                # https://target-data.nci.nih.gov/WT/Discovery/miRNA-seq/L3/TARGET-50-CAAAAO-01A-01R.isoform.quantification.txt
+                # will have a MAGETAB at
+                # https://target-data.nci.nih.gov/WT/Discovery/miRNA-seq/METADATA/MAGE-TAB_TARGET_WT_miRNA-Seq_Illumina_20141223.sdrf.txt
+                #
+                # a file that has the url
+                # https://target-data.nci.nih.gov/WT/Discovery/mRNA-seq/L3/expression/TARGET-50-CAAAAO-01A-01R.isoform.quantification.txt
+                # will have a MAGETAB at the url
+                # https://target-data.nci.nih.gov/WT/Discovery/mRNA-seq/METADATA/MAGE-TAB_TARGET_WT_RNA-seq_Illumina_20150305.sdrf.txt
+                # here we extract that part of the url that should match and then filter based on it
+                part_of_url_that_should_match = link.split("METADATA")[0]
+                filtered_files = [file for file in files
+                                  if part_of_url_that_should_match in file.system_annotations["url"]]
+                assert len(filtered_files) == 1
+                file = filtered_files[0]
             self.tie_file_to_sdrf(file, sdrf)
             for barcode in aliquot_barcodes:
                 self.log.info("attempting to tie file %s to aliquot %s", file_name, barcode)
