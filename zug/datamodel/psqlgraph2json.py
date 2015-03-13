@@ -13,7 +13,6 @@ from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy, deepcopy
 from cdisutils.pool import AsyncProcessPool
 
-
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
 
@@ -533,6 +532,8 @@ class PsqlGraph2JSON(object):
             self.patch_file_datetimes(rf_doc)
             if related_file['file_name'].endswith('.bai'):
                 rf_doc['type'] = 'bai'
+            elif related_file['file_name'].endswith('.sdrf.txt'):
+                rf_doc['type'] = 'magetab'
             else:
                 rf_doc['type'] = None
             rf_docs.append(rf_doc)
@@ -616,13 +617,18 @@ class PsqlGraph2JSON(object):
 
     def add_file_derived_from_entities(self, node, doc, participant_id):
         entities = self.neighbors_labeled(node, [
-            'participant', 'sample', 'portion',
-            'slide', 'analyte', 'aliquot'])
-        doc['associated_entities'] = [{
-            'entity_type': e.label,
-            'entity_id': e.node_id,
-            'participant_id': participant_id,
-        } for e in entities]
+            'sample', 'portion', 'slide', 'analyte', 'aliquot'])
+        docs = []
+        for e in entities:
+            paths = [p for p in self.file_to_part_paths if p[0] == e.label]
+            print e.label, paths
+            docs += {
+                'entity_type': e.label,
+                'entity_id': e.node_id,
+                'participant_id': participant_id,
+            }
+        if docs:
+            doc['associated_entities'] = docs
 
     def add_file_origin(self, node, doc):
         doc['origin'] = 'migrated'
@@ -735,9 +741,6 @@ class PsqlGraph2JSON(object):
                     p['participant_id'] for p in files[did]['participants']}
                 if part_id not in existing_ids:
                     files[did]['participants'] += file_doc['participants']
-            for entity in file_doc['associated_entities']:
-                files[did]['associated_entities'] += (
-                    file_doc['associated_entities'])
 
     def denormalize_participants(self, participants=None):
         """If participants is not specified, denormalize all participants in

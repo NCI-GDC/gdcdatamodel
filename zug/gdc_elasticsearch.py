@@ -23,7 +23,7 @@ class GDCElasticsearch(object):
     """
     """
 
-    def __init__(self, es=None):
+    def __init__(self, es=None, c=None):
         """Walks the graph to produce elasticsearch json documents.
 
         :param es: An instance of Elasticsearch class
