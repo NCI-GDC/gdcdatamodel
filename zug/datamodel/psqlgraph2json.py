@@ -70,6 +70,7 @@ class PsqlGraph2JSON(object):
         ]
 
         self.part_to_file_paths = [
+            ['file'],
             ['sample', 'portion', 'file'],
             ['sample', 'portion', 'analyte', 'aliquot', 'file'],
         ]
