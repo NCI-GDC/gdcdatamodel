@@ -47,6 +47,7 @@ class PsqlGraph2JSON(object):
         self.relevant_nodes = None
         self.annotations = None
         self.annotation_entities = None
+        self.entity_participants = None
 
         # The body of these nested documents will be flattened into
         # the parent document using the given key's value
@@ -70,8 +71,14 @@ class PsqlGraph2JSON(object):
 
         self.part_to_file_paths = [
             ['file'],
+            ['sample', 'aliquot', 'file'],
             ['sample', 'portion', 'file'],
             ['sample', 'portion', 'analyte', 'aliquot', 'file'],
+        ]
+
+        self.possible_associated_entites = [
+            'portion',
+            'aliquot',
         ]
 
         self.file_to_part_paths = [
@@ -140,12 +147,29 @@ class PsqlGraph2JSON(object):
         self._cache_data_types()
         self._cache_annotations()
         self._cache_relevant_nodes()
+        self._cache_entity_participants()
         if not self.participants:
             print 'Caching participants...'
             self.participants = list(self.nodes_labeled('participant'))
         if not self.projects:
             print 'Caching projects...'
             self.projects = list(self.nodes_labeled('project'))
+
+    def _cache_entity_participants(self):
+        if self.entity_participants:
+            return
+        entities = list(self.nodes_labeled(self.possible_associated_entites))
+        pbar = self.pbar('Caching entity participants: ', len(entities))
+        self.entity_participants = {}
+        for e in entities:
+            paths = [p[1:] for p in self.file_to_part_paths if p[0] == e.label]
+            participants = self.walk_paths(e, paths)
+            assert len(participants) == 1,\
+                '{}: Found {} participants: {}'.format(
+                    e, len(participants), paths)
+            self.entity_participants[e] = participants.pop()
+            pbar.update(pbar.currval+1)
+        pbar.finish()
 
     def _cache_relevant_nodes(self):
         if self.relevant_nodes:
@@ -157,7 +181,7 @@ class PsqlGraph2JSON(object):
             self.relevant_nodes[f] = self.walk_paths(
                 f, self.file_to_part_paths, whole=True)
             pbar.update(pbar.currval+1)
-        pbar.finish
+        pbar.finish()
 
     def _cache_annotations(self):
         if not self.annotations:
@@ -173,15 +197,16 @@ class PsqlGraph2JSON(object):
                 a_doc = self.denormalize_annotation(a)
                 self.annotation_entities[n][a.node_id] = a_doc
             pbar.update(pbar.currval+1)
-        pbar.finish
+        pbar.finish()
 
-    def nodes_labeled(self, label):
+    def nodes_labeled(self, labels):
         """Returns an iterator over the edges in the graph with label `label`
 
         """
 
+        labels = tuple(labels) if hasattr(labels, '__iter__') else (labels,)
         for n, p in self.G.nodes_iter(data=True):
-            if n.label == label:
+            if n.label in labels:
                 yield n
 
     def _cache_popular_neighbor(self, node, neighbors, labels):
@@ -616,19 +641,16 @@ class PsqlGraph2JSON(object):
         doc['acl'] = node.acl
 
     def add_file_derived_from_entities(self, node, doc, participant_id):
-        entities = self.neighbors_labeled(node, [
-            'sample', 'portion', 'slide', 'analyte', 'aliquot'])
+        self._cache_entity_participants()
+        entities = self.neighbors_labeled(
+            node, self.possible_associated_entites)
         docs = []
         for e in entities:
-            paths = [p[1:] for p in self.file_to_part_paths if p[0] == e.label]
-            participants = self.walk_paths(e, paths)
-            assert len(participants) == 1,\
-                '{}: Found {} participants: {}'.format(
-                    e, len(participants), paths)
+            participant = self.entity_participants[e]
             docs.append({
                 'entity_type': e.label,
                 'entity_id': e.node_id,
-                'participant_id': participants.pop().node_id,
+                'participant_id': participant.node_id,
             })
         if docs:
             doc['associated_entities'] = docs
