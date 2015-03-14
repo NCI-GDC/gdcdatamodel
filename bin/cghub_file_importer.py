@@ -48,11 +48,10 @@ def setup():
 
 def process(roots):
     converter = setup()
-    print phsid
-    # for root in roots:
-    #     root = etree.fromstring(root)
-    #     converter.parse('file', root)
-    # converter.rebase(source)
+    for root in roots:
+        root = etree.fromstring(root)
+        converter.parse('file', root)
+    converter.rebase(source)
 
 
 def open_xml():
@@ -94,7 +93,8 @@ def import_files(xml):
     chunks = [roots[i:i+chunksize]
               for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    Pool(args.processes).map(process, chunks)
+    # Pool(args.processes).map(process, chunks)
+    map(process, chunks)
     log.info('Complete.')
 
 if __name__ == '__main__':

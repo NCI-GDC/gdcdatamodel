@@ -341,13 +341,16 @@ class cghub2psqlgraph(object):
         legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
                                           root, single=True, nullable=False)
         code = self.center_regex.match(legacy_sample_id)
-        assert code, 'Unable to parse center code from barcode'
-        node = self.graph.nodes().labels('center')\
-                                 .props({'code': code.group(2)})\
-                                 .first()
-        assert node, 'Missing center code:{}, {}'.format(
-            code.group(2), file_key)
-        self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
+        if not code:
+            log.warn('Unable to parse center code from barcode: {}'.format(
+                legacy_sample_id))
+        else:
+            node = self.graph.nodes().labels('center')\
+                                     .props({'code': code.group(2)})\
+                                     .first()
+            assert node, 'Missing center code:{}, {}'.format(
+                code.group(2), file_key)
+            self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
 
     def add_edges(self, root, node_type, params, file_key, node):
         """
