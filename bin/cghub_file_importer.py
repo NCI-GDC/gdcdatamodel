@@ -48,10 +48,11 @@ def setup():
 
 def process(roots):
     converter = setup()
-    for root in roots:
-        root = etree.fromstring(root)
-        converter.parse('file', root)
-    converter.rebase(source)
+    print phsid
+    # for root in roots:
+    #     root = etree.fromstring(root)
+    #     converter.parse('file', root)
+    # converter.rebase(source)
 
 
 def open_xml():
@@ -84,7 +85,8 @@ def import_files(xml):
     roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
     log.info('Found {} result(s)'.format(len(roots)))
     if not roots:
-        log.warn('No results found for past {} days'.format(args.days))
+        log.warn('No results found for past {} days or from file.'.format(
+            args.days))
         return
 
     # Chunk the results and distribute to process pool
@@ -120,11 +122,21 @@ if __name__ == '__main__':
                         help='signpost server port')
     parser.add_argument('-V', '--signpost-version', default='v0',
                         help='the version of signpost API')
+    parser.add_argument('--phsid', required=True,
+                        help='access group to import as')
     parser.add_argument('--no-signpost', action='store_true',
-                        help='do not use signpost instance, use random ids')
+                        help='do not add the files to signpost')
+
     args = parser.parse_args()
 
-    source, phsid = 'tcga_cghub', 'phs000178'
+    phsid = args.phsid
+    if phsid in ['phs000178']:
+        source = 'target_cghub'
+    elif phsid in ['phs000471']:
+        source = 'tcga_cghub'
+    else:
+        raise RuntimeError('Unknown phsid: {}'.format(phsid))
+
     if args.file:
         xml = open_xml()
     else:
