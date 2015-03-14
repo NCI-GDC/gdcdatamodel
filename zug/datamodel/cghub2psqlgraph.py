@@ -85,10 +85,12 @@ class cghub2psqlgraph(object):
         log.info('Handling {} nodes'.format(len(self.files_to_add)))
         with self.graph.session_scope():
             self.rebase_file_nodes(source)
+
         log.info('Handling {} edges'.format(
             len(self.edges) + len(self.related_to_edges)))
         with self.graph.session_scope():
             self.export_edges()
+
         self.reset()
 
     def reset(self):
@@ -155,6 +157,7 @@ class cghub2psqlgraph(object):
             the file source to be put in system_annotations
 
         """
+        print source
         system_annotations = {'source': source}
         # Loop through files to add and merge them into the graph
         for file_key, node in self.files_to_add.iteritems():
@@ -331,11 +334,13 @@ class cghub2psqlgraph(object):
             dst = self.graph.nodes().labels(dst_label)\
                                     .props(dict(name=normalized))\
                                     .first()
-            assert dst, 'Missing dst {} name:{}, {}'.format(
-                dst_label, normalized, file_key)
-            dst_id = dst.node_id
-            edge_label = file_mapping[dst_label]['edge_label']
-            self.save_edge(file_key, dst_id, dst_label, edge_label)
+            if not dst:
+                log.warn('Missing dst {} name:{}, {}'.format(
+                    dst_label, normalized, file_key))
+            else:
+                dst_id = dst.node_id
+                edge_label = file_mapping[dst_label]['edge_label']
+                self.save_edge(file_key, dst_id, dst_label, edge_label)
 
     def save_center_edge(self, root, file_key):
         legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',

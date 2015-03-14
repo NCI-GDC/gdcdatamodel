@@ -48,10 +48,14 @@ def setup():
 
 def process(roots):
     converter = setup()
-    for root in roots:
-        root = etree.fromstring(root)
-        converter.parse('file', root)
-    converter.rebase(source)
+    with converter.graph.session_scope() as session:
+        for root in roots:
+            root = etree.fromstring(root)
+            converter.parse('file', root)
+        converter.rebase(source)
+        if args.dry_run:
+            log.warn('Rolling back session as requested.')
+            session.rollback()
 
 
 def open_xml():
@@ -126,14 +130,20 @@ if __name__ == '__main__':
                         help='access group to import as')
     parser.add_argument('--no-signpost', action='store_true',
                         help='do not add the files to signpost')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Do not commit any sessions')
 
     args = parser.parse_args()
 
+    if args.dry_run:
+        log.warn('Dry run: forcing --no-signpost')
+        args.no_signpost = True
+
     phsid = args.phsid
     if phsid in ['phs000178']:
-        source = 'target_cghub'
-    elif phsid in ['phs000471']:
         source = 'tcga_cghub'
+    elif phsid in ['phs000471']:
+        source = 'target_cghub'
     else:
         raise RuntimeError('Unknown phsid: {}'.format(phsid))
 
