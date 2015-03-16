@@ -50,6 +50,7 @@ class TARGETMAGETABSyncTest(ZugsTestBase):
             }
         )
 
+
     @patch("zug.datamodel.target.magetab_sync.tree_walk", fake_tree_walk)
     def test_basic_magetab_sync(self):
         sdrf = self.create_file("test_magetab_19911205.sdrf.txt")
