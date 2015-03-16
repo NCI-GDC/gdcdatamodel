@@ -20,10 +20,17 @@ ETHNICITY_MAP = {
 }
 
 
+def parse_race(race):
+    if race == "Unknown":
+        return "not reported"
+    else:
+        return race.lower()
+
+
 def parse_row_into_props(row):
     return {
         "gender": row["Gender"].lower(),
-        "race": row["Race"].lower(),
+        "race": parse_race(row["Race"]),
         "ethnicity": ETHNICITY_MAP[row["Ethnicity"]],
         "vital_status": row["Vital Status"].lower(),
         "year_of_diagnosis": None,
