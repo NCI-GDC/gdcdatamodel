@@ -220,7 +220,8 @@
       "american indian or alaska native",
       "black or african american",
       "asian",
-      "native hawaiian or other pacific islander"
+      "native hawaiian or other pacific islander",
+      "other"
     ],
     "type": "enum",
     "doc": "TOREVIEW: Allowed races"
