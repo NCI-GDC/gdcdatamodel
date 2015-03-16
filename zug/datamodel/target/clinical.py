@@ -21,18 +21,18 @@ ETHNICITY_MAP = {
 
 
 def parse_race(race):
-    if race == "Unknown":
+    if race.strip() == "Unknown":
         return "not reported"
     else:
-        return race.lower()
+        return race.lower().strip()
 
 
 def parse_row_into_props(row):
     return {
-        "gender": row["Gender"].lower(),
+        "gender": row["Gender"].lower().strip(),
         "race": parse_race(row["Race"]),
-        "ethnicity": ETHNICITY_MAP[row["Ethnicity"]],
-        "vital_status": row["Vital Status"].lower(),
+        "ethnicity": ETHNICITY_MAP[row["Ethnicity"].strip()],
+        "vital_status": row["Vital Status"].lower().strip(),
         "year_of_diagnosis": None,
         "age_at_diagnosis": int(row["Age at diagnosis (days)"]),
         "days_to_death": None,
