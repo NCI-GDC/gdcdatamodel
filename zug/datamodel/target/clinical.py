@@ -94,7 +94,9 @@ class TARGETClinicalSyncer(object):
                                               "url": self.url}).one()
             self.log.info("found clinical file %s as %s", self.url, clinical_file)
             for _, row in df.iterrows():
-                participant_barcode = row["TARGET Patient USI"]
+                # the .strip is necessary because sometimes there is a
+                # space after the name, e.g. 'TARGET-50-PAEAFB '
+                participant_barcode = row["TARGET Patient USI"].strip()
                 self.log.info("looking up participant %s", participant_barcode)
                 participant = self.graph.nodes()\
                                         .labels("participant")\
