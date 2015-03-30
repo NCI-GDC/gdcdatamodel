@@ -16,19 +16,59 @@ from cdisutils.pool import AsyncProcessPool
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
 
-# Module level variables for multiprocessing
-GRAPH = None
-PARTICIPANTS = None
-DATA_TYPES = None
-EXPERIMENTAL_STRATEGIES = None
-RELEVANT_NODES = None
-ANNOTATIONS = None
-ANNOTATION_ENTITIES = None
-
 
 class PsqlGraph2JSON(object):
 
-    """
+    """This class handles all of the JSON production for the GDC
+    portal. Currently, the entire postgresql database is cached to
+    memory.  To save space, edge labels are only maintained if we need
+    to distinguish between two different types of edges between a
+    single pair of node types.
+
+    Currently, the entire batch of JSON documents is produced at once
+    for reasons that follow. There are two topmost denormalization
+    functions that are called, denormalize_participants() and
+    denormalize_projects(). The former produces all of the
+    participant, file, and annotations documents. The latter produces
+    the project summaries.
+
+    The participant denormalization takes the participant tree from
+    gdcdatamodel and, starting at a participant, walks recursively to
+    all possible children.  Each child's properties are added to the
+    participant document at the appropriate level depending on the
+    correlation (one to one=singleton, or one to many=list).  The leaf
+    node for most paths from participant are files, which have a
+    special denormalization.
+
+    When a file is gathered from walking the participant path, a deep
+    copy is both added to the participants file list returned for
+    later collection.  Denormalizing a participant produces a list of
+    files and annotations. Each file is upserted into a persisting
+    list of files.  If after denormalizing participant 1 who produced
+    file A, the upsert involves adding to A the list if not present.
+    If we have already gotten file A from another participant, it
+    means that the file came from multiple participants and we have to
+    update file A to also reference participant 1.
+
+    In order to make decrease the processing time, there are a lot of
+    caching initiatives.  The paths from participants to files are
+    cached. The set of files using each data type and experimental
+    strategy are cached.  There is also a caching scheme for
+    remembering which nodes are walked through a lot and remembering
+    which neighbors they have with a given label.
+
+    NOTE: An attempt was made to do this whole thing in parallel,
+    however the memory footprint grew to large.  The best method for
+    doing this is to use the main process as a workload distributer,
+    and have child processes denormalizing participants.  This way,
+    the main thread can upsert files on an outbound queue from child
+    processes.
+
+    - Josh (jsmiller@uchicago.edu)
+
+    TODOS:
+      - figure out a way to parallelize without excess copies
+
     """
 
     def __init__(self, psqlgraph_driver):
@@ -90,7 +130,7 @@ class PsqlGraph2JSON(object):
         """Create and initialize a custom progressbar
 
         :param str title: The text of the progress bar
-        "param int maxva': The maximumum value of the progress bar
+        :param int maxval: The maximumum value of the progress bar
 
         """
         pbar = ProgressBar(widgets=[
@@ -116,129 +156,9 @@ class PsqlGraph2JSON(object):
         self.ftree_mapping = {'file': file_tree.to_dict()}
         self.atree_mapping = {'annotation': annotation_tree.to_dict()}
 
-    def cache_database(self):
-        """Load the database into memory and remember only edge labels that we
-        will need to distinguish later.
-
-        """
-        with self.g.session_scope():
-            pbar = self.pbar('Caching Database: ', self.g.edges().count())
-            for e in self.g.edges().options(joinedload(Edge.src))\
-                                   .options(joinedload(Edge.dst))\
-                                   .yield_per(int(1e5)):
-                pbar.update(pbar.currval+1)
-                needs_differentiation = ((e.src.label, e.label, e.dst.label)
-                                         in self.differentiated_edges)
-                if needs_differentiation and e.properties:
-                    self.G.add_edge(
-                        e.src, e.dst, label=e.label, props=e.properties)
-                elif needs_differentiation and not e.properties:
-                    self.G.add_edge(e.src, e.dst, label=e.label)
-                elif e.properties:
-                    self.G.add_edge(e.src, e.dst, props=e.properties)
-                else:
-                    self.G.add_edge(e.src, e.dst)
-            pbar.finish()
-        self._cache_all()
-        print('Cached {} nodes'.format(self.G.number_of_nodes()))
-
-    def _cache_all(self):
-        self._cache_experimental_strategies()
-        self._cache_data_types()
-        self._cache_annotations()
-        self._cache_relevant_nodes()
-        self._cache_entity_participants()
-        if not self.participants:
-            print 'Caching participants...'
-            self.participants = list(self.nodes_labeled('participant'))
-        if not self.projects:
-            print 'Caching projects...'
-            self.projects = list(self.nodes_labeled('project'))
-
-    def _cache_entity_participants(self):
-        if self.entity_participants:
-            return
-        entities = list(self.nodes_labeled(self.possible_associated_entites))
-        pbar = self.pbar('Caching entity participants: ', len(entities))
-        self.entity_participants = {}
-        for e in entities:
-            paths = [p[1:] for p in self.file_to_part_paths if p[0] == e.label]
-            participants = self.walk_paths(e, paths)
-            assert len(participants) == 1,\
-                '{}: Found {} participants: {}'.format(
-                    e, len(participants), paths)
-            self.entity_participants[e] = participants.pop()
-            pbar.update(pbar.currval+1)
-        pbar.finish()
-
-    def _cache_relevant_nodes(self):
-        if self.relevant_nodes:
-            return
-        files = list(self.nodes_labeled('file'))
-        self.relevant_nodes = {}
-        pbar = self.pbar('Caching file paths: ', len(files))
-        for f in files:
-            self.relevant_nodes[f] = self.walk_paths(
-                f, self.file_to_part_paths, whole=True)
-            pbar.update(pbar.currval+1)
-        pbar.finish()
-
-    def _cache_annotations(self):
-        if not self.annotations:
-            self.annotations = list(self.nodes_labeled('annotation'))
-        if self.annotation_entities:
-            return
-        pbar = self.pbar('Caching annotations: ', len(self.annotations))
-        self.annotation_entities = {}
-        for a in self.annotations:
-            for n in self.G.neighbors(a):
-                if n not in self.annotation_entities:
-                    self.annotation_entities[n] = {}
-                a_doc = self.denormalize_annotation(a)
-                self.annotation_entities[n][a.node_id] = a_doc
-            pbar.update(pbar.currval+1)
-        pbar.finish()
-
-    def nodes_labeled(self, labels):
-        """Returns an iterator over the edges in the graph with label `label`
-
-        """
-
-        labels = tuple(labels) if hasattr(labels, '__iter__') else (labels,)
-        for n, p in self.G.nodes_iter(data=True):
-            if n.label in labels:
-                yield n
-
-    def _cache_popular_neighbor(self, node, neighbors, labels):
-        if node not in self.popular_nodes:
-            self.popular_nodes[node] = {}
-        self.popular_nodes[node][labels] = {
-            n for n in neighbors if n.label in labels}
-        return self.popular_nodes[node][labels]
-
-    def neighbors_labeled(self, node, labels):
-        """For a given node, return an iterator with generates neighbors to
-        that node that are in a list of labels.  `label` can be either a
-        string or list of strings.
-
-        """
-        labels = tuple(labels) if hasattr(labels, '__iter__') else (labels,)
-
-        if node in self.popular_nodes:
-            if labels not in self.popular_nodes[node]:
-                neighbors = self._cache_popular_neighbor(
-                    node, self.G.neighbors(node), labels)
-            else:
-                neighbors = self.popular_nodes[node][labels]
-        else:
-            temp = self.G.neighbors(node)
-            if len(temp) > 200:
-                neighbors = self._cache_popular_neighbor(node, temp, labels)
-            else:
-                neighbors = {n for n in temp if n.label in labels}
-
-        for n in neighbors:
-            yield n
+    ###################################################################
+    #                        Tree functions
+    ###################################################################
 
     def parse_tree(self, tree, result):
         """Recursively walk a mapping tree and generate a simpler tree with
@@ -251,17 +171,6 @@ class PsqlGraph2JSON(object):
                 result[key] = {}
                 self.parse_tree(tree[key], result[key])
         return result
-
-    def _get_base_doc(self, node):
-        """This is the basic document generator.  Take all the properties of a
-        node and add it the the result.  The result doc will have *_id
-        where * is the node type.
-
-        """
-
-        base = {'{}_id'.format(node.label): node.node_id}
-        base.update(node.properties)
-        return base
 
     def create_tree(self, node, mapping, tree):
         """Recursively walk a mapping to create a walkable tree.
@@ -297,7 +206,7 @@ class PsqlGraph2JSON(object):
                            subdoc[child_plural], level+1)
         if corr == ONE_TO_MANY:
             doc.append(subdoc)
-        else:
+       else:
             doc.update(subdoc)
         return doc
 
@@ -310,6 +219,21 @@ class PsqlGraph2JSON(object):
             new[node] = {}
             self.copy_tree(original[node], new[node])
         return new
+
+    def _get_base_doc(self, node):
+        """This is the basic document generator.  Take all the properties of a
+        node and add it the the result.  The result doc will have *_id
+        where * is the node type.
+
+        """
+
+        base = {'{}_id'.format(node.label): node.node_id}
+        base.update(node.properties)
+        return base
+
+    ###################################################################
+    #                        Path functions
+    ###################################################################
 
     def walk_path(self, node, path, whole=False):
         """Given a list of strings, treat it as a path, and yield the end of
@@ -338,32 +262,66 @@ class PsqlGraph2JSON(object):
     def remove_bam_index_files(self, files):
         return {f for f in files if not f['file_name'].endswith('.bai')}
 
-    def _cache_data_types(self):
-        """Looking up the files that are classified in each data_type is a
-        common computation.  Here we cache this information for easy retrieval.
+    ###################################################################
+    #                          Participants
+    ###################################################################
+
+    def denormalize_participant(self, node):
+        """Given a participant node, return the entire participant document,
+        the files belonging to that participant, and the annotations
+        that were aggregated to those files.
 
         """
 
-        if len(self.data_types):
-            return
-        print('Caching data types')
-        for data_type in self.nodes_labeled('data_type'):
-            self.data_types[data_type] = self.remove_bam_index_files(
-                set(self.walk_path(data_type, ['data_subtype', 'file'])))
+        # Walk graph naturally for tree of node objects
+        ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
+        # Use tree to create nested json
+        participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
+        # Walk from participant to all file leaves
+        files = self.remove_bam_index_files(
+            self.walk_paths(node, self.part_to_file_paths))
 
-    def _cache_experimental_strategies(self):
-        """Looking up the files that are classified in each
-        experimental_strategy is a common computation.  Here we cache
-        this information for easy retrieval.
+        # Create participant summary
+        participant['summary'] = self.get_participant_summary(node, files)
 
-        """
+        # Take any out of place nodes and put then in correct place in tree
+        self.reconstruct_biospecimen_paths(participant)
+        # Get the metadatafiles that generated the participant
+        participant['metadata_files'] = self.get_metadata_files(node)
 
-        if len(self.experimental_strategies):
-            return
-        print('Caching experitmental strategies')
-        for exp_strat in self.nodes_labeled('experimental_strategy'):
-            self.experimental_strategies[exp_strat] = set(self.walk_path(
-                exp_strat, ['file']))
+        self.patch_project(participant['project'])
+        project = participant['project']
+
+        # Denormalize the participants files
+        def get_file(f):
+            return self.denormalize_file(f, self.copy_tree(ptree, {}))
+        participant['files'] = map(get_file, files)
+
+        # Add properties to all annotations
+        for a in [a for f in participant['files']
+                  for a in f.get('annotations', [])]:
+            a['participant_id'] = node.node_id
+
+        # Create copy of annotations and add properties
+        annotations = {a['annotation_id']: copy(a)
+                       for f in participant['files']
+                       for a in f.get('annotations', [])}
+        for a in annotations.itervalues():
+            a['project'] = project
+
+        # Copy the files with all participants
+        files = deepcopy(participant['files'])
+
+        # Trim other participants from fiels
+        for f in participant['files']:
+            f['participants'] = [p for p in f['participants']
+                                 if p['participant_id'] == node.node_id]
+            f.pop('annotations', None)
+            f.pop('associated_entities', None)
+
+        self.validate_participant(node, participant)
+
+        return participant, files, annotations.values()
 
     def get_exp_strats(self, files):
         """Get the set of experimental_strategies where intersection of the
@@ -432,76 +390,30 @@ class PsqlGraph2JSON(object):
         project_id = '{}-{}'.format(program, code)
         project_doc['project_id'] = project_id
 
-    def verify_data_type_count(self, participant, data_type):
-        calc = len([f for f in participant['files']
-                    if f['data_type'] == data_type])
-        act = ([d['file_count'] for d in participant['summary']['data_types']
-                if d['data_type'] == data_type][:1] or [0])[0]
-        assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
+    ###################################################################
+    #                       File denormalization
+    ###################################################################
 
-    def validate_participant(self, node, participant):
-        # Assert file count = summary.file_count
-        assert len(participant['files'])\
-            == participant['summary']['file_count'],\
-            '{}: {} != {}'.format(node.node_id, len(participant['files']),
-                                  participant['summary']['file_count'])
-
-    def denormalize_participant(self, node):
-        """Given a participant node, return the entire participant document,
-        the files belonging to that participant, and the annotations
-        that were aggregated to those files.
+    def denormalize_file(self, node, ptree):
+        """Given a participants tree and a file node, create the file json
+        document.
 
         """
 
-        # Walk graph naturally for tree of node objects
-        ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
-        # Use tree to create nested json
-        participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
-        # Walk from participant to all file leaves
-        files = self.remove_bam_index_files(
-            self.walk_paths(node, self.part_to_file_paths))
-
-        # Create participant summary
-        participant['summary'] = self.get_participant_summary(node, files)
-
-        # Take any out of place nodes and put then in correct place in tree
-        self.reconstruct_biospecimen_paths(participant)
-        # Get the metadatafiles that generated the participant
-        participant['metadata_files'] = self.get_metadata_files(node)
-
-        self.patch_project(participant['project'])
-        project = participant['project']
-
-        # Denormalize the participants files
-        def get_file(f):
-            return self.denormalize_file(f, self.copy_tree(ptree, {}))
-        participant['files'] = map(get_file, files)
-
-        # Add properties to all annotations
-        for a in [a for f in participant['files']
-                  for a in f.get('annotations', [])]:
-            a['participant_id'] = node.node_id
-
-        # Create copy of annotations and add properties
-        annotations = {a['annotation_id']: copy(a)
-                       for f in participant['files']
-                       for a in f.get('annotations', [])}
-        for a in annotations.itervalues():
-            a['project'] = project
-
-        # Copy the files with all participants
-        files = deepcopy(participant['files'])
-
-        # Trim other participants from fiels
-        for f in participant['files']:
-            f['participants'] = [p for p in f['participants']
-                                 if p['participant_id'] == node.node_id]
-            f.pop('annotations', None)
-            f.pop('associated_entities', None)
-
-        self.validate_participant(node, participant)
-
-        return participant, files, annotations.values()
+        participant_id = ptree.keys()[0].node_id if ptree.keys() else None
+        doc = self._get_base_doc(node)
+        self.patch_file_datetimes(doc)
+        self.add_file_origin(node, doc)
+        self.add_file_neighbors(node, doc)
+        self.add_data_type(node, doc)
+        self.add_related_files(node, doc)
+        self.add_archives(node, doc)
+        doc['participants'] = []
+        relevant = self.add_participants(node, ptree, doc)
+        self.add_file_derived_from_entities(node, doc, participant_id)
+        self.add_annotations(node, relevant, doc)
+        self.add_acl(node, doc)
+        return doc
 
     def prune_participant(self, relevant_nodes, ptree, keys):
         """Start with whole participant tree and remove any nodes that did not
@@ -658,26 +570,21 @@ class PsqlGraph2JSON(object):
     def add_file_origin(self, node, doc):
         doc['origin'] = 'migrated'
 
-    def denormalize_file(self, node, ptree):
-        """Given a participants tree and a file node, create the file json
-        document.
+    def upsert_file_into_dict(self, files, file_doc):
+        did = file_doc['file_id']
+        if did not in files:
+            files[did] = file_doc
+        else:
+            for part in file_doc['participants']:
+                part_id = part['participant_id']
+                existing_ids = {
+                    p['participant_id'] for p in files[did]['participants']}
+                if part_id not in existing_ids:
+                    files[did]['participants'] += file_doc['participants']
 
-        """
-
-        participant_id = ptree.keys()[0].node_id if ptree.keys() else None
-        doc = self._get_base_doc(node)
-        self.patch_file_datetimes(doc)
-        self.add_file_origin(node, doc)
-        self.add_file_neighbors(node, doc)
-        self.add_data_type(node, doc)
-        self.add_related_files(node, doc)
-        self.add_archives(node, doc)
-        doc['participants'] = []
-        relevant = self.add_participants(node, ptree, doc)
-        self.add_file_derived_from_entities(node, doc, participant_id)
-        self.add_annotations(node, relevant, doc)
-        self.add_acl(node, doc)
-        return doc
+    ###################################################################
+    #                       Project summaries
+    ###################################################################
 
     def denormalize_project(self, p):
         """Summarize a project.
@@ -755,17 +662,9 @@ class PsqlGraph2JSON(object):
             doc['summary']['data_types'] = data_type_summaries
         return doc
 
-    def upsert_file_into_dict(self, files, file_doc):
-        did = file_doc['file_id']
-        if did not in files:
-            files[did] = file_doc
-        else:
-            for part in file_doc['participants']:
-                part_id = part['participant_id']
-                existing_ids = {
-                    p['participant_id'] for p in files[did]['participants']}
-                if part_id not in existing_ids:
-                    files[did]['participants'] += file_doc['participants']
+    ###################################################################
+    #                     Topmost denorm functions
+    ###################################################################
 
     def denormalize_participants(self, participants=None):
         """If participants is not specified, denormalize all participants in
@@ -858,6 +757,48 @@ class PsqlGraph2JSON(object):
         projects = self.denormalize_projects(projs)
         return parts, files, annotations, projects
 
+    ###################################################################
+    #                         Graph functions
+    ###################################################################
+
+    def nodes_labeled(self, labels):
+        """Returns an iterator over the edges in the graph with label `label`
+
+        """
+
+        labels = tuple(labels) if hasattr(labels, '__iter__') else (labels,)
+        for n, p in self.G.nodes_iter(data=True):
+            if n.label in labels:
+                yield n
+
+    def neighbors_labeled(self, node, labels):
+        """For a given node, return an iterator with generates neighbors to
+        that node that are in a list of labels.  `label` can be either a
+        string or list of strings.
+
+        """
+        labels = tuple(labels) if hasattr(labels, '__iter__') else (labels,)
+
+        if node in self.popular_nodes:
+            if labels not in self.popular_nodes[node]:
+                neighbors = self._cache_popular_neighbor(
+                    node, self.G.neighbors(node), labels)
+            else:
+                neighbors = self.popular_nodes[node][labels]
+        else:
+            temp = self.G.neighbors(node)
+            if len(temp) > 200:
+                neighbors = self._cache_popular_neighbor(node, temp, labels)
+            else:
+                neighbors = {n for n in temp if n.label in labels}
+
+        for n in neighbors:
+            yield n
+
+    ###################################################################
+    #                       Validation functions
+    ###################################################################
+
     def validate_project_file_counts(self, project_doc, file_docs):
         print 'Validating {}'.format(project_doc['project_id'])
         actual = len([f for f in file_docs
@@ -872,59 +813,147 @@ class PsqlGraph2JSON(object):
         for project_doc in project_docs:
             self.validate_project_file_counts(project_doc, file_docs)
 
-    def parallel_denormalize_participants(self, processes, sample_size=None):
-        """DO NOT USE.  It's not tested to work
+    def verify_data_type_count(self, participant, data_type):
+        calc = len([f for f in participant['files']
+                    if f['data_type'] == data_type])
+        act = ([d['file_count'] for d in participant['summary']['data_types']
+                if d['data_type'] == data_type][:1] or [0])[0]
+        assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
+
+    def validate_participant(self, node, participant):
+        # Assert file count = summary.file_count
+        assert len(participant['files'])\
+            == participant['summary']['file_count'],\
+            '{}: {} != {}'.format(node.node_id, len(participant['files']),
+                                  participant['summary']['file_count'])
+
+    ###################################################################
+    #                       Caching functions
+    ###################################################################
+
+    def cache_database(self):
+        """Load the database into memory and remember only edge labels that we
+        will need to distinguish later.
+
+        """
+        with self.g.session_scope():
+            pbar = self.pbar('Caching Database: ', self.g.edges().count())
+            for e in self.g.edges().options(joinedload(Edge.src))\
+                                   .options(joinedload(Edge.dst))\
+                                   .yield_per(int(1e5)):
+                pbar.update(pbar.currval+1)
+                needs_differentiation = ((e.src.label, e.label, e.dst.label)
+                                         in self.differentiated_edges)
+                if needs_differentiation and e.properties:
+                    self.G.add_edge(
+                        e.src, e.dst, label=e.label, props=e.properties)
+                elif needs_differentiation and not e.properties:
+                    self.G.add_edge(e.src, e.dst, label=e.label)
+                elif e.properties:
+                    self.G.add_edge(e.src, e.dst, props=e.properties)
+                else:
+                    self.G.add_edge(e.src, e.dst)
+            pbar.finish()
+        self._cache_all()
+        print('Cached {} nodes'.format(self.G.number_of_nodes()))
+
+    def _cache_all(self):
+        """Create key value maps to cache nodes by label, by path, etc.
 
         """
 
-        global GRAPH, EXPERIMENTAL_STRATEGIES, DATA_TYPES, PARTICIPANTS,\
-            RELEVANT_NODES, ANNOTATIONS, ANNOTATION_ENTITIES
+        self._cache_experimental_strategies()
+        self._cache_data_types()
+        self._cache_annotations()
+        self._cache_relevant_nodes()
+        self._cache_entity_participants()
+        self._participants()
+        self._cache_projects()
 
-        self._cache_all()
+    def _cache_projectse(self):
+        if not self.projects:
+            print 'Caching projects...'
+            self.projects = list(self.nodes_labeled('project'))
 
-        if sample_size:
-            participants = self.participants[:sample_size]
-        else:
-            participants = self.participants
+    def _cache_participants(self):
+        if not self.participants:
+            print 'Caching participants...'
+            self.participants = list(self.nodes_labeled('participant'))
 
-        part_count = len(participants)
-        print 'Denormalizing {} participants'.format(part_count)
-        part_docs, ann_docs, file_docs = [], {}, {}
-        pbar = self.pbar('Denormalizing participants ', len(participants))
-
-        # Set global variables
-        GRAPH = self.G
-        EXPERIMENTAL_STRATEGIES = self.experimental_strategies
-        DATA_TYPES = self.data_types
-        PARTICIPANTS = {p.node_id: p for p in participants}
-        RELEVANT_NODES = self.relevant_nodes
-        ANNOTATIONS = self.annotations
-        ANNOTATION_ENTITIES = self.annotation_entities
-
-        # Create pool, enqueue all participants, parse them as the return
-        pool = AsyncProcessPool(processes)
-        pool.start(denorm_participant_worker, participants)
-        for pa, fi, an in pool:
-            for f in fi:
-                self.upsert_file_into_dict(file_docs, f)
-            for a in an:
-                ann_docs[a['annotation_id']] = a
-            part_docs.append(pa)
-            pbar.update(len(part_docs))
-        pool.terminate()
+    def _cache_entity_participants(self):
+        if self.entity_participants:
+            return
+        entities = list(self.nodes_labeled(self.possible_associated_entites))
+        pbar = self.pbar('Caching entity participants: ', len(entities))
+        self.entity_participants = {}
+        for e in entities:
+            paths = [p[1:] for p in self.file_to_part_paths if p[0] == e.label]
+            participants = self.walk_paths(e, paths)
+            assert len(participants) == 1,\
+                '{}: Found {} participants: {}'.format(
+                    e, len(participants), paths)
+            self.entity_participants[e] = participants.pop()
+            pbar.update(pbar.currval+1)
         pbar.finish()
-        return part_docs, file_docs.values(), ann_docs.values()
 
+    def _cache_relevant_nodes(self):
+        if self.relevant_nodes:
+            return
+        files = list(self.nodes_labeled('file'))
+        self.relevant_nodes = {}
+        pbar = self.pbar('Caching file paths: ', len(files))
+        for f in files:
+            self.relevant_nodes[f] = self.walk_paths(
+                f, self.file_to_part_paths, whole=True)
+            pbar.update(pbar.currval+1)
+        pbar.finish()
 
-def denorm_participant_worker(participant):
-    c = PsqlGraph2JSON(None)
-    c.G = GRAPH
-    c.experimental_strategies = EXPERIMENTAL_STRATEGIES
-    c.data_types = DATA_TYPES
-    c.relevant_nodes = RELEVANT_NODES
-    c.annotations = ANNOTATIONS
-    c.annotation_entities = ANNOTATION_ENTITIES
+    def _cache_annotations(self):
+        if not self.annotations:
+            self.annotations = list(self.nodes_labeled('annotation'))
+        if self.annotation_entities:
+            return
+        pbar = self.pbar('Caching annotations: ', len(self.annotations))
+        self.annotation_entities = {}
+        for a in self.annotations:
+            for n in self.G.neighbors(a):
+                if n not in self.annotation_entities:
+                    self.annotation_entities[n] = {}
+                a_doc = self.denormalize_annotation(a)
+                self.annotation_entities[n][a.node_id] = a_doc
+            pbar.update(pbar.currval+1)
+        pbar.finish()
 
-    node = PARTICIPANTS[participant.node_id]
-    part_doc, file_docs, ann_docs = c.denormalize_participant(node)
-    return part_doc, file_docs, ann_docs
+    def _cache_popular_neighbor(self, node, neighbors, labels):
+        if node not in self.popular_nodes:
+            self.popular_nodes[node] = {}
+        self.popular_nodes[node][labels] = {
+            n for n in neighbors if n.label in labels}
+        return self.popular_nodes[node][labels]
+
+    def _cache_data_types(self):
+        """Looking up the files that are classified in each data_type is a
+        common computation.  Here we cache this information for easy retrieval.
+
+        """
+
+        if len(self.data_types):
+            return
+        print('Caching data types')
+        for data_type in self.nodes_labeled('data_type'):
+            self.data_types[data_type] = self.remove_bam_index_files(
+                set(self.walk_path(data_type, ['data_subtype', 'file'])))
+
+    def _cache_experimental_strategies(self):
+        """Looking up the files that are classified in each
+        experimental_strategy is a common computation.  Here we cache
+        this information for easy retrieval.
+
+        """
+
+        if len(self.experimental_strategies):
+            return
+        print('Caching experitmental strategies')
+        for exp_strat in self.nodes_labeled('experimental_strategy'):
+            self.experimental_strategies[exp_strat] = set(self.walk_path(
+                exp_strat, ['file']))
