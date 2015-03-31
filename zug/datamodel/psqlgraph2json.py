@@ -149,6 +149,10 @@ class PsqlGraph2JSON(object):
                                                    .portion\
                                                    .analyte\
                                                    .aliquot
+        participant_tree.sample.aliquot = participant_tree.sample\
+                                                          .portion\
+                                                          .analyte\
+                                                          .aliquot
 
         # Format tree in way that allows uniform walking
         self.ptree_mapping = {'participant': participant_tree.to_dict()}
@@ -365,10 +369,36 @@ class PsqlGraph2JSON(object):
 
         """
 
-        for sample in participant.get('samples', []):
+        samples = participant.get('samples', [])
+        correct_aliquots = set()
+        for sample in samples:
+            for portion in sample.get('portions', []):
+                for analyte in portion.get('analytes', []):
+                    for aliquot in analyte.get('aliquots', []):
+                        correct_aliquots.add(aliquot['aliquot_id'])
+
+        for sample in samples:
             sample['portions'] = sample.get('portions', [])
-            for aliquot in sample.pop('aliquots', []):
-                sample['portions'].append({'portion': {'analyte': {aliquot}}})
+
+            # Get all aliquots connected to samples
+            sample_aliquots = sample.pop('aliquots', [])
+            for aliquot in sample_aliquots:
+                if aliquot['aliquot_id'] not in correct_aliquots:
+                    sample['portions'].append({
+                        'analytes': [{
+                            'aliquots': [aliquot]
+                        }]})
+
+            for portion in sample['portions']:
+                portion['analytes'] = portion.get('analytes', [])
+
+                # Get aliquots connected to portions
+                portion_aliquots = portion.pop('aliquots', [])
+                for aliquot in portion_aliquots:
+                    # Put aliquot under analyte
+                    if aliquot['aliquot_id'] not in correct_aliquots:
+                        portion['analytes'].append([{
+                            'aliquots': [aliquot]}])
 
     def get_metadata_files(self, participant):
         """Return the biospecimen.xml and clinical.xml files that contain a
