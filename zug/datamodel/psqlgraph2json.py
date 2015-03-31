@@ -11,7 +11,6 @@ import itertools
 from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy, deepcopy
-from cdisutils.pool import AsyncProcessPool
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
