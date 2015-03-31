@@ -20,6 +20,7 @@ user = 'test'
 password = 'test'
 database = 'automated_test'
 
+
 converter = xml2psqlgraph.xml2psqlgraph(
     xml_mapping=bcr_xml_mapping,
     host=host,
@@ -126,13 +127,15 @@ class TestElasticsearchMappings(unittest.TestCase):
 
     def test_participant_annotations(self):
         props = get_participant_es_mapping()['properties']
-        self.assertTrue('annotations' in props)
-        self.assertEqual(annotation_props, set(props['annotations']['properties']))
+        self.assertEqual(annotation_props.union({'entity_submitter_id'}),
+                         set(props['annotations']['properties']))
 
     def test_participant_files(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('files' in props)
-        self.assertEqual(file_props, set(props['files']['properties']))
+        self.assertEqual(file_props.union({'origin'}),
+                         set(props['files']['properties']).union(
+                             {'annotations', 'associated_entities'}))
 
 
 class TestPsqlgraph2JSON(unittest.TestCase):
