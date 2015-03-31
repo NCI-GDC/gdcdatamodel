@@ -1,7 +1,7 @@
 import logging
 import unittest
 import os
-from zug.datamodel import xml2psqlgraph, bcr_xml_mapping
+from zug.datamodel import xml2psqlgraph, bcr_xml_mapping, prelude
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import (
@@ -147,20 +147,7 @@ class TestElasticsearchMappings(unittest.TestCase):
 class TestPsqlgraph2JSON(unittest.TestCase):
 
     def add_req_nodes(self):
-        for code in ['01', '02', '05', '07', '09', '13']:
-            g.node_merge(node_id=code, label='center', properties={
-                'center_type': 'center_type',
-                'code': code,
-                'name': 'name',
-                'namespace': 'namespace',
-                'short_name': 'short_name'})
-        g.node_merge(node_id='tss', label='tissue_source_site',
-                     properties={'name': 'BRCA', 'bcr_id': 'id', 'code': 'AR',
-                                 'name': u"name", 'project': 'Mesothelioma'})
-        g.node_merge(node_id='project', label='project', properties={
-            'code': 'BRCA', 'primary_site': 'primary site',
-            'name': 'project name', 'state': 'legacy',
-            'disease_type': 'disease type'})
+        prelude.create_prelude_nodes(g)
 
     def add_file_nodes(self):
         g.node_merge(node_id='file1', label='file', properties={

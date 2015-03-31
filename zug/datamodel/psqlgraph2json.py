@@ -206,7 +206,7 @@ class PsqlGraph2JSON(object):
                            subdoc[child_plural], level+1)
         if corr == ONE_TO_MANY:
             doc.append(subdoc)
-       else:
+        else:
             doc.update(subdoc)
         return doc
 
@@ -867,10 +867,10 @@ class PsqlGraph2JSON(object):
         self._cache_annotations()
         self._cache_relevant_nodes()
         self._cache_entity_participants()
-        self._participants()
+        self._cache_participants()
         self._cache_projects()
 
-    def _cache_projectse(self):
+    def _cache_projects(self):
         if not self.projects:
             print 'Caching projects...'
             self.projects = list(self.nodes_labeled('project'))
@@ -911,7 +911,7 @@ class PsqlGraph2JSON(object):
     def _cache_annotations(self):
         if not self.annotations:
             self.annotations = list(self.nodes_labeled('annotation'))
-        if self.annotation_entities:
+        if self.annotation_entities or not self.annotations:
             return
         pbar = self.pbar('Caching annotations: ', len(self.annotations))
         self.annotation_entities = {}

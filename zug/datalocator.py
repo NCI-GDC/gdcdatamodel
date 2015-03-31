@@ -32,16 +32,20 @@ class DataLocator(object):
     def sync(self, container):
         for obj in self.storage.list_container_objects(self.storage.get_container(container)):
             analysis_id, name = obj.name.split("/", 1)
-            try:
-                with self.graph.session_scope():
+            with self.graph.session_scope():
+                try:
                     self.log.info("looking for node with submitter_id %s and name %s", analysis_id, name)
                     file_node = self.graph.nodes().props({"file_name": name})\
                                                   .sysan({"analysis_id": analysis_id}).one()
-                doc = self.signpost.get(file_node.node_id)
-                url = url_for(obj)
-                doc.urls = [url]
-                self.log.info("patching node %s with url %s", file_node, url)
-                doc.patch()
-            except:
-                self.log.exception("couldn't sync %s/%s", analysis_id, name)
-                continue
+                    doc = self.signpost.get(file_node.node_id)
+                    if not doc.urls:  # only set the url if it doesn't have one already
+                        url = url_for(obj)
+                        doc.urls = [url]
+                        self.log.info("patching node %s with url %s", file_node, url)
+                        doc.patch()
+                    else:
+                        self.log.info("document already has urls: %s, not changing", doc.urls)
+                    self.graph.node_update(node=file_node, properties={"state": "live"})
+                except:
+                    self.log.exception("couldn't sync %s/%s", analysis_id, name)
+                    continue
