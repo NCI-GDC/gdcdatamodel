@@ -144,6 +144,7 @@ class cghub2psqlgraph(object):
         # Add the correct src_id to this file's edges now that we know it
         for edge in self.edges.get(file_key, []):
             edge.src_id = node_id
+        return node_id
 
     def rebase_file_nodes(self, source):
         """update file records in graph
@@ -158,7 +159,8 @@ class cghub2psqlgraph(object):
         system_annotations = {'source': source}
         # Loop through files to add and merge them into the graph
         for file_key, node in self.files_to_add.iteritems():
-            self.merge_file_node(file_key, node, system_annotations)
+            node_id = self.merge_file_node(file_key, node, system_annotations)
+            self.files_to_add[file_key].node_id = node_id
 
         # Loop through files to remove and delete them from the graph
         for file_key in self.files_to_delete:
@@ -192,10 +194,12 @@ class cghub2psqlgraph(object):
         self.edges
 
         """
-        for src_key, dst_key in self.related_to_edges.items():
-            self.save_edge(src_key, self.files_to_add[dst_key].node_id,
-                           'file', 'related_to',
-                           src_id=self.files_to_add[src_key].node_id)
+        for src_key, dst_key in self.related_to_edges.iteritems():
+            src_id = self.files_to_add[src_key].node_id
+            dst_id = self.files_to_add[dst_key].node_id
+            assert dst_id and src_id
+            self.save_edge(
+                src_key, dst_id, 'file', 'related_to', src_id=src_id)
         for src_f_name, edges in self.edges.iteritems():
             map(self.export_edge, edges)
         self.edges = {}

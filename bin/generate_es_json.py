@@ -1,35 +1,16 @@
 #!/usr/bin/env python
 import logging
 import argparse
-import json
-from itertools import islice
-from multiprocessing import Pool
-from zug.datamodel import psqlgraph2json
+from psqlgraph import PsqlGraphDriver
+from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
+from zug.gdc_elasticsearch import GDCElasticsearch
 from cdisutils.log import get_logger
+from elasticsearch import Elasticsearch
 
 log = get_logger("json_generator")
-logging.root.setLevel(level=logging.ERROR)
+logging.root.setLevel(level=logging.WARNING)
+log.setLevel(level=logging.INFO)
 args = None
-
-
-def get_converter():
-    return psqlgraph2json.PsqlGraph2JSON(
-        host=args.host,
-        user=args.user,
-        password=args.password,
-        database=args.database,
-    )
-
-
-def print_samples(converter):
-    with open('participants.json', 'w') as f:
-        f.write(json.dumps([
-            converter.denormalize_participant(n)
-            for n in islice(converter.get_nodes('participant'), 10)]))
-    with open('files.json', 'w') as f:
-        f.write(json.dumps([
-            converter.denormalize_file(n)
-            for n in islice(converter.get_nodes('file'), 10)]))
 
 
 if __name__ == '__main__':
@@ -42,9 +23,24 @@ if __name__ == '__main__':
                         help='the password for import user')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='the postgres server host')
-    parser.add_argument('-n', '--nproc', default=8, type=int,
-                        help='the number of processes')
+    parser.add_argument('--alias', default='gdc_test', type=str,
+                        help='elasticsearch index')
+    parser.add_argument('--es-host', default='elasticsearch.service.consul',
+                        type=str, help='elasticsearch host')
     args = parser.parse_args()
-    converter = get_converter()
-    with converter.graph.session_scope():
-        print_samples(converter)
+
+    # Get graph driver
+    g = PsqlGraphDriver(
+        host=args.host,
+        user=args.user,
+        password=args.password,
+        database=args.database)
+
+    # Get graph to json converter and load the database
+    p2j = PsqlGraph2JSON(g)
+    p2j.cache_database()
+
+    # Get json to elasticsearch exporter and deploy the index
+    es = GDCElasticsearch(
+        Elasticsearch(hosts=[args.es_host], timeout=9999), p2j)
+    es.deploy_alias(args.alias)
