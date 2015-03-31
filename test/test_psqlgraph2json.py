@@ -46,8 +46,9 @@ sample_props = {'sample_type_id',
                 'days_to_sample_procurement', 'freezing_method',
                 'is_ffpe', 'pathology_report_uuid', 'portions',
                 'sample_type', 'days_to_collection', 'initial_weight',
-                'current_weight', 'annotations', 'longest_dimension'}
-project_props = {'code', 'name', 'state', 'program', 'primary_site',
+                'current_weight', 'annotations', 'longest_dimension',
+                'tumor_code_id', 'tumor_code'}
+project_props = {'name', 'state', 'program', 'primary_site',
                  'project_id', 'disease_type'}
 summary_props = {'data_types', 'file_count',
                  'experimental_strategies', 'file_size'}
@@ -67,15 +68,15 @@ aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
                  'concentration', 'source_center', 'annotations'}
 annotation_props = {'category', 'status', 'classification',
                     'creator', 'created_datetime', 'notes',
-                    'submitter_id', 'annotation_id', 'item_id',
-                    'item_type', 'project'}
+                    'submitter_id', 'annotation_id', 'entity_id',
+                    'entity_type', 'participant_id'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
-              'file_name', 'md5sum', 'participants',
-              'submitter_id', 'access', 'platform', 'state',
-              'data_subtype', 'file_id', 'file_size',
-              'experimental_strategy', 'state_comment',
-              'annotations', 'archives', 'related_archives', 'data_type',
-              'uploaded_datetime', 'published_datetime', 'acl'}
+              'file_name', 'md5sum', 'participants', 'submitter_id',
+              'access', 'platform', 'state', 'data_subtype',
+              'file_id', 'file_size', 'experimental_strategy',
+              'state_comment', 'annotations', 'data_type',
+              'uploaded_datetime', 'published_datetime', 'acl',
+              'associated_entities', 'archive'}
 
 
 class TestElasticsearchMappings(unittest.TestCase):
@@ -85,41 +86,35 @@ class TestElasticsearchMappings(unittest.TestCase):
         self.assertTrue('project' in props)
         print props['project']['properties']
         self.assertTrue('program' in props['project']['properties'])
-        self.assertEqual(project_props.symmetric_difference(
-            set(props['project']['properties'])), set([]))
+        self.assertEqual(project_props, set(props['project']['properties']))
 
     def test_participant_summary(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('summary' in props)
-        self.assertEqual(summary_props.symmetric_difference(
-            set(props['summary']['properties'])), set([]))
+        self.assertEqual(summary_props, set(props['summary']['properties']))
 
     def test_participant_tss(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('tissue_source_site' in props)
-        self.assertEqual(tss_props.symmetric_difference(
-            set(props['tissue_source_site']['properties'])), set([]))
+        self.assertEqual(tss_props, set(props['tissue_source_site']['properties']))
 
     def test_participant_samples(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('samples' in props)
-        self.assertEqual(sample_props.symmetric_difference(
-            set(props['samples']['properties'])), set([]))
+        self.assertEqual(sample_props, set(props['samples']['properties']))
 
     def test_participant_portions(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('portions' in props['samples']['properties'])
-        self.assertEqual(portion_props.symmetric_difference(
-            set(props['samples']['properties']
-                ['portions']['properties'])), set([]))
+        self.assertEqual(portion_props, set(props['samples']['properties']
+                                            ['portions']['properties']))
 
     def test_participant_analytes(self):
         props = get_participant_es_mapping()['properties']
         portions = (props['samples']
                     ['properties']['portions']['properties'])
         self.assertTrue('analytes' in portions)
-        self.assertEqual(analyte_props.symmetric_difference(
-            set(portions['analytes']['properties'])), set([]))
+        self.assertEqual(analyte_props, set(portions['analytes']['properties']))
 
     def test_participant_aliquots(self):
         props = get_participant_es_mapping()['properties']
@@ -127,21 +122,17 @@ class TestElasticsearchMappings(unittest.TestCase):
                     ['portions']['properties']
                     ['analytes']['properties'])
         self.assertTrue('aliquots' in analytes)
-        self.assertEqual(aliquot_props.symmetric_difference(
-            set(analytes['aliquots']['properties'])), set([]))
+        self.assertEqual(aliquot_props, set(analytes['aliquots']['properties']))
 
     def test_participant_annotations(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('annotations' in props)
-        self.assertEqual(annotation_props.symmetric_difference(
-            set(props['annotations']['properties'])), set(['project']))
+        self.assertEqual(annotation_props, set(props['annotations']['properties']))
 
     def test_participant_files(self):
         props = get_participant_es_mapping()['properties']
         self.assertTrue('files' in props)
-        self.assertEqual(file_props.symmetric_difference(
-            set(props['files']['properties'])), set([
-                'uploaded_datetime', 'published_datetime']))
+        self.assertEqual(file_props, set(props['files']['properties']))
 
 
 class TestPsqlgraph2JSON(unittest.TestCase):
@@ -189,54 +180,58 @@ class TestPsqlgraph2JSON(unittest.TestCase):
     def test_participant_project(self):
         props = self.part_doc
         self.assertTrue('project' in props)
-        self.assertEqual(project_props.symmetric_difference(
-            set(props['project'].keys())), set(['program']))
+        actual = set(props['project'].keys())
+        self.assertEqual(project_props, actual)
 
     def test_participant_summary(self):
         props = self.part_doc
         self.assertTrue('summary' in props)
-        self.assertEqual(summary_props.symmetric_difference(
-            set(props['summary'].keys())), set([]))
+        actual = set(props['summary'].keys())
+        self.assertEqual(summary_props, actual)
 
     def test_participant_tss(self):
         props = self.part_doc
         self.assertTrue('tissue_source_site' in props)
-        self.assertEqual(tss_props.symmetric_difference(
-            set(props['tissue_source_site'].keys())), set([]))
+        actual = set(props['tissue_source_site'].keys())
+        self.assertEqual(tss_props, actual)
 
     def test_participant_samples(self):
         props = self.part_doc
         self.assertTrue('samples' in props)
-        self.assertEqual(sample_props.symmetric_difference(
-            set(props['samples'][0].keys())), set(['annotations']))
+        actual = set(props['samples'][0].keys())
+        self.assertEqual(sample_props, actual.union(
+            {'annotations'}))
 
     def test_participant_portions(self):
         props = self.part_doc
         self.assertTrue('portions' in props['samples'][0])
         portion = [p for s in props['samples'] for p in s['portions']
                    if 'slides' not in p][0]
-        self.assertEqual(portion_props.symmetric_difference(
-            set(portion.keys())), set(['center', 'annotations', 'slides']))
+        actual = set(portion.keys())
+        self.assertEqual(portion_props, actual.union(
+            {'annotations', 'slides', 'center'}))
 
     def test_participant_analytes(self):
         props = self.part_doc
         portions = (props['samples'][0]['portions'][0])
         self.assertTrue('analytes' in portions)
-        self.assertEqual(analyte_props.symmetric_difference(
-            set(portions['analytes'][0].keys())), set(['annotations']))
+        actual = set(portions['analytes'][0].keys())
+        self.assertEqual(analyte_props, actual.union(
+            {'annotations'}))
 
     def test_participant_aliquots(self):
         props = self.part_doc
         analytes = (props['samples'][0]['portions'][0]['analytes'][0])
         self.assertTrue('aliquots' in analytes)
-        self.assertEqual(aliquot_props.symmetric_difference(
-            set(analytes['aliquots'][0].keys())), set(['annotations']))
+        actual = set(analytes['aliquots'][0].keys())
+        self.assertEqual(aliquot_props, actual.union(
+            {'annotations'}))
 
     def test_participant_files(self):
         props = self.part_doc
         self.assertTrue('files' in props)
-        self.assertEqual(file_props.symmetric_difference(
-            set(props['files'][0].keys())
-        ), set(['related_files', 'center', 'tags', 'data_format', 'platform',
-                'archives', 'annotations', 'experimental_strategy',
-                'data_subtype', 'related_archives', 'data_type']))
+        actual = set(props['files'][0].keys())
+        self.assertEqual(file_props.union({'origin'}), actual.union(
+            {'annotations', 'related_files', 'center', 'data_type',
+             'tags', 'data_format', 'platform', 'data_subtype',
+             'associated_entities', 'archive', 'experimental_strategy'}))

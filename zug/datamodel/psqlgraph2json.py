@@ -910,8 +910,15 @@ class PsqlGraph2JSON(object):
 
     def _cache_annotations(self):
         if not self.annotations:
+            # cache what nodes are annotations
             self.annotations = list(self.nodes_labeled('annotation'))
-        if self.annotation_entities or not self.annotations:
+        if self.annotation_entities:
+            # we've already cached the related entities
+            return
+        if not self.annotations:
+            # there aren't any entities to relate
+            self.annotation_entities = {}
+            log.warn('No annotations found in the cached database!')
             return
         pbar = self.pbar('Caching annotations: ', len(self.annotations))
         self.annotation_entities = {}
