@@ -309,11 +309,7 @@ class Downloader(object):
                 path, offset, bytes,
                 part_num
             ])
-        try:
-            pool.map_async(upload_multipart, args).get(99999999)
-        except:
-            self.logger.exception("caught exception while uploading with process pool")
-            raise
+        pool.map_async(upload_multipart, args).get(99999999)
         pool.close()
         pool.join()
 
@@ -354,9 +350,9 @@ class Downloader(object):
                     self.set_file_state(file, state)
                     return
             self.logger.exception("failure while trying to move %s from %s to %s via %s",
-                               file, original_state, final_state, intermediate_state)
+                                  file, original_state, final_state, intermediate_state)
             self.set_file_state(file, original_state)
-            raise
+            raise e
 
     def url_for_file(self, file):
         template = "s3://{host}/{bucket}/{analysis_id}/{file_name}"
@@ -380,6 +376,7 @@ class Downloader(object):
         doc.patch()
 
     def cleanup(self):
+        self.logger.info("Cleaning up before shutting down")
         dir = os.path.join(self.download_path, self.analysis_id)
         self.logger.info("Removing directory %s", dir)
         shutil.rmtree(dir)
@@ -402,20 +399,22 @@ class Downloader(object):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
-        with self.graph.session_scope():
-            self.get_files_to_download()
-            # we don't state transition here (just hold our locks)
-            # because we want to transition one file at a time
-            self.logger.info("Downloading analysis id %s from cghub", self.analysis_id)
-            self.download()
-            # first upload all files in the same session
-            for file in self.files:
-                with self.state_transition(file, "uploading", "uploaded"):
-                    self.upload(file)
-        # once they've been uploaded, verify checksums in a separate session
-        with self.graph.session_scope():
-            for file in self.files:
-                with self.state_transition(file, "validating", "live",
-                                           error_states={InvalidChecksumException: "invalid"}):
-                    self.verify(file)
-        self.cleanup()
+        try:
+            with self.graph.session_scope():
+                self.get_files_to_download()
+                # we don't state transition here (just hold our locks)
+                # because we want to transition one file at a time
+                self.logger.info("Downloading analysis id %s from cghub", self.analysis_id)
+                self.download()
+                # first upload all files in the same session
+                for file in self.files:
+                    with self.state_transition(file, "uploading", "uploaded"):
+                        self.upload(file)
+            # once they've been uploaded, verify checksums in a separate session
+            with self.graph.session_scope():
+                for file in self.files:
+                    with self.state_transition(file, "validating", "live",
+                                               error_states={InvalidChecksumException: "invalid"}):
+                        self.verify(file)
+        finally:
+            self.cleanup()
