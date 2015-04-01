@@ -24,7 +24,9 @@ from sqlalchemy.exc import OperationalError
 
 from cdisutils.log import get_logger
 from psqlgraph import PsqlGraphDriver, Node
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from signpostclient import SignpostClient
+from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 
 # buffer 10 MB in memory at once
@@ -166,7 +168,8 @@ class Downloader(object):
         self.pg_info["pass"] = self.consul_get(["pg", "pass"])
         self.graph = PsqlGraphDriver(self.pg_info["host"], self.pg_info["user"],
                                      self.pg_info["pass"], self.pg_info["name"])
-        # TODO validators
+        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
+        self.graph.edge_validator = AvroNodeValidator(edge_avsc_object)
         self.s3_info = {}
         self.s3_info["host"] = self.consul_get(["s3", "host"])
         self.s3_info["port"] = int(self.consul_get(["s3", "port"]))

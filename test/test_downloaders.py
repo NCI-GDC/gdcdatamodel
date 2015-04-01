@@ -83,6 +83,7 @@ class DownloadersTest(ZugsTestBase):
                 "md5sum": md5sum(content),
                 "file_size": len(content),
                 "state": "submitted",
+                "state_comment": None,
                 "submitter_id": aid
             },
             system_annotations={
