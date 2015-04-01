@@ -233,6 +233,7 @@ class Downloader(object):
                 else:
                     for file in files:
                         assert file.system_annotations["source"] == self.source
+                        assert file["state"] == "submitted"
                     self.files = files
                 self.logger.info("Found %s files (%s) with analysis_id %s", len(files), files, self.analysis_id)
                 return self.files
@@ -295,7 +296,7 @@ class Downloader(object):
 
         block_size = 1073741824  # bytes (1 GiB) must be > 5 MB
 
-        self.logger.info("Initiating multipart upload")
+        self.logger.info("Initiating multipart upload in bucket %s", self.s3_bucket.name)
         mp = self.s3_bucket.initiate_multipart_upload(name)
         self.logger.info("Initiated multipart upload: {}".format(mp.id))
 
