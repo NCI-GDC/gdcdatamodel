@@ -84,6 +84,12 @@ def which(program):
     return None
 
 
+def upload_multipart_wrapper(args):
+    """This exists purely to get around pickling problems with
+    multiprocessing.Pool"""
+    return upload_multipart(*args)
+
+
 def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
     log = get_logger("{}_upload_part_{}".format(key_name, index))
     tries = 0
@@ -309,7 +315,7 @@ class Downloader(object):
                 path, offset, bytes,
                 part_num
             ])
-        pool.map_async(lambda args: upload_multipart(*args), args_list).get(99999999)
+        pool.map_async(upload_multipart_wrapper, args_list).get(99999999)
         pool.close()
         pool.join()
 
