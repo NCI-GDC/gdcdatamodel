@@ -24,7 +24,7 @@ class FakePool(object):
 
     def map_async(self, f, args_list):
         for args in args_list:
-            f(*args)
+            f(args)
         return Mock()
 
     def close(self):

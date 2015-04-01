@@ -230,6 +230,7 @@ class Downloader(object):
             except OperationalError:
                 self.graph.current_session().rollback()
                 self.logger.exception("Caught OperationalError on try %s to find files to download, retrying", tries)
+                time.sleep(3)
         raise RuntimeError("Couldn't find files to download in five tries")
 
     def get_free_space(self):
@@ -296,19 +297,19 @@ class Downloader(object):
         chunk_amount = int(math.ceil(source_size / float(block_size)))
         self.logger.info("Number of chunks: {}".format(chunk_amount))
         self.logger.info("Starting upload")
-        args = []
+        args_list = []
         for i in range(chunk_amount):
             # compute offset and bytes
             offset = i * block_size
             remaining_bytes = source_size - offset
             bytes = min([block_size, remaining_bytes])
             part_num = i + 1
-            args.append([
+            args_list.append([
                 self.s3_info, mp.key_name, mp.id,
                 path, offset, bytes,
                 part_num
             ])
-        pool.map_async(upload_multipart, args).get(99999999)
+        pool.map_async(lambda args: upload_multipart(*args), args_list).get(99999999)
         pool.close()
         pool.join()
 
