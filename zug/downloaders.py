@@ -161,7 +161,6 @@ class Downloader(object):
         self.graph = PsqlGraphDriver(self.pg_info["host"], self.pg_info["user"],
                                      self.pg_info["pass"], self.pg_info["name"])
         # TODO validators
-        self.cghub_key = self.consul_get(["cghub_key"])
         self.s3_info = {}
         self.s3_info["host"] = self.consul_get(["s3", "host"])
         self.s3_info["port"] = int(self.consul_get(["s3", "port"]))
@@ -241,13 +240,12 @@ class Downloader(object):
     def call_gtdownload(self):
         cmd = ' '.join([
             'gtdownload -v -k 15',
-            '-c {cghub_key}',
+            '-c /var/tungsten/keys/cghub',
             '-l {aid}.log',
             '--max-children 4',
             '-p {download_path}',
             '{aid}',
         ]).format(
-            cghub_key=self.cghub_key,
             download_path=self.download_path,
             aid=self.analysis_id,
         )
