@@ -94,7 +94,6 @@ class DownloadersTest(ZugsTestBase):
         return file
 
     @mock_s3bucket_path
-    @patch("zug.downloaders.read_source", lambda: "fake_cghub")
     @patch("zug.downloaders.Downloader.check_gtdownload", lambda self: None)
     @patch("zug.downloaders.Pool", FakePool)
     @patch("zug.downloaders.Downloader.get_free_space", lambda self: 1000000000000)
@@ -108,7 +107,31 @@ class DownloadersTest(ZugsTestBase):
         def mock_consul_get(consul, path):
             return get_in(self.fake_consul_data, path)
         with patch("zug.downloaders.consul_get", mock_consul_get), patch("zug.downloaders.Downloader.call_gtdownload", self.call_gtdownload):
-            downloader = Downloader()
+            downloader = Downloader(source="fake_cghub")
+            downloader.go()
+        with self.graph.session_scope():
+            for file in self.graph.nodes().labels("file").sysan({"analysis_id": aid}).all():
+                self.assertEqual(file["state"], "live")
+                url = self.signpost_client.get(file.node_id).urls[0]
+                expected_url = "s3://s3.amazonaws.com/fake_cghub_protected/{}/{}".format(file.system_annotations["analysis_id"],
+                                                                                         file["file_name"])
+                self.assertEqual(expected_url, url)
+
+    @mock_s3bucket_path
+    @patch("zug.downloaders.Downloader.check_gtdownload", lambda self: None)
+    @patch("zug.downloaders.Pool", FakePool)
+    @patch("zug.downloaders.Downloader.get_free_space", lambda self: 1000000000000)
+    def test_specifying_analysis_id(self):
+        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+        conn.create_bucket("fake_cghub_protected")
+        aid = str(uuid.uuid4())
+        self.files = []
+        self.files.append(self.create_file("foobar.bam", "fake bam test content", aid))
+        self.files.append(self.create_file("foobar.bam.bai", "fake bai test content", aid))
+        def mock_consul_get(consul, path):
+            return get_in(self.fake_consul_data, path)
+        with patch("zug.downloaders.consul_get", mock_consul_get), patch("zug.downloaders.Downloader.call_gtdownload", self.call_gtdownload):
+            downloader = Downloader(source="fake_cghub", analysis_id=aid)
             downloader.go()
         with self.graph.session_scope():
             for file in self.graph.nodes().labels("file").sysan({"analysis_id": aid}).all():

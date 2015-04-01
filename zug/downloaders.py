@@ -43,13 +43,6 @@ def md5sum(iterable):
     return md5.hexdigest()
 
 
-def read_source():
-    """This is the only thing that gets read from the filesystem rather than consul,
-    the point being to enable targeting downloaders to specific sources.
-    """
-    return open("/var/tungsten/services/downloaders/source").read().strip()
-
-
 def consul_get(consul, path):
     return consul.kv["/".join(path)]
 
@@ -148,7 +141,13 @@ class Downloader(object):
     def consul_get(self, path):
         return consul_get(self.consul, ["downloaders"] + path)
 
-    def __init__(self):
+    def __init__(self, source=None, analysis_id=None):
+        if not source:
+            raise RuntimeError("Must specify a source")
+        self.source = source
+        assert self.source.endswith("_cghub")
+        self.analysis_id = analysis_id
+
         self.consul = Consul()
 
         self.signpost_url = self.consul_get(["signpost_url"])
@@ -168,8 +167,6 @@ class Downloader(object):
         self.s3_info["port"] = int(self.consul_get(["s3", "port"]))
         self.s3_info["access_key"] = self.consul_get(["s3", "access_key"])
         self.s3_info["secret_key"] = self.consul_get(["s3", "secret_key"])
-        self.source = read_source()
-        assert self.source.endswith("_cghub")
         self.s3_info["bucket"] = self.consul_get(["s3", "buckets", self.source])
         self.boto_conn = boto.connect_s3(
             aws_access_key_id=self.s3_info["access_key"],
@@ -205,27 +202,30 @@ class Downloader(object):
         tries = 0
         while tries < 5:
             tries += 1
-            start_file = self.graph.nodes()\
-                                   .labels("file")\
-                                   .props({"state": "submitted"})\
-                                   .sysan({"source": self.source})\
-                                   .filter(func.right(Node.properties["file_name"].astext, 4) != ".bai")\
-                                   .order_by(func.random())\
-                                   .first()
+            if not self.analysis_id:
+                start_file = self.graph.nodes()\
+                                       .labels("file")\
+                                       .props({"state": "submitted"})\
+                                       .sysan({"source": self.source})\
+                                       .filter(func.right(Node.properties["file_name"].astext, 4) != ".bai")\
+                                       .order_by(func.random())\
+                                       .first()
+                self.analysis_id = start_file.system_annotations["analysis_id"]
             try:
                 # attempt to acquire a lock on all the files with this analysis id
                 files = self.graph.nodes()\
                                   .labels("file")\
                                   .sysan({
                                       "source": self.source,
-                                      "analysis_id": start_file.system_annotations["analysis_id"]
+                                      "analysis_id": self.analysis_id
                                   }).with_for_update(nowait=True).all()
                 if not files:
                     raise RuntimeError("File with analysis id % seems to have disappeared, something is very wrong",
                                        start_file.system_annotations["analysis_id"])
                 else:
+                    for file in files:
+                        assert file.system_annotations["source"] == self.source
                     self.files = files
-                self.analysis_id = self.files[0].system_annotations["analysis_id"]
                 self.logger.info("Found %s files (%s) with analysis_id %s", len(files), files, self.analysis_id)
                 return self.files
             except OperationalError:
