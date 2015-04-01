@@ -384,8 +384,9 @@ class Downloader(object):
     def cleanup(self):
         self.logger.info("Cleaning up before shutting down")
         dir = os.path.join(self.download_path, self.analysis_id)
-        self.logger.info("Removing directory %s", dir)
-        shutil.rmtree(dir)
+        if os.path.isdir(dir):
+            self.logger.info("Removing directory %s", dir)
+            shutil.rmtree(dir)
 
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
