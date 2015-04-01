@@ -299,7 +299,7 @@ class Downloader(object):
         self.logger.info("Initiating multipart upload in bucket %s", self.s3_bucket.name)
         mp = self.s3_bucket.initiate_multipart_upload(name)
         self.logger.info("Initiated multipart upload: {}".format(mp.id))
-
+        time.sleep(1)  # give cleversafe time to have the upload show up everywhere
         pool = Pool(processes=5)
         self.logger.info("Loading file")
         source_size = os.stat(path).st_size
