@@ -402,10 +402,13 @@ class Downloader(object):
         bucket, name = parsed.path.split("/", 2)[1:]
         assert bucket == self.s3_bucket.name
         key = self.s3_bucket.get_key(name)
+        self.logger.info("Computing md5sum from boto key %s", key)
         md5 = md5sum(key)
         if md5 != file["md5sum"]:
-            self.logger.info("actual md5sum (%s) does not match expected md5sum (%s)", md5, file["md5sum"])
+            self.logger.warning("actual md5sum (%s) does not match expected md5sum (%s)", md5, file["md5sum"])
             raise InvalidChecksumException()
+        else:
+            self.logger.info("actual md5sum (%s) matches expected md5sum (%s)", md5, file["md5sum"])
 
     def go(self):
         self.sanity_checks()
