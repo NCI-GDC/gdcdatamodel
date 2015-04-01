@@ -229,7 +229,8 @@ class Downloader(object):
                 self.logger.info("Found %s files (%s) with analysis_id %s", len(files), files, self.analysis_id)
                 return self.files
             except OperationalError:
-                self.logger.exception("Caught OperationalError on try %s to find files to download, retrying")
+                self.graph.current_session().rollback()
+                self.logger.exception("Caught OperationalError on try %s to find files to download, retrying", tries)
         raise RuntimeError("Couldn't find files to download in five tries")
 
     def get_free_space(self):
