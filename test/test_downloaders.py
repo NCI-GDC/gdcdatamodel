@@ -117,6 +117,8 @@ class DownloadersTest(ZugsTestBase):
                 expected_url = "s3://s3.amazonaws.com/fake_cghub_protected/{}/{}".format(file.system_annotations["analysis_id"],
                                                                                          file["file_name"])
                 self.assertEqual(expected_url, url)
+                assert file.system_annotations["import_took"] > 0
+                assert file.system_annotations["import_completed"] > file.system_annotations["import_took"]
 
     @mock_s3bucket_path
     @patch("zug.downloaders.Downloader.check_gtdownload", lambda self: None)

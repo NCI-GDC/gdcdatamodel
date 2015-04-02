@@ -413,6 +413,7 @@ class Downloader(object):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
+        start_time = int(time.time())
         try:
             with self.graph.session_scope():
                 self.get_files_to_download()
@@ -430,5 +431,13 @@ class Downloader(object):
                     with self.state_transition(file, "validating", "live",
                                                error_states={InvalidChecksumException: "invalid"}):
                         self.verify(file)
+            # note how long it took
+            with self.graph.session_scope():
+                now = int(time.time())
+                took = now - start_time
+                for file in self.files:
+                    self.logger.info("Recording upload time, completed at %s, took %s seconds", now, took)
+                    self.graph.node_update(file, system_annotations={"import_completed": now,
+                                                                     "import_took": took})
         finally:
             self.cleanup()
