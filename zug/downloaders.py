@@ -385,12 +385,17 @@ class Downloader(object):
         doc.urls = [url]
         doc.patch()
 
+    def delete_scratch(self):
+        complete_dir = os.path.join(self.download_path, self.analysis_id)
+        partial_dir = os.path.join(self.download_path, self.analysis_id + ".partial")
+        for dir in [complete_dir, partial_dir]:
+            if os.path.isdir(dir):
+                self.logger.info("Removing directory %s", dir)
+                shutil.rmtree(dir)
+
     def cleanup(self):
         self.logger.info("Cleaning up before shutting down")
-        dir = os.path.join(self.download_path, self.analysis_id)
-        if os.path.isdir(dir):
-            self.logger.info("Removing directory %s", dir)
-            shutil.rmtree(dir)
+        self.delete_scratch()
 
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
