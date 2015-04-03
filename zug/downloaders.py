@@ -274,8 +274,14 @@ class Downloader(object):
                 locked = self.consul.kv.acquire_lock(self.consul_key, self.consul_session)
                 if not locked:
                     raise RuntimeError("Couldn't lock consul key %s!", self.consul_key)
-                self.consul.kv.set(self.consul_key, {"state": "downloading",
-                                                     "started": self.start_time})
+                self.consul.kv.set(
+                    self.consul_key,
+                    {
+                        "state": "downloading",
+                        "host": socket.gethostname(),
+                        "started": self.start_time
+                    }
+                )
                 if not files:
                     raise RuntimeError("File with analysis id % seems to have disappeared, something is very wrong",
                                        start_file.system_annotations["analysis_id"])
