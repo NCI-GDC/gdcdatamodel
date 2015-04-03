@@ -160,5 +160,13 @@
       "slide"
     ],
     "type": "enum"
+  },
+  {
+    "name": "case_enum",
+    "namespace": "gov.nih.nci.gdc",
+    "symbols": [
+      "case"
+    ],
+    "type": "enum"
   }
 ]

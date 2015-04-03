@@ -81,6 +81,15 @@
     "doc":"Allowed string constants for indicating shipped_to"
   },
   {
+    "name": "untitled_enum",
+    "namespace": "gov.nih.nci.gdc",
+    "symbols": [
+      "untitled"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating untitled"
+  },
+  {
     "name": "submitted_by_enum",
     "namespace": "gov.nih.nci.gdc",
     "symbols": [
