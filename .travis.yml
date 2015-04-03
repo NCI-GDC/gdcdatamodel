@@ -11,13 +11,13 @@ addons:
 before_install:
   - echo -e 'Host github.com\n\tStrictHostKeyChecking no\n' >> ~/.ssh/config
   - sudo apt-get install libxml2-dev libxslt-dev python-dev
+  - wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
+  - unzip 0.5.0_linux_amd64.zip
+  - ./consul agent -bootstrap-expect=1 -server -data-dir /tmp/consul &
 install:
   - python setup.py install
   - pip install -r dev-requirements.txt
 before_script:
   - python bin/setup_psqlgraph.py
   - python bin/setup_neo4j.py
-  - wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
-  - unzip https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
-  - ./consul agent -bootstrap-expect=1 -server -data-dir /tmp/consul &
 script: "nosetests -v"
