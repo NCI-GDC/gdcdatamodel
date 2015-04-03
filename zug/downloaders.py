@@ -196,6 +196,7 @@ class Downloader(object):
         # start a thread that heartbeats every 5 seconds
         self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
                                                 args=(self.consul_session, 10))
+        self.heartbeat_thread.daemon = True
         self.heartbeat_thread.start()
 
         self.signpost_url = self.consul_get(["signpost_url"])
@@ -461,7 +462,9 @@ class Downloader(object):
         self.logger.info("Stopping consul heartbeat thread")
         self.heartbeat_thread.stop()
         self.logger.info("Waiting to join heartbeat thread . . .")
-        self.heartbeat_thread.join()
+        self.heartbeat_thread.join(20)
+        if self.heartbeat_thread.is_alive():
+            self.logger.warning("Joining heartbeat thread failed after 20 seconds!")
         self.logger.info("Invalidating consul session")
         self.consul.session.destroy(self.consul_session)
 
