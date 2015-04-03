@@ -184,6 +184,14 @@ class Downloader(object):
     def consul_key(self):
         return "downloaders/current/{}".format(self.analysis_id)
 
+    def start_consul_session(self):
+        self.consul_session = self.consul.session.create(behavior="delete", ttl="60s")
+        # start a thread that heartbeats every 5 seconds
+        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
+                                                args=(self.consul_session, 10))
+        self.heartbeat_thread.daemon = True
+        self.heartbeat_thread.start()
+
     def __init__(self, source=None, analysis_id=None):
         if not source:
             raise RuntimeError("Must specify a source")
@@ -192,12 +200,6 @@ class Downloader(object):
         self.analysis_id = analysis_id
 
         self.consul = Consul()
-        self.consul_session = self.consul.session.create(behavior="delete", ttl="60s")
-        # start a thread that heartbeats every 5 seconds
-        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
-                                                args=(self.consul_session, 10))
-        self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
 
         self.signpost_url = self.consul_get(["signpost_url"])
         self.signpost = SignpostClient(self.signpost_url, version="v0")
@@ -489,6 +491,7 @@ class Downloader(object):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
+        self.start_consul_session()
         self.start_time = int(time.time())
         try:
             with self.graph.session_scope():
