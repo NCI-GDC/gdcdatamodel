@@ -3,10 +3,8 @@ python:
     - "2.7"
 cache:
   - directories:
-    - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/pandas
-    - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/numpy
-    - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/lxml
-    - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/psycopg2
+    - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages
+    - $HOME/.pip-cache
   - apt
 addons:
   postgresql: '9.4'
