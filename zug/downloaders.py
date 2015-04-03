@@ -230,7 +230,6 @@ class Downloader(object):
         )
         self.s3_bucket = self.boto_conn.get_bucket(self.s3_info["bucket"])
 
-
     def check_gtdownload(self):
         self.logger.info('Checking that genetorrent is installed')
         gtdownload = which('gtdownload')
@@ -449,6 +448,7 @@ class Downloader(object):
     def delete_scratch(self):
         complete_dir = os.path.join(self.download_path, self.analysis_id)
         partial_dir = os.path.join(self.download_path, self.analysis_id + ".partial")
+        self.logger.info("Checking for directories to destroy")
         for dir in [complete_dir, partial_dir]:
             if os.path.isdir(dir):
                 self.logger.info("Removing directory %s", dir)
@@ -467,7 +467,7 @@ class Downloader(object):
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
         url = self.signpost.get(file.node_id).urls[0]
-        self.logger.info("url: %s", url)
+        self.logger.info("signpost url: %s", url)
         parsed = urlparse(url)
         assert parsed.scheme == "s3"
         assert parsed.netloc == self.s3_info["host"]
