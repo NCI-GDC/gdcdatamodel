@@ -186,7 +186,11 @@ class Downloader(object):
 
     def start_consul_session(self):
         self.logger.info("Starting new consul session")
-        self.consul_session = self.consul.session.create(behavior="delete", ttl="60s")
+        self.consul_session = self.consul.session.create(
+            behavior="delete",
+            ttl="60s",
+            delay="0s"
+        )
         self.logger.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
         self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
                                                 args=(self.consul_session, 10))
@@ -277,7 +281,7 @@ class Downloader(object):
                 # also lock the relevant consul key
                 locked = self.consul.kv.acquire_lock(self.consul_key, self.consul_session)
                 if not locked:
-                    raise RuntimeError("Couldn't lock consul key %s!", self.consul_key)
+                    raise RuntimeError("Couldn't lock consul key {}!".format(self.consul_key))
                 self.consul.kv.set(
                     self.consul_key,
                     {
@@ -287,8 +291,10 @@ class Downloader(object):
                 )
                 self.set_consul_state("downloading")
                 if not files:
-                    raise RuntimeError("File with analysis id % seems to have disappeared, something is very wrong",
-                                       start_file.system_annotations["analysis_id"])
+                    raise RuntimeError(
+                        "File with analysis id {} seems to have disappeared, something is very wrong".format(
+                            start_file.system_annotations["analysis_id"])
+                    )
                 else:
                     for file in files:
                         assert file.system_annotations["source"] == self.source
@@ -340,7 +346,7 @@ class Downloader(object):
         self.paths = [os.path.join(download_directory, f) for f in paths]
 
         if len(self.paths) != len(self.files):
-            raise RuntimeError('Number of files downloaded from genetorrent (%s) is not what was expected (%s)', len(self.paths), len(self.files))
+            raise RuntimeError('Number of files downloaded from genetorrent ({}) is not what was expected ({})'.format(len(self.paths), len(self.files)))
 
         for f in self.paths:
             self.logger.info('Successfully downloaded file: %s', f)
