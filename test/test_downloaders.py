@@ -41,6 +41,8 @@ class DownloadersTest(ZugsTestBase):
         super(DownloadersTest, self).setUp()
         self.gtdownload_dict = {}
         self.consul = Consul()
+        # this is to prevent accidentally blowing away the values on a real server
+        assert self.consul.catalog.datacenters() == "dc1"
         self.consul.kv.set("downloaders/signpost_url", self.signpost_url)
         self.consul.kv.set("downloaders/path", self.scratch_dir)
         self.consul.kv.set("downloaders/s3/host", "s3.amazonaws.com")  # this is necessary for moto to work
