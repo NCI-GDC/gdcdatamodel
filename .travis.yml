@@ -17,4 +17,7 @@ install:
 before_script:
   - python bin/setup_psqlgraph.py
   - python bin/setup_neo4j.py
+  - wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
+  - unzip https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
+  - ./consul agent -bootstrap-expect=1 -server -data-dir /tmp/consul &
 script: "nosetests -v"
