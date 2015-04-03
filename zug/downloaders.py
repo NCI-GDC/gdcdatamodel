@@ -395,10 +395,10 @@ class Downloader(object):
         self.graph.node_update(file, properties={"state": state})
 
     def set_consul_state(self, state):
-        key = "downloaders/current/{}".format(self.analysis_id)
-        current = self.consul.kv.get(key)
+        current = self.consul.kv.get(self.consul_key)
         current["state"] = state
-        self.consul.kv.set(key, current)
+        self.logger.info("Setting %s to %s", self.consul_key, current)
+        self.consul.kv.set(self.consul_key, current)
 
     @contextmanager
     def state_transition(self, file, intermediate_state, final_state,
