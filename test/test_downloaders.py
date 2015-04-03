@@ -165,3 +165,14 @@ class DownloadersTest(ZugsTestBase):
         with self.graph.session_scope():
             bam_file = self.graph.nodes().labels("file").props({"file_name": "foobar.bam"}).one()
         self.assertEqual(bam_file["state"], "invalid")
+
+    @patch("zug.downloaders.Pool", FakePool)
+    def test_startup_fails_if_analysis_id_is_locked(self):
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        sess = self.consul.session.create(ttl="60s")  # we just won't heartbeat this so it'll go away in minute
+        assert self.consul.kv.acquire_lock("downloaders/current/{}".format(self.aid), sess)
+        with self.downloader_monkey_patches():
+            downloader = Downloader(source="fake_cghub")
+            with self.assertRaises(RuntimeError):
+                downloader.go()
