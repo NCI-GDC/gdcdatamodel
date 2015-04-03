@@ -461,6 +461,8 @@ class Downloader(object):
         self.heartbeat_thread.stop()
         self.logger.info("Waiting to join heartbeat thread . . .")
         self.heartbeat_thread.join()
+        self.logger.info("Invalidating consul session")
+        self.consul.session.destroy(self.consul_session)
 
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
