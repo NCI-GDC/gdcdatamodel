@@ -230,11 +230,10 @@ class TCGAMAGETABSyncer(object):
                                                   .labels("archive")\
                                                   .props({"submitter_id": submitter_id, "revision": int(rev)})\
                                                   .one()
-                self.log.info("found archive node for this magetab: %s", self.archive_node)
             except Exception:
                 self.log.exception("Couldn't load exactly one archive from graph")
-                if not lazy:
-                    raise
+                raise
+        self.log.info("found archive node for this magetab: %s", self.archive_node)
         self._cache_path = cache_path
         if not lazy:
             self.fetch_sdrf()
@@ -284,13 +283,9 @@ class TCGAMAGETABSyncer(object):
             if is_shipped_portion_barcode(fixed):
                 barcode = fixed
             elif is_fat_fingered_shipped_portion_barcode(fixed):
-                if self.pause_for_fat:
-                    import ipdb; ipdb.set_trace()
                 barcode = fix_fat_fingered_barcode(fixed)
                 assert is_shipped_portion_barcode(barcode)
             elif is_truncated_shipped_portion_barcode(fixed):
-                if self.pause_for_truc:
-                    import ipdb; ipdb.set_trace()
                 # in this case, the barcode is totally useless, so we just
                 # set it to None
                 barcode = None
@@ -301,8 +296,6 @@ class TCGAMAGETABSyncer(object):
         raise RuntimeError("Can't compute uuid/barcode for {}".format(row))
 
     def compute_mapping(self, force=False):
-        self.pause_for_fat = True
-        self.pause_for_trunc = True
         if self._mapping and not force:
             self.log.info("cached mapping present, not computing")
             return self._mapping
