@@ -185,8 +185,9 @@ class Downloader(object):
         return "downloaders/current/{}".format(self.analysis_id)
 
     def start_consul_session(self):
+        self.logger.info("Starting new consul session")
         self.consul_session = self.consul.session.create(behavior="delete", ttl="60s")
-        # start a thread that heartbeats every 5 seconds
+        self.logger.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
         self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
                                                 args=(self.consul_session, 10))
         self.heartbeat_thread.daemon = True
@@ -280,11 +281,11 @@ class Downloader(object):
                 self.consul.kv.set(
                     self.consul_key,
                     {
-                        "state": "downloading",
                         "host": socket.gethostname(),
                         "started": self.start_time
                     }
                 )
+                self.set_consul_state("downloading")
                 if not files:
                     raise RuntimeError("File with analysis id % seems to have disappeared, something is very wrong",
                                        start_file.system_annotations["analysis_id"])
