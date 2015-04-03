@@ -41,13 +41,13 @@ class StoppableThread(Thread):
 
     def __init__(self, *args, **kwargs):
         super(StoppableThread, self).__init__(*args, **kwargs)
-        self._stop = Event()
+        self._stop = False
 
     def stop(self):
-        self._stop.set()
+        self._stop = True
 
     def stopped(self):
-        return self._stop.isSet()
+        return self._stop
 
 
 class InvalidChecksumException(Exception):
@@ -166,12 +166,13 @@ def consul_heartbeat(session, interval):
     seconds. This must be called as the `target` of a `StoppableThread`.
     """
     consul = Consul()
-    thread = current_thread()
     logger = get_logger("consul_heartbeat_thread")
+    thread = current_thread()
+    logger.info("current thread is %s", thread)
     while not thread.stopped():
-        time.sleep(interval)
-        logger.debug("renewing consul session %s", session)
+        logger.info("renewing consul session %s", session)
         consul.session.renew(session)
+        time.sleep(interval)
 
 
 class Downloader(object):
