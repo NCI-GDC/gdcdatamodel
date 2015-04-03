@@ -4,6 +4,7 @@ import boto
 from base import ZugsTestBase
 from mock import patch, Mock
 from moto import mock_s3bucket_path
+from consulate import Consul
 
 from boto.s3.connection import OrdinaryCallingFormat
 
@@ -39,31 +40,22 @@ class DownloadersTest(ZugsTestBase):
     def setUp(self):
         super(DownloadersTest, self).setUp()
         self.gtdownload_dict = {}
+        self.consul = Consul()
+        self.consul.kv.set("downloaders/signpost_url", self.signpost_url)
+        self.consul.kv.set("downloaders/path", self.scratch_dir)
+        self.consul.kv.set("downloaders/s3/host", "s3.amazonaws.com")  # this is necessary for moto to work
+        self.consul.kv.set("downloaders/s3/port", "80")
+        self.consul.kv.set("downloaders/s3/access_key", "fake_access_key")
+        self.consul.kv.set("downloaders/s3/secret_key", "fake_secret_key")
+        self.consul.kv.set("downloaders/s3/buckets/fake_cghub", "fake_cghub_protected")
+        self.consul.kv.set("downloaders/pg/host", "localhost")
+        self.consul.kv.set("downloaders/pg/user", "test")
+        self.consul.kv.set("downloaders/pg/pass", "test")
+        self.consul.kv.set("downloaders/pg/name", "automated_test")
 
-    @property
-    def fake_consul_data(self):
-        return {
-            "downloaders": {
-                "signpost_url": self.signpost_url,
-                "path": self.scratch_dir,
-                "cghub_key": "fake_cghub_key",
-                "pg": {
-                    "host": "localhost",
-                    "user": "test",
-                    "pass": "test",
-                    "name": "automated_test",
-                },
-                "s3": {
-                    "host": "s3.amazonaws.com",
-                    "port": "80",
-                    "access_key": "fake_access",
-                    "secret_key": "fake_secret",
-                    "buckets": {
-                        "fake_cghub": "fake_cghub_protected"
-                    }
-                }
-            }
-        }
+    def tearDown(self):
+        super(DownloadersTest, self).tearDown()
+        self.consul.kv.delete("downloaders/", recurse=True)
 
     def call_gtdownload(self):
         if self.gtdownload_dict:
@@ -94,24 +86,49 @@ class DownloadersTest(ZugsTestBase):
         self.gtdownload_dict[file] = content
         return file
 
-    @mock_s3bucket_path
-    @patch("zug.downloaders.Downloader.check_gtdownload", lambda self: None)
-    @patch("zug.downloaders.Pool", FakePool)
-    @patch("zug.downloaders.Downloader.get_free_space", lambda self: 1000000000000)
-    def test_basic_download(self):
+    def with_fake_s3(self, f):
+        def wrapper(*args, **kwargs):
+            self.fake_s3.start()
+            try:
+                f(*args, **kwargs)
+            finally:
+                self.fake_s3.stop()
+        return wrapper
+
+    def setup_fake_s3(self):
+        self.fake_s3 = mock_s3bucket_path()
+        for backend in self.fake_s3.backends.values():
+            # lololol TODO write explaination for this nonsense
+            backend.reset = lambda: None
+        self.fake_s3.start()
         conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
         conn.create_bucket("fake_cghub_protected")
-        aid = str(uuid.uuid4())
+        self.fake_s3.stop()
+
+    def setup_fake_files(self):
+        self.aid = str(uuid.uuid4())
         self.files = []
-        self.files.append(self.create_file("foobar.bam", "fake bam test content", aid))
-        self.files.append(self.create_file("foobar.bam.bai", "fake bai test content", aid))
-        def mock_consul_get(consul, path):
-            return get_in(self.fake_consul_data, path)
-        with patch("zug.downloaders.consul_get", mock_consul_get), patch("zug.downloaders.Downloader.call_gtdownload", self.call_gtdownload):
+        self.files.append(self.create_file("foobar.bam", "fake bam test content", self.aid))
+        self.files.append(self.create_file("foobar.bam.bai", "fake bai test content", self.aid))
+
+    def downloader_monkey_patches(self):
+        return patch.multiple("zug.downloaders.Downloader",
+                              call_gtdownload=self.call_gtdownload,
+                              setup_s3=self.with_fake_s3(Downloader.setup_s3),
+                              upload=self.with_fake_s3(Downloader.upload),
+                              verify=self.with_fake_s3(Downloader.verify),
+                              check_gtdownload=lambda self: None,
+                              get_free_space=lambda self: 100000000)
+
+    @patch("zug.downloaders.Pool", FakePool)
+    def test_basic_download(self):
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub")
             downloader.go()
         with self.graph.session_scope():
-            for file in self.graph.nodes().labels("file").sysan({"analysis_id": aid}).all():
+            for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
                 self.assertEqual(file["state"], "live")
                 url = self.signpost_client.get(file.node_id).urls[0]
                 expected_url = "s3://s3.amazonaws.com/fake_cghub_protected/{}/{}".format(file.system_annotations["analysis_id"],
@@ -120,47 +137,30 @@ class DownloadersTest(ZugsTestBase):
                 assert file.system_annotations["import_took"] > 0
                 assert file.system_annotations["import_completed"] > file.system_annotations["import_took"]
 
-    @mock_s3bucket_path
-    @patch("zug.downloaders.Downloader.check_gtdownload", lambda self: None)
     @patch("zug.downloaders.Pool", FakePool)
-    @patch("zug.downloaders.Downloader.get_free_space", lambda self: 1000000000000)
     def test_specifying_analysis_id(self):
-        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-        conn.create_bucket("fake_cghub_protected")
-        aid = str(uuid.uuid4())
-        self.files = []
-        self.files.append(self.create_file("foobar.bam", "fake bam test content", aid))
-        self.files.append(self.create_file("foobar.bam.bai", "fake bai test content", aid))
-        def mock_consul_get(consul, path):
-            return get_in(self.fake_consul_data, path)
-        with patch("zug.downloaders.consul_get", mock_consul_get), patch("zug.downloaders.Downloader.call_gtdownload", self.call_gtdownload):
-            downloader = Downloader(source="fake_cghub", analysis_id=aid)
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        with self.downloader_monkey_patches():
+            downloader = Downloader(source="fake_cghub", analysis_id=self.aid)
             downloader.go()
         with self.graph.session_scope():
-            for file in self.graph.nodes().labels("file").sysan({"analysis_id": aid}).all():
+            for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
                 self.assertEqual(file["state"], "live")
                 url = self.signpost_client.get(file.node_id).urls[0]
                 expected_url = "s3://s3.amazonaws.com/fake_cghub_protected/{}/{}".format(file.system_annotations["analysis_id"],
                                                                                          file["file_name"])
                 self.assertEqual(expected_url, url)
 
-    @mock_s3bucket_path
-    @patch("zug.downloaders.Downloader.check_gtdownload", lambda self: None)
     @patch("zug.downloaders.Pool", FakePool)
-    @patch("zug.downloaders.Downloader.get_free_space", lambda self: 1000000000000)
     def test_file_is_invalidated_if_checksum_fails(self):
-        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-        conn.create_bucket("fake_cghub_protected")
-        aid = str(uuid.uuid4())
-        self.files = []
-        bam_file = self.create_file("foobar.bam", "fake bam test content", aid)
-        self.files.append(bam_file)
-        self.graph.node_update(bam_file, properties={"md5sum": "bogus"})
-        self.files.append(self.create_file("foobar.bam.bai", "fake bai test content", aid))
-        def mock_consul_get(consul, path):
-            return get_in(self.fake_consul_data, path)
-        with patch("zug.downloaders.consul_get", mock_consul_get), patch("zug.downloaders.Downloader.call_gtdownload", self.call_gtdownload):
-            downloader = Downloader(source="fake_cghub", analysis_id=aid)
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        with self.graph.session_scope():
+            bam_file = self.graph.nodes().labels("file").props({"file_name": "foobar.bam"}).one()
+            self.graph.node_update(bam_file, properties={"md5sum": "bogus"})
+        with self.downloader_monkey_patches():
+            downloader = Downloader(source="fake_cghub")
             downloader.go()
         with self.graph.session_scope():
             bam_file = self.graph.nodes().labels("file").props({"file_name": "foobar.bam"}).one()

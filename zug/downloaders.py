@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from urlparse import urlparse
 import shutil
 import hashlib
+from threading import Thread, Event, current_thread
 
 from consulate import Consul
 
@@ -32,6 +33,21 @@ from gdcdatamodel import node_avsc_object, edge_avsc_object
 # buffer 10 MB in memory at once
 from boto.s3.key import Key
 Key.BufferSize = 10 * 1024 * 1024
+
+
+class StoppableThread(Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self, *args, **kwargs):
+        super(StoppableThread, self).__init__(*args, **kwargs)
+        self._stop = Event()
+
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
 
 
 class InvalidChecksumException(Exception):
@@ -144,10 +160,28 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
     raise RuntimeError("Retries exhausted, upload failed")
 
 
+def consul_heartbeat(session, interval):
+    """
+    Heartbeat with consul to keep `session` alive every `interval`
+    seconds. This must be called as the `target` of a `StoppableThread`.
+    """
+    consul = Consul()
+    thread = current_thread()
+    logger = get_logger("consul_heartbeat_thread")
+    while not thread.stopped():
+        time.sleep(interval)
+        logger.debug("renewing consul session %s", session)
+        consul.session.renew(session)
+
+
 class Downloader(object):
 
     def consul_get(self, path):
         return consul_get(self.consul, ["downloaders"] + path)
+
+    @property
+    def consul_key(self):
+        return "downloaders/current/{}".format(self.analysis_id)
 
     def __init__(self, source=None, analysis_id=None):
         if not source:
@@ -157,6 +191,11 @@ class Downloader(object):
         self.analysis_id = analysis_id
 
         self.consul = Consul()
+        self.consul_session = self.consul.session.create(behavior="delete", ttl="60s")
+        # start a thread that heartbeats every 5 seconds
+        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
+                                                args=(self.consul_session, 10))
+        self.heartbeat_thread.start()
 
         self.signpost_url = self.consul_get(["signpost_url"])
         self.signpost = SignpostClient(self.signpost_url, version="v0")
@@ -169,13 +208,18 @@ class Downloader(object):
         self.graph = PsqlGraphDriver(self.pg_info["host"], self.pg_info["user"],
                                      self.pg_info["pass"], self.pg_info["name"])
         self.graph.node_validator = AvroNodeValidator(node_avsc_object)
-        self.graph.edge_validator = AvroNodeValidator(edge_avsc_object)
+        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.s3_info = {}
         self.s3_info["host"] = self.consul_get(["s3", "host"])
         self.s3_info["port"] = int(self.consul_get(["s3", "port"]))
         self.s3_info["access_key"] = self.consul_get(["s3", "access_key"])
         self.s3_info["secret_key"] = self.consul_get(["s3", "secret_key"])
         self.s3_info["bucket"] = self.consul_get(["s3", "buckets", self.source])
+        self.setup_s3()
+        self.download_path = self.consul_get(["path"])
+        self.logger = get_logger("downloader_{}".format(socket.gethostname()))
+
+    def setup_s3(self):
         self.boto_conn = boto.connect_s3(
             aws_access_key_id=self.s3_info["access_key"],
             aws_secret_access_key=self.s3_info["secret_key"],
@@ -185,8 +229,7 @@ class Downloader(object):
             calling_format=boto.s3.connection.OrdinaryCallingFormat(),
         )
         self.s3_bucket = self.boto_conn.get_bucket(self.s3_info["bucket"])
-        self.download_path = self.consul_get(["path"])
-        self.logger = get_logger("downloader_{}".format(socket.gethostname()))
+
 
     def check_gtdownload(self):
         self.logger.info('Checking that genetorrent is installed')
@@ -227,6 +270,12 @@ class Downloader(object):
                                       "source": self.source,
                                       "analysis_id": self.analysis_id
                                   }).with_for_update(nowait=True).all()
+                # also lock the relevant consul key
+                locked = self.consul.kv.acquire_lock(self.consul_key, self.consul_session)
+                if not locked:
+                    raise RuntimeError("Couldn't lock consul key %s!", self.consul_key)
+                self.consul.kv.set(self.consul_key, {"state": "downloading",
+                                                     "started": self.start_time})
                 if not files:
                     raise RuntimeError("File with analysis id % seems to have disappeared, something is very wrong",
                                        start_file.system_annotations["analysis_id"])
@@ -339,6 +388,12 @@ class Downloader(object):
     def set_file_state(self, file, state):
         self.graph.node_update(file, properties={"state": state})
 
+    def set_consul_state(self, state):
+        key = "downloaders/current/{}".format(self.analysis_id)
+        current = self.consul.kv.get(key)
+        current["state"] = state
+        self.consul.kv.set(key, current)
+
     @contextmanager
     def state_transition(self, file, intermediate_state, final_state,
                          error_states={}):
@@ -396,6 +451,10 @@ class Downloader(object):
     def cleanup(self):
         self.logger.info("Cleaning up before shutting down")
         self.delete_scratch()
+        self.logger.info("Stopping consul heartbeat thread")
+        self.heartbeat_thread.stop()
+        self.logger.info("Waiting to join heartbeat thread . . .")
+        self.heartbeat_thread.join()
 
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
@@ -418,7 +477,7 @@ class Downloader(object):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
-        start_time = int(time.time())
+        self.start_time = int(time.time())
         try:
             with self.graph.session_scope():
                 self.get_files_to_download()
@@ -427,11 +486,13 @@ class Downloader(object):
                 self.logger.info("Downloading analysis id %s from cghub", self.analysis_id)
                 self.download()
                 # first upload all files in the same session
+                self.set_consul_state("uploading")
                 for file in self.files:
                     with self.state_transition(file, "uploading", "uploaded"):
                         self.upload(file)
             # once they've been uploaded, verify checksums in a separate session
             with self.graph.session_scope():
+                self.set_consul_state("validating")
                 for file in self.files:
                     with self.state_transition(file, "validating", "live",
                                                error_states={InvalidChecksumException: "invalid"}):
@@ -439,7 +500,7 @@ class Downloader(object):
             # note how long it took
             with self.graph.session_scope():
                 now = int(time.time())
-                took = now - start_time
+                took = now - self.start_time
                 for file in self.files:
                     self.logger.info("Recording upload time, completed at %s, took %s seconds", now, took)
                     self.graph.node_update(file, system_annotations={"import_completed": now,
