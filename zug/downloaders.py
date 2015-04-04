@@ -200,6 +200,7 @@ class Downloader(object):
         self.heartbeat_thread.start()
 
     def __init__(self, source=None, analysis_id=None):
+        self.logger = get_logger("downloader_{}".format(socket.gethostname()))
         if not source:
             raise RuntimeError("Must specify a source")
         self.source = source
@@ -228,7 +229,6 @@ class Downloader(object):
         self.s3_info["bucket"] = self.consul_get(["s3", "buckets", self.source])
         self.setup_s3()
         self.download_path = self.consul_get(["path"])
-        self.logger = get_logger("downloader_{}".format(socket.gethostname()))
 
     def setup_s3(self):
         self.logger.info("Connecting to s3 at %s.", self.s3_info["host"])
