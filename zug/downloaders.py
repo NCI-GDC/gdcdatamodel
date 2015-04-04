@@ -172,7 +172,7 @@ def consul_heartbeat(session, interval):
     thread = current_thread()
     logger.info("current thread is %s", thread)
     while not thread.stopped():
-        logger.info("renewing consul session %s", session)
+        logger.debug("renewing consul session %s", session)
         consul.session.renew(session)
         time.sleep(interval)
 
@@ -240,7 +240,7 @@ class Downloader(object):
             is_secure=False,
             calling_format=boto.s3.connection.OrdinaryCallingFormat(),
         )
-        self.logger.info("Getting s3 bucket $s", self.s3_info["bucket"])
+        self.logger.info("Getting s3 bucket %s", self.s3_info["bucket"])
         self.s3_bucket = self.boto_conn.get_bucket(self.s3_info["bucket"])
 
     def check_gtdownload(self):
