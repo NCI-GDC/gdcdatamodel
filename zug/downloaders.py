@@ -229,6 +229,7 @@ class Downloader(object):
         self.logger = get_logger("downloader_{}".format(socket.gethostname()))
 
     def setup_s3(self):
+        self.logger.info("Connecting to s3 at %s.", self.s3_info["host"])
         self.boto_conn = boto.connect_s3(
             aws_access_key_id=self.s3_info["access_key"],
             aws_secret_access_key=self.s3_info["secret_key"],
@@ -237,6 +238,7 @@ class Downloader(object):
             is_secure=False,
             calling_format=boto.s3.connection.OrdinaryCallingFormat(),
         )
+        self.logger.info("Getting s3 bucket $s", self.s3_info["bucket"])
         self.s3_bucket = self.boto_conn.get_bucket(self.s3_info["bucket"])
 
     def check_gtdownload(self):
