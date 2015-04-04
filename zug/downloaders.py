@@ -153,7 +153,9 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
                 log.info("Posted part {} {} MBps".format(
                     index, (bytes/float(1024*1024))/(els+0.001)))  # sometimes this gives division by zero?
                 return
-        except Exception as e:
+        except KeyboardInterrupt:
+            raise
+        except:
             log.exception("Caught exception while uploading, retrying in a second")
             time.sleep(1)
     log.error("Exhausted 30 retries, failing upload")
