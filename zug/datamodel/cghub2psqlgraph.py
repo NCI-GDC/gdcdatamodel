@@ -72,19 +72,16 @@ class cghub2psqlgraph(object):
         self.signpost = signpost  # should be a SignpostClient object
         self.reset()
 
-    def rebase(self, source):
+    def rebase(self):
         """Similar to export in xml2psqlgraph, but re-writes changes onto the
         graph
 
         ..note: postcondition: node/edge state is cleared.
 
-        :param src source:
-            the file source to be put in system_annotations
-
         """
         log.info('Handling {} nodes'.format(len(self.files_to_add)))
         with self.graph.session_scope():
-            self.rebase_file_nodes(source)
+            self.rebase_file_nodes()
 
         log.info('Handling {} edges'.format(
             len(self.edges) + len(self.related_to_edges)))
@@ -112,9 +109,6 @@ class cghub2psqlgraph(object):
         1. does this file_key already exist
         2a. if it does, then update it
         2b. if it does not, then get a new id for it, and add it
-
-        :param src source:
-            the file source to be put in system_annotations
 
         """
 
@@ -147,20 +141,29 @@ class cghub2psqlgraph(object):
         for edge in self.edges.get(file_key, []):
             edge.src_id = node_id
 
-    def rebase_file_nodes(self, source):
+    def get_source(self, acl):
+        assert len(acl) == 1, 'Not sure how to parse acls with > 1 entry!'
+        phsid = acl[0]
+        target = re.compile('(phs000218|phs0004\d\d)')
+        tcga = re.compile('phs000178')
+        if tcga.match(phsid):
+            return 'tcga_cghub'
+        elif target.match(phsid):
+            return 'target_cghub'
+        else:
+            raise RuntimeError('Unknown phsid! {}'.format(phsid))
+
+    def rebase_file_nodes(self):
         """update file records in graph
 
         1. for each valid file, merge it in to the graph
         2. for each invalid file, remove it from the graph
 
-        :param src source:
-            the file source to be put in system_annotations
-
         """
-        print source
-        system_annotations = {'source': source}
+
         # Loop through files to add and merge them into the graph
         for file_key, node in self.files_to_add.iteritems():
+            system_annotations = {'source': self.get_source(node.acl)}
             self.merge_file_node(file_key, node, system_annotations)
 
         # Loop through files to remove and delete them from the graph

@@ -12,7 +12,7 @@ from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
-all_phsids = '(phs000218 OR phs0004*)'
+all_phsids = '(phs000218 OR phs0004* OR phs000178)'
 
 args = None
 
@@ -53,8 +53,7 @@ def process(roots):
         for root in roots:
             root = etree.fromstring(root)
             converter.parse('file', root)
-        print converter.nodes
-        # converter.rebase(source)
+        converter.rebase()
         if args.dry_run:
             log.warn('Rolling back session as requested.')
             session.rollback()
@@ -99,8 +98,11 @@ def import_files(xml):
     chunks = [roots[i:i+chunksize]
               for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    # Pool(args.processes).map(process, chunks)
-    map(process, chunks)
+    if args.serial:
+        map(process, chunks)
+    else:
+        res = Pool(args.processes).map_async(process, chunks)
+        res.get(int(1e9))
     log.info('Complete.')
 
 if __name__ == '__main__':
@@ -132,6 +134,8 @@ if __name__ == '__main__':
                         help='do not add the files to signpost')
     parser.add_argument('--dry-run', action='store_true',
                         help='Do not commit any sessions')
+    parser.add_argument('--serial', action='store_true',
+                        help='Do not use python multiprocessing')
 
     args = parser.parse_args()
 
