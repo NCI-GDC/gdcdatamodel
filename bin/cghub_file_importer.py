@@ -12,8 +12,9 @@ from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
+all_phsids = '(phs000218 OR phs0004*)'
 
-args, source, phsid = None, None, None
+args = None
 
 
 class TestSignpostClient(object):
@@ -52,7 +53,8 @@ def process(roots):
         for root in roots:
             root = etree.fromstring(root)
             converter.parse('file', root)
-        converter.rebase(source)
+        print converter.nodes
+        # converter.rebase(source)
         if args.dry_run:
             log.warn('Rolling back session as requested.')
             session.rollback()
@@ -69,10 +71,10 @@ def download_xml():
     # Download the file list
     if args.all:
         log.info('Importing all files from TCGA...'.format(args.days))
-        xml = cgquery.get_all(phsid)
+        xml = cgquery.get_all(all_phsids)
     else:
         log.info('Rebasing past {} days from TCGA...'.format(args.days))
-        xml = cgquery.get_changes_last_x_days(args.days, phsid)
+        xml = cgquery.get_changes_last_x_days(args.days, all_phsids)
 
     if not xml:
         raise Exception('No xml found')
@@ -126,8 +128,6 @@ if __name__ == '__main__':
                         help='signpost server port')
     parser.add_argument('-V', '--signpost-version', default='v0',
                         help='the version of signpost API')
-    parser.add_argument('--phsid', required=True,
-                        help='access group to import as')
     parser.add_argument('--no-signpost', action='store_true',
                         help='do not add the files to signpost')
     parser.add_argument('--dry-run', action='store_true',
@@ -138,14 +138,6 @@ if __name__ == '__main__':
     if args.dry_run:
         log.warn('Dry run: forcing --no-signpost')
         args.no_signpost = True
-
-    phsid = args.phsid
-    if phsid in ['phs000178']:
-        source = 'tcga_cghub'
-    elif phsid in ['phs000471']:
-        source = 'target_cghub'
-    else:
-        raise RuntimeError('Unknown phsid: {}'.format(phsid))
 
     if args.file:
         xml = open_xml()
