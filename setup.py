@@ -33,6 +33,9 @@ setup(
         'elasticsearch==1.4.0',
         'pandas==0.15.2',
         'xlrd==0.9.3',
+        'consulate==0.4',
+        'boto==2.36.0',
+        'filechunkio==1.6'
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@b82edf146567eb711b1e5137606998d8d46d46f1#egg=psqlgraph',
