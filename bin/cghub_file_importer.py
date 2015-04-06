@@ -84,7 +84,6 @@ def download_xml():
 
 def import_files(xml):
     # Split the file into results
-    # print xml
     root = etree.fromstring(str(xml)).getroottree()
     roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
     log.info('Found {} result(s)'.format(len(roots)))
