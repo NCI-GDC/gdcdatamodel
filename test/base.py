@@ -53,8 +53,7 @@ class ZugsTestBase(TestCase):
             "kwargs": {}
         }
         self.signpost_url = "http://localhost:{}".format(self.port)
-        self.signpost_client = SignpostClient(self.signpost_url,
-                                              version="v0")
+        self.signpost_client = SignpostClient(self.signpost_url, version="v0")
         create_prelude_nodes(self.graph)
 
     def tearDown(self):

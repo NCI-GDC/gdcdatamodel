@@ -367,6 +367,14 @@ class TCGAMAGETABSyncer(object):
                 session=session
             ).one()
             self.log.info("found biospecemin by barcode: %s", bio)
+        
+        # delete all previous built edges parsed from filename
+        left_edges = self.pg_driver.edges().src(file.node_id).labels('data_from').sysan(
+            {'source':'filename'}).all()
+        for edge in left_edges:
+            self.pg_driver.edge_delete(edge,session=session)
+
+
         maybe_edge = self.pg_driver.edge_lookup_one(
             label="data_from",
             src_id=file.node_id,

@@ -199,7 +199,7 @@ class xml2psqlgraph(object):
         with self.graph.session_scope():
             for edge_id, e in self.edges.iteritems():
                 existing = self.graph.edge_lookup(
-                    src_id=e.src_id, dst_id=e.dst_id, label=e.label).count()
+                    src_id=e.src_id, dst_id=e.dst_id, label=e.label).first()
                 if not existing:
                     try:
                         self.graph.edge_insert(e)
@@ -208,6 +208,10 @@ class xml2psqlgraph(object):
                             e.label, e.src, e.dst))
                         log.error(e.properties)
                         raise
+                else:
+                    self.graph.edge_update(
+                        existing, properties=e.properties,
+                        system_annotations=e.system_annotations)
         self.edges = {}
 
     def xml2psqlgraph(self, data):

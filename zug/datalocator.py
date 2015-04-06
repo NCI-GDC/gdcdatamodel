@@ -37,6 +37,10 @@ class DataLocator(object):
                     self.log.info("looking for node with submitter_id %s and name %s", analysis_id, name)
                     file_node = self.graph.nodes().props({"file_name": name})\
                                                   .sysan({"analysis_id": analysis_id}).one()
+                    if file_node["state"] == "live":
+                        self.log.info("ignoring %s because it is already live", file_node)
+                        continue
+                    assert int(file_node["file_size"]) == int(obj.size)
                     doc = self.signpost.get(file_node.node_id)
                     if not doc.urls:  # only set the url if it doesn't have one already
                         url = url_for(obj)
