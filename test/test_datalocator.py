@@ -61,7 +61,8 @@ class DataLocatorTest(unittest.TestCase):
         self.graph.node_insert(node=PsqlNode(node_id=doc.did,
                                              label='file',
                                              properties={"file_name": "baz.txt",
-                                                         "state": "submitted"},
+                                                         "state": "submitted",
+                                                         "file_size": 4},
                                              system_annotations={"analysis_id": "abc123"}))
         cont = self.storage_client.get_container("test")
         self.storage_client.upload_object_via_stream("data", cont, "abc123/baz.txt")
