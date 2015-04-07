@@ -87,7 +87,7 @@ class TestCGHubFileImporter(unittest.TestCase):
                 self.assertTrue(file_key in self.converter.files_to_delete)
 
             # insert
-            self.converter.rebase('test')
+            self.converter.rebase()
 
             # post-insert
             for file_key in to_add:

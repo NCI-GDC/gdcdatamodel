@@ -12,8 +12,9 @@ from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
+all_phsids = '(phs000218 OR phs0004* OR phs000178)'
 
-args, source, phsid = None, None, None
+args = None
 
 
 class TestSignpostClient(object):
@@ -48,10 +49,14 @@ def setup():
 
 def process(roots):
     converter = setup()
-    for root in roots:
-        root = etree.fromstring(root)
-        converter.parse('file', root)
-    converter.rebase(source)
+    with converter.graph.session_scope() as session:
+        for root in roots:
+            root = etree.fromstring(root)
+            converter.parse('file', root)
+        converter.rebase()
+        if args.dry_run:
+            log.warn('Rolling back session as requested.')
+            session.rollback()
 
 
 def open_xml():
@@ -65,10 +70,10 @@ def download_xml():
     # Download the file list
     if args.all:
         log.info('Importing all files from TCGA...'.format(args.days))
-        xml = cgquery.get_all(phsid)
+        xml = cgquery.get_all(all_phsids)
     else:
         log.info('Rebasing past {} days from TCGA...'.format(args.days))
-        xml = cgquery.get_changes_last_x_days(args.days, phsid)
+        xml = cgquery.get_changes_last_x_days(args.days, all_phsids)
 
     if not xml:
         raise Exception('No xml found')
@@ -79,12 +84,12 @@ def download_xml():
 
 def import_files(xml):
     # Split the file into results
-    # print xml
     root = etree.fromstring(str(xml)).getroottree()
     roots = [etree.tostring(r) for r in root.xpath('/ResultSet/Result')]
     log.info('Found {} result(s)'.format(len(roots)))
     if not roots:
-        log.warn('No results found for past {} days'.format(args.days))
+        log.warn('No results found for past {} days or from file.'.format(
+            args.days))
         return
 
     # Chunk the results and distribute to process pool
@@ -92,7 +97,11 @@ def import_files(xml):
     chunks = [roots[i:i+chunksize]
               for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    Pool(args.processes).map(process, chunks)
+    if args.serial:
+        map(process, chunks)
+    else:
+        res = Pool(args.processes).map_async(process, chunks)
+        res.get(int(1e9))
     log.info('Complete.')
 
 if __name__ == '__main__':
@@ -121,10 +130,18 @@ if __name__ == '__main__':
     parser.add_argument('-V', '--signpost-version', default='v0',
                         help='the version of signpost API')
     parser.add_argument('--no-signpost', action='store_true',
-                        help='do not use signpost instance, use random ids')
+                        help='do not add the files to signpost')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Do not commit any sessions')
+    parser.add_argument('--serial', action='store_true',
+                        help='Do not use python multiprocessing')
+
     args = parser.parse_args()
 
-    source, phsid = 'tcga_cghub', 'phs000178'
+    if args.dry_run:
+        log.warn('Dry run: forcing --no-signpost')
+        args.no_signpost = True
+
     if args.file:
         xml = open_xml()
     else:

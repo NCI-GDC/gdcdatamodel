@@ -72,23 +72,22 @@ class cghub2psqlgraph(object):
         self.signpost = signpost  # should be a SignpostClient object
         self.reset()
 
-    def rebase(self, source):
+    def rebase(self):
         """Similar to export in xml2psqlgraph, but re-writes changes onto the
         graph
 
         ..note: postcondition: node/edge state is cleared.
 
-        :param src source:
-            the file source to be put in system_annotations
-
         """
         log.info('Handling {} nodes'.format(len(self.files_to_add)))
         with self.graph.session_scope():
-            self.rebase_file_nodes(source)
+            self.rebase_file_nodes()
+
         log.info('Handling {} edges'.format(
             len(self.edges) + len(self.related_to_edges)))
         with self.graph.session_scope():
             self.export_edges()
+
         self.reset()
 
     def reset(self):
@@ -110,9 +109,6 @@ class cghub2psqlgraph(object):
         1. does this file_key already exist
         2a. if it does, then update it
         2b. if it does not, then get a new id for it, and add it
-
-        :param src source:
-            the file source to be put in system_annotations
 
         """
 
@@ -146,19 +142,29 @@ class cghub2psqlgraph(object):
             edge.src_id = node_id
         return node_id
 
-    def rebase_file_nodes(self, source):
+    def get_source(self, acl):
+        assert len(acl) == 1, 'Not sure how to parse acls with > 1 entry!'
+        phsid = acl[0]
+        target = re.compile('(phs000218|phs0004\d\d)')
+        tcga = re.compile('phs000178')
+        if tcga.match(phsid):
+            return 'tcga_cghub'
+        elif target.match(phsid):
+            return 'target_cghub'
+        else:
+            raise RuntimeError('Unknown phsid! {}'.format(phsid))
+
+    def rebase_file_nodes(self):
         """update file records in graph
 
         1. for each valid file, merge it in to the graph
         2. for each invalid file, remove it from the graph
 
-        :param src source:
-            the file source to be put in system_annotations
-
         """
-        system_annotations = {'source': source}
+
         # Loop through files to add and merge them into the graph
         for file_key, node in self.files_to_add.iteritems():
+            system_annotations = {'source': self.get_source(node.acl)}
             node_id = self.merge_file_node(file_key, node, system_annotations)
             self.files_to_add[file_key].node_id = node_id
 
@@ -335,23 +341,28 @@ class cghub2psqlgraph(object):
             dst = self.graph.nodes().labels(dst_label)\
                                     .props(dict(name=normalized))\
                                     .first()
-            assert dst, 'Missing dst {} name:{}, {}'.format(
-                dst_label, normalized, file_key)
-            dst_id = dst.node_id
-            edge_label = file_mapping[dst_label]['edge_label']
-            self.save_edge(file_key, dst_id, dst_label, edge_label)
+            if not dst:
+                log.warn('Missing dst {} name:{}, {}'.format(
+                    dst_label, normalized, file_key))
+            else:
+                dst_id = dst.node_id
+                edge_label = file_mapping[dst_label]['edge_label']
+                self.save_edge(file_key, dst_id, dst_label, edge_label)
 
     def save_center_edge(self, root, file_key):
         legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
                                           root, single=True, nullable=False)
         code = self.center_regex.match(legacy_sample_id)
-        assert code, 'Unable to parse center code from barcode'
-        node = self.graph.nodes().labels('center')\
-                                 .props({'code': code.group(2)})\
-                                 .first()
-        assert node, 'Missing center code:{}, {}'.format(
-            code.group(2), file_key)
-        self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
+        if not code:
+            log.warn('Unable to parse center code from barcode: {}'.format(
+                legacy_sample_id))
+        else:
+            node = self.graph.nodes().labels('center')\
+                                     .props({'code': code.group(2)})\
+                                     .first()
+            assert node, 'Missing center code:{}, {}'.format(
+                code.group(2), file_key)
+            self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
 
     def add_edges(self, root, node_type, params, file_key, node):
         """
