@@ -1,6 +1,8 @@
 import os
 import uuid
 import boto
+import hashlib
+from itertools import islice
 from base import ZugsTestBase
 from mock import patch, Mock
 from moto import mock_s3bucket_path
@@ -8,7 +10,7 @@ from consulate import Consul
 
 from boto.s3.connection import OrdinaryCallingFormat
 
-from zug.downloaders import Downloader, md5sum
+from zug.downloaders import Downloader, md5sum_with_size
 
 
 def get_in(dictionary, path):
@@ -33,6 +35,28 @@ class FakePool(object):
 
     def join(self):
         pass
+
+
+class FailingMD5SumWithSize(object):
+    """Fail once, sending returning a truncated version of this boto key,
+    then succeed later.
+    """
+
+    def __init__(self):
+        self.truncate = True
+
+    def __call__(self, key):
+        if self.truncate:
+            self.truncate = False
+            length = int(key.size * 0.8)
+            iterable = islice(key, length)
+        else:
+            length = key.size
+            iterable = key
+        md5 = hashlib.md5()
+        for chunk in iterable:
+            md5.update(chunk)
+        return md5.hexdigest(), length
 
 
 class DownloadersTest(ZugsTestBase):
@@ -74,7 +98,7 @@ class DownloadersTest(ZugsTestBase):
             label="file",
             properties={
                 "file_name": name,
-                "md5sum": md5sum(content),
+                "md5sum": md5sum_with_size(content)[0],
                 "file_size": len(content),
                 "state": "submitted",
                 "state_comment": None,
@@ -178,3 +202,12 @@ class DownloadersTest(ZugsTestBase):
             downloader = Downloader(source="fake_cghub")
             with self.assertRaises(RuntimeError):
                 downloader.go()
+
+    @patch("zug.downloaders.Pool", FakePool)
+    @patch("zug.downloaders.md5sum_with_size", FailingMD5SumWithSize())
+    def test_startup_temporary_stream_of_incorrect_length_is_handled(self):
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        with self.downloader_monkey_patches():
+            downloader = Downloader(source="fake_cghub")
+            downloader.go()
