@@ -13,7 +13,9 @@ def base_query(g, state):
     """Query for all files in a state
 
     """
+
     return g.nodes().labels('file').props(dict(state=state))
+
 
 def end_query(q):
     """Take a query, and sum all values, assuming that's what you're doing
@@ -21,24 +23,30 @@ def end_query(q):
     script, and return the value in TB (base 10).
 
     """
+
     try:
         return float(q.with_entities(func.sum(
             Node.properties['file_size'].cast(BigInteger))).all()[0][0])/1e12
     except:
         return 0
 
+
 def query_total(g, state):
     """Get the total size in TB of all files in a given state
 
     """
+
     return end_query(base_query(g, state))
+
 
 def query_size(g, source, state):
     """Get the total size in TB of all files in a given state from a given
     source.
 
     """
+
     return end_query(base_query(g, state).sysan(dict(source=source)))
+
 
 def print_project_source(g, project, source):
     """Get the total size downloaded and total data in TB of all files
@@ -53,6 +61,7 @@ def print_project_source(g, project, source):
     print '{} {} Data'.format(project.upper(), source.upper())
     print 'Total Downloaded\t{}'.format(live)
     print 'Total Data\t{}'.format(submitted+live)
+
 
 def print_total(g):
     """Print the totals of downloaded and total data
