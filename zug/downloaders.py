@@ -54,11 +54,13 @@ class InvalidChecksumException(Exception):
     pass
 
 
-def md5sum(iterable):
+def md5sum_with_size(iterable):
     md5 = hashlib.md5()
+    size = 0
     for chunk in iterable:
         md5.update(chunk)
-    return md5.hexdigest()
+        size += len(chunk)
+    return md5.hexdigest(), size
 
 
 def consul_get(consul, path):
@@ -492,12 +494,33 @@ class Downloader(object):
         assert bucket == self.s3_bucket.name
         key = self.s3_bucket.get_key(name)
         self.logger.info("Computing md5sum from boto key %s", key)
-        md5 = md5sum(key)
-        if md5 != file["md5sum"]:
-            self.logger.warning("actual md5sum (%s) does not match expected md5sum (%s)", md5, file["md5sum"])
+        boto_key_size = int(key.size)
+        if boto_key_size != int(file["file_size"]):
+            self.logger.warning(
+                "file size in database (%s) does not match key size in S3 (%s)",
+                file["file_size"],
+                boto_key_size,
+            )
             raise InvalidChecksumException()
-        else:
-            self.logger.info("actual md5sum (%s) matches expected md5sum (%s)", md5, file["md5sum"])
+        tries = 0
+        while tries < 5:
+            tries += 1
+            md5, actual_stream_size = md5sum_with_size(key)
+            if actual_stream_size != boto_key_size:
+                self.logger.warning("Actual size streamed from S3 (%s) did not equal expected size according to boto (%s), retrying (%s tries so far).",
+                                    actual_stream_size, boto_key_size, tries)
+                continue
+            if md5 != file["md5sum"]:
+                self.logger.warning("actual md5sum (%s) does not match expected md5sum (%s)", md5, file["md5sum"])
+                raise InvalidChecksumException()
+            else:
+                self.logger.info("actual md5sum (%s) matches expected md5sum (%s)", md5, file["md5sum"])
+                return
+        # if we get here, we couldn't get the file to be the correct
+        # length, in five tries, so log a warning and mark it as
+        # invalid
+        self.logger.warning("Couldn't get a stream of the correct length in 5 tries!")
+        raise InvalidChecksumException()
 
     def go(self):
         self.sanity_checks()
