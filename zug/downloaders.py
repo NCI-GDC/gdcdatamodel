@@ -494,20 +494,13 @@ class Downloader(object):
         assert bucket == self.s3_bucket.name
         key = self.s3_bucket.get_key(name)
         self.logger.info("Computing md5sum from boto key %s", key)
-
-        # sometimes S3 (or at least cleversafe) will just finish
-        # streaming without raising an exception before you actually
-        # get the entire object. This is very annoying, so here's our strategy
-        #
-        # 1. get the size of the key
-        #      if the length of the key and the expected size of the file don't match
-        #      we raise InvalidChecksumException
-        # 2. stream it down from S3, also returning how long the thing was
-        # 3. if the length we actually got and the length of the key object are different, we
-        #    log a warning and try again up to like 3 times or something
-        # 4.
-        boto_key_size = int(file["file_size"])
-        if (key.size) != boto_key_size:
+        boto_key_size = int(key.size)
+        if boto_key_size != int(file["file_size"]):
+            self.logger.warning(
+                "file size in database (%s) does not match key size in S3 (%s)",
+                file["file_size"],
+                boto_key_size,
+            )
             raise InvalidChecksumException()
         tries = 0
         while tries < 5:
