@@ -304,7 +304,6 @@ class Downloader(object):
                 else:
                     for file in files:
                         assert file.system_annotations["source"] == self.source
-                        assert file["state"] == "submitted"
                     self.files = files
                 self.logger.info("Found %s files (%s) with analysis_id %s", len(files), files, self.analysis_id)
                 return self.files
@@ -537,15 +536,17 @@ class Downloader(object):
                 # first upload all files in the same session
                 self.set_consul_state("uploading")
                 for file in self.files:
-                    with self.state_transition(file, "uploading", "uploaded"):
-                        self.upload(file)
+                    if file["state"] == "submitted":
+                        with self.state_transition(file, "uploading", "uploaded"):
+                            self.upload(file)
             # once they've been uploaded, verify checksums in a separate session
             with self.graph.session_scope():
                 self.set_consul_state("validating")
                 for file in self.files:
-                    with self.state_transition(file, "validating", "live",
-                                               error_states={InvalidChecksumException: "invalid"}):
-                        self.verify(file)
+                    if file["state"] == "uploaded":
+                        with self.state_transition(file, "validating", "live",
+                                                   error_states={InvalidChecksumException: "invalid"}):
+                            self.verify(file)
             # note how long it took
             with self.graph.session_scope():
                 now = int(time.time())
