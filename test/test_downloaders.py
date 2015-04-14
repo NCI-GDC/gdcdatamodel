@@ -211,3 +211,18 @@ class DownloadersTest(ZugsTestBase):
         with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub")
             downloader.go()
+
+    @patch("zug.downloaders.Pool", FakePool)
+    def test_mixed_states_are_handled(self):
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        self.graph.node_update(
+            self.files[1],
+            properties={"state": "live"}
+        )
+        with self.downloader_monkey_patches():
+            downloader = Downloader(source="fake_cghub")
+            downloader.go()
+        with self.graph.session_scope():
+            for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
+                self.assertEqual(file["state"], "live")
