@@ -294,22 +294,20 @@ class TCGADCCArchiveSyncer(object):
         self.archive_id = archive_id
         self.archive_node = None  # this gets filled in later
         self.max_memory = max_memory
+        self.temp_file = None
         self.tarball = None
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()))
 
-    # TODO these next two are largely a copy paste job from
+    # TODO this is largely a copy paste job from
     # downloaders.py, would like to clean up at some point
-
-    @property
-    def consul_key(self):
-        return "tcgadccsync/current/{}".format(self.name)
 
     def start_consul_session(self):
         self.log.info("Starting new consul session")
         self.consul_session = self.consul.session.create(
             behavior="delete",
             ttl="60s",
+            delay="0s",
         )
         self.log.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
         self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
@@ -329,14 +327,14 @@ class TCGADCCArchiveSyncer(object):
         from the index (so that it doesn't 404 when people try to
         download it).
         """
+        self.log.info("Marking %s as to_delete in system annotations", node)
         self.graph.node_update(node, system_annotations={"to_delete": True})
 
-    def remove_old_versions(self, submitter_id, session):
+    def remove_old_versions(self, submitter_id):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
         all_versions = self.graph.node_lookup(
             label="archive",
             property_matches={"submitter_id": submitter_id},
-            session=session
         ).all()
         old_versions = [version for version in all_versions
                         if version["revision"] < self.archive["revision"]]
@@ -349,25 +347,23 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive["revision"],
                           submitter_id)
-            for file in self.graph.node_lookup(label="file", session=session)\
-                                      .with_edge_to_node("member_of", old_archive)\
-                                      .all():
-                self.log.info("voiding file %s", str(file))
+            for file in self.graph.node_lookup(label="file")\
+                                  .with_edge_to_node("member_of", old_archive)\
+                                  .all():
                 self.delete_later(file)
             self.delete_later(old_archive)
 
-    def sync_archive(self, session):
+    def sync_archive(self):
         # submitter_id is just the name without the revision or series
         # this will be identical between different versions of an
         # archive as new versions are submitted
         submitter_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
-        self.remove_old_versions(submitter_id, session)
+        self.remove_old_versions(submitter_id)
         self.log.info("looking for archive %s in postgres", self.name)
         maybe_this_archive = self.graph.node_lookup_one(
             label="archive",
             property_matches={"submitter_id": submitter_id,
                               "revision": self.archive["revision"]},
-            session=session
         )
         if maybe_this_archive:
             node_id = maybe_this_archive.node_id
@@ -390,18 +386,15 @@ class TCGADCCArchiveSyncer(object):
                 "revision": self.archive["revision"]
             },
             system_annotations=sysan,
-            session=session
         )
         project_node = self.graph.node_lookup_one(
             label="project",
             property_matches={"code": self.archive["disease_code"]},
-            session=session
         )
         maybe_edge_to_project = self.graph.edge_lookup_one(
             src_id=archive_node.node_id,
             dst_id=project_node.node_id,
             label="member_of",
-            session=session
         )
         if not maybe_edge_to_project:
             edge_to_project = PsqlEdge(
@@ -409,7 +402,7 @@ class TCGADCCArchiveSyncer(object):
                 dst_id=project_node.node_id,
                 label="member_of"
             )
-            self.graph.edge_insert(edge_to_project, session=session)
+            self.graph.edge_insert(edge_to_project)
         return archive_node
 
     def lookup_file_in_pg(self, archive_node, filename, session):
@@ -785,6 +778,70 @@ class TCGADCCArchiveSyncer(object):
                 return self.archive
         raise RuntimeError("Couldn't lock archive to download in five tries")
 
+    def upload_archive(self):
+        self.temp_file.seek(0)
+        self.log.info("uploading archive to storage")
+        obj = self.upload_data(self.temp_file, "/".join(["archives", self.name]))
+        archive_url = url_for(obj)
+        archive_doc = self.signpost.get(self.archive_node.node_id)
+        if archive_doc and archive_doc.urls:
+            self.log.info("archive already has signpost url")
+        else:
+            self.log.info("storing archive url %s in signpost", archive_url)
+            doc = self.signpost.get(self.archive_node.node_id)
+            doc.urls = [archive_url]
+            doc.patch()
+            self.log.info("noting that archive node %s is uploaded", self.archive_node)
+            self.graph.node_update(
+                self.archive_node,
+                system_annotations={
+                    "uploaded": True
+                }
+            )
+
+    def cleanup(self):
+        self.log.info("Cleaning up")
+        if self.temp_file:
+            self.log.info("Closing temp file in which archive was stored")
+            self.temp_file.close()
+        self.log.info("Stopping consul heartbeat thread")
+        self.heartbeat_thread.stop()
+        self.log.info("Waiting to join heartbeat thread . . .")
+        self.heartbeat_thread.join(20)
+        if self.heartbeat_thread.is_alive():
+            self.log.warning("Joining heartbeat thread failed after 20 seconds!")
+        self.log.info("Invalidating consul session")
+        self.consul.session.destroy(self.consul_session)
+
+    def transition_files_to_live(self, file_nodes):
+        for node in file_nodes:
+            if node["state"] in ["submitted", "uploading"]:
+                with self.state_transition(node, "uploading", "uploaded"):
+                    self.log.info("uploading file %s (%s)", node, node["file_name"])
+                    self.upload(node)
+            if node["state"] in ["uploaded", "validating"]:
+                with self.state_transition(node, "validating", "live",
+                                           error_states={InvalidChecksumException: "invalid"}):
+                    self.log.info("validating file %s (%s)", node, node["file_name"])
+                    self.verify(node)
+            if node["state"] in ["live", "invalid"]:
+                self.log.info("%s (%s) is in state %s",
+                              node, node["file_name"], node["state"])
+
+    def download_archive_and_sync_files(self):
+        with self.graph.session_scope() as session:
+            self.archive_node = self.sync_archive()
+            self.download_archive()
+            manifest = self.get_manifest()
+            filenames = self.get_files()
+            file_nodes = []
+            for filename in filenames:
+                if filename != "MANIFEST.txt":
+                    file_node = self.sync_file(filename, manifest.get(filename), session)
+                    if file_node:
+                        file_nodes.append(file_node)
+            return file_nodes
+
     def sync(self):
         self.start_consul_session()
         # this sets self.archive and potentially self.archive_node
@@ -797,62 +854,11 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
-        with self.graph.session_scope() as session:
-            if not self.archive_node:
-                # get_archive may have already set self.archive_node
-                # if we're working on an archive that we already have
-                # in the database and just haven't uploaded, I *think*
-                # it's correct to just skip sync_archive in this case.
-                #
-                # Another thing to note is that I think this means we
-                # could remove all the "archive already exists" logic from
-                # sync_archive and it would basically become insert_archive
-                self.archive_node = self.sync_archive(session)
-            self.download_archive()
-            manifest = self.get_manifest()
-            filenames = self.get_files()
-            file_nodes = []
-            for filename in filenames:
-                if filename != "MANIFEST.txt":
-                    file_node = self.sync_file(filename, manifest.get(filename), session)
-                    if file_node:
-                        file_nodes.append(file_node)
-        if not self.no_upload and not self.meta_only:
-            for node in file_nodes:
-                if node["state"] in ["submitted", "uploading"]:
-                    with self.state_transition(node, "uploading", "uploaded"):
-                        self.log.info("uploading file %s (%s)", node, node["file_name"])
-                        self.upload(node)
-                if node["state"] in ["uploaded", "validating"]:
-                    with self.state_transition(node, "validating", "live",
-                                               error_states={InvalidChecksumException: "invalid"}):
-                        self.log.info("validating file %s (%s)", node, node["file_name"])
-                        self.verify(node)
-                if node["state"] in ["live", "invalid"]:
-                    self.log.info("%s (%s) is in state %s",
-                                  node, node["file_name"], node["state"])
-
+        try:
+            file_nodes = self.download_archive_and_sync_files()
+            self.transition_files_to_live(file_nodes)
             # finally, upload the archive itself
-            self.temp_file.seek(0)
-            self.log.info("uploading archive to storage")
-            obj = self.upload_data(self.temp_file, "/".join(["archives", self.name]))
-            archive_url = url_for(obj)
-            archive_doc = self.signpost.get(self.archive_node.node_id)
-            if archive_doc and archive_doc.urls:
-                self.log.info("archive already has signpost url")
-            else:
-                self.log.info("storing archive in signpost")
-                doc = self.signpost.get(self.archive_node.node_id)
-                doc.urls = [archive_url]
-                doc.patch()
-                self.log.info("noting that archive node %s is uploaded", self.archive_node)
-                self.graph.node_update(
-                    self.archive_node,
-                    system_annotations={
-                        "uploaded": True
-                    }
-                )
-        else:
-            self.log.info("skipping upload to object store")
-        if not self.meta_only:
+            self.upload_archive()
             self.temp_file.close()
+        finally:
+            self.cleanup()
