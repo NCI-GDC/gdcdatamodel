@@ -1,4 +1,4 @@
-from edge import *
+from edge import Edge
 
 
 class DerivedFrom(object):

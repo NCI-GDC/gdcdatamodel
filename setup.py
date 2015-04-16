@@ -5,7 +5,9 @@ setup(
     packages=[
         'gdcdatamodel',
         'gdcdatamodel.mappings',
-        'gdcdatamodel.models'
+        'gdcdatamodel.models',
+        'gdcdatamodel.models.nodes',
+        'gdcdatamodel.models.edges',
     ],
     install_requires=[
         'avro==1.7.7',
