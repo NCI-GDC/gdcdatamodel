@@ -3,6 +3,7 @@ import tempfile
 import tarfile
 import re
 import hashlib
+import random
 from urlparse import urlparse, urljoin
 from functools import partial
 import copy
@@ -28,6 +29,20 @@ from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
 
 from zug.datamodel import tcga_classification
+from zug.datamodel.latest_urls import LatestURLParser
+# TODO put these somewhere that makes more sense
+from zug.downloaders import StoppableThread, consul_heartbeat
+
+from psqlgraph import PsqlGraphDriver
+from signpostclient import SignpostClient
+
+from libcloud.storage.types import Provider
+from libcloud.storage.providers import get_driver
+
+from consulate import Consul
+
+S3 = get_driver(Provider.S3)
+
 
 import libcloud.storage.drivers.s3
 # upload in 500MB chunks
@@ -35,6 +50,9 @@ libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
 
 
 def run_edge_build(g, files):
+    """
+    This is here just to be run from the REPL for one off jobs.
+    """
     logger = get_logger("tcga_edge_build")
     logger.info("about to process %s nodes", len(files))
     for node in files:
@@ -125,9 +143,9 @@ def classify(archive, filename):
 
 class TCGADCCEdgeBuilder(object):
 
-    def __init__(self, file_node, pg_driver, logger):
+    def __init__(self, file_node, graph, logger):
         self.file_node = file_node
-        self.pg_driver = pg_driver
+        self.graph = graph
         self.archive = self._get_archive()
         self.log = logger
 
@@ -136,11 +154,11 @@ class TCGADCCEdgeBuilder(object):
         return self.archive["archive_name"]
 
     def _get_archive(self):
-        with self.pg_driver.session_scope():
-            return self.pg_driver.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
+        with self.graph.session_scope():
+            return self.graph.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
 
     def build(self):
-        with self.pg_driver.session_scope() as session:
+        with self.graph.session_scope() as session:
             self.classify(self.file_node, session)
             self.tie_file_to_center(self.file_node, session)
 
@@ -148,18 +166,18 @@ class TCGADCCEdgeBuilder(object):
         center_type = self.archive['center_type']
         namespace = self.archive['center_name']
         if namespace == 'mdanderson.org' and center_type.upper() == 'CGCC':
-            query = self.pg_driver.nodes().labels('center').props({'code':'20'})
+            query = self.graph.nodes().labels('center').props({'code':'20'})
         elif namespace == 'genome.wustl.edu' and center_type.upper() == 'CGCC':
-            query = self.pg_driver.nodes().labels('center').props({'code':'21'})
+            query = self.graph.nodes().labels('center').props({'code':'21'})
         elif namespace == 'bcgsc.ca' and center_type.upper() == 'CGCC':
-            query = self.pg_driver.nodes().labels('center').props({'code':'13'})
+            query = self.graph.nodes().labels('center').props({'code':'13'})
         else:
-            query = self.pg_driver.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
+            query = self.graph.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
 
         count = query.count()
         if count == 1:
             attr_node = query.first()
-            maybe_edge_to_center = self.pg_driver.edge_lookup_one(
+            maybe_edge_to_center = self.graph.edge_lookup_one(
                 label='submitted_by',
                 src_id=file_node.node_id,
                 dst_id=attr_node.node_id
@@ -170,7 +188,7 @@ class TCGADCCEdgeBuilder(object):
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id
                 )
-                self.pg_driver.edge_insert(edge_to_center, session=session)
+                self.graph.edge_insert(edge_to_center, session=session)
         elif count == 0:
             self.log.warning("center with type %s and namespace %s not found",
                              self.archive['center_type'],
@@ -193,14 +211,14 @@ class TCGADCCEdgeBuilder(object):
             # sometimes a list and sometimes a string
             value = [value]
         for val in value:
-            attr_node = self.pg_driver.node_lookup_one(
+            attr_node = self.graph.node_lookup_one(
                 label=attr,
                 property_matches={"name": val},
                 session=session
             )
             if not attr_node:
                 self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
-            maybe_edge_to_attr_node = self.pg_driver.edge_lookup_one(
+            maybe_edge_to_attr_node = self.graph.edge_lookup_one(
                 label=LABEL_MAP[attr],
                 src_id=file_node.node_id,
                 dst_id=attr_node.node_id
@@ -211,7 +229,7 @@ class TCGADCCEdgeBuilder(object):
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id
                 )
-                self.pg_driver.edge_insert(edge_to_attr_node, session=session)
+                self.graph.edge_insert(edge_to_attr_node, session=session)
 
     def classify(self, file_node, session):
         classification = classify(self.archive, file_node["file_name"])
@@ -246,35 +264,76 @@ class TCGADCCEdgeBuilder(object):
 
 class TCGADCCArchiveSyncer(object):
 
-    def __init__(self, archive, signpost=None,
-                 pg_driver=None, dcc_auth=None,
-                 scratch_dir=None, storage_client=None,
-                 meta_only=False, force=False, no_upload=False,
-                 max_memory=2*10**9):
-        self.archive = archive
-        self.signpost = signpost  # this should be SignpostClient object
-        self.pg_driver = pg_driver
-        self.pg_driver.node_validator = AvroNodeValidator(node_avsc_object)
-        self.pg_driver.edge_validator = AvroEdgeValidator(edge_avsc_object)
-        self.dcc_auth = dcc_auth
-        self.storage_client = storage_client
-        self.scratch_dir = scratch_dir
-        self.meta_only = meta_only
-        self.force = force
+    def __init__(self, archive_id=None, max_memory=2*10**9, s3=None):
+        self.graph = PsqlGraphDriver(
+            os.environ["PG_HOST"],
+            os.environ["PG_USER"],
+            os.environ["PG_PASS"],
+            os.environ["PG_NAME"],
+        )
+        self.signpost = SignpostClient(os.environ["SIGNPOST_URL"])
+        self.consul = Consul()
+        self.dcc_auth = (os.environ["DCC_USER"], os.environ["DCC_PASS"])
+        if not s3:
+            self.s3 = S3(
+                os.environ["S3_ACCESS_KEY"],
+                os.environ["S3_SECRET_KEY"],
+                host=os.environ["S3_HOST"],
+                secure=False,
+            )
+        else:
+            self.s3 = s3
+        self.scratch_dir = os.environ["SCRATCH_DIR"]
+        self.protected_bucket = os.environ["TCGA_PROTECTED_BUCKET"]
+        self.public_bucket = os.environ["TCGA_PUBLIC_BUCKET"]
+        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
+        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
+        # these options are deprecated, eventually I will remove them
+        self.meta_only = False
+        self.no_upload = False
+        self.archive_id = archive_id
+        self.archive_node = None  # this gets filled in later
         self.max_memory = max_memory
         self.tarball = None
-        self.no_upload = no_upload
         self.log = get_logger("tcga_dcc_sync_" +
-                              str(os.getpid()) +
-                              "_" + self.name)
+                              str(os.getpid()))
+
+    # TODO these next two are largely a copy paste job from
+    # downloaders.py, would like to clean up at some point
+
+    @property
+    def consul_key(self):
+        return "tcgadccsync/current/{}".format(self.name)
+
+    def start_consul_session(self):
+        self.log.info("Starting new consul session")
+        self.consul_session = self.consul.session.create(
+            behavior="delete",
+            ttl="60s",
+        )
+        self.log.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
+        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
+                                                args=(self.consul_session, 10))
+        self.heartbeat_thread.daemon = True
+        self.heartbeat_thread.start()
 
     @property
     def name(self):
         return self.archive["archive_name"]
 
+    def delete_later(self, node):
+        """
+        Mark a node for deletion. The reason we do this instead of just
+        deleting immediately is so that the elasticsearch index
+        generation code has time to run again and remove this data
+        from the index (so that it doesn't 404 when people try to
+        download it).
+        """
+        self.graph.node_update(node, system_annotations={"to_delete": True})
+
     def remove_old_versions(self, submitter_id, session):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
-        all_versions = self.pg_driver.node_lookup(
+        all_versions = self.graph.node_lookup(
             label="archive",
             property_matches={"submitter_id": submitter_id},
             session=session
@@ -290,12 +349,12 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive["revision"],
                           submitter_id)
-            for file in self.pg_driver.node_lookup(label="file", session=session)\
+            for file in self.graph.node_lookup(label="file", session=session)\
                                       .with_edge_to_node("member_of", old_archive)\
                                       .all():
                 self.log.info("voiding file %s", str(file))
-                self.pg_driver.node_delete(node=file, session=session)
-            self.pg_driver.node_delete(node=old_archive, session=session)
+                self.delete_later(file)
+            self.delete_later(old_archive)
 
     def sync_archive(self, session):
         # submitter_id is just the name without the revision or series
@@ -304,7 +363,7 @@ class TCGADCCArchiveSyncer(object):
         submitter_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
         self.remove_old_versions(submitter_id, session)
         self.log.info("looking for archive %s in postgres", self.name)
-        maybe_this_archive = self.pg_driver.node_lookup_one(
+        maybe_this_archive = self.graph.node_lookup_one(
             label="archive",
             property_matches={"submitter_id": submitter_id,
                               "revision": self.archive["revision"]},
@@ -318,7 +377,11 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("inserting new archive node in postgres with id: %s", node_id)
         sysan = self.archive
         sysan["source"] = "tcga_dcc"
-        archive_node = self.pg_driver.node_merge(
+        if not maybe_this_archive:
+            # the conditional is because we only want to mark it as
+            # unreleased if we're creating it
+            sysan["unreleased"] = True
+        archive_node = self.graph.node_merge(
             node_id=node_id,
             label='archive',
             acl=self.acl,
@@ -329,12 +392,12 @@ class TCGADCCArchiveSyncer(object):
             system_annotations=sysan,
             session=session
         )
-        project_node = self.pg_driver.node_lookup_one(
+        project_node = self.graph.node_lookup_one(
             label="project",
             property_matches={"code": self.archive["disease_code"]},
             session=session
         )
-        maybe_edge_to_project = self.pg_driver.edge_lookup_one(
+        maybe_edge_to_project = self.graph.edge_lookup_one(
             src_id=archive_node.node_id,
             dst_id=project_node.node_id,
             label="member_of",
@@ -346,11 +409,11 @@ class TCGADCCArchiveSyncer(object):
                 dst_id=project_node.node_id,
                 label="member_of"
             )
-            self.pg_driver.edge_insert(edge_to_project, session=session)
+            self.graph.edge_insert(edge_to_project, session=session)
         return archive_node
 
     def lookup_file_in_pg(self, archive_node, filename, session):
-        q = self.pg_driver.node_lookup(label="file",
+        q = self.graph.node_lookup(label="file",
                                        property_matches={"file_name": filename},
                                        session=session)\
                           .with_edge_to_node("member_of", archive_node)
@@ -362,7 +425,6 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
-
     def get_file_size_from_http(self, filename):
         base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
         file_url = urljoin(base_url, filename)
@@ -372,9 +434,8 @@ class TCGADCCArchiveSyncer(object):
         resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
         return int(resp.headers["content-length"])
 
-
     def set_file_state(self, file_node, state):
-        self.pg_driver.node_update(file_node, properties={"state": state})
+        self.graph.node_update(file_node, properties={"state": state})
 
     def extract_file_data(self, filename):
         return self.tarball.extractfile("/".join([self.name, filename]))
@@ -406,7 +467,7 @@ class TCGADCCArchiveSyncer(object):
         if file_node:
             node_id = file_node.node_id
             self.log.info("file %s in already in postgres with id %s, not inserting", filename, node_id)
-            self.pg_driver.node_update(
+            self.graph.node_update(
                 file_node,
                 acl=self.acl,
                 properties={
@@ -423,7 +484,7 @@ class TCGADCCArchiveSyncer(object):
             )
         else:
             node_id = self.signpost.create().did
-            file_node = self.pg_driver.node_merge(
+            file_node = self.graph.node_merge(
                 node_id=node_id,
                 label="file",
                 acl=self.acl,
@@ -438,11 +499,12 @@ class TCGADCCArchiveSyncer(object):
                 system_annotations={
                     "source": "tcga_dcc",
                     "md5_source": md5_source,
+                    "unreleased": True,
                 },
                 session=session
             )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
-        maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
+        maybe_edge_to_archive = self.graph.edge_lookup_one(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
             label="member_of",
@@ -454,8 +516,8 @@ class TCGADCCArchiveSyncer(object):
                 dst_id=self.archive_node.node_id,
                 label="member_of"
             )
-            self.pg_driver.edge_insert(edge_to_archive, session=session)
-        edge_builder = TCGADCCEdgeBuilder(file_node, self.pg_driver, self.log)
+            self.graph.edge_insert(edge_to_archive, session=session)
+        edge_builder = TCGADCCEdgeBuilder(file_node, self.graph, self.log)
         edge_builder.build()
         return file_node
 
@@ -560,7 +622,6 @@ class TCGADCCArchiveSyncer(object):
                            temp_file_len, content_length)
             self.temp_file.close()
 
-
     def manifest_is_complete(self, manifest, filenames):
         """Verify that the manifest is complete."""
         return all((name in manifest for name in filenames
@@ -569,14 +630,14 @@ class TCGADCCArchiveSyncer(object):
     @property
     def container(self):
         if self.archive["protected"]:
-            return self.storage_client.get_container("tcga_dcc_protected")
+            return self.s3.get_container(self.protected_bucket)
         else:
-            return self.storage_client.get_container("tcga_dcc_public")
+            return self.s3.get_container(self.public_bucket)
 
     def obj_for(self, url):
-        # for now this assumes that the object can be found by self.storage_client
+        # for now this assumes that the object can be found by self.s3
         parsed = urlparse(url)
-        return self.storage_client.get_object(*parsed.path.split("/", 2)[1:])
+        return self.s3.get_object(*parsed.path.split("/", 2)[1:])
 
     @no_proxy()
     def upload_data(self, fileobj, key):
@@ -596,7 +657,7 @@ class TCGADCCArchiveSyncer(object):
         expected_sum = node["md5sum"]
         actual_sum = md5sum(obj.as_stream())
         if actual_sum != expected_sum:
-            self.pg_driver.node_update(
+            self.graph.node_update(
                 node, properties={"state_comment": "bad md5sum"})
             self.log.warning("file %s has invalid checksum", node["file_name"])
             raise InvalidChecksumException()
@@ -649,22 +710,105 @@ class TCGADCCArchiveSyncer(object):
             self.set_file_state(file, original_state)
             raise
 
+    def get_consul_lock(self, archive):
+        key = "tcgadccsync/current/{}".format(archive["archive_name"])
+        self.log.info("Attempting to lock %s in consul", key)
+        return self.consul.kv.acquire_lock(key, self.consul_session)
+
+    def get_archive(self):
+        """
+        Our strategy for choosing an archive to work on is if we have
+        self.archive_id just use that one. Otherwise:
+
+        1) pull all archives from database and latest list from the dcc
+        2) if we have any unuploaded archives in the database (as indicated by system_annotations["uploaded"]),
+           work on one of those at random
+        3) otherwise, choose one at random from the dcc that we don't yet have in the database
+
+        """
+        self.log.info("Fetching latest archives list from DCC")
+        archives = list(LatestURLParser())
+        if self.archive_id:
+            with self.graph.session_scope():
+                self.log.info("Archive with id %s requested, finding in database", self.archive_id)
+                archive_node = self.graph.nodes().ids(self.archive_id).one()
+                assert archive_node.label == "archive"
+                self.log.info("Finding matching archive from DCC")
+                archive = [archive for archive in archives
+                           if archive["archive_name"] == archive_node.system_annotations["archive_name"]][0]
+                if not self.get_consul_lock(archive):
+                    msg = "Couldn't lock archive {} for requested id {}".format(
+                        archive["archive_name"],
+                        self.archive_id
+                    )
+                    raise RuntimeError(msg)
+                else:
+                    self.archive_node = archive_node
+                    self.archive = archive
+                    return self.archive
+        tries = 0
+        while tries < 5:
+            tries += 1
+            self.log.info("Finding archive to work on, try %s", tries)
+            with self.graph.session_scope():
+                self.log.info("Fetching archive nodes from database")
+                archive_nodes = self.graph.nodes().labels("archive").all()
+                unuploaded = [node for node in archive_nodes
+                              if not node.system_annotations.get("uploaded")]
+                if unuploaded:
+                    self.log.info("There are %s unuploaded archive nodes in the db, choosing one of them", len(unuploaded))
+                    random.shuffle(unuploaded)
+                    # there are unuploaded nodes
+                    choice = unuploaded[0]
+                    archive = [archive for archive in archives
+                               if archive["archive_name"] == choice.system_annotations["archive_name"]][0]
+                    if not self.get_consul_lock(archive):
+                        self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
+                        continue
+                    self.archive = archive
+                    self.archive_node = choice
+                else:
+                    self.log.info("Found no unuploaded nodes in the database, choosing new archive from DCC")
+                    names_in_db = [node.system_annotations["archive_name"]
+                                   for node in archive_nodes]
+                    unimported = [archive for archive in archives
+                                  if archive["archive_name"] not in names_in_db]
+                    if not unimported:
+                        self.log.info("No unuploaded nodes or unimported archives found, we're all caught up!")
+                        return None
+                    random.shuffle(unimported)
+                    if not self.get_consul_lock(archive):
+                        self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
+                        continue
+                    self.archive = unimported[0]
+                self.log.info("chose archive %s to work on", self.name)
+                return self.archive
+        raise RuntimeError("Couldn't lock archive to download in five tries")
+
     def sync(self):
+        self.start_consul_session()
+        # this sets self.archive and potentially self.archive_node
+        if not self.get_archive():
+            # if this returns None, it means we're all done
+            return
         if self.archive["disease_code"] == "FPPP":
             self.log.info("%s is an FPPP archive, skipping", self.name)
             return
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
-        with self.pg_driver.session_scope() as session:
-            self.archive_node = self.sync_archive(session)
-            archive_doc = self.signpost.get(self.archive_node.node_id)
-            if archive_doc and archive_doc.urls and not self.force:
-                self.log.info("archive already has urls in signpost, "
-                              "assuming it's complete")
-                return
-            if not self.meta_only:
-                self.download_archive()
+        with self.graph.session_scope() as session:
+            if not self.archive_node:
+                # get_archive may have already set self.archive_node
+                # if we're working on an archive that we already have
+                # in the database and just haven't uploaded, I *think*
+                # it's correct to just skip sync_archive in this case.
+                #
+                # Another thing to note is that I think this means we
+                # could remove all the "archive already exists" logic from
+                # sync_archive and it would basically become insert_archive
+                self.archive_node = self.sync_archive(session)
+            self.download_archive()
             manifest = self.get_manifest()
             filenames = self.get_files()
             file_nodes = []
@@ -701,6 +845,13 @@ class TCGADCCArchiveSyncer(object):
                 doc = self.signpost.get(self.archive_node.node_id)
                 doc.urls = [archive_url]
                 doc.patch()
+                self.log.info("noting that archive node %s is uploaded", self.archive_node)
+                self.graph.node_update(
+                    self.archive_node,
+                    system_annotations={
+                        "uploaded": True
+                    }
+                )
         else:
             self.log.info("skipping upload to object store")
         if not self.meta_only:

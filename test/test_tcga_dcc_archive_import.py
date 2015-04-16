@@ -1,4 +1,6 @@
+import os
 from base import ZugsTestBase
+from mock import patch
 
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
@@ -9,8 +11,18 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
     def setUp(self):
         super(TCGADCCArchiveSyncTest, self).setUp()
         self.parser = LatestURLParser()
-        self.storage_client.create_container("tcga_dcc_public")
-        self.storage_client.create_container("tcga_dcc_protected")
+        self.storage_client.create_container("test_tcga_dcc_public")
+        self.storage_client.create_container("test_tcga_dcc_protected")
+        os.environ["PG_HOST"] = "localhost"
+        os.environ["PG_USER"] = "test"
+        os.environ["PG_PASS"] = "test"
+        os.environ["PG_NAME"] = "automated_test"
+        os.environ["SIGNPOST_URL"] = self.signpost_url
+        os.environ["SCRATCH_DIR"] = self.scratch_dir
+        os.environ["TCGA_PROTECTED_BUCKET"] = "test_tcga_dcc_protected"
+        os.environ["TCGA_PUBLIC_BUCKET"] = "test_tcga_dcc_public"
+        os.environ["DCC_USER"] = ""
+        os.environ["DCC_PASS"] = ""
 
     def syncer_for(self, archive, **kwargs):
         return TCGADCCArchiveSyncer(
@@ -44,14 +56,15 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
         self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
 
-    def test_syncing_an_archive_works(self):
+    def test_basic_sync(self):
         archive = self.parser.parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
         )
-        syncer = self.syncer_for(archive)
-        syncer.sync()
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]):
+            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+            syncer.sync()
         with self.graph.session_scope():
             self.assertEqual(self.graph.node_lookup(label="file").count(), 109)
             self.assertEqual(self.graph.node_lookup(label="archive").count(), 1)
@@ -72,8 +85,8 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
             self.assertEqual(center['code'],'20')
 
         # make sure file and archive are in storage
-        self.storage_client.get_object("tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
-        self.storage_client.get_object("tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
+        self.storage_client.get_object("test_tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
+        self.storage_client.get_object("test_tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
 
     def test_syncing_is_idempotent(self):
         archive = self.parser.parse_archive(
