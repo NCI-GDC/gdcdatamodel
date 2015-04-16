@@ -27,17 +27,17 @@ class FileMemberOfArchive(Edge, MemberOf):
 
 class FileMemberOfExperimentalStrategy(Edge, MemberOf):
     __src_label__ = 'file'
-    __dst_label__ = 'experimentalstrategy'
+    __dst_label__ = 'experimental_strategy'
 
 
 class FileMemberOfDataSubtype(Edge, MemberOf):
     __src_label__ = 'file'
-    __dst_label__ = 'datasubtype'
+    __dst_label__ = 'data_subtype'
 
 
 class FileMemberOfDataFormat(Edge, MemberOf):
     __src_label__ = 'file'
-    __dst_label__ = 'dataformat'
+    __dst_label__ = 'data_format'
 
 
 class FileMemeberOfTag(Edge, MemberOf):
@@ -46,5 +46,5 @@ class FileMemeberOfTag(Edge, MemberOf):
 
 
 class DataSubtypeMemberOfDataType(Edge, MemberOf):
-    __src_label__ = 'datasubtype'
-    __dst_label__ = 'datatype'
+    __src_label__ = 'data_subtype'
+    __dst_label__ = 'data_type'

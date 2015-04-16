@@ -1,19 +1,25 @@
 from node import *
+from gdcdatamodel.models import validate
 
 
 class Archive(Node):
+
+    __nonnull_properties__ = ['submitter_id', 'revision']
+
     @hybrid_property
     def submitter_id(self):
-        return self.properties['submitter_id']
+        return self._get_property('submitter_id')
 
     @submitter_id.setter
+    @validate(str)
     def submitter_id(self, value):
-        self.properties['submitter_id'] = value
+        self._set_property('submitter_id', value)
 
     @hybrid_property
     def revision(self):
-        return self.properties['revision']
+        return self._get_property('revision')
 
     @revision.setter
+    @validate(int, long)
     def revision(self, value):
-        self.properties['revision'] = value
+        self._set_property('revision', value)

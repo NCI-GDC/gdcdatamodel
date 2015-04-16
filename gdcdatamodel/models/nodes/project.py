@@ -1,43 +1,53 @@
 from node import *
+from gdcdatamodel.models import validate
 
 
 class Project(Node):
+
+    __nonnull_properties__ = ['code', 'name', 'disease_type', 'state',
+                              'primary_site']
+
     @hybrid_property
     def code(self):
-        return self.properties['code']
+        return self._get_property('code')
 
     @code.setter
+    @validate(str)
     def code(self, value):
-        self.properties['code'] = value
+        self._set_property('code', value)
 
     @hybrid_property
     def name(self):
-        return self.properties['name']
+        return self._get_property('name')
 
     @name.setter
+    @validate(str)
     def name(self, value):
-        self.properties['name'] = value
+        self._set_property('name', value)
 
     @hybrid_property
     def disease_type(self):
-        return self.properties['disease_type']
+        return self._get_property('disease_type')
 
     @disease_type.setter
+    @validate(str)
     def disease_type(self, value):
-        self.properties['disease_type'] = value
+        self._set_property('disease_type', value)
 
     @hybrid_property
     def state(self):
-        return self.properties['state']
+        return self._get_property('state')
 
     @state.setter
+    @validate(str)
     def state(self, value):
-        self.properties['state'] = value
+        self._set_property('state', value)
 
     @hybrid_property
     def primary_site(self):
-        return self.properties['primary_site']
+        return self._get_property('primary_site')
 
     @primary_site.setter
+    @validate(str)
     def primary_site(self, value):
-        self.properties['primary_site'] = value
+        self._set_property('primary_site', value)

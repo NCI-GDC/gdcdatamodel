@@ -1,14 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='gdcdatamodel',
-    packages=[
-        'gdcdatamodel',
-        'gdcdatamodel.mappings',
-        'gdcdatamodel.models',
-        'gdcdatamodel.models.nodes',
-        'gdcdatamodel.models.edges',
-    ],
+    packages=find_packages(),
     install_requires=[
         'avro==1.7.7',
         'graphviz==0.4.2',
