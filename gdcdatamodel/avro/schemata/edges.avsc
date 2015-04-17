@@ -408,5 +408,44 @@
         "doc": "The primary IDs for the source and destination nodes."
       }
     ]
+  },
+  {
+    "name": "refers_to",
+    "namespace": "gov.nih.nci.gdc",
+    "type": "record",
+    "doc": "Indicates the source entity refers to the destination entity in the content",
+    "fields": [
+      {
+        "name": "properties",
+        "type": [
+            "refers_to_properties"
+        ],
+        "doc": "Key-values representing refers_to properties"
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Primary unique edge ID"
+      },
+      {
+        "name": "label",
+        "type": [
+          "refers_to_enum"
+        ],
+        "doc": "String constant representing the refers_to label."
+      },
+      {
+        "name": "node_labels",
+        "type": [
+          "publication:file"
+        ],
+        "doc": "The source/destination node types allowed."
+      },
+      {
+        "name": "node_ids",
+        "type": "src_dst_nodes",
+        "doc": "The primary IDs for the source and destination nodes."
+      }
+    ]
   }
 ]

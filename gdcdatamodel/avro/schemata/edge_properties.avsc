@@ -106,5 +106,12 @@
     "namespace": "gov.nih.nci.gdc",
     "doc": "The properties of tissue_source_site edge",
     "fields": []
+  },
+  {
+    "type": "record",
+    "name": "refers_to_properties",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "The properties of refers_to edge",
+    "fields": []
   }
 ]

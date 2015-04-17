@@ -481,5 +481,29 @@
         ]
       }
     ]
+  },
+  {
+    "type": "record",
+    "name": "publication",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "publication_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "publication_properties"
+        ]
+      }
+    ]
   }
 ]
