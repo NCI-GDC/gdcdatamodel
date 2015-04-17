@@ -710,6 +710,13 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("Attempting to lock %s in consul", key)
         return self.consul.kv.acquire_lock(key, self.consul_session)
 
+    def list_locked_archives(self):
+        current = [key.split("/")[-1] for key in
+                   self.consul.kv.find("/".join([self.consul_prefix, "current"]))]
+        self.log.info("there are %s archives currently being synced: %s", len(current), current)
+        return current
+
+
     def get_archive(self):
         """
         Our strategy for choosing an archive to work on is if we have
@@ -748,8 +755,10 @@ class TCGADCCArchiveSyncer(object):
             with self.graph.session_scope():
                 self.log.info("Fetching archive nodes from database")
                 archive_nodes = self.graph.nodes().labels("archive").all()
+                current = self.list_locked_archives()
                 unuploaded = [node for node in archive_nodes
-                              if not node.system_annotations.get("uploaded")]
+                              if not node.system_annotations.get("uploaded")
+                              and node.system_annotations["archive_name"] not in current]
                 if unuploaded:
                     self.log.info("There are %s unuploaded archive nodes in the db, choosing one of them", len(unuploaded))
                     random.shuffle(unuploaded)
@@ -767,7 +776,7 @@ class TCGADCCArchiveSyncer(object):
                     names_in_db = [node.system_annotations["archive_name"]
                                    for node in archive_nodes]
                     unimported = [archive for archive in archives
-                                  if archive["archive_name"] not in names_in_db]
+                                  if archive["archive_name"] not in names_in_db + current]
                     if not unimported:
                         self.log.info("No unuploaded nodes or unimported archives found, we're all caught up!")
                         return None
