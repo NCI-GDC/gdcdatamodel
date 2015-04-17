@@ -49,6 +49,23 @@ import libcloud.storage.drivers.s3
 libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
 
 
+def quickstats(graph):
+    """
+    This is just for using from the repl to get a quick sense of where we're at.
+    """
+    archives_in_dcc = list(LatestURLParser())
+    names_in_dcc = {a["archive_name"] for a in archives_in_dcc}
+    archive_nodes = graph.nodes().labels("archive").not_sysan({"to_delete": True}).all()
+    names_in_graph = {n.system_annotations["archive_name"] for n in archive_nodes}
+    removed = names_in_graph - names_in_dcc
+    have = names_in_graph & names_in_dcc
+    need = names_in_dcc - names_in_graph
+    print "{} archives in graph and removed from dcc".format(len(removed))
+    print "{} archives in graph and still in dcc".format(len(have))
+    print "{} archives still to download from dcc".format(len(need))
+
+
+
 def run_edge_build(g, files):
     """
     This is here just to be run from the REPL for one off jobs.
