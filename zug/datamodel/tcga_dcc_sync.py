@@ -677,6 +677,7 @@ class TCGADCCArchiveSyncer(object):
                     raise e
                 else:
                     self.log.warning("caught %s while trying to upload, retrying", e)
+                    time.sleep(3)
         new_url = url_for(obj)
         doc.urls = [new_url]
         doc.patch()
