@@ -786,6 +786,7 @@ class TCGADCCArchiveSyncer(object):
                         self.log.info("No unuploaded nodes or unimported archives found, we're all caught up!")
                         return None
                     random.shuffle(unimported)
+                    archive = unimported[0]
                     if not self.get_consul_lock(archive):
                         self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
                         continue
