@@ -627,7 +627,7 @@
       },
       {
         "name": "pubmed_id",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TOREVIEW: Pubmed ID of the publication "
       }
     ]
