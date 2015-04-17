@@ -4,14 +4,12 @@ import tarfile
 import re
 import hashlib
 import random
-from urlparse import urlparse, urljoin
+from urlparse import urlparse
 from functools import partial
 import copy
 import os
 import time
 from contextlib import contextmanager
-
-from lxml import html
 
 import requests
 
@@ -175,11 +173,11 @@ class TCGADCCEdgeBuilder(object):
             return self.graph.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
 
     def build(self):
-        with self.graph.session_scope() as session:
-            self.classify(self.file_node, session)
-            self.tie_file_to_center(self.file_node, session)
+        with self.graph.session_scope():
+            self.classify(self.file_node)
+            self.tie_file_to_center(self.file_node)
 
-    def tie_file_to_center(self,file_node,session):
+    def tie_file_to_center(self, file_node):
         center_type = self.archive['center_type']
         namespace = self.archive['center_name']
         if namespace == 'mdanderson.org' and center_type.upper() == 'CGCC':
@@ -205,7 +203,7 @@ class TCGADCCEdgeBuilder(object):
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id
                 )
-                self.graph.edge_insert(edge_to_center, session=session)
+                self.graph.edge_insert(edge_to_center)
         elif count == 0:
             self.log.warning("center with type %s and namespace %s not found",
                              self.archive['center_type'],
@@ -215,7 +213,7 @@ class TCGADCCEdgeBuilder(object):
                              self.archive['center_type'],
                              self.archive['center_name'])
 
-    def tie_file_to_atribute(self, file_node, attr, value, session):
+    def tie_file_to_atribute(self, file_node, attr, value):
         LABEL_MAP = {
             "platform": "generated_from",
             "data_subtype": "member_of",
@@ -231,7 +229,6 @@ class TCGADCCEdgeBuilder(object):
             attr_node = self.graph.node_lookup_one(
                 label=attr,
                 property_matches={"name": val},
-                session=session
             )
             if not attr_node:
                 self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
@@ -246,9 +243,9 @@ class TCGADCCEdgeBuilder(object):
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id
                 )
-                self.graph.edge_insert(edge_to_attr_node, session=session)
+                self.graph.edge_insert(edge_to_attr_node)
 
-    def classify(self, file_node, session):
+    def classify(self, file_node):
         classification = classify(self.archive, file_node["file_name"])
         if classification["data_format"] == "to_be_ignored":
             self.log.info("ignoring %s for classification",
@@ -272,8 +269,7 @@ class TCGADCCEdgeBuilder(object):
         for attribute in CLASSIFICATION_ATTRS:
             if classification.get(attribute):
                 self.tie_file_to_atribute(file_node, attribute,
-                                          classification[attribute],
-                                          session)
+                                          classification[attribute])
             else:
                 self.log.warning("not tieing %s (node %s) to a %s",
                                  file_node["file_name"], file_node, attribute)
@@ -421,11 +417,12 @@ class TCGADCCArchiveSyncer(object):
             self.graph.edge_insert(edge_to_project)
         return archive_node
 
-    def lookup_file_in_pg(self, archive_node, filename, session):
-        q = self.graph.node_lookup(label="file",
-                                       property_matches={"file_name": filename},
-                                       session=session)\
-                          .with_edge_to_node("member_of", archive_node)
+    def lookup_file_in_pg(self, archive_node, filename):
+        q = self.graph.node_lookup(
+            label="file",
+            property_matches={
+                "file_name": filename
+            }).with_edge_to_node("member_of", archive_node)
         file_nodes = q.all()
         if not file_nodes:
             return None
@@ -457,9 +454,9 @@ class TCGADCCArchiveSyncer(object):
         tarinfo = self.tarball.getmember(self.full_name(filename))
         return int(tarinfo.size)
 
-    def sync_file(self, filename, dcc_md5, session):
+    def sync_file(self, filename, dcc_md5):
         """Sync this file in the database."""
-        file_node = self.lookup_file_in_pg(self.archive_node, filename, session)
+        file_node = self.lookup_file_in_pg(self.archive_node, filename)
         md5, md5_source = self.determine_md5(filename, dcc_md5)
         if file_node:
             node_id = file_node.node_id
@@ -477,7 +474,6 @@ class TCGADCCArchiveSyncer(object):
                     "source": "tcga_dcc",
                     "md5_source": md5_source,
                 },
-                session=session
             )
         else:
             node_id = self.signpost.create().did
@@ -498,14 +494,12 @@ class TCGADCCArchiveSyncer(object):
                     "md5_source": md5_source,
                     "ready_to_release": False,
                 },
-                session=session
             )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
         maybe_edge_to_archive = self.graph.edge_lookup_one(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
             label="member_of",
-            session=session
         )
         if not maybe_edge_to_archive:
             edge_to_archive = PsqlEdge(
@@ -513,7 +507,7 @@ class TCGADCCArchiveSyncer(object):
                 dst_id=self.archive_node.node_id,
                 label="member_of"
             )
-            self.graph.edge_insert(edge_to_archive, session=session)
+            self.graph.edge_insert(edge_to_archive)
         edge_builder = TCGADCCEdgeBuilder(file_node, self.graph, self.log)
         edge_builder.build()
         return file_node
@@ -836,7 +830,7 @@ class TCGADCCArchiveSyncer(object):
                               node, node["file_name"], node["state"])
 
     def download_archive_and_sync_files(self):
-        with self.graph.session_scope() as session:
+        with self.graph.session_scope():
             self.archive_node = self.sync_archive()
             self.download_archive()
             manifest = self.get_manifest()
@@ -844,7 +838,7 @@ class TCGADCCArchiveSyncer(object):
             file_nodes = []
             for filename in filenames:
                 if filename != "MANIFEST.txt":
-                    file_node = self.sync_file(filename, manifest.get(filename), session)
+                    file_node = self.sync_file(filename, manifest.get(filename))
                     if file_node:
                         file_nodes.append(file_node)
             return file_nodes
