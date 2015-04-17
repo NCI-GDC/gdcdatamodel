@@ -603,6 +603,7 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("requesting %s", range)
             resp = self.get_with_auth(self.archive["dcc_archive_url"],
                                       headers={"Range": range}, stream=True)
+            resp.raise_for_status()
             self.log.info("writing chunks to temp file")
             for chunk in resp.iter_content(chunk_size=10000000):
                 self.temp_file.write(chunk)
