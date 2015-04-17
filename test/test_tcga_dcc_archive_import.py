@@ -1,9 +1,26 @@
 import os
+import random
 from base import ZugsTestBase
 from mock import patch
+from httmock import urlmatch, HTTMock
 
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import LatestURLParser
+
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "dcc_archives")
+
+ARCHIVES = {}
+
+for archive in os.listdir(FIXTURES_DIR):
+    ARCHIVES[archive] = open(os.path.join(FIXTURES_DIR, archive)).read()
+
+
+@urlmatch(netloc=r'https://tcga-data.nci.nih.gov/.*')
+def dcc_archives_fixture(url, request):
+    archive = url.split("/")[-1]
+    return {"content": ARCHIVES[archive],
+            "status_code": 200}
 
 
 class TCGADCCArchiveSyncTest(ZugsTestBase):
@@ -24,14 +41,20 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         os.environ["DCC_USER"] = ""
         os.environ["DCC_PASS"] = ""
 
+    def get_syncer(self):
+        return TCGADCCArchiveSyncer(
+            s3=self.storage_client,
+            consul_prefix=str(random.randint(1,1000)) + "_test_tcgadccsync",
+        )
+
     def test_syncing_an_archive_with_distinct_center(self):
         archive = self.parser.parse_archive(
             "hms.harvard.edu_BLCA.IlluminaHiSeq_DNASeqC.Level_3.1.3.0",
             "12/16/2013",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/blca/cgcc/hms.harvard.edu/illuminahiseq_dnaseqc/cna/hms.harvard.edu_BLCA.IlluminaHiSeq_DNASeqC.Level_3.1.3.0.tar.gz"
         )
-        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]):
-            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]), HTTMock(dcc_archives_fixture):
+            syncer = self.get_syncer()
             syncer.sync()
         with self.graph.session_scope():
             file = self.graph.node_lookup(
@@ -50,8 +73,8 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
         )
-        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]):
-            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]), HTTMock(dcc_archives_fixture):
+            syncer = self.get_syncer()
             syncer.sync()
         with self.graph.session_scope():
             self.assertEqual(self.graph.node_lookup(label="file").count(), 109)
@@ -82,8 +105,8 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
         )
-        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]):
-            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]), HTTMock(dcc_archives_fixture):
+            syncer = self.get_syncer()
             syncer.sync()
         # change some of the data to be bunk to verify that we fix it
         with self.graph.session_scope():
@@ -100,8 +123,8 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
             file.acl = ["fizzbuzz"]
         with self.graph.session_scope():
             first_archive_id = self.graph.node_lookup(label="archive").one().node_id
-        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]):
-            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]), HTTMock(dcc_archives_fixture):
+            syncer = self.get_syncer()
             syncer.sync()
         with self.graph.session_scope():
             self.assertEqual(self.graph.node_lookup(label="file").not_sysan({"to_delete": True}).count(), 109)
@@ -126,11 +149,11 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz")
 
-        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [old_archive]):
-            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [old_archive]), HTTMock(dcc_archives_fixture):
+            syncer = self.get_syncer()
             syncer.sync()
-        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [new_archive]):
-            syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
+        with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [new_archive]), HTTMock(dcc_archives_fixture):
+            syncer = self.get_syncer()
             syncer.sync()
         with self.graph.session_scope():
             self.assertEqual(self.graph.node_lookup(label="file").not_sysan({"to_delete": True}).count(), 109)

@@ -264,7 +264,8 @@ class TCGADCCEdgeBuilder(object):
 
 class TCGADCCArchiveSyncer(object):
 
-    def __init__(self, archive_id=None, max_memory=2*10**9, s3=None):
+    def __init__(self, archive_id=None, max_memory=2*10**9,
+                 s3=None, consul_prefix="tcgadccsync"):
         self.graph = PsqlGraphDriver(
             os.environ["PG_HOST"],
             os.environ["PG_USER"],
@@ -294,8 +295,10 @@ class TCGADCCArchiveSyncer(object):
         self.archive_id = archive_id
         self.archive_node = None  # this gets filled in later
         self.max_memory = max_memory
+        # these two also get filled in later
         self.temp_file = None
         self.tarball = None
+        self.consul_prefix = consul_prefix
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()))
 
@@ -307,7 +310,6 @@ class TCGADCCArchiveSyncer(object):
         self.consul_session = self.consul.session.create(
             behavior="delete",
             ttl="60s",
-            delay="0s",
         )
         self.log.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
         self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
@@ -704,7 +706,7 @@ class TCGADCCArchiveSyncer(object):
             raise
 
     def get_consul_lock(self, archive):
-        key = "tcgadccsync/current/{}".format(archive["archive_name"])
+        key = "{}/current/{}".format(self.consul_prefix, archive["archive_name"])
         self.log.info("Attempting to lock %s in consul", key)
         return self.consul.kv.acquire_lock(key, self.consul_session)
 
