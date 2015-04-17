@@ -757,9 +757,13 @@ class TCGADCCArchiveSyncer(object):
                 self.log.info("Fetching archive nodes from database")
                 archive_nodes = self.graph.nodes().labels("archive").all()
                 current = self.list_locked_archives()
+                names_in_dcc = [archive["archive_name"] for archive in archives]
                 unuploaded = [node for node in archive_nodes
                               if not node.system_annotations.get("uploaded")
-                              and node.system_annotations["archive_name"] not in current]
+                              # this line filters nodes that are already locked
+                              and node.system_annotations["archive_name"] not in current
+                              # this line filters nodes that have been removed from the dcc
+                              and node.system_annotations["archive_name"] in names_in_dcc]
                 if unuploaded:
                     self.log.info("There are %s unuploaded archive nodes in the db, choosing one of them", len(unuploaded))
                     random.shuffle(unuploaded)
