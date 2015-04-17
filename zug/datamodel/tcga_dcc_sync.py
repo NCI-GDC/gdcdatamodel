@@ -306,9 +306,6 @@ class TCGADCCArchiveSyncer(object):
         self.public_bucket = os.environ["TCGA_PUBLIC_BUCKET"]
         self.graph.node_validator = AvroNodeValidator(node_avsc_object)
         self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
-        # these options are deprecated, eventually I will remove them
-        self.meta_only = False
-        self.no_upload = False
         self.archive_id = archive_id
         self.archive_node = None  # this gets filled in later
         self.max_memory = max_memory
@@ -437,15 +434,6 @@ class TCGADCCArchiveSyncer(object):
         else:
             return file_nodes[0]
 
-    def get_file_size_from_http(self, filename):
-        base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
-        file_url = urljoin(base_url, filename)
-        # it's necessary to specify the accept-encoding here so that
-        # there server doesn't send us gzipped content and we get the
-        # wrong length
-        resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
-        return int(resp.headers["content-length"])
-
     def set_file_state(self, file_node, state):
         self.graph.node_update(file_node, properties={"state": state})
 
@@ -466,11 +454,8 @@ class TCGADCCArchiveSyncer(object):
             return md5, "gdc_import_process"
 
     def determine_file_size(self, filename):
-        if not self.meta_only:
-            tarinfo = self.tarball.getmember(self.full_name(filename))
-            return int(tarinfo.size)
-        else:
-            return self.get_file_size_from_http(filename)
+        tarinfo = self.tarball.getmember(self.full_name(filename))
+        return int(tarinfo.size)
 
     def sync_file(self, filename, dcc_md5, session):
         """Sync this file in the database."""
@@ -534,13 +519,8 @@ class TCGADCCArchiveSyncer(object):
         return file_node
 
     def get_manifest(self):
-        if self.meta_only:
-            resp = self.get_with_auth("/".join([self.archive["non_tar_url"],
-                                                "MANIFEST.txt"]))
-            manifest_data = resp.content
-        else:
-            manifest_tarinfo = self.tarball.getmember("{}/MANIFEST.txt".format(self.name))
-            manifest_data = self.tarball.extractfile(manifest_tarinfo).read()
+        manifest_tarinfo = self.tarball.getmember("{}/MANIFEST.txt".format(self.name))
+        manifest_data = self.tarball.extractfile(manifest_tarinfo).read()
         res = {}
         try:
             for line in manifest_data.splitlines():
@@ -552,18 +532,10 @@ class TCGADCCArchiveSyncer(object):
         return res
 
     def get_files(self):
-        if self.meta_only:
-            NOT_PART_OF_ARCHIVE = ["Name", "Last modified",
-                                   "Size", "Parent Directory"]
-            resp = self.get_with_auth(self.archive["non_tar_url"])
-            archives_html = html.fromstring(resp.content)
-            return [elem.text for elem in archives_html.cssselect('a')
-                    if elem.text not in NOT_PART_OF_ARCHIVE]
-        else:
-            # the reason for this is that sometimes the tarballs have
-            # a useless entry that's just the name of the tarball, so we filter it out
-            names = [name for name in self.tarball.getnames() if name != self.name]
-            return [name.replace(self.name + "/", "") for name in names]
+        # the reason for this is that sometimes the tarballs have
+        # a useless entry that's just the name of the tarball, so we filter it out
+        names = [name for name in self.tarball.getnames() if name != self.name]
+        return [name.replace(self.name + "/", "") for name in names]
 
     def get_with_auth(self, url, **kwargs):
         tries = 0
