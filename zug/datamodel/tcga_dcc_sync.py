@@ -377,8 +377,8 @@ class TCGADCCArchiveSyncer(object):
         sysan["source"] = "tcga_dcc"
         if not maybe_this_archive:
             # the conditional is because we only want to mark it as
-            # unreleased if we're creating it
-            sysan["unreleased"] = True
+            # not ready to release if we're creating it
+            sysan["ready_to_release"] = False
         archive_node = self.graph.node_merge(
             node_id=node_id,
             label='archive',
@@ -494,7 +494,7 @@ class TCGADCCArchiveSyncer(object):
                 system_annotations={
                     "source": "tcga_dcc",
                     "md5_source": md5_source,
-                    "unreleased": True,
+                    "ready_to_release": False,
                 },
                 session=session
             )
