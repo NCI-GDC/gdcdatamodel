@@ -33,10 +33,7 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]):
             syncer = TCGADCCArchiveSyncer(s3=self.storage_client)
             syncer.sync()
-       # make sure archive gets tied to project
         with self.graph.session_scope():
-            # make sure the files get ties to center
-
             file = self.graph.node_lookup(
                 label="file",
                 property_matches={"file_name":"TCGA-BT-A0S7-01A-11D-A10R-02_AC1927ACXX---TCGA-BT-A0S7-10A-01D-A10R-02_AC1927ACXX---Segment.tsv"}
