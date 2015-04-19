@@ -4,7 +4,7 @@ import argparse
 import re
 from multiprocessing import Pool
 from gdcdatamodel import node_avsc_object, edge_avsc_object
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from gdcdatamodel import models
 from zug.datamodel import xml2psqlgraph, latest_urls,\
     extract_tar, bcr_xml_mapping, clinical_xml_mapping, prelude
 from cdisutils.log import get_logger
@@ -28,8 +28,6 @@ def get_converter(mapping):
         user=args.user,
         password=args.password,
         database=args.database,
-        edge_validator=AvroEdgeValidator(edge_avsc_object),
-        node_validator=AvroNodeValidator(node_avsc_object),
     )
 
 
@@ -67,8 +65,8 @@ def import_datatypes():
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
     log.info('Found {} latest files.'.format(len(latest)))
-    p = Pool(args.nproc)
-    p.map(process, latest)
+    # p = Pool(args.nproc)
+    map(process, latest)
 
 
 if __name__ == '__main__':

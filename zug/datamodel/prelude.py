@@ -2,7 +2,11 @@ import csv
 from uuid import uuid5, UUID
 import os
 
-from psqlgraph import PsqlEdge, PsqlNode
+from psqlgraph import PolyNode as PsqlNode
+from gdcdatamodel.models import (
+    DataSubtypeMemberOfDataType,
+    ProjectMemberOfProgram
+)
 from sqlalchemy.exc import IntegrityError
 
 from zug.datamodel import PKG_DIR
@@ -151,10 +155,10 @@ PLATFORMS = [
 
 
 def idempotent_insert(driver, label, name, session):
-        return driver.node_merge(node_id=str(uuid5(GDC_NAMESPACES[label], name)),
-                                 label=label,
-                                 properties={"name": name},
-                                 session=session)
+    return driver.node_merge(node_id=str(uuid5(GDC_NAMESPACES[label], name)),
+                             label=label,
+                             properties={"name": name},
+                             session=session)
 
 
 def insert_project_nodes(driver, path):
@@ -162,7 +166,7 @@ def insert_project_nodes(driver, path):
         'TCGA': str(uuid5(GDC_NAMESPACES['program'], 'TCGA')),
         'TARGET': str(uuid5(GDC_NAMESPACES['program'], 'TARGET')),
     }
-    with driver.session_scope():
+    with driver.session_scope() as session:
         with open(path, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
@@ -178,7 +182,7 @@ def insert_project_nodes(driver, path):
                 if driver.nodes().ids(node_id).scalar():
                     driver.node_clobber(node_id=node_id, properties=properties)
                 else:
-                    driver.node_insert(PsqlNode(
+                    driver.node_merge(node=PsqlNode(
                         node_id=node_id,
                         label='project',
                         properties=properties))
@@ -186,10 +190,10 @@ def insert_project_nodes(driver, path):
                 if not driver.edge_lookup_one(src_id=node_id,
                                               dst_id=program_id,
                                               label="member_of"):
-                    driver.edge_insert(PsqlEdge(
+                    session.merge(ProjectMemberOfProgram(
                         src_id=node_id,
                         dst_id=program_id,
-                        label="member_of"), max_retries=4)
+                        label="member_of"))
 
 
 def insert_classification_nodes(driver):
@@ -204,11 +208,11 @@ def insert_classification_nodes(driver):
                                               dst_id=type_node.node_id,
                                               label="member_of")
                 if not edge:
-                    edge = PsqlEdge(src_id=subtype_node.node_id,
-                                    dst_id=type_node.node_id,
-                                    label="member_of")
+                    edge = DataSubtypeMemberOfDataType(
+                        src_id=subtype_node.node_id,
+                        dst_id=type_node.node_id)
                     try:
-                        driver.edge_insert(edge, session=session)
+                        session.merge(edge)
                     except IntegrityError:
                         pass  # assume someone beat us there
         for tag in TAGS:

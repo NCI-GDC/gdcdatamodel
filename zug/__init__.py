@@ -1,3 +1,4 @@
+from gdcdatamodel import models
 import os
 import functools
 import datamodel

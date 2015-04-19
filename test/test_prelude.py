@@ -1,24 +1,28 @@
 from zug.datamodel.prelude import create_prelude_nodes
 import unittest
-from psqlgraph import PsqlGraphDriver
-from gdcdatamodel import node_avsc_object, edge_avsc_object
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from psqlgraph import PsqlGraphDriver, Node
+from gdcdatamodel.models import (
+    ProjectMemberOfProgram,
+    DataSubtypeMemberOfDataType,
+)
 
 
 class TestPrelude(unittest.TestCase):
 
     def setUp(self):
         self.driver = PsqlGraphDriver(
-            'localhost', 'test', 'test', 'automated_test',
-            edge_validator=AvroEdgeValidator(edge_avsc_object),
-            node_validator=AvroNodeValidator(node_avsc_object))
+            'localhost', 'test', 'test', 'automated_test')
 
-    def tearDown(self):
+    # def tearDown(self):
+    #     self.clear_tables()
+
+    def clear_tables(self):
         with self.driver.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.driver.engine.dispose()
 
     def test_prelude(self):
@@ -44,7 +48,7 @@ class TestPrelude(unittest.TestCase):
             self.driver.node_lookup(
                 label="project",
                 property_matches={"code": "ACC"}
-            ).with_edge_to_node("member_of", tcga).one()
+            ).with_edge_to_node(ProjectMemberOfProgram, tcga).one()
             clinical = self.driver.node_lookup(
                 label="data_type",
                 property_matches={"name": "Clinical"}
@@ -52,8 +56,7 @@ class TestPrelude(unittest.TestCase):
             self.driver.node_lookup(
                 label="data_subtype",
                 property_matches={"name": "Diagnostic image"}
-            ).with_edge_to_node("member_of", clinical).one()
+            ).with_edge_to_node(DataSubtypeMemberOfDataType, clinical).one()
 
-            # Test that mapping data_subtypes -> data_types is injective
             for dst in self.driver.nodes().labels('data_subtype'):
                 self.assertEqual(len(dst.edges_out), 1)

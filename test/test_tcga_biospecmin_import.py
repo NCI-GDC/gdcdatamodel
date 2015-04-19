@@ -1,11 +1,9 @@
 import logging
 import unittest
 import os
-from zug.datamodel import xml2psqlgraph, latest_urls, extract_tar, \
-    bcr_xml_mapping
+from zug.datamodel import xml2psqlgraph, extract_tar, bcr_xml_mapping
 from zug.datamodel.prelude import create_prelude_nodes
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from gdcdatamodel import node_avsc_object, edge_avsc_object
+from psqlgraph import Node
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -21,9 +19,6 @@ database = 'automated_test'
 
 def initialize():
 
-    node_validator = AvroNodeValidator(node_avsc_object)
-    edge_validator = AvroEdgeValidator(edge_avsc_object)
-
     extractor = extract_tar.ExtractTar(
         regex=".*(bio).*(Level_1).*\\.xml"
     )
@@ -33,8 +28,6 @@ def initialize():
         user=user,
         password=password,
         database=database,
-        edge_validator=edge_validator,
-        node_validator=node_validator,
     )
     return extractor, converter
 
@@ -53,49 +46,55 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         create_prelude_nodes(self.converter.graph)
 
     def tearDown(self):
+        self.clear_tables()
+
+    def clear_tables(self):
         with self.converter.graph.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.converter.graph.engine.dispose()
 
     def test_convert_sample(self):
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
-        self.converter.export()
+        self.converter.export_nodes(group_id='group1', version=1)
 
     def test_convert_validate_nodes_sample(self):
-        self.converter.export_nodes()
+        self.converter.export_nodes(group_id='group1', version=1)
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
-        self.converter.export_nodes()
+        self.converter.export_nodes(group_id='group1', version=1)
 
     def test_convert_validate_edges_sample(self):
-        self.converter.export_nodes()
+        self.converter.export_nodes(group_id='group1', version=1)
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
-        self.converter.export_nodes()
+        self.converter.export_nodes(group_id='group1', version=1)
         self.converter.export_edges()
 
     def test_versioned_idempotency(self):
         g = self.converter.graph
-        self.converter.export_nodes()
+        self.converter.export_nodes(group_id='group1', version=1)
         with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
             xml = f.read()
 
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=1)
-        v1 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in self.IGNORED_LABELS}
+        with g.session_scope():
+            v1 = {n.node_id: n for n in g.get_nodes().all()
+                  if n.label not in self.IGNORED_LABELS}
 
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=2.5)
-        v2 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in self.IGNORED_LABELS}
+        with g.session_scope():
+            v2 = {n.node_id: n for n in g.get_nodes().all()
+                  if n.label not in self.IGNORED_LABELS}
 
         for node_id, node in v1.iteritems():
             self.assertTrue(node_id in v2)
@@ -118,15 +117,17 @@ class TestTCGABiospeceminImport(unittest.TestCase):
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=1)
-        v1 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in self.IGNORED_LABELS}
+        with g.session_scope():
+            v1 = {n.node_id: n for n in g.get_nodes().all()
+                  if n.label not in self.IGNORED_LABELS}
 
         with open(os.path.join(data_dir, 'sample_biospecimen_v2.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=2.5)
-        v2 = {n.node_id: n for n in g.get_nodes().all()
-              if n.label not in self.IGNORED_LABELS}
+        with g.session_scope():
+            v2 = {n.node_id: n for n in g.get_nodes().all()
+                  if n.label not in self.IGNORED_LABELS}
 
         for node_id, node in v1.iteritems():
             self.assertTrue(node_id in v2)

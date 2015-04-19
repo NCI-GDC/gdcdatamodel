@@ -3,8 +3,8 @@ import datetime
 import psqlgraph
 import pprint
 from uuid import uuid5, UUID
-from psqlgraph.edge import PsqlEdge
-from psqlgraph.node import PsqlNode
+from psqlgraph import PolyEdge as PsqlEdge
+from psqlgraph import PolyNode as PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
 
@@ -75,10 +75,6 @@ class xml2psqlgraph(object):
                                           object_hook=AttrDict)
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
-        if node_validator:
-            self.graph.node_validator = node_validator
-        if edge_validator:
-            self.graph.edge_validator = edge_validator
         self.nodes, self.edges = {}, {}
 
     def purge_old_nodes(self, group_id, version):
@@ -169,7 +165,7 @@ class xml2psqlgraph(object):
                         group_id, old_node.system_annotations.get(
                             'group_id', None), node))
 
-            if group_id and version:
+            if group_id is not None and version is not None:
                 system_annotations.update(
                     {'group_id': group_id, 'version': version})
 
@@ -180,6 +176,7 @@ class xml2psqlgraph(object):
                     system_annotations=node.system_annotations)
 
             else:
+                node.system_annotations.update(system_annotations)
                 node.merge(system_annotations=system_annotations)
                 self.graph.node_insert(node)
 
@@ -260,7 +257,7 @@ class xml2psqlgraph(object):
                 edge_props.update(self.get_node_edge_datetime_properties(
                     root, edge_label, params, node_id))
                 self.save_edge(node_id, dst_id, dst_label, edge_label,
-                               edge_props)
+                               edge_props, src_label=node_type)
 
     def save_node(self, node_id, label, properties, acl=[]):
         """Adds a node to the graph
@@ -281,16 +278,18 @@ class xml2psqlgraph(object):
             )
 
     def save_edge(self, src_id, dst_id, dst_label, edge_label,
-                  properties={}):
+                  properties={}, src_label=None):
         """Adds an edge to the graph
 
         """
-
+        assert src_label
         edge_id = "{}:{}:{}".format(src_id, dst_id, edge_label)
         if edge_id in self.edges:
             self.edges[edge_id].merge(properties=properties)
         else:
-            self.edges[edge_id] = PsqlEdge(
+            EdgeType = self.graph.get_edge_by_labels(
+                src_label, edge_label, dst_label)
+            self.edges[edge_id] = EdgeType(
                 src_id=src_id,
                 dst_id=dst_id,
                 label=edge_label,
