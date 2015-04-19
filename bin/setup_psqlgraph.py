@@ -9,7 +9,7 @@ import logging
 
 
 from psqlgraph import create_all
-from psqlgraph import PsqlGraphDriver
+from psqlgraph import PsqlGraphDriver, Node, Edge
 from gdcdatamodel import models
 
 
@@ -82,7 +82,38 @@ def create_indexes(host, user, password, database):
     """
     create a table
     """
-    return
+    print('Creating indexes')
+    driver = PsqlGraphDriver(host, user, password, database)
+    index = lambda t, c: ["CREATE INDEX ON {} ({})".format(t, x) for x in c]
+    for cls in Node.get_subclasses():
+        table = cls.__tablename__
+        map(driver.engine.execute, index(
+            table, [
+                'node_id',
+                '_label',
+                'node_id, _label'
+            ]))
+        map(driver.engine.execute, [
+            "CREATE INDEX ON {} USING gin (_sysan)".format(table),
+            "CREATE INDEX ON {} USING gin (_props)".format(table),
+            "CREATE INDEX ON {} USING gin (_sysan, _props)".format(table),
+        ])
+
+    for cls in Edge.get_subclasses():
+        table = cls.__tablename__
+        map(driver.engine.execute, index(
+            table, [
+                'src_id',
+                'dst_id',
+                '_label',
+                'dst_id, src_id',
+                'dst_id, src_id, _label'
+            ]))
+        map(driver.engine.execute, [
+            "CREATE INDEX ON {} USING gin (_sysan)".format(table),
+            "CREATE INDEX ON {} USING gin (_props)".format(table),
+            "CREATE INDEX ON {} USING gin (_sysan, _props)".format(table),
+        ])
 
 if __name__ == '__main__':
 
