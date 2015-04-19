@@ -12,7 +12,7 @@ from processed_at import ParticipantProcessedAtTissueSourceSite
 from generated_from import FileGeneratedFromPlatform
 from data_from import (FileDataFromAliquot, FileDataFromAnalyte,
                        FileDataFromPortion, FileDataFromSample,
-                       FileDataFromParticipant,FileDataFromSlide)
+                       FileDataFromParticipant, FileDataFromSlide)
 from describes import FileDescribesParticipant, ClinicalDescribesParticipant
 from annotates import (AnnotationAnnotatesParticipant,
                        AnnotationAnnotatesSample,

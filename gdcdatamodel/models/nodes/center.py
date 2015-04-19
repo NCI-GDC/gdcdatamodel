@@ -14,7 +14,7 @@ class Center(Node):
     @code.setter
     @validate(str)
     def code(self, value):
-        self._get_property('code', value)
+        self._set_property('code', value)
 
     @hybrid_property
     def namespace(self):
@@ -23,7 +23,7 @@ class Center(Node):
     @namespace.setter
     @validate(str)
     def namespace(self, value):
-        self._get_property('namespace', value)
+        self._set_property('namespace', value)
 
     @hybrid_property
     def name(self):
@@ -32,7 +32,7 @@ class Center(Node):
     @name.setter
     @validate(str)
     def name(self, value):
-        self._get_property('name', value)
+        self._set_property('name', value)
 
     @hybrid_property
     def short_name(self):
@@ -41,7 +41,7 @@ class Center(Node):
     @short_name.setter
     @validate(str)
     def short_name(self, value):
-        self._get_property('short_name', value)
+        self._set_property('short_name', value)
 
     @hybrid_property
     def center_type(self):
@@ -50,4 +50,4 @@ class Center(Node):
     @center_type.setter
     @validate(str)
     def center_type(self, value):
-        self._get_property('center_type', value)
+        self._set_property('center_type', value)

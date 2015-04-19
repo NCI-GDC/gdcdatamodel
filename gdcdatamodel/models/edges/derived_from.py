@@ -6,30 +6,42 @@ class DerivedFrom(object):
 
 
 class AliquotDerivedFromAnalyte(Edge,  DerivedFrom):
-    __src_label__ = 'aliquot'
-    __dst_label__ = 'analyte'
+    __src_class__ = 'Aliquot'
+    __dst_class__ = 'Analyte'
+    __src_dst_assoc__ = 'analytes'
+    __dst_src_assoc__ = 'aliquots'
 
 
 class AliquotDerivedFromSample(Edge,  DerivedFrom):
-    __src_label__ = 'aliquot'
-    __dst_label__ = 'sample'
+    __src_class__ = 'Aliquot'
+    __dst_class__ = 'Sample'
+    __src_dst_assoc__ = 'samples'
+    __dst_src_assoc__ = 'aliquots'
 
 
 class AnalyteDerivedFromPortion(Edge, DerivedFrom):
-    __src_label__ = 'analyte'
-    __dst_label__ = 'portion'
+    __src_class__ = 'Analyte'
+    __dst_class__ = 'Portion'
+    __src_dst_assoc__ = 'portions'
+    __dst_src_assoc__ = 'analytes'
 
 
 class PortionDerivedFromSample(Edge, DerivedFrom):
-    __src_label__ = 'portion'
-    __dst_label__ = 'sample'
+    __src_class__ = 'Portion'
+    __dst_class__ = 'Sample'
+    __src_dst_assoc__ = 'samples'
+    __dst_src_assoc__ = 'portions'
 
 
 class SampleDerivedFromParticipant(Edge, DerivedFrom):
-    __src_label__ = 'sample'
-    __dst_label__ = 'participant'
+    __src_class__ = 'Sample'
+    __dst_class__ = 'Participant'
+    __src_dst_assoc__ = 'participants'
+    __dst_src_assoc__ = 'samples'
 
 
 class SlideDerivedFromPortion(Edge, DerivedFrom):
-    __src_label__ = 'slide'
-    __dst_label__ = 'portion'
+    __src_class__ = 'Slide'
+    __dst_class__ = 'Portion'
+    __src_dst_assoc__ = 'portions'
+    __dst_src_assoc__ = 'slides'

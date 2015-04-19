@@ -6,5 +6,7 @@ class ProcessedAt(object):
 
 
 class ParticipantProcessedAtTissueSourceSite(Edge, ProcessedAt):
-    __src_label__ = 'participant'
-    __dst_label__ = 'tissue_source_site'
+    __src_class__ = 'Participant'
+    __dst_class__ = 'TissueSourceSite'
+    __src_dst_assoc__ = 'tissue_source_sites'
+    __dst_src_assoc__ = 'participants'

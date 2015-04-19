@@ -6,10 +6,14 @@ class Describes(object):
 
 
 class FileDescribesParticipant(Edge, Describes):
-    __src_label__ = 'file'
-    __dst_label__ = 'participant'
+    __src_class__ = 'File'
+    __dst_class__ = 'Participant'
+    __src_dst_assoc__ = 'described_participants'
+    __dst_src_assoc__ = 'describing_files'
 
 
 class ClinicalDescribesParticipant(Edge, Describes):
-    __src_label__ = 'clinical'
-    __dst_label__ = 'participant'
+    __src_class__ = 'Clinical'
+    __dst_class__ = 'Participant'
+    __src_dst_assoc__ = 'participants'
+    __dst_src_assoc__ = 'clinicals'

@@ -13,4 +13,4 @@ class Tag(Node):
     @name.setter
     @validate(str)
     def name(self, value):
-        self.properties('name', value)
+        self._set_property('name', value)

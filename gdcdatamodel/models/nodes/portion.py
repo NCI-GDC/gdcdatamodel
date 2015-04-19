@@ -4,7 +4,7 @@ from gdcdatamodel.models import validate
 
 class Portion(Node):
 
-    __nonnull_properties__ = ['submitter_id', 'portion_number', 
+    __nonnull_properties__ = ['submitter_id', 'portion_number',
                               'creation_datetime']
 
     @hybrid_property
@@ -14,7 +14,7 @@ class Portion(Node):
     @submitter_id.setter
     @validate(str)
     def submitter_id(self, value):
-        self.properties('submitter_id', value)
+        self._set_property('submitter_id', value)
 
     @hybrid_property
     def portion_number(self):
@@ -23,7 +23,7 @@ class Portion(Node):
     @portion_number.setter
     @validate(str)
     def portion_number(self, value):
-        self.properties('portion_number', value)
+        self._set_property('portion_number', value)
 
     @hybrid_property
     def creation_datetime(self):
@@ -32,7 +32,7 @@ class Portion(Node):
     @creation_datetime.setter
     @validate(long, int)
     def creation_datetime(self, value):
-        self.properties('creation_datetime', value)
+        self._set_property('creation_datetime', value)
 
     @hybrid_property
     def weight(self):
@@ -41,13 +41,13 @@ class Portion(Node):
     @weight.setter
     @validate(float)
     def weight(self, value):
-        self.properties('weight', value)
+        self._set_property('weight', value)
 
     @hybrid_property
-    def is__ffpe(self):
-        return self._get_property('is__ffpe')
+    def is_ffpe(self):
+        return self._get_property('is_ffpe')
 
-    @is__ffpe.setter
+    @is_ffpe.setter
     @validate(bool)
-    def is__ffpe(self, value):
-        self.properties('is__ffpe', value)
+    def is_ffpe(self, value):
+        self._set_property('is_ffpe', value)

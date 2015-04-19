@@ -6,5 +6,7 @@ class SubmittedBy(object):
 
 
 class FileSubmittedByCenter(Edge, SubmittedBy):
-    __src_label__ = 'file'
-    __dst_label__ = 'center'
+    __src_class__ = 'File'
+    __dst_class__ = 'Center'
+    __src_dst_assoc__ = 'centers'
+    __dst_src_assoc__ = 'files'

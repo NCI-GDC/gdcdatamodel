@@ -57,6 +57,15 @@ class Clinical(Node):
         self._set_property('year_of_diagnosis', value)
 
     @hybrid_property
+    def age_at_diagnosis(self):
+        return self._get_property('age_at_diagnosis')
+
+    @age_at_diagnosis.setter
+    @validate(int)
+    def age_at_diagnosis(self, value):
+        self._set_property('age_at_diagnosis', value)
+
+    @hybrid_property
     def days_to_death(self):
         return self._get_property('days_to_death')
 

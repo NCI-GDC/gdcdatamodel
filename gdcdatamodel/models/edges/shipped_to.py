@@ -5,10 +5,12 @@ from sqlalchemy.ext.hybrid import hybrid_property
 class ShippedTo(object):
     __label__ = 'shipped_to'
 
-    
+
 class AliquotShippedToCenter(ShippedTo, Edge):
-    __src_label__ = 'aliquot'
-    __dst_label__ = 'center'
+    __src_class__ = 'Aliquot'
+    __dst_class__ = 'Center'
+    __src_dst_assoc__ = 'centers'
+    __dst_src_assoc__ = 'aliquots'
 
     @hybrid_property
     def plate_id(self):
@@ -60,8 +62,10 @@ class AliquotShippedToCenter(ShippedTo, Edge):
 
 
 class PortionShippedToCenter(Edge, ShippedTo):
-    __src_label__ = 'portion'
-    __dst_label__ = 'center'
+    __src_class__ = 'Portion'
+    __dst_class__ = 'Center'
+    __src_dst_assoc__ = 'centers'
+    __dst_src_assoc__ = 'portions'
 
     @hybrid_property
     def plate_id(self):

@@ -6,5 +6,7 @@ class GeneratedFrom(object):
 
 
 class FileGeneratedFromPlatform(Edge, GeneratedFrom):
-    __src_label__ = 'file'
-    __dst_label__ = 'platform'
+    __src_class__ = 'File'
+    __dst_class__ = 'Platform'
+    __src_dst_assoc__ = 'platforms'
+    __dst_src_assoc__ = 'files'

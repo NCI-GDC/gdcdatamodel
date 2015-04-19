@@ -6,6 +6,9 @@ class Project(Node):
 
     __nonnull_properties__ = ['code', 'name', 'disease_type', 'state',
                               'primary_site']
+    __children__ = {
+        'programs': 'ProjectMemberOfProgram'
+    }
 
     @hybrid_property
     def code(self):
