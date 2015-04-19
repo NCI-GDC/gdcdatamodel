@@ -65,8 +65,11 @@ def import_datatypes():
     latest = list(latest_urls.LatestURLParser(
         constraints={'data_level': 'Level_1', 'platform': 'bio'}))
     log.info('Found {} latest files.'.format(len(latest)))
-    # p = Pool(args.nproc)
-    map(process, latest)
+    if args.nproc == 1:
+        map(process, latest)
+    else:
+        p = Pool(args.nproc)
+        p.map(process, latest)
 
 
 if __name__ == '__main__':
