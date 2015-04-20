@@ -2,8 +2,7 @@ import re
 import json
 import datetime
 import psqlgraph
-from psqlgraph.edge import PsqlEdge
-from psqlgraph.node import PsqlNode
+from psqlgraph import PolyEdge, PolyNode
 from lxml import etree
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
@@ -85,7 +84,6 @@ class cghub2psqlgraph(object):
             len(self.edges) + len(self.related_to_edges)))
         with self.graph.session_scope():
             self.export_edges()
-
         self.reset()
 
     def reset(self):
@@ -209,10 +207,12 @@ class cghub2psqlgraph(object):
         """
         for src_key, dst_key in self.related_to_edges.iteritems():
             src_id = self.files_to_add[src_key].node_id
+            src_label = self.files_to_add[src_key].label
             dst_id = self.files_to_add[dst_key].node_id
             assert dst_id and src_id
             self.save_edge(
-                src_key, dst_id, 'file', 'related_to', src_id=src_id)
+                src_key, dst_id, 'file', 'related_to', src_id=src_id,
+                src_label=src_label)
         for src_f_name, edges in self.edges.iteritems():
             map(self.export_edge, edges)
         self.edges = {}
@@ -264,6 +264,7 @@ class cghub2psqlgraph(object):
         :param str data: xml string to convert and insert
 
         """
+
         with self.graph.session_scope():
             for params in self.xml_mapping[node_type]:
                 files = self.xml.get_node_roots(node_type, params, root=root)
@@ -354,11 +355,15 @@ class cghub2psqlgraph(object):
             else:
                 dst_id = dst.node_id
                 edge_label = file_mapping[dst_label]['edge_label']
-                self.save_edge(file_key, dst_id, dst_label, edge_label)
+                self.save_edge(
+                    file_key, dst_id, dst_label, edge_label, src_label='file')
 
     def save_center_edge(self, root, file_key):
         legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
-                                          root, single=True, nullable=False)
+                                          root, single=True, nullable=True)
+        if not legacy_sample_id:
+            log.error('No legacy_sample_id for {}'.format(file_key))
+            return
         code = self.center_regex.match(legacy_sample_id)
         if not code:
             self.log.warn('Unable to parse center code from barcode: {}'.format(
@@ -369,7 +374,9 @@ class cghub2psqlgraph(object):
                                      .scalar()
             assert node, 'Missing center code:{}, {}'.format(
                 code.group(2), file_key)
-            self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
+            self.save_edge(
+                file_key, node.node_id, node.label, 'submitted_by',
+                src_label='file')
 
     def add_edges(self, root, node_type, params, file_key, node):
         """
@@ -389,7 +396,8 @@ class cghub2psqlgraph(object):
             edges = self.xml.get_node_edges(root, node_type, params)
             for dst_id, edge in edges.iteritems():
                 dst_label, edge_label = edge
-                self.save_edge(file_key, dst_id, dst_label, edge_label)
+                self.save_edge(
+                    file_key, dst_id, dst_label, edge_label, src_label='file')
 
     def is_bam_index_file(self, file_name):
         return self.bam_index_regex.match(file_name)
@@ -404,11 +412,11 @@ class cghub2psqlgraph(object):
         if file_key in self.files_to_add:
             self.files_to_add[file_key].merge(properties=properties)
         else:
-            self.files_to_add[file_key] = PsqlNode(
+            self.files_to_add[file_key] = PolyNode(
                 node_id=None, acl=acl, label=label, properties=properties)
 
     def save_edge(self, file_key, dst_id, dst_label, edge_label, src_id=None,
-                  properties={}):
+                  properties={}, src_label=None):
         """Adds an edge to self.edges
 
         If the file_key exists in the map, then append the edge to
@@ -416,8 +424,10 @@ class cghub2psqlgraph(object):
         it with a singleton containing the edge
 
         """
-        edge = PsqlEdge(src_id=src_id, dst_id=dst_id, label=edge_label,
-                        properties=properties)
+        assert src_label
+        Type = self.graph.get_edge_by_labels(src_label, edge_label, dst_label)
+        edge = Type(src_id=src_id, dst_id=dst_id, label=edge_label,
+                    properties=properties)
         if file_key in self.edges:
             self.edges[file_key].append(edge)
         else:

@@ -2,8 +2,14 @@ import logging
 import unittest
 import uuid
 from lxml import etree
-from gdcdatamodel import node_avsc_object, edge_avsc_object
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from gdcdatamodel.models import (
+    File,
+    Center,
+    Platform,
+    ExperimentalStrategy,
+    DataFormat,
+    DataSubtype,
+)
 from psqlgraph import Node, Edge
 from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping, prelude
 from cdisutils.log import get_logger
@@ -31,9 +37,8 @@ host = 'localhost'
 user = 'test'
 password = 'test'
 database = 'automated_test'
-node_validator = AvroNodeValidator(node_avsc_object)
-edge_validator = AvroEdgeValidator(edge_avsc_object)
 center_id = str(uuid.uuid4())
+
 
 class TestCGHubFileImporter(unittest.TestCase):
 
@@ -45,8 +50,6 @@ class TestCGHubFileImporter(unittest.TestCase):
             user=user,
             password=password,
             database=database,
-            edge_validator=edge_validator,
-            node_validator=node_validator,
             signpost=TestSignpostClient(),
         )
         self._add_required_nodes()
@@ -80,10 +83,11 @@ class TestCGHubFileImporter(unittest.TestCase):
 
     def tearDown(self):
         with self.converter.graph.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.converter.graph.engine.dispose()
 
     def insert_test_files(self):
@@ -131,7 +135,9 @@ class TestCGHubFileImporter(unittest.TestCase):
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bai.get_edges())), 1)
-            self.converter.graph.nodes().ids(bai.node_id).path_in(['file']).one()
+            self.assertEqual(
+                len(self.converter.graph.nodes().ids(bai.node_id).one()\
+                    .parent_files), 1)
 
     def test_categorization(self):
         graph = self.converter.graph
@@ -142,11 +148,13 @@ class TestCGHubFileImporter(unittest.TestCase):
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bam.get_edges())), 7)
             base = graph.nodes().ids(bam.node_id)
-            base.path_end(['center']).props({'code': '07'}).one()
-            base.path_end(['platform']).props({'name': 'Illumina GA'}).one()
-            base.path_end(['data_subtype']).props({'name': 'Aligned reads'}).one()
-            base.path_end(['data_format']).props({'name': 'BAM'}).one()
-            base.path_end(['experimental_strategy']).props({'name': 'RNA-Seq'}).one()
+            base.any([File.centers], Center, {'code': '07'}).one()
+            base.any([File.platforms], Platform, {'name': 'Illumina GA'}).one()
+            base.any([File.data_subtypes], DataSubtype,
+                     {'name': 'Aligned reads'}).one()
+            base.any([File.data_formats], DataFormat, {'name': 'BAM'}).one()
+            base.any([File.experimental_strategies], ExperimentalStrategy,
+                     {'name': 'RNA-Seq'}).one()
 
     def test_idempotency(self):
         graph = self.converter.graph

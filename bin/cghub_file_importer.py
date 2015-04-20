@@ -2,8 +2,7 @@
 import logging
 import argparse
 import uuid
-from gdcdatamodel import node_avsc_object, edge_avsc_object
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from gdcdatamodel import models
 from zug.datamodel import cghub2psqlgraph, cgquery, cghub_xml_mapping
 from multiprocessing import Pool
 from lxml import etree
@@ -32,16 +31,12 @@ def setup():
             "http://{}:{}".format(args.signpost_host, args.signpost_port),
             version=args.signpost_version)
 
-    node_validator = AvroNodeValidator(node_avsc_object)
-    edge_validator = AvroEdgeValidator(edge_avsc_object)
     converter = cghub2psqlgraph.cghub2psqlgraph(
         xml_mapping=cghub_xml_mapping,
         host=args.host,
         user=args.user,
         password=args.password,
         database=args.db,
-        edge_validator=edge_validator,
-        node_validator=node_validator,
         signpost=signpost,
     )
     return converter
@@ -97,7 +92,7 @@ def import_files(xml):
     chunks = [roots[i:i+chunksize]
               for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
-    if args.serial:
+    if args.processes == 1:
         map(process, chunks)
     else:
         res = Pool(args.processes).map_async(process, chunks)
@@ -133,8 +128,6 @@ if __name__ == '__main__':
                         help='do not add the files to signpost')
     parser.add_argument('--dry-run', action='store_true',
                         help='Do not commit any sessions')
-    parser.add_argument('--serial', action='store_true',
-                        help='Do not use python multiprocessing')
 
     args = parser.parse_args()
 

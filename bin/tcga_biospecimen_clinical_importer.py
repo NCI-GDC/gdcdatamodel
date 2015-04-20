@@ -69,7 +69,8 @@ def import_datatypes():
         map(process, latest)
     else:
         p = Pool(args.nproc)
-        p.map(process, latest)
+        res = p.map_async(process, latest)
+        res.get(int(1e9))
 
 
 if __name__ == '__main__':
