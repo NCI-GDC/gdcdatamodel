@@ -12,7 +12,7 @@ from signpostclient import SignpostClient
 from zug.datamodel.prelude import create_prelude_nodes
 from zug.datamodel.latest_urls import LatestURLParser
 from zug.datamodel.tcga_dcc_to_biospecimen import TCGADCCToBiospecimen
-import os 
+import os
 import pandas as pd
 
 
@@ -25,7 +25,7 @@ def run_signpost(port):
 
 
 class TCGADCCToBiospecimenTest(TestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         cls.port = random.randint(5000,6000)
@@ -70,14 +70,14 @@ class TCGADCCToBiospecimenTest(TestCase):
             storage_client=self.storage_client,
             **kwargs
         )
-    
+
     def fake_biospecimen(self,node_id,props,label):
         participant = Node(label=label,
                 properties=props,
                 node_id=node_id)
         self.pg_driver.node_insert(participant)
 
-       
+
     def create_archive(self, archive):
         submitter_id, rev = get_submitter_id_and_rev(archive)
         return self.pg_driver.node_merge(
@@ -131,30 +131,23 @@ class TCGADCCToBiospecimenTest(TestCase):
             "revision": rev
         }, node
 
-   
-
-
-
     def test_tie_to_participant_without_magetab(self):
-        archive = self.parser.parse_archive(
-            "nationwidechildrens.org_LGG.bio.Level_1.78.65.0",
-            "02/05/2015",
-            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/lgg/bcr/nationwidechildrens.org/bio/clin/nationwidechildrens.org_LGG.bio.Level_1.78.65.0.tar.gz",
-        )
-        syncer = self.syncer_for(archive)
-        syncer.sync()
+        barcode = '2c03e8b9-8856-43a7-853d-5ec51a6e5330'
+        self.create_file("nationwidechildrens.org_clinical.TCGA-DH-5140.xml",
+                         sys_ann={"_participant_barcode": barcode})
+        self.fake_biospecimen(barcode,
+                              {'submitter_id': barcode,
+                               'days_to_index': 0},
+                              'participant')
         with self.pg_driver.session_scope():
             file_node = self.pg_driver.node_lookup(
                 label='file',
-                property_matches={'file_name':
-                    'nationwidechildrens.org_clinical.TCGA-DH-5140.xml'}
-                ).one()
-            
+                property_matches={
+                    'file_name':
+                    'nationwidechildrens.org_clinical.TCGA-DH-5140.xml'
+                }).one()
+
             barcode = file_node.system_annotations['_participant_barcode']
-            self.fake_biospecimen('2c03e8b9-8856-43a7-853d-5ec51a6e5330',
-                {'submitter_id':barcode,
-                 'days_to_index': 0},
-                'participant')
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
             participant=self.pg_driver.nodes().labels('participant').\
@@ -166,17 +159,11 @@ class TCGADCCToBiospecimenTest(TestCase):
             self.assertEqual(edge.system_annotations['source'],'filename')
 
     def test_file_without_sysan(self):
-        archive = self.parser.parse_archive(
-            "genome.wustl.edu_LAML.bio.Level_2.0.1.0",
-            "01/28/2015",
-            "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/laml/bcr/genome.wustl.edu/bio/clin/genome.wustl.edu_LAML.bio.Level_2.0.1.0.tar.gz",
-        )
-        syncer = self.syncer_for(archive)
-        syncer.sync()
+        self.create_file("nationwidechildrens.org_biospecimen_analyte_laml.txt")
        # make sure archive gets tied to project
         with self.pg_driver.session_scope():
             # make sure the files get ties to center
-            
+
             file_node = self.pg_driver.node_lookup(
                 label="file",
                 property_matches={"file_name":"nationwidechildrens.org_biospecimen_analyte_laml.txt"}
@@ -184,7 +171,7 @@ class TCGADCCToBiospecimenTest(TestCase):
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
 
-    def load_file_with_aliquot(self):        
+    def load_file_with_aliquot(self):
         aliquot = self.fake_biospecimen("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
                    {'submitter_id':"TCGA-OR-A5J5-01A-11R-A29W-13",
                     u'amount': 20.0,
@@ -214,7 +201,7 @@ class TCGADCCToBiospecimenTest(TestCase):
                 property_matches={'file_name':
                     'TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt'}
                 ).one()
-            
+
             barcode = file_node.system_annotations['_aliquot_barcode']
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
@@ -234,7 +221,7 @@ class TCGADCCToBiospecimenTest(TestCase):
                 property_matches={'file_name':
                     'TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt'}
                 ).one()
-            
+
             barcode = file_node.system_annotations['_aliquot_barcode']
            #fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
             #mageSyncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
@@ -252,4 +239,3 @@ class TCGADCCToBiospecimenTest(TestCase):
                 src(file_node.node_id).\
                 dst(aliquot.node_id).one()
             self.assertEqual(edge.system_annotations['source'],'tcga_magetab')
-

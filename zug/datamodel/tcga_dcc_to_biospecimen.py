@@ -6,7 +6,7 @@ class TCGADCCToBiospecimen(object):
 
     def __init__(self,file_node,pg_driver):
         '''
-        DCC to biospecimen edge builder class  which tie DCC file node to 
+        DCC to biospecimen edge builder class  which tie DCC file node to
         biospecimen nodes from file node's system annotation, if the file is
         not tied to any biospecimen from magetab parsing.
 
@@ -20,18 +20,14 @@ class TCGADCCToBiospecimen(object):
     def name(self):
         return self.file_node["file_name"]
 
-    def _get_archive(self):
-        return self.pg_driver.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
-
     def build(self):
         '''build edges between the given file node and biospecimen nodes'''
         with self.pg_driver.session_scope() as session:
-            self.archive = self._get_archive()
             self.tie_file_from_classification(self.file_node,session)
 
     def tie_file_from_classification(self,file_node,session):
         attrs = file_node.system_annotations
-        self.log.debug(attrs) 
+        self.log.debug(attrs)
         for edge in  file_node.edges_out:
             if edge.label == 'data_from' and \
                 edge.system_annotations['source']=='tcga_magetab':
@@ -39,7 +35,7 @@ class TCGADCCToBiospecimen(object):
         nodes=[]
         # find aliquot or slide node that should be tied to this file
         for possible_attr in ['_aliquot','_tumor_aliquot','_control_aliquot',\
-           '_slide']: 
+           '_slide']:
             node=None
             if possible_attr+'_uuid' in attrs:
                 node = self.pg_driver.nodes().ids(
@@ -50,7 +46,7 @@ class TCGADCCToBiospecimen(object):
             if node:
                 self.log.info("find %s %s",node.label,node['submitter_id'])
                 nodes.append(node)
-        
+
         # if no biospecimen is tied to this file, find participant that should be tied to this file
         if len(nodes) == 0:
             node=None
@@ -75,4 +71,3 @@ class TCGADCCToBiospecimen(object):
                     dst_id=node.node_id)
                 edge_to_biospecimen.system_annotations['source']='filename'
                 self.pg_driver.edge_insert(edge_to_biospecimen,session=session)
- 
