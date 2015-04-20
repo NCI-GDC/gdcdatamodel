@@ -344,10 +344,11 @@ class TCGADCCArchiveSyncer(object):
 
     def remove_old_versions(self, submitter_id):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
-        all_versions = self.graph.node_lookup(
-            label="archive",
-            property_matches={"submitter_id": submitter_id},
-        ).all()
+        all_versions = self.graph.nodes()\
+                                 .labels("archive")\
+                                 .props({"submitter_id": submitter_id})\
+                                 .not_sysan({"to_delete": True})\
+                                 .all()
         old_versions = [version for version in all_versions
                         if version["revision"] < self.archive["revision"]]
         if len(old_versions) > 1:
