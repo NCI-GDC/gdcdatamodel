@@ -621,7 +621,7 @@
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
-        "name": "DOI",
+        "name": "doi",
         "type": "string",
         "doc": "TOREVIEW: The Digital Object Identifier of the publication"
       },
