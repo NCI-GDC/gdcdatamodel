@@ -626,7 +626,7 @@
         "doc": "TOREVIEW: The Digital Object Identifier of the publication"
       },
       {
-        "name": "pubmed_id",
+        "name": "pmid",
         "type": ["null", "string"],
         "doc": "TOREVIEW: Pubmed ID of the publication "
       }
