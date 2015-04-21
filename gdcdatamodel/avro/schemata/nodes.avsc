@@ -481,5 +481,29 @@
         ]
       }
     ]
+  },
+  {
+    "type": "record",
+    "name": "case",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "case_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "case_properties"
+        ]
+      }
+    ]
   }
 ]

@@ -106,5 +106,12 @@
     "namespace": "gov.nih.nci.gdc",
     "doc": "The properties of tissue_source_site edge",
     "fields": []
+  },
+ {
+    "type": "record",
+    "name": "untitled_properties",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "The properties of untitled edge",
+    "fields": []
   }
 ]
