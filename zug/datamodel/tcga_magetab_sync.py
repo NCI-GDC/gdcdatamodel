@@ -231,8 +231,6 @@ class TCGAMAGETABSyncer(object):
         self.graph.node_validator = AvroNodeValidator(node_avsc_object)
         self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self._cache_path = cache_path
-        if not lazy:
-            self.fetch_sdrf()
         self._mapping = None
 
     @property
@@ -332,14 +330,13 @@ class TCGAMAGETABSyncer(object):
         self._mapping = result
         return result
 
-    def get_file_node(self, archive_name, file_name, session):
+    def get_file_node(self, archive_name, file_name):
             if archive_name is None:
                 # this is a cghub file
                 file_node = self.graph.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
                     system_annotation_matches={"source": "tcga_cghub"},
-                    session=session
                 ).one()
             else:
                 # dcc file
@@ -348,20 +345,18 @@ class TCGAMAGETABSyncer(object):
                     label="archive",
                     property_matches={"submitter_id": submitter_id,
                                       "revision": revision},
-                    session=session
                 ).one()
                 file_node = self.graph.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
-                    session=session
                 ).with_edge_to_node("member_of", archive_node).one()
             # TODO might need to explicitly free the archive node here
             # to avoid connection leaks
             return file_node
 
-    def tie_to_biospecemin(self, file, label, uuid, barcode, session):
+    def tie_to_biospecemin(self, file, label, uuid, barcode):
         if uuid:
-            bio = self.graph.node_lookup(node_id=uuid, session=session).one()
+            bio = self.graph.node_lookup(node_id=uuid).one()
             self.log.info("found biospecemin by uuid: %s", bio)
             assert bio.label == label
             assert bio["submitter_id"] == barcode
@@ -369,7 +364,6 @@ class TCGAMAGETABSyncer(object):
             bio = self.graph.node_lookup(
                 label=label,
                 property_matches={"submitter_id": barcode},
-                session=session
             ).one()
             self.log.info("found biospecemin by barcode: %s", bio)
 
@@ -377,14 +371,13 @@ class TCGAMAGETABSyncer(object):
         left_edges = self.graph.edges().src(file.node_id).labels('data_from').sysan(
             {'source':'filename'}).all()
         for edge in left_edges:
-            self.graph.edge_delete(edge,session=session)
+            self.graph.edge_delete(edge)
 
 
         maybe_edge = self.graph.edge_lookup_one(
             label="data_from",
             src_id=file.node_id,
             dst_id=bio.node_id,
-            session=session
         )
         if not maybe_edge:
             if file.system_annotations["source"] == "tcga_cghub":
@@ -402,20 +395,19 @@ class TCGAMAGETABSyncer(object):
                 },
             )
             self.log.info("tieing file to biospecemin: %s", edge)
-            self.graph.edge_insert(edge, session=session)
+            self.graph.edge_insert(edge)
 
-    def delete_old_edges(self, session):
+    def delete_old_edges(self):
         """We need to first find all the edges produced by previous runs of
         this archive and delete them."""
-        to_delete = session.query(PsqlEdge)\
-                           .filter(PsqlEdge.system_annotations["source"].astext == "tcga_magetab")\
-                           .filter(PsqlEdge.system_annotations["submitter_id"].astext == self.submitter_id)\
-                           .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.revision)\
-                           .all()
+        to_delete = self.graph.edges()\
+                              .sysan({"source": "tcga_magetab"})\
+                              .sysan({"submitter_id": self.submitter_id})\
+                              .sysan({"revision": str(self.revision)}).all()
         self.log.info("found %s edges to delete from previous revisions", len(to_delete))
         for edge in to_delete:
             self.log.info("deleting old edge %s", edge)
-            self.graph.edge_delete(edge, session=session)
+            self.graph.edge_delete(edge)
 
     def tie_to_archive(self, file):
         maybe_edge_to_archive = self.graph.edge_lookup_one(
@@ -438,28 +430,26 @@ class TCGAMAGETABSyncer(object):
             self.graph.edge_insert(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
-        with self.graph.session_scope() as session:
-            self.delete_old_edges(session)
-            for (archive, filename), specemins in mapping.iteritems():
-                if archive is None:
-                    self.log.info("%s is a cghub file, skipping", filename)
+        self.delete_old_edges()
+        for (archive, filename), specemins in mapping.iteritems():
+            if archive is None:
+                self.log.info("%s is a cghub file, skipping", filename)
+                continue
+            for (label, uuid, barcode) in specemins:
+                self.log.info("attempting to tie file %s to specemin %s",
+                              (archive, filename),
+                              (label, uuid, barcode))
+                try:
+                    file = self.get_file_node(archive, filename)
+                    self.log.info("found file node %s", file)
+                except NoResultFound:
+                    self.log.warning("Couldn't find file %s in archive %s", filename, archive)
                     continue
-                for (label, uuid, barcode) in specemins:
-                    self.log.info("attempting to tie file %s to specemin %s",
-                                  (archive, filename),
-                                  (label, uuid, barcode))
-                    try:
-                        file = self.get_file_node(archive, filename, session)
-                        self.log.info("found file node %s", file)
-                    except NoResultFound:
-                        self.log.warning("Couldn't find file %s in archive %s", filename, archive)
-                        continue
-                    try:
-                        self.tie_to_biospecemin(file, label, uuid,
-                                                barcode, session)
-                        self.tie_to_archive(file)
-                    except NoResultFound:
-                        self.log.warning("Couldn't find biospecemin (%s, %s, %s)", label, uuid, barcode)
+                try:
+                    self.tie_to_biospecemin(file, label, uuid, barcode)
+                    self.tie_to_archive(file)
+                except NoResultFound:
+                    self.log.warning("Couldn't find biospecemin (%s, %s, %s)", label, uuid, barcode)
 
     def get_archive_to_workon(self):
         """
@@ -499,6 +489,7 @@ class TCGAMAGETABSyncer(object):
         with self.graph.session_scope():
             if not self.get_archive_to_workon():
                 return
+            self.fetch_sdrf()
             # the "mapping" is a dictionary from (archive, filename) pairs
             # to (label, uuid, barcode) triples
             mapping = self.compute_mapping()
