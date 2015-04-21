@@ -234,6 +234,11 @@ def get_participant_es_mapping(include_file=True):
     summary.data_types.properties.data_type = STRING
     summary.data_types.properties.file_count = LONG
 
+    # Clinical
+    clinical = participant.properties.clinical.properties
+    clinical.age_at_diagnosis = INTEGER
+    clinical.days_to_death = INTEGER
+
     return participant.to_dict()
 
 
