@@ -3,12 +3,15 @@ from lxml import html
 import requests
 import os
 import re
+import time
 from collections import defaultdict
 
-from psqlgraph import PsqlEdge
+from psqlgraph import PsqlGraphDriver, PsqlEdge
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 from gdcdatamodel import node_avsc_object, edge_avsc_object
+from sqlalchemy import func
 from sqlalchemy.types import Integer
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound
 
 from cdisutils.log import get_logger
@@ -217,41 +220,43 @@ def get_submitter_id_and_rev(archive):
 
 class TCGAMAGETABSyncer(object):
 
-    def __init__(self, archive, pg_driver=None, cache_path=None, lazy=False):
-        self.archive = archive
-        self.log = get_logger("tcga_magetab_sync_{}_{}".format(os.getpid(), self.archive["archive_name"]))
-        self.pg_driver = pg_driver
-        self.pg_driver.node_validator = AvroNodeValidator(node_avsc_object)
-        self.pg_driver.edge_validator = AvroEdgeValidator(edge_avsc_object)
-        submitter_id, rev = get_submitter_id_and_rev(self.archive["archive_name"])
-        with self.pg_driver.session_scope():
-            try:
-                self.archive_node = self.pg_driver.nodes()\
-                                                  .labels("archive")\
-                                                  .props({"submitter_id": submitter_id, "revision": int(rev)})\
-                                                  .one()
-            except Exception:
-                self.log.exception("Couldn't load exactly one archive from graph")
-                raise
-        self.log.info("found archive node for this magetab: %s", self.archive_node)
+    def __init__(self, cache_path=None, lazy=False):
+        self.log = get_logger("tcga_magetab_sync_{}".format(os.getpid()))
+        self.graph = PsqlGraphDriver(
+            os.environ["PG_HOST"],
+            os.environ["PG_USER"],
+            os.environ["PG_PASS"],
+            os.environ["PG_NAME"],
+        )
+        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
+        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self._cache_path = cache_path
         if not lazy:
             self.fetch_sdrf()
         self._mapping = None
 
+    @property
+    def revision(self):
+        return self.archive["revision"]
+
+    @property
+    def submitter_id(self):
+        return self.archive["submitter_id"]
+
     def fetch_sdrf(self):
-        folder_url = self.archive["dcc_archive_url"].replace(".tar.gz", "")
+        # TODO this is somewhat janky and it would probably be faster
+        # to fetch the archive from our object store since we've
+        # already downloaded it
+        folder_url = self.archive.system_annotations["dcc_archive_url"].replace(".tar.gz", "")
         if self._cache_path:
-            pickle_path = os.path.join(self._cache_path, "{}.pickle".format(self.archive["archive_name"]))
+            pickle_path = os.path.join(self._cache_path, "{}.pickle".format(
+                self.archive.system_annotations["archive_name"])
+            )
             self.log.info("reading sdrf from cache path %s", pickle_path)
             self.df = pd.read_pickle(pickle_path)
         else:
             self.log.info("downloading sdrf from %s", folder_url)
             self.df = pd.read_table(sdrf_from_folder(folder_url))
-
-    def cache_df_to_file(self, path):
-        self.df.to_pickle(os.path.join(path, "{}.pickle".format(
-            self.archive["archive_name"])))
 
     def sample_for(self, row):
         EXTRACT_NAME = "Extract Name"
@@ -330,7 +335,7 @@ class TCGAMAGETABSyncer(object):
     def get_file_node(self, archive_name, file_name, session):
             if archive_name is None:
                 # this is a cghub file
-                file_node = self.pg_driver.node_lookup(
+                file_node = self.graph.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
                     system_annotation_matches={"source": "tcga_cghub"},
@@ -339,13 +344,13 @@ class TCGAMAGETABSyncer(object):
             else:
                 # dcc file
                 submitter_id, revision = get_submitter_id_and_rev(archive_name)
-                archive_node = self.pg_driver.node_lookup(
+                archive_node = self.graph.node_lookup(
                     label="archive",
                     property_matches={"submitter_id": submitter_id,
                                       "revision": revision},
                     session=session
                 ).one()
-                file_node = self.pg_driver.node_lookup(
+                file_node = self.graph.node_lookup(
                     label="file",
                     property_matches={"file_name": file_name},
                     session=session
@@ -356,26 +361,26 @@ class TCGAMAGETABSyncer(object):
 
     def tie_to_biospecemin(self, file, label, uuid, barcode, session):
         if uuid:
-            bio = self.pg_driver.node_lookup(node_id=uuid, session=session).one()
+            bio = self.graph.node_lookup(node_id=uuid, session=session).one()
             self.log.info("found biospecemin by uuid: %s", bio)
             assert bio.label == label
             assert bio["submitter_id"] == barcode
         elif barcode:
-            bio = self.pg_driver.node_lookup(
+            bio = self.graph.node_lookup(
                 label=label,
                 property_matches={"submitter_id": barcode},
                 session=session
             ).one()
             self.log.info("found biospecemin by barcode: %s", bio)
-        
+
         # delete all previous built edges parsed from filename
-        left_edges = self.pg_driver.edges().src(file.node_id).labels('data_from').sysan(
+        left_edges = self.graph.edges().src(file.node_id).labels('data_from').sysan(
             {'source':'filename'}).all()
         for edge in left_edges:
-            self.pg_driver.edge_delete(edge,session=session)
+            self.graph.edge_delete(edge,session=session)
 
 
-        maybe_edge = self.pg_driver.edge_lookup_one(
+        maybe_edge = self.graph.edge_lookup_one(
             label="data_from",
             src_id=file.node_id,
             dst_id=bio.node_id,
@@ -391,49 +396,49 @@ class TCGAMAGETABSyncer(object):
                 src_id=file.node_id,
                 dst_id=bio.node_id,
                 system_annotations={
-                    "submitter_id": self.archive_node["submitter_id"],
-                    "revision": self.archive["revision"],
+                    "submitter_id": self.submitter_id,
+                    "revision": self.revision,
                     "source": "tcga_magetab",
                 },
             )
             self.log.info("tieing file to biospecemin: %s", edge)
-            self.pg_driver.edge_insert(edge, session=session)
+            self.graph.edge_insert(edge, session=session)
 
     def delete_old_edges(self, session):
         """We need to first find all the edges produced by previous runs of
         this archive and delete them."""
         to_delete = session.query(PsqlEdge)\
                            .filter(PsqlEdge.system_annotations["source"].astext == "tcga_magetab")\
-                           .filter(PsqlEdge.system_annotations["submitter_id"].astext == self.archive_node["submitter_id"])\
-                           .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.archive["revision"])\
+                           .filter(PsqlEdge.system_annotations["submitter_id"].astext == self.submitter_id)\
+                           .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.revision)\
                            .all()
         self.log.info("found %s edges to delete from previous revisions", len(to_delete))
         for edge in to_delete:
             self.log.info("deleting old edge %s", edge)
-            self.pg_driver.edge_delete(edge, session=session)
+            self.graph.edge_delete(edge, session=session)
 
     def tie_to_archive(self, file):
-        maybe_edge_to_archive = self.pg_driver.edge_lookup_one(
+        maybe_edge_to_archive = self.graph.edge_lookup_one(
             label="related_to",
-            src_id=self.archive_node.node_id,
+            src_id=self.archive.node_id,
             dst_id=file.node_id
         )
         if not maybe_edge_to_archive:
             edge_to_archive = PsqlEdge(
                 label="related_to",
-                src_id=self.archive_node.node_id,
+                src_id=self.archive.node_id,
                 dst_id=file.node_id,
                 system_annotations={
-                    "submitter_id": self.archive_node["submitter_id"],
-                    "revision": self.archive["revision"],
+                    "submitter_id": self.submitter_id,
+                    "revision": self.revision,
                     "source": "tcga_magetab",
                 }
             )
             self.log.info("relating file to magetab archive %s", edge_to_archive)
-            self.pg_driver.edge_insert(edge_to_archive)
+            self.graph.edge_insert(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
-        with self.pg_driver.session_scope() as session:
+        with self.graph.session_scope() as session:
             self.delete_old_edges(session)
             for (archive, filename), specemins in mapping.iteritems():
                 if archive is None:
@@ -456,8 +461,45 @@ class TCGAMAGETABSyncer(object):
                     except NoResultFound:
                         self.log.warning("Couldn't find biospecemin (%s, %s, %s)", label, uuid, barcode)
 
+    def get_archive_to_workon(self):
+        """
+        Find an unsynced mage-tab archive in the graph to download, parse, and insert metadata from
+        """
+        # we first find an archive that we want to try to work on
+        try_archive = self.graph.nodes()\
+                                .labels("archive")\
+                                .sysan({"data_level": "mage-tab"})\
+                                .not_sysan({"magetab_synced": True})\
+                                .order_by(func.random())\
+                                .first()
+        if not try_archive:
+            self.log.info("No unsynced magetab archives found, we're all caught up!")
+            return
+        # now we try to lock it
+        lock_tries = 0
+        while lock_tries < 5:
+            lock_tries += 1
+            try:
+                archive = self.graph.nodes()\
+                                    .ids(try_archive.node_id)\
+                                    .with_for_update(nowait=True).one()
+                self.archive = archive
+                return self.archive
+            except OperationalError:
+                self.graph.current_session().rollback()
+                self.log.exception("Couldn't lock archive %s, try number %s, retrying",
+                                   try_archive.node_id, lock_tries)
+                time.sleep(3)
+        raise RuntimeError("Couldn't lock archive to sync in 5 tries")
+
     def sync(self):
-        # the "mapping" is a dictionary from (archive, filename) pairs
-        # to (label, uuid, barcode) triples
-        mapping = self.compute_mapping()
-        self.put_mapping_in_pg(mapping)
+        # we have to use one session at the top level because we need
+        # to hold the lock on the magetab archive the whole time we're
+        # working on it
+        with self.graph.session_scope():
+            if not self.get_archive_to_workon():
+                return
+            # the "mapping" is a dictionary from (archive, filename) pairs
+            # to (label, uuid, barcode) triples
+            mapping = self.compute_mapping()
+            self.put_mapping_in_pg(mapping)
