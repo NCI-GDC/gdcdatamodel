@@ -36,7 +36,7 @@ class FileMemberOfArchive(Edge, MemberOf):
 class FileMemberOfExperimentalStrategy(Edge, MemberOf):
     __src_class__ = 'File'
     __dst_class__ = 'ExperimentalStrategy'
-    __src_dst_assoc__ = 'expertimental_strategies'
+    __src_dst_assoc__ = 'experimental_strategies'
     __dst_src_assoc__ = 'files'
 
 
