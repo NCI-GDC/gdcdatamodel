@@ -411,7 +411,7 @@
     ]
   },
   {
-    "name": "untitled",
+    "name": "UNTITLED",
     "namespace": "gov.nih.nci.gdc",
     "type": "record",
     "doc": "Indicates the submitting entity of a file/data.",
@@ -438,7 +438,13 @@
       {
         "name": "node_labels",
         "type": [
-          "case:participant"
+          "case:participant",
+          "sample:case",
+          "portion:case",
+          "aliquot:case",
+          "analyte:case",
+          "slide:case",
+          "sample:participant"
         ],
         "doc": "The source/destination node types allowed."
       },

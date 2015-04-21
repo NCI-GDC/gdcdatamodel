@@ -61,5 +61,11 @@ digraph {
 			aliquot -> center [label=shipped_to]
 			portion -> center [label=shipped_to]
 			file -> center [label=submitted_by]
-			case -> participant [label=untitled]
+			case -> participant [label=UNTITLED]
+			sample -> case [label=UNTITLED]
+			portion -> case [label=UNTITLED]
+			aliquot -> case [label=UNTITLED]
+			analyte -> case [label=UNTITLED]
+			slide -> case [label=UNTITLED]
+			sample -> participant [label=UNTITLED]
 }

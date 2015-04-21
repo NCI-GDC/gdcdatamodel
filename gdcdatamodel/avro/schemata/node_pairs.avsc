@@ -598,5 +598,80 @@
         "type": "center_enum"
       }
     ]
+  },
+  {
+    "type": "record",
+    "name": "portion:case",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "portion_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "case_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "slide:case",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "slide_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "case_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte:case",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "analyte_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "case_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "aliquot:case",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "aliquot_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "case_enum"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "sample:participant",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "sample_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "participant_enum"
+      }
+    ]
   }
 ]
