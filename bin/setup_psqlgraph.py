@@ -2,9 +2,8 @@ import argparse
 from sqlalchemy import create_engine
 import logging
 
-
 from gdcdatamodel.models import *
-from psqlgraph import create_all
+from psqlgraph import create_all, Node, Edge
 
 
 def try_drop_test_data(user, database, root_user='postgres', host=''):
@@ -74,10 +73,32 @@ def create_tables(host, user, password, database):
 
 
 def create_indexes(host, user, password, database):
-    """
-    create a table
-    """
-    return
+    print('Creating indexes')
+    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
+        user=user, host=host, pwd=password, db=database))
+    index = lambda t, c: ["CREATE INDEX ON {} ({})".format(t, x) for x in c]
+    for scls in Node.get_subclasses():
+        tablename = scls.__tablename__
+        map(engine.execute, index(
+            tablename, [
+                'node_id',
+                '_label',
+                'node_id, _label'
+            ]))
+        map(engine.execute, [
+            "CREATE INDEX ON {} USING gin (_sysan)".format(tablename),
+            "CREATE INDEX ON {} USING gin (_props)".format(tablename),
+            "CREATE INDEX ON {} USING gin (_sysan, _props)".format(tablename),
+        ])
+    for scls in Edge.get_subclasses():
+        map(engine.execute, index(
+            scls.__tablename__, [
+                'src_id',
+                'dst_id',
+                '_label',
+                'dst_id, src_id',
+                'dst_id, src_id, _label'
+            ]))
 
 if __name__ == '__main__':
 
