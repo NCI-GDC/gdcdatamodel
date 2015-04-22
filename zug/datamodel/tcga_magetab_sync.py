@@ -495,7 +495,8 @@ class TCGAMAGETABSyncer(object):
         raise RuntimeError("Couldn't lock archive to sync in 5 tries")
 
     def mark_synced(self):
-        self.log.info("marking %s as magetab_synced", self.archive)
+        self.log.info("marking %s as magetab_synced and resulting in %s edges ",
+                      self.archive, self.edges_from)
         # TODO record how many edges we got from this so we can investigate
         # anything suspicious (i.e. 0)
         self.graph.node_update(
