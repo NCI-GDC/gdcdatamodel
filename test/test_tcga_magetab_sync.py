@@ -12,7 +12,8 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "magetabs")
 
 BASIC_DF = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
-DUPLICATE_DF_DF = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
+DUPLICATE_DF = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
+PROTEIN_DF = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
 
 
 class TestTCGAMAGETASync(ZugsTestBase):
@@ -151,6 +152,8 @@ class TestTCGAMAGETASync(ZugsTestBase):
         for id in old_edge_ids:
             self.assertNotIn(id, new_edge_ids)
 
+    @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
+           lambda path: BASIC_DF)
     def test_magetab_sync_handles_missing_file_gracefully(self):
         # this is the same as the above test, but one of the files is missing
         aliquot = self.create_aliquot("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
@@ -160,14 +163,15 @@ class TestTCGAMAGETASync(ZugsTestBase):
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
                          archive=archive)
         fake_archive, _ = self.fake_archive_for("basic.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.graph, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                 .with_edge_to_node("data_from", aliquot).count()
+                                .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 1)
 
+    @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
+           lambda path: DUPLICATE_DF)
     def test_duplicate_barcode_magetab_sync(self):
         aliquot = self.create_aliquot(str(uuid.uuid4()), "TCGA-28-1751-01A-02R-0598-07")
         lvl1 = self.create_archive("unc.edu_GBM.AgilentG4502A_07_2.Level_1.1.6.0")
@@ -180,14 +184,15 @@ class TestTCGAMAGETASync(ZugsTestBase):
         self.create_file("US82800149_251780410508_S01_GE2_105_Dec08.txt_lmean.out.logratio.gene.tcga_level3.data.txt",
                          archive=lvl3)
         fake_archive, _ = self.fake_archive_for("duplicate.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.graph, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
+        syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                 .with_edge_to_node("data_from", aliquot).count()
+                                .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
 
+    @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
+           lambda path: PROTEIN_DF)
     def test_shipped_portion_magetab_sync(self):
         portion = self.create_portion("f9762bbb-bca0-4b54-a2c8-6f81a91de22f", "TCGA-OR-A5J2-01A-21-A39K-20")
         lvl1 = self.create_archive("mdanderson.org_ACC.MDA_RPPA_Core.Level_1.1.1.0")
@@ -200,10 +205,9 @@ class TestTCGAMAGETASync(ZugsTestBase):
         self.create_file("mdanderson.org_ACC.MDA_RPPA_Core.protein_expression.Level_3.F9762BBB-BCA0-4B54-A2C8-6F81A91DE22F.txt",
                          archive=lvl3)
         fake_archive, _ = self.fake_archive_for("duplicate.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.graph, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
+        syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                 .with_edge_to_node("data_from", portion).count()
+                                .with_edge_to_node("data_from", portion).count()
         self.assertEqual(n_files, 4)
