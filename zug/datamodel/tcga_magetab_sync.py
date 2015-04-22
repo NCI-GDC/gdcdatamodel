@@ -220,7 +220,7 @@ def get_submitter_id_and_rev(archive):
 
 class TCGAMAGETABSyncer(object):
 
-    def __init__(self, cache_path=None, lazy=False):
+    def __init__(self, cache_path=None, archive_id=None):
         self.log = get_logger("tcga_magetab_sync_{}".format(os.getpid()))
         self.graph = PsqlGraphDriver(
             os.environ["PG_HOST"],
@@ -230,6 +230,7 @@ class TCGAMAGETABSyncer(object):
         )
         self.graph.node_validator = AvroNodeValidator(node_avsc_object)
         self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
+        self.archive_id = archive_id
         self._cache_path = cache_path
         self._mapping = None
 
@@ -452,21 +453,27 @@ class TCGAMAGETABSyncer(object):
         """
         Find an unsynced mage-tab archive in the graph to download, parse, and insert metadata from
         """
-        # we first find an archive that we want to try to work on
-        try_archive = self.graph.nodes()\
-                                .labels("archive")\
-                                .sysan({"data_level": "mage-tab"})\
-                                .not_sysan({"magetab_synced": True})\
-                                .order_by(func.random())\
-                                .first()
-        if not try_archive:
-            self.log.info("No unsynced magetab archives found, we're all caught up!")
-            return
-        # now we try to lock it
         lock_tries = 0
         while lock_tries < 5:
             lock_tries += 1
             try:
+                if self.archive_id:
+                    # if we were passed an id, just grab that
+                    try_archive = self.graph.nodes.ids(self.archive_id).one()
+                    assert try_archive.label == "archive"
+                else:
+                    self.log.info("Searching for archive to work on")
+                    # find an archive that we want to try to work on
+                    try_archive = self.graph.nodes()\
+                                            .labels("archive")\
+                                            .sysan({"data_level": "mage-tab"})\
+                                            .not_sysan({"magetab_synced": True})\
+                                            .order_by(func.random())\
+                                            .first()
+                    if not try_archive:
+                        self.log.info("No unsynced magetab archives found, we're all caught up!")
+                        return
+                self.log.info("Attempting to lock %s in postgres", try_archive)
                 archive = self.graph.nodes()\
                                     .ids(try_archive.node_id)\
                                     .with_for_update(nowait=True).one()
