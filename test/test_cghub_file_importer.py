@@ -86,9 +86,20 @@ class TestCGHubFileImporter(unittest.TestCase):
             for table in Node().get_subclass_table_names():
                 if table != Node.__tablename__:
                     conn.execute('delete from {}'.format(table))
+            for table in Edge().get_subclass_table_names():
+                if table != Edge.__tablename__:
+                    conn.execute('delete from {}'.format(table))
             conn.execute('delete from _voided_nodes')
             conn.execute('delete from _voided_edges')
         self.converter.graph.engine.dispose()
+
+    def test_simple_parse(self):
+        graph = self.converter.graph
+        with graph.session_scope():
+            to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
+            to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
+            for root in TEST_DATA:
+                self.converter.parse('file', etree.fromstring(root))
 
     def insert_test_files(self):
         with self.converter.graph.session_scope():
@@ -147,14 +158,12 @@ class TestCGHubFileImporter(unittest.TestCase):
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bam.get_edges())), 7)
-            base = graph.nodes().ids(bam.node_id)
-            base.any([File.centers], Center, {'code': '07'}).one()
-            base.any([File.platforms], Platform, {'name': 'Illumina GA'}).one()
-            base.any([File.data_subtypes], DataSubtype,
-                     {'name': 'Aligned reads'}).one()
-            base.any([File.data_formats], DataFormat, {'name': 'BAM'}).one()
-            base.any([File.experimental_strategies], ExperimentalStrategy,
-                     {'name': 'RNA-Seq'}).one()
+            base = graph.nodes(File).ids(bam.node_id)
+            base.path('centers').props(code='07').one()
+            base.path('platforms').props(name='Illumina GA').one()
+            base.path('data_subtypes').props(name='Aligned reads').one()
+            base.path('data_formats').props(name='BAM').one()
+            base.path('experimental_strategies').props(name='RNA-Seq').one()
 
     def test_idempotency(self):
         graph = self.converter.graph
