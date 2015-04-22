@@ -160,5 +160,14 @@
       "slide"
     ],
     "type": "enum"
+  },
+  {
+    "name": "publication_enum",
+    "namespace": "gov.nih.nci.gdc",
+    "symbols": [
+      "publication"
+    ],
+    "type": "enum"
   }
+
 ]

@@ -88,5 +88,14 @@
     ],
     "type": "enum",
     "doc":"Allowed string constants for indicating submitted_by"
+  },
+  {
+    "name": "refers_to_enum",
+    "namespace": "gov.nih.nci.gdc",
+    "symbols": [
+      "refers_to"
+    ],
+    "type": "enum",
+    "doc":"Allowed string constants for indicating refers_to"
   }
 ]

@@ -568,5 +568,20 @@
         "type": "center_enum"
       }
     ]
+  },
+  {
+    "type": "record",
+    "name": "publication:file",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "src_node_label",
+        "type": "publication_enum"
+      },
+      {
+        "name": "dst_node_label",
+        "type": "file_enum"
+      }
+    ]
   }
 ]

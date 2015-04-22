@@ -614,5 +614,22 @@
         "doc": "TODO: define, from BCR"
       }
     ]
+  },
+  {
+    "type": "record",
+    "name": "publication_properties",
+    "namespace": "gov.nih.nci.gdc",
+    "fields": [
+      {
+        "name": "doi",
+        "type": "string",
+        "doc": "TOREVIEW: The Digital Object Identifier of the publication"
+      },
+      {
+        "name": "pmid",
+        "type": ["null", "string"],
+        "doc": "TOREVIEW: Pubmed ID of the publication "
+      }
+    ]
   }
 ]
