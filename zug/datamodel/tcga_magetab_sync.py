@@ -376,7 +376,9 @@ class TCGAMAGETABSyncer(object):
                                .labels("data_from")\
                                .src(file.node_id)\
                                .dst(bio.node_id).scalar()
-        if not maybe_edge:
+        if maybe_edge:
+            self.log.info("edge already exists: %s", maybe_edge)
+        else:
             if file.system_annotations["source"] == "tcga_cghub":
                 self.log.warning("cghub file %s should be tied to %s %s but is not",
                                  file, label, (uuid, barcode))
