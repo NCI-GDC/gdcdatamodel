@@ -8,7 +8,7 @@ from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 from multiprocessing import Process
 
-from psqlgraph import PsqlGraphDriver
+from psqlgraph import PsqlGraphDriver, Node, Edge
 from zug.datamodel.prelude import create_prelude_nodes
 from signpost import Signpost
 from signpostclient import SignpostClient
@@ -58,11 +58,12 @@ class ZugsTestBase(TestCase):
 
     def tearDown(self):
         with self.graph.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            for table in Edge().get_subclass_table_names():
+                if table != Edge.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.graph.engine.dispose()
-        for container in self.storage_client.list_containers():
-            for obj in container.list_objects():
-                obj.delete()

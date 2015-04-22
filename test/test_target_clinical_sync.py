@@ -7,7 +7,10 @@ from httmock import HTTMock, urlmatch
 
 from zug.datamodel.target.sample_matrices import NAMESPACE_PARTICIPANTS
 from zug.datamodel.target.clinical import TARGETClinicalSyncer
-
+from gdcdatamodel.models import (
+    ClinicalDescribesParticipant,
+    FileDescribesParticipant
+)
 
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures")
 
@@ -29,7 +32,7 @@ class TARGETClinicalSyncerTest(ZugsTestBase):
                 "file_name": url.split("/")[-1],
                 "md5sum": "bogus",
                 "file_size": 0,
-                "file_state": "live"
+                "state": "live"
             },
             system_annotations={
                 "source": "target_dcc",
@@ -57,7 +60,8 @@ class TARGETClinicalSyncerTest(ZugsTestBase):
         with HTTMock(target_clinical_mock):
             syncer.sync()
         with self.graph.session_scope():
-            clin = self.graph.nodes().labels("clinical").with_edge_to_node("describes", participant).one()
+            clin = self.graph.nodes().labels("clinical").with_edge_to_node(
+                ClinicalDescribesParticipant, participant).one()
             self.assertEqual(clin["vital_status"], "dead")
             self.assertEqual(clin["gender"], "male")
             self.assertEqual(clin["race"], "white")
@@ -67,4 +71,4 @@ class TARGETClinicalSyncerTest(ZugsTestBase):
             self.graph.nodes()\
                       .labels("file")\
                       .sysan({"url": "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx"})\
-                      .with_edge_to_node("describes", participant).one()
+                      .with_edge_to_node(FileDescribesParticipant, participant).one()

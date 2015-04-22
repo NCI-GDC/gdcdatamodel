@@ -7,7 +7,7 @@ from datetime import datetime
 from uuid import UUID, uuid5
 
 from cdisutils.log import get_logger
-from psqlgraph import PsqlEdge
+from gdcdatamodel import models
 
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
@@ -78,10 +78,12 @@ class TARGETClinicalSyncer(object):
             dst_id=dst.node_id,
         ).scalar()
         if not maybe_edge:
-            self.graph.edge_insert(PsqlEdge(
+            self.graph.edge_insert(self.graph.get_PsqlEdge(
                 label=label,
                 src_id=src.node_id,
                 dst_id=dst.node_id,
+                src_label=src.label,
+                dst_label=dst.label,
             ))
 
     def insert(self, df):
