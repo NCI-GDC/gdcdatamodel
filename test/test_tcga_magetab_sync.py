@@ -1,7 +1,9 @@
-import unittest
+from base import ZugsTestBase
+from mock import patch
+
 import os
 import uuid
-from psqlgraph import PsqlGraphDriver, PsqlEdge, PsqlNode
+from psqlgraph import PsqlEdge, PsqlNode
 from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer, get_submitter_id_and_rev
 import pandas as pd
 
@@ -9,20 +11,18 @@ import pandas as pd
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "magetabs")
 
+BASIC_DF = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+DUPLICATE_DF_DF = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
 
-class TestTCGAMAGETASync(unittest.TestCase):
+
+class TestTCGAMAGETASync(ZugsTestBase):
 
     def setUp(self):
-        self.driver = PsqlGraphDriver('localhost', 'test',
-                                      'test', 'automated_test')
-
-    def tearDown(self):
-        with self.driver.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
-        self.driver.engine.dispose()
+        super(TestTCGAMAGETASync, self).setUp()
+        os.environ["PG_HOST"] = "localhost"
+        os.environ["PG_USER"] = "test"
+        os.environ["PG_PASS"] = "test"
+        os.environ["PG_NAME"] = "automated_test"
 
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
@@ -32,18 +32,22 @@ class TestTCGAMAGETASync(unittest.TestCase):
             properties={
                 "submitter_id": fixture + "fake_test_archive.1",
                 "revision": rev
+            },
+            system_annotations={
+                "data_level": "mage-tab",
+                "dcc_archive_url": "http://fake.nih.gov/fake/url.tar.gz",
             }
         )
-        self.driver.node_insert(node)
+        self.graph.node_insert(node)
         return {
-            "archive_name": fixture + "fake_test_archive.1." + str(rev) +".0",
+            "archive_name": fixture + "fake_test_archive.1." + str(rev) + ".0",
             "disease_code": "FAKE",
             "batch": 1,
             "revision": rev
         }, node
 
     def create_aliquot(self, uuid, barcode):
-        return self.driver.node_merge(
+        return self.graph.node_merge(
             node_id=uuid if uuid else str(uuid.uuid4()),
             label="aliquot",
             properties={
@@ -55,7 +59,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
         )
 
     def create_portion(self, uuid, barcode):
-        return self.driver.node_merge(
+        return self.graph.node_merge(
             node_id=uuid if uuid else str(uuid.uuid4()),
             label="portion",
             properties={
@@ -67,7 +71,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
 
     def create_archive(self, archive):
         submitter_id, rev = get_submitter_id_and_rev(archive)
-        return self.driver.node_merge(
+        return self.graph.node_merge(
             node_id=str(uuid.uuid4()),
             label="archive",
             properties={"submitter_id": submitter_id,
@@ -75,7 +79,7 @@ class TestTCGAMAGETASync(unittest.TestCase):
         )
 
     def create_file(self, file, archive=None):
-        file = self.driver.node_merge(
+        file = self.graph.node_merge(
             node_id=str(uuid.uuid4()),
             label="file",
             properties={
@@ -94,8 +98,10 @@ class TestTCGAMAGETASync(unittest.TestCase):
                 src_id=file.node_id,
                 dst_id=archive.node_id
             )
-            self.driver.edge_insert(edge)
+            self.graph.edge_insert(edge)
 
+    @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
+           lambda path: BASIC_DF)
     def test_basic_magetab_sync(self):
         aliquot = self.create_aliquot("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
                                       "TCGA-OR-A5J5-01A-11R-A29W-13")
@@ -106,15 +112,19 @@ class TestTCGAMAGETASync(unittest.TestCase):
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.mirna.quantification.txt",
                          archive=archive)
         fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.driver, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer = TCGAMAGETABSyncer()
         syncer.sync()
-        with self.driver.session_scope():
-            n_files = self.driver.node_lookup(label="file")\
-                                 .with_edge_to_node("data_from", aliquot)\
-                                 .with_edge_from_node("related_to", fake_archive_node).count()
+        with self.graph.session_scope():
+            n_files = self.graph.node_lookup(label="file")\
+                                .with_edge_to_node("data_from", aliquot)\
+                                .with_edge_from_node("related_to", fake_archive_node).count()
+            magetab = self.graph.nodes().labels("archive")\
+                                        .sysan({"data_level": "mage-tab"}).one()
+            self.assertTrue(magetab.system_annotations["magetab_synced"])
         self.assertEqual(n_files, 2)
 
+    @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
+           lambda path: BASIC_DF)
     def test_magetab_sync_deletes_old_edges(self):
         aliquot = self.create_aliquot("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
                                       "TCGA-OR-A5J5-01A-11R-A29W-13")
@@ -125,20 +135,21 @@ class TestTCGAMAGETASync(unittest.TestCase):
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.mirna.quantification.txt",
                          archive=archive)
         fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt", rev=1)
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.driver, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer = TCGAMAGETABSyncer()
         syncer.sync()
-        with self.driver.session_scope():
-            self.driver.node_delete(node_id=fake_archive_node.node_id)
-            old_edge_ids = set([edge.edge_id for edge in self.driver.edges().all()])
+        with self.graph.session_scope():
+            self.graph.node_delete(node_id=fake_archive_node.node_id)
+            old_edge_ids = set([edge.edge_id for edge in
+                                self.graph.edges().labels("data_from").all()])
 
         fake_archive, _ = self.fake_archive_for("basic.sdrf.txt", rev=2)
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.driver, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
+        syncer = TCGAMAGETABSyncer()
         syncer.sync()
-        with self.driver.session_scope():
-            new_edge_ids = set([edge.edge_id for edge in self.driver.edges().all()])
-        self.assertNotEqual(old_edge_ids, new_edge_ids)
+        with self.graph.session_scope():
+            new_edge_ids = set([edge.edge_id for edge in
+                                self.graph.edges().labels("data_from").all()])
+        for id in old_edge_ids:
+            self.assertNotIn(id, new_edge_ids)
 
     def test_magetab_sync_handles_missing_file_gracefully(self):
         # this is the same as the above test, but one of the files is missing
@@ -149,11 +160,11 @@ class TestTCGAMAGETASync(unittest.TestCase):
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
                          archive=archive)
         fake_archive, _ = self.fake_archive_for("basic.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.driver, lazy=True)
+        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.graph, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
         syncer.sync()
-        with self.driver.session_scope():
-            n_files = self.driver.node_lookup(label="file")\
+        with self.graph.session_scope():
+            n_files = self.graph.node_lookup(label="file")\
                                  .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 1)
 
@@ -169,11 +180,11 @@ class TestTCGAMAGETASync(unittest.TestCase):
         self.create_file("US82800149_251780410508_S01_GE2_105_Dec08.txt_lmean.out.logratio.gene.tcga_level3.data.txt",
                          archive=lvl3)
         fake_archive, _ = self.fake_archive_for("duplicate.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.driver, lazy=True)
+        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.graph, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
         syncer.sync()
-        with self.driver.session_scope():
-            n_files = self.driver.node_lookup(label="file")\
+        with self.graph.session_scope():
+            n_files = self.graph.node_lookup(label="file")\
                                  .with_edge_to_node("data_from", aliquot).count()
         self.assertEqual(n_files, 3)
 
@@ -189,10 +200,10 @@ class TestTCGAMAGETASync(unittest.TestCase):
         self.create_file("mdanderson.org_ACC.MDA_RPPA_Core.protein_expression.Level_3.F9762BBB-BCA0-4B54-A2C8-6F81A91DE22F.txt",
                          archive=lvl3)
         fake_archive, _ = self.fake_archive_for("duplicate.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.driver, lazy=True)
+        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.graph, lazy=True)
         syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
         syncer.sync()
-        with self.driver.session_scope():
-            n_files = self.driver.node_lookup(label="file")\
+        with self.graph.session_scope():
+            n_files = self.graph.node_lookup(label="file")\
                                  .with_edge_to_node("data_from", portion).count()
         self.assertEqual(n_files, 4)

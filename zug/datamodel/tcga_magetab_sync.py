@@ -242,19 +242,22 @@ class TCGAMAGETABSyncer(object):
         return self.archive["submitter_id"]
 
     def fetch_sdrf(self):
-        # TODO this is somewhat janky and it would probably be faster
-        # to fetch the archive from our object store since we've
-        # already downloaded it
+        # TODO (jjp) this is somewhat janky and it would probably be
+        # faster to fetch the archive from our object store since
+        # we've already downloaded it, however this would require
+        # adding a bunch more complicated configuration info for
+        # connecting to various object stores to this class, which is
+        # why I'm not doing it right now
         folder_url = self.archive.system_annotations["dcc_archive_url"].replace(".tar.gz", "")
         if self._cache_path:
             pickle_path = os.path.join(self._cache_path, "{}.pickle".format(
                 self.archive.system_annotations["archive_name"])
             )
             self.log.info("reading sdrf from cache path %s", pickle_path)
-            self.df = pd.read_pickle(pickle_path)
+            return pd.read_pickle(pickle_path)
         else:
             self.log.info("downloading sdrf from %s", folder_url)
-            self.df = pd.read_table(sdrf_from_folder(folder_url))
+            return pd.read_table(sdrf_from_folder(folder_url))
 
     def sample_for(self, row):
         EXTRACT_NAME = "Extract Name"
@@ -403,7 +406,8 @@ class TCGAMAGETABSyncer(object):
         to_delete = self.graph.edges()\
                               .sysan({"source": "tcga_magetab"})\
                               .sysan({"submitter_id": self.submitter_id})\
-                              .sysan({"revision": str(self.revision)}).all()
+                              .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.revision)\
+                              .all()
         self.log.info("found %s edges to delete from previous revisions", len(to_delete))
         for edge in to_delete:
             self.log.info("deleting old edge %s", edge)
@@ -482,6 +486,13 @@ class TCGAMAGETABSyncer(object):
                 time.sleep(3)
         raise RuntimeError("Couldn't lock archive to sync in 5 tries")
 
+    def mark_synced(self):
+        self.log.info("marking %s as magetab_synced", self.archive)
+        self.graph.node_update(
+            self.archive,
+            system_annotations={"magetab_synced": True}
+        )
+
     def sync(self):
         # we have to use one session at the top level because we need
         # to hold the lock on the magetab archive the whole time we're
@@ -489,8 +500,9 @@ class TCGAMAGETABSyncer(object):
         with self.graph.session_scope():
             if not self.get_archive_to_workon():
                 return
-            self.fetch_sdrf()
+            self.df = self.fetch_sdrf()
             # the "mapping" is a dictionary from (archive, filename) pairs
             # to (label, uuid, barcode) triples
             mapping = self.compute_mapping()
             self.put_mapping_in_pg(mapping)
+            self.mark_synced()
