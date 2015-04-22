@@ -215,7 +215,7 @@ def is_reference_row(row):
 
 def get_submitter_id_and_rev(archive):
     pat = "\.(\d+?)\.(\d+)$"
-    return re.sub(pat, "", archive), re.search(pat, archive).group(1)
+    return re.sub(pat, "", archive), int(re.search(pat, archive).group(1))
 
 
 class TCGAMAGETABSyncer(object):
