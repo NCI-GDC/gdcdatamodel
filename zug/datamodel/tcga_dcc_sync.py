@@ -715,7 +715,7 @@ class TCGADCCArchiveSyncer(object):
 
         """
         self.log.info("Fetching latest archives list from DCC")
-        archives = list(LatestURLParser())
+        archives = [a for a in LatestURLParser() if a["disease_code"] != "FPPP"]
         if self.archive_id:
             with self.graph.session_scope():
                 self.log.info("Archive with id %s requested, finding in database", self.archive_id)
@@ -849,9 +849,6 @@ class TCGADCCArchiveSyncer(object):
         # this sets self.archive and potentially self.archive_node
         if not self.get_archive():
             # if this returns None, it means we're all done
-            return
-        if self.archive["disease_code"] == "FPPP":
-            self.log.info("%s is an FPPP archive, skipping", self.name)
             return
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
