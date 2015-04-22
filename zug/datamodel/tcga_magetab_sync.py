@@ -231,6 +231,11 @@ class TCGAMAGETABSyncer(object):
         self.graph.node_validator = AvroNodeValidator(node_avsc_object)
         self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.archive_id = archive_id
+        # this is to keep track of the number of edges we got out of
+        # this magetab so we can record it on system_annotations and
+        # manually investigate anything that looks fishy (e.g. zero,
+        # a billion)
+        self.edges_from = 0
         self._cache_path = cache_path
         self._mapping = None
 
@@ -376,6 +381,7 @@ class TCGAMAGETABSyncer(object):
                                .labels("data_from")\
                                .src(file.node_id)\
                                .dst(bio.node_id).scalar()
+        self.edges_from += 1
         if maybe_edge:
             self.log.info("edge already exists: %s", maybe_edge)
         else:
@@ -490,9 +496,14 @@ class TCGAMAGETABSyncer(object):
 
     def mark_synced(self):
         self.log.info("marking %s as magetab_synced", self.archive)
+        # TODO record how many edges we got from this so we can investigate
+        # anything suspicious (i.e. 0)
         self.graph.node_update(
             self.archive,
-            system_annotations={"magetab_synced": True}
+            system_annotations={
+                "magetab_synced": True,
+                "magetab_edges_from": self.edges_from,
+            }
         )
 
     def sync(self):
