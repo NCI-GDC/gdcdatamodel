@@ -336,38 +336,39 @@ class TCGAMAGETABSyncer(object):
     def get_file_node(self, archive_name, file_name):
             if archive_name is None:
                 # this is a cghub file
-                file_node = self.graph.node_lookup(
-                    label="file",
-                    property_matches={"file_name": file_name},
-                    system_annotation_matches={"source": "tcga_cghub"},
-                ).one()
+                file_node = self.graph.nodes()\
+                                      .labels("file")\
+                                      .props({"file_name": file_name})\
+                                      .sysan({"source": "tcga_cghub"})\
+                                      .one()
             else:
                 # dcc file
                 submitter_id, revision = get_submitter_id_and_rev(archive_name)
-                archive_node = self.graph.node_lookup(
-                    label="archive",
-                    property_matches={"submitter_id": submitter_id,
-                                      "revision": revision},
-                ).one()
-                file_node = self.graph.node_lookup(
-                    label="file",
-                    property_matches={"file_name": file_name},
-                ).with_edge_to_node("member_of", archive_node).one()
+                archive_node = self.graph.nodes()\
+                                         .labels("archive")\
+                                         .props({"submitter_id": submitter_id,
+                                                 "revision": revision})\
+                                         .one()
+                file_node = self.graph.nodes()\
+                                      .labels("file")\
+                                      .props({"file_name": file_name})\
+                                      .with_edge_to_node("member_of", archive_node)\
+                                      .one()
             # TODO might need to explicitly free the archive node here
             # to avoid connection leaks
             return file_node
 
     def tie_to_biospecemin(self, file, label, uuid, barcode):
         if uuid:
-            bio = self.graph.node_lookup(node_id=uuid).one()
+            bio = self.graph.nodes().ids(uuid).one()
             self.log.info("found biospecemin by uuid: %s", bio)
             assert bio.label == label
             assert bio["submitter_id"] == barcode
         elif barcode:
-            bio = self.graph.node_lookup(
-                label=label,
-                property_matches={"submitter_id": barcode},
-            ).one()
+            bio = self.graph.nodes()\
+                            .labels(label)\
+                            .props({"submitter_id": barcode})\
+                            .one()
             self.log.info("found biospecemin by barcode: %s", bio)
 
         # delete all previous built edges parsed from filename
@@ -376,12 +377,10 @@ class TCGAMAGETABSyncer(object):
         for edge in left_edges:
             self.graph.edge_delete(edge)
 
-
-        maybe_edge = self.graph.edge_lookup_one(
-            label="data_from",
-            src_id=file.node_id,
-            dst_id=bio.node_id,
-        )
+        maybe_edge = self.graph.edges()\
+                               .labels("data_from")\
+                               .src(file.node_id)\
+                               .dst(bio.node_id).scalar()
         if not maybe_edge:
             if file.system_annotations["source"] == "tcga_cghub":
                 self.log.warning("cghub file %s should be tied to %s %s but is not",
@@ -414,11 +413,10 @@ class TCGAMAGETABSyncer(object):
             self.graph.edge_delete(edge)
 
     def tie_to_archive(self, file):
-        maybe_edge_to_archive = self.graph.edge_lookup_one(
-            label="related_to",
-            src_id=self.archive.node_id,
-            dst_id=file.node_id
-        )
+        maybe_edge_to_archive = self.graph.edges()\
+                                          .labels("related_to")\
+                                          .src(self.archive.node_id)\
+                                          .dst(file.node_id).scalar()
         if not maybe_edge_to_archive:
             edge_to_archive = PsqlEdge(
                 label="related_to",
@@ -430,7 +428,8 @@ class TCGAMAGETABSyncer(object):
                     "source": "tcga_magetab",
                 }
             )
-            self.log.info("relating file to magetab archive %s", edge_to_archive)
+            self.log.info("relating file to magetab archive %s",
+                          edge_to_archive)
             self.graph.edge_insert(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
