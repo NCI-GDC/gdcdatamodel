@@ -371,12 +371,6 @@ class TCGAMAGETABSyncer(object):
                             .one()
             self.log.info("found biospecemin by barcode: %s", bio)
 
-        # delete all previous built edges parsed from filename
-        left_edges = self.graph.edges().src(file.node_id).labels('data_from').sysan(
-            {'source':'filename'}).all()
-        for edge in left_edges:
-            self.graph.edge_delete(edge)
-
         maybe_edge = self.graph.edges()\
                                .labels("data_from")\
                                .src(file.node_id)\
