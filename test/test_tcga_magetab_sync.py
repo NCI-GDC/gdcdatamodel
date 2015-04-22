@@ -37,15 +37,13 @@ class TestTCGAMAGETASync(ZugsTestBase):
             system_annotations={
                 "data_level": "mage-tab",
                 "dcc_archive_url": "http://fake.nih.gov/fake/url.tar.gz",
+                "archive_name": fixture + "fake_test_archive.1." + str(rev) + ".0",
+                "disease_code": "FAKE",
+                "batch": 1,
             }
         )
         self.graph.node_insert(node)
-        return {
-            "archive_name": fixture + "fake_test_archive.1." + str(rev) + ".0",
-            "disease_code": "FAKE",
-            "batch": 1,
-            "revision": rev
-        }, node
+        return node
 
     def create_aliquot(self, uuid, barcode):
         return self.graph.node_merge(
@@ -112,7 +110,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
                          archive=archive)
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.mirna.quantification.txt",
                          archive=archive)
-        fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
+        fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
@@ -135,7 +133,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
                          archive=archive)
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.mirna.quantification.txt",
                          archive=archive)
-        fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt", rev=1)
+        fake_archive_node = self.fake_archive_for("basic.sdrf.txt", rev=1)
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
@@ -143,7 +141,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
             old_edge_ids = set([edge.edge_id for edge in
                                 self.graph.edges().labels("data_from").all()])
 
-        fake_archive, _ = self.fake_archive_for("basic.sdrf.txt", rev=2)
+        self.fake_archive_for("basic.sdrf.txt", rev=2)
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
@@ -162,7 +160,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13_mirna.bam")
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
                          archive=archive)
-        fake_archive, _ = self.fake_archive_for("basic.sdrf.txt")
+        self.fake_archive_for("basic.sdrf.txt")
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
@@ -183,7 +181,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
                          archive=lvl2)
         self.create_file("US82800149_251780410508_S01_GE2_105_Dec08.txt_lmean.out.logratio.gene.tcga_level3.data.txt",
                          archive=lvl3)
-        fake_archive, _ = self.fake_archive_for("duplicate.sdrf.txt")
+        self.fake_archive_for("duplicate.sdrf.txt")
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
@@ -204,7 +202,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
                          archive=lvl2)
         self.create_file("mdanderson.org_ACC.MDA_RPPA_Core.protein_expression.Level_3.F9762BBB-BCA0-4B54-A2C8-6F81A91DE22F.txt",
                          archive=lvl3)
-        fake_archive, _ = self.fake_archive_for("duplicate.sdrf.txt")
+        self.fake_archive_for("duplicate.sdrf.txt")
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
