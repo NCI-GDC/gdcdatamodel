@@ -7,11 +7,10 @@ import hashlib
 from functools import partial
 from lxml import html
 
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from gdcdatamodel import node_avsc_object, edge_avsc_object
+from gdcdatamodel import models
 from signpostclient import SignpostClient
 
-from psqlgraph import PsqlNode, PsqlEdge, PsqlGraphDriver
+from psqlgraph import Node, Edge, PsqlGraphDriver
 
 from zug.datamodel.target.classification import CLASSIFICATION
 from zug.datamodel.target import PROJECTS
@@ -131,10 +130,12 @@ class TARGETDCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_attr_node:
-                edge_to_attr_node = PsqlEdge(
+                edge_to_attr_node = self.graph.get_PsqlEdge(
                     label=LABEL_MAP[attr],
                     src_id=file_node.node_id,
-                    dst_id=attr_node.node_id
+                    dst_id=attr_node.node_id,
+                    src_label='file',
+                    dst_label=attr,
                 )
                 self.graph.edge_insert(edge_to_attr_node)
 
@@ -210,8 +211,6 @@ class TARGETDCCFileSyncer(object):
         self.signpost = SignpostClient(signpost_url, version="v0")
         self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
                                      graph_info["pass"], graph_info["database"])
-        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
-        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.dcc_auth = dcc_auth
         self.storage_client = storage_info["driver"](storage_info["access_key"],
                                                      **storage_info["kwargs"])
@@ -255,9 +254,8 @@ class TARGETDCCFileSyncer(object):
                 # ok, now we can allocate an id
                 self.log.info("allocating id for %s from signpost", key)
                 doc = self.signpost.create(urls=[url_for(obj)])
-                file_node = PsqlNode(
+                file_node = models.File(
                     node_id=doc.did,
-                    label="file",
                     acl=self.acl,
                     properties={
                         "file_name": self.filename,

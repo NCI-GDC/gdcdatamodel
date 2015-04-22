@@ -18,10 +18,7 @@ from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
 from libcloud.storage.drivers.local import LocalStorageDriver
 from libcloud.common.types import LibcloudError
 
-from psqlgraph import PsqlEdge
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-
-from gdcdatamodel import node_avsc_object, edge_avsc_object
+from gdcdatamodel import models
 
 from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
@@ -61,7 +58,6 @@ def quickstats(graph):
     print "{} archives in graph and removed from dcc".format(len(removed))
     print "{} archives in graph and still in dcc".format(len(have))
     print "{} archives still to download from dcc".format(len(need))
-
 
 
 def run_edge_build(g, files):
@@ -169,8 +165,13 @@ class TCGADCCEdgeBuilder(object):
         return self.archive["archive_name"]
 
     def _get_archive(self):
-        with self.graph.session_scope():
-            return self.graph.nodes().labels('archive').with_edge_from_node('member_of',self.file_node).first().system_annotations
+        with self.pg_driver.session_scope():
+            return self.pg_driver.nodes().labels('archive')\
+                                         .with_edge_from_node(
+                                             models.FileMemberOfArchive,
+                                             self.file_node)\
+                                         .first()\
+                                         .system_annotations
 
     def build(self):
         with self.graph.session_scope():
@@ -198,10 +199,9 @@ class TCGADCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_center:
-                edge_to_center = PsqlEdge(
-                    label='submitted_by',
+                edge_to_center = models.FileSubmittedByCenter(
                     src_id=file_node.node_id,
-                    dst_id=attr_node.node_id
+                    dst_id=attr_node.node_id,
                 )
                 self.graph.edge_insert(edge_to_center)
         elif count == 0:
@@ -238,10 +238,12 @@ class TCGADCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_attr_node:
-                edge_to_attr_node = PsqlEdge(
+                edge_to_attr_node = self.graph.get_PsqlEdge(
                     label=LABEL_MAP[attr],
                     src_id=file_node.node_id,
-                    dst_id=attr_node.node_id
+                    dst_id=attr_node.node_id,
+                    src_label='file',
+                    dst_label=attr,
                 )
                 self.graph.edge_insert(edge_to_attr_node)
 
@@ -406,10 +408,9 @@ class TCGADCCArchiveSyncer(object):
             label="member_of",
         )
         if not maybe_edge_to_project:
-            edge_to_project = PsqlEdge(
+            edge_to_project = models.ArchiveMemberOfProject(
                 src_id=archive_node.node_id,
                 dst_id=project_node.node_id,
-                label="member_of"
             )
             self.graph.edge_insert(edge_to_project)
         return archive_node
@@ -427,6 +428,15 @@ class TCGADCCArchiveSyncer(object):
             raise ValueError("multiple files with the same name found in archive {}".format(archive_node))
         else:
             return file_nodes[0]
+
+    def get_file_size_from_http(self, filename):
+        base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
+        file_url = urljoin(base_url, filename)
+        # it's necessary to specify the accept-encoding here so that
+        # there server doesn't send us gzipped content and we get the
+        # wrong length
+        resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
+        return int(resp.headers["content-length"])
 
     def set_file_state(self, file_node, state):
         self.graph.node_update(file_node, properties={"state": state})
@@ -498,10 +508,9 @@ class TCGADCCArchiveSyncer(object):
             label="member_of",
         )
         if not maybe_edge_to_archive:
-            edge_to_archive = PsqlEdge(
+            edge_to_archive = models.FileMemberOfArchive(
                 src_id=file_node.node_id,
                 dst_id=self.archive_node.node_id,
-                label="member_of"
             )
             self.graph.edge_insert(edge_to_archive)
         edge_builder = TCGADCCEdgeBuilder(file_node, self.graph, self.log)
@@ -541,6 +550,7 @@ class TCGADCCArchiveSyncer(object):
                     resp = requests.get(resp.headers["location"], auth=self.dcc_auth,
                                         allow_redirects=False, **kwargs)
                 # ENTERING GROSS HACK ZONE
+                # (+1 for informative header)
                 #
                 # sometimes it just returns a 401 (no redirect) when you're
                 # trying to hit tcga-data but you want

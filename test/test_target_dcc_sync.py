@@ -1,5 +1,6 @@
 from base import ZugsTestBase
 
+from gdcdatamodel import models
 from zug.datamodel.target.dcc_sync import TARGETDCCProjectSyncer
 
 from httmock import urlmatch, HTTMock
@@ -38,7 +39,7 @@ class TARGETDCCSyncTest(ZugsTestBase):
                 file = self.graph.nodes()\
                                  .labels("file")\
                                  .sysan({"source": "target_dcc"}).one()
-                subtype = self.graph.nodes().labels("data_subtype").with_edge_from_node("member_of", file).one()
+                subtype = file.data_subtypes[0]
             self.assertEqual(file["file_name"], "target-wt-snp-indel.mafplus.txt")
             self.assertEqual(file.acl, ["phs000218", "phs000471"])
             self.assertEqual(file["md5sum"], '5a7146f821d11c8fa91a0f5865f7b6f8')
