@@ -93,8 +93,10 @@ def import_files(xml):
               for i in xrange(0, len(roots), chunksize)]
     assert sum([len(c) for c in chunks]) == len(roots)
     if args.processes == 1:
+        log.info('Processing serially')
         map(process, chunks)
     else:
+        log.info('Processing with pool size {}'.format(args.processes))
         res = Pool(args.processes).map_async(process, chunks)
         res.get(int(1e9))
     log.info('Complete.')

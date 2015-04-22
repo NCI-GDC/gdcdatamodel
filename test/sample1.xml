@@ -10,7 +10,7 @@
       <test:level3>
         <test:id>level3</test:id>
         <test:text3.1>3a</test:text3.1>
-        <test:text3.2>3b</test:text3.2>
+        <test:text3.2>3</test:text3.2>
         <test:text_none/>
       </test:level3>
     </test:level2>

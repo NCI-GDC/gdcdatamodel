@@ -2,6 +2,8 @@ import logging
 import os
 import unittest
 import yaml
+from gdcdatamodel import models
+from psqlgraph import Edge, Node
 
 from zug import datamodel
 
@@ -30,14 +32,6 @@ class TestXML2PsqlGraph(unittest.TestCase):
         with open(os.path.join(test_dir, 'sample1.xml')) as f:
             self.xml = f.read()
 
-    def tearDown(self):
-        with self.converter.graph.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
-        self.converter.graph.engine.dispose()
-
     def test_convert_sample1(self):
         # convert sample data
         self.converter.xml2psqlgraph(self.xml)
@@ -48,8 +42,8 @@ class TestXML2PsqlGraph(unittest.TestCase):
             first = self.converter.graph.node_lookup_one(node_id='level1')
             second = self.converter.graph.node_lookup_one(node_id='level2')
             third = self.converter.graph.node_lookup_one(node_id='level3')
-        self.assertEqual(first.properties['text1.1'], '1a')
-        self.assertEqual(second.properties['text2.2'], '2a')
-        self.assertEqual(second.properties['text2.3'], '2b')
-        self.assertEqual(third.properties['text3.1'], '3a')
-        self.assertEqual(third.properties['text3.2'], '3b')
+        self.assertEqual(first.properties['submitter_id'], '1a')
+        self.assertEqual(second.properties['sample_type_id'], '2a')
+        self.assertEqual(second.properties['sample_type'], '2b')
+        self.assertEqual(third.properties['submitter_id'], '3a')
+        self.assertEqual(third.properties['creation_datetime'], 3)

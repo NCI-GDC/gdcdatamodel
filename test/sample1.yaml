@@ -1,45 +1,41 @@
-first:
+participant:
   -
     root: .//test:level1
     id: ./test:id
-    edges:
-      below:
-        second: .//level2/test:id
-        third: .//level1/test:id
     properties:
-      text1.1:
+      submitter_id:
         path: ./test:text1.1
         type: str
 
-second:
+sample:
   -
     root: .//test:level2
     id: ./test:id
     edges:
-      above:
-        first: ancestor::test:level1/test:id
-      below:
-        third: ./test:level3/test:id
+      derived_from:
+        participant: ancestor::test:level1/test:id
     properties:
-      text2.2:
+      sample_type_id:
         path: ./test:text2.2
         type: str
-      text2.3:
+      sample_type:
         path: ./test:text2.3
         type: str
 
-third:
+portion:
   -
     root: .//test:level3
     id: ./test:id
     edges:
-      above:
-        first: ancestor::test:level1/test:id
-        second: ancestor::test:level2/test:id
+      derived_from:
+        sample: ancestor::test:level2/test:id
     properties:
-      text3.1:
+      submitter_id:
         path: ./test:text3.1
         type: str
-      text3.2:
+      creation_datetime:
         path: ./test:text3.2
-        type: str
+        type: long
+      portion_number:
+        path: ./test:text3.2
+        type: long
