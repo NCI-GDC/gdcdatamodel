@@ -32,6 +32,7 @@ class TCGADCCToBiospecimen(object):
         for edge in file_node.edges_out:
             if edge.label == 'data_from' and \
                     edge.system_annotations['source'] == 'tcga_magetab':
+                self.log.info("File already has edge from magetab: %s, bailing", edge)
                 return
         nodes = []
         # find aliquot or slide node that should be tied to this file
