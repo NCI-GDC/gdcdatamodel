@@ -30,8 +30,7 @@ class TCGADCCToBiospecimen(object):
         attrs = file_node.system_annotations
         self.log.debug(attrs)
         for edge in file_node.edges_out:
-            if edge.label == 'data_from' and \
-                    edge.system_annotations['source'] == 'tcga_magetab':
+            if edge.label == 'data_from' and edge.system_annotations['source'] == 'tcga_magetab':
                 self.log.info("File already has edge from magetab: %s, bailing", edge)
                 return
         nodes = []
@@ -46,12 +45,12 @@ class TCGADCCToBiospecimen(object):
                 node = self.graph.nodes().props(
                     {'submitter_id': attrs[possible_attr + '_barcode']}).first()
             if node:
-                self.log.info("find %s %s", node.label, node['submitter_id'])
+                self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
 
         # if no biospecimen is tied to this file, find participant that should
         # be tied to this file
-        if len(nodes) == 0:
+        if not nodes:
             node = None
             if '_participant_uuid' in attrs:
                 node = self.graph.nodes().ids(
@@ -69,8 +68,10 @@ class TCGADCCToBiospecimen(object):
                 src_id=file_node.node_id,
                 dst_id=node.node_id)
             if not maybe_edge_to_biospecimen:
-                edge_to_biospecimen = PsqlEdge(label='data_from',
-                                               src_id=file_node.node_id,
-                                               dst_id=node.node_id)
+                edge_to_biospecimen = PsqlEdge(
+                    label='data_from',
+                    src_id=file_node.node_id,
+                    dst_id=node.node_id
+                )
                 edge_to_biospecimen.system_annotations['source'] = 'filename'
                 self.graph.edge_insert(edge_to_biospecimen)
