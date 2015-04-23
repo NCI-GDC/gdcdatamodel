@@ -5,7 +5,7 @@ import os
 
 class TCGADCCToBiospecimen(object):
 
-    def __init__(self, file_node, pg_driver):
+    def __init__(self, file_node, graph):
         '''
         DCC to biospecimen edge builder class  which tie DCC file node to
         biospecimen nodes from file node's system annotation, if the file is
@@ -13,7 +13,7 @@ class TCGADCCToBiospecimen(object):
 
         '''
         self.file_node = file_node
-        self.pg_driver = pg_driver
+        self.graph = graph
         self.log = get_logger('tcga_dcc_to_biospecimen_'
                               + str(os.getpid()) + '_' + self.name)
 
@@ -23,7 +23,7 @@ class TCGADCCToBiospecimen(object):
 
     def build(self):
         '''build edges between the given file node and biospecimen nodes'''
-        with self.pg_driver.session_scope():
+        with self.graph.session_scope():
             self.tie_file_from_classification(self.file_node)
 
     def tie_file_from_classification(self, file_node):
@@ -40,10 +40,10 @@ class TCGADCCToBiospecimen(object):
                               '_slide']:
             node = None
             if possible_attr + '_uuid' in attrs:
-                node = self.pg_driver.nodes().ids(
+                node = self.graph.nodes().ids(
                     [attrs[possible_attr + '_uuid']]).first()
             elif possible_attr + '_barcode' in attrs:
-                node = self.pg_driver.nodes().props(
+                node = self.graph.nodes().props(
                     {'submitter_id': attrs[possible_attr + '_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
@@ -54,17 +54,17 @@ class TCGADCCToBiospecimen(object):
         if len(nodes) == 0:
             node = None
             if '_participant_uuid' in attrs:
-                node = self.pg_driver.nodes().ids(
+                node = self.graph.nodes().ids(
                     [attrs['_participant_uuid']]).first()
             elif '_participant_barcode' in attrs:
-                node = self.pg_driver.nodes().props(
+                node = self.graph.nodes().props(
                     {'submitter_id': attrs['_participant_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)
 
         for node in nodes:
-            maybe_edge_to_biospecimen = self.pg_driver.edge_lookup_one(
+            maybe_edge_to_biospecimen = self.graph.edge_lookup_one(
                 label='data_from',
                 src_id=file_node.node_id,
                 dst_id=node.node_id)
@@ -73,4 +73,4 @@ class TCGADCCToBiospecimen(object):
                                                src_id=file_node.node_id,
                                                dst_id=node.node_id)
                 edge_to_biospecimen.system_annotations['source'] = 'filename'
-                self.pg_driver.edge_insert(edge_to_biospecimen)
+                self.graph.edge_insert(edge_to_biospecimen)
