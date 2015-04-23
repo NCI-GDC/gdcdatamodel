@@ -23,10 +23,10 @@ class TCGADCCToBiospecimen(object):
 
     def build(self):
         '''build edges between the given file node and biospecimen nodes'''
-        with self.pg_driver.session_scope() as session:
-            self.tie_file_from_classification(self.file_node, session)
+        with self.pg_driver.session_scope():
+            self.tie_file_from_classification(self.file_node)
 
-    def tie_file_from_classification(self, file_node, session):
+    def tie_file_from_classification(self, file_node):
         attrs = file_node.system_annotations
         self.log.debug(attrs)
         for edge in file_node.edges_out:
@@ -73,5 +73,4 @@ class TCGADCCToBiospecimen(object):
                                                src_id=file_node.node_id,
                                                dst_id=node.node_id)
                 edge_to_biospecimen.system_annotations['source'] = 'filename'
-                self.pg_driver.edge_insert(
-                    edge_to_biospecimen, session=session)
+                self.pg_driver.edge_insert(edge_to_biospecimen)
