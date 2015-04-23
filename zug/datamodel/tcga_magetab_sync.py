@@ -369,7 +369,8 @@ class TCGAMAGETABSyncer(object):
             bio = self.graph.nodes().ids(uuid).one()
             self.log.info("found biospecemin by uuid: %s", bio)
             assert bio.label == label
-            assert bio["submitter_id"] == barcode
+            if barcode:
+                assert bio["submitter_id"] == barcode
         elif barcode:
             bio = self.graph.nodes()\
                             .labels(label)\
