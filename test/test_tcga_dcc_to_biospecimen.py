@@ -1,7 +1,7 @@
 from unittest import TestCase
 import tempfile,uuid
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
-from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer,get_submitter_id_and_rev
+from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
 import random,time
 from libcloud.storage.providers import get_driver
 from libcloud.storage.types import Provider
@@ -71,12 +71,12 @@ class TCGADCCToBiospecimenTest(TestCase):
             **kwargs
         )
 
-    def fake_biospecimen(self,node_id,props,label):
-        participant = Node(label=label,
-                properties=props,
-                node_id=node_id)
-        self.pg_driver.node_insert(participant)
-
+    def fake_biospecimen(self, node_id, props, label):
+        bio = Node(label=label,
+                   properties=props,
+                   node_id=node_id)
+        self.pg_driver.node_insert(bio)
+        return bio
 
     def create_archive(self, archive):
         submitter_id, rev = get_submitter_id_and_rev(archive)
@@ -107,7 +107,7 @@ class TCGADCCToBiospecimenTest(TestCase):
                 dst_id=archive.node_id
             )
             self.pg_driver.edge_insert(edge)
-
+        return file
 
 
     def specimen_edge_builder_for(self,node):
@@ -173,28 +173,31 @@ class TCGADCCToBiospecimenTest(TestCase):
 
     def load_file_with_aliquot(self):
         aliquot = self.fake_biospecimen("290f101e-ff47-4aeb-ad71-11cb6e6b9dde",
-                   {'submitter_id':"TCGA-OR-A5J5-01A-11R-A29W-13",
-                    u'amount': 20.0,
-                     u'concentration': 0.17,
-                         u'source_center': u'23'},'aliquot')
+                                        {'submitter_id':"TCGA-OR-A5J5-01A-11R-A29W-13",
+                                         u'amount': 20.0,
+                                         u'concentration': 0.17,
+                                         u'source_center': u'23'},'aliquot')
         archive = self.create_archive("bcgsc.ca_ACC.IlluminaHiSeq_miRNASeq.Level_3.1.1.0")
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13_mirna.bam")
-        self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
-                         archive=archive,
-                         sys_ann={'_aliquot_barcode': u'TCGA-OR-A5J5-01A-11R-A29W-13',
-                        'source':'tcga_dcc'})
+        file = self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt",
+                                archive=archive,
+                                sys_ann={'_aliquot_barcode': u'TCGA-OR-A5J5-01A-11R-A29W-13',
+                                         'source':'tcga_dcc'})
         self.create_file("TCGA-OR-A5J5-01A-11R-A29W-13.mirna.quantification.txt",
                          archive=archive,
                          sys_ann={'_aliquot_barcode': u'TCGA-OR-A5J5-01A-11R-A29W-13',
-                         'source':'tcga_dcc'})
+                                  'source':'tcga_dcc'})
+        return file, aliquot
 
     def test_tie_to_aliquot_with_magetab_first(self):
-        self.load_file_with_aliquot()
-        fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
-        syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.pg_driver, lazy=True)
-        syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
-        syncer.sync()
-
+        file, aliquot = self.load_file_with_aliquot()
+        self.pg_driver.edge_insert(PsqlEdge(
+            label="data_from",
+            src_id=file.node_id,
+            dst_id=aliquot.node_id,
+            system_annotations={"source": "tcga_magetab"}
+        ))
+        self.fake_archive_for("basic.sdrf.txt")
         with self.pg_driver.session_scope():
             file_node = self.pg_driver.node_lookup(
                 label='file',
@@ -205,33 +208,6 @@ class TCGADCCToBiospecimenTest(TestCase):
             barcode = file_node.system_annotations['_aliquot_barcode']
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
-            aliquot = self.pg_driver.nodes().labels('aliquot').\
-                with_edge_from_node('data_from',file_node).one()
-            self.assertEqual(aliquot['submitter_id'],barcode)
-            edge = self.pg_driver.edges().labels('data_from').\
-                src(file_node.node_id).\
-                dst(aliquot.node_id).one()
-            self.assertEqual(edge.system_annotations['source'],'tcga_magetab')
-
-    def test_tie_to_aliquot_with_edgebuilder_first(self):
-        self.load_file_with_aliquot()
-        with self.pg_driver.session_scope():
-            file_node = self.pg_driver.node_lookup(
-                label='file',
-                property_matches={'file_name':
-                    'TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt'}
-                ).one()
-
-            barcode = file_node.system_annotations['_aliquot_barcode']
-           #fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
-            #mageSyncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
-            builder = self.specimen_edge_builder_for(file_node)
-            builder.build()
-            fake_archive, fake_archive_node = self.fake_archive_for("basic.sdrf.txt")
-            syncer = TCGAMAGETABSyncer(fake_archive, pg_driver=self.pg_driver, lazy=True)
-            syncer.df = pd.read_table(os.path.join(FIXTURES_DIR, "basic.sdrf.txt"))
-            syncer.sync()
-
             aliquot = self.pg_driver.nodes().labels('aliquot').\
                 with_edge_from_node('data_from',file_node).one()
             self.assertEqual(aliquot['submitter_id'],barcode)
