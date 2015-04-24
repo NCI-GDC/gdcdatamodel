@@ -1,9 +1,43 @@
 from cdisutils.log import get_logger
-from psqlgraph import PsqlEdge
+from psqlgraph import PsqlEdge, Node
 import os
 
 
-class TCGADCCToBiospecimen(object):
+PROPS = [
+    "_aliquot_uuid",
+    "_aliquot_barcode",
+    "_tumor_aliquot_uuid",
+    "_tumor_aliquot_barcode",
+    "_control_aliquot_uuid",
+    "_control_aliquot_barcode",
+    "_slide_uuid",
+    "_slide_barcode",
+    "_participant_uuid",
+    "_participant_barcode",
+    "_participant_barcode",
+]
+
+
+def sync(graph):
+    """
+    Build edges based on filename in the given db
+    """
+    logger = get_logger("tcga_filename_metadata_sync")
+    first = PROPS[0]
+    rest = PROPS[1:]
+    with graph.session_scope():
+        q = graph.nodes().labels("file").not_sysan({"to_delete": True}).has_sysan(first)
+        for key in rest:
+            q = q.union(graph.nodes().labels("file").not_sysan({"to_delete": True}).has_sysan(key))
+        logger.log("Loading files to process")
+        files = q.all()
+        logger.log("About to tie to biospecemin from filename for %s files", len(files))
+        for file in files:
+            syncer = TCGAFilenameMetadataSyncer(file, graph)
+            syncer.sync()
+
+
+class TCGAFilenameMetadataSyncer(object):
 
     def __init__(self, file_node, graph):
         '''
@@ -14,16 +48,14 @@ class TCGADCCToBiospecimen(object):
         '''
         self.file_node = file_node
         self.graph = graph
-        self.log = get_logger('tcga_dcc_to_biospecimen_'
-                              + str(os.getpid()) + '_' + self.name)
-
-    @property
-    def name(self):
-        return self.file_node["file_name"]
+        self.log = get_logger('tcga_filename_metadata_syncer_'
+                              + str(os.getpid()) + '_' +
+                              self.file_node.node_id)
 
     def build(self):
         '''build edges between the given file node and biospecimen nodes'''
         with self.graph.session_scope():
+            self.log.info("Building edges")
             self.tie_file_from_classification(self.file_node)
 
     def tie_file_from_classification(self, file_node):
@@ -39,11 +71,9 @@ class TCGADCCToBiospecimen(object):
                               '_slide']:
             node = None
             if possible_attr + '_uuid' in attrs:
-                node = self.graph.nodes().ids(
-                    [attrs[possible_attr + '_uuid']]).first()
+                node = self.graph.nodes().ids([attrs[possible_attr + '_uuid']]).one()
             elif possible_attr + '_barcode' in attrs:
-                node = self.graph.nodes().props(
-                    {'submitter_id': attrs[possible_attr + '_barcode']}).first()
+                node = self.graph.nodes().props({'submitter_id': attrs[possible_attr + '_barcode']}).one()
             if node:
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
@@ -53,13 +83,11 @@ class TCGADCCToBiospecimen(object):
         if not nodes:
             node = None
             if '_participant_uuid' in attrs:
-                node = self.graph.nodes().ids(
-                    [attrs['_participant_uuid']]).first()
+                node = self.graph.nodes().ids([attrs['_participant_uuid']]).one()
             elif '_participant_barcode' in attrs:
-                node = self.graph.nodes().props(
-                    {'submitter_id': attrs['_participant_barcode']}).first()
+                node = self.graph.nodes().props({'submitter_id': attrs['_participant_barcode']}).one()
             if node:
-                self.log.info("find %s %s", node.label, node['submitter_id'])
+                self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
 
         for node in nodes:
@@ -74,4 +102,5 @@ class TCGADCCToBiospecimen(object):
                     dst_id=node.node_id
                 )
                 edge_to_biospecimen.system_annotations['source'] = 'filename'
+                self.log.info("inserting edge %s", edge_to_biospecimen)
                 self.graph.edge_insert(edge_to_biospecimen)
