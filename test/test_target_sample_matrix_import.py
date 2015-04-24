@@ -1,6 +1,12 @@
 import unittest
 import os
-from psqlgraph import PsqlGraphDriver
+from psqlgraph import PsqlGraphDriver, Node, Edge
+from gdcdatamodel.models import (
+    Participant,
+    Sample,
+    Aliquot,
+    AliquotDerivedFromSample,
+)
 from zug.datamodel.target.sample_matrices import TARGETSampleMatrixSyncer
 from zug.datamodel.prelude import create_prelude_nodes
 
@@ -20,19 +26,21 @@ class TestTARGETSampleMatrixSync(unittest.TestCase):
 
     def tearDown(self):
         with self.driver.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            for table in Edge().get_subclass_table_names():
+                if table != Edge.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.driver.engine.dispose()
 
     def trace_participant(self, aliquot_id):
-        aliquot = self.driver.nodes().labels("aliquot")\
-                                     .props({"submitter_id": aliquot_id}).one()
-        sample = self.driver.nodes().labels("sample")\
-                                    .with_edge_from_node("derived_from", aliquot).one()
-        return self.driver.nodes().labels("participant")\
-                                  .with_edge_from_node("derived_from", sample).one()
+        return self.driver.nodes(Participant)\
+                          .path('samples.aliquots')\
+                          .props({"submitter_id": aliquot_id})\
+                          .one()
 
     def test_sync(self):
         syncer = self.syncer_for("AML")

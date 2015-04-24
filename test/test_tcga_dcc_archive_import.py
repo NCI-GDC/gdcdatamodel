@@ -4,6 +4,7 @@ from base import ZugsTestBase
 from mock import patch
 from httmock import urlmatch, HTTMock
 
+from gdcdatamodel import models
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.latest_urls import parse_archive
 
@@ -55,13 +56,14 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         with patch("zug.datamodel.tcga_dcc_sync.LatestURLParser", lambda: [archive]), HTTMock(dcc_archives_fixture):
             syncer = self.get_syncer()
             syncer.sync()
+
         with self.graph.session_scope():
             file = self.graph.node_lookup(
                 label="file",
                 property_matches={"file_name":"TCGA-BT-A0S7-01A-11D-A10R-02_AC1927ACXX---TCGA-BT-A0S7-10A-01D-A10R-02_AC1927ACXX---Segment.tsv"}
                 ).one()
-            center = self.graph.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
-            self.assertEqual(center['code'],'02')
+            center = file.centers[0]
+            self.assertEqual(center['code'], '02')
             # make sure file and archive are in storage
         self.storage_client.get_object("test_tcga_dcc_public", "/".join([archive["archive_name"], file["file_name"]]))
         self.storage_client.get_object("test_tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
@@ -87,11 +89,16 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         assert file["state"] == "live"
         # make sure archive gets tied to project
         with self.graph.session_scope():
-            self.graph.node_lookup(label="project", property_matches={"code": "PAAD"})\
-                      .with_edge_from_node("member_of", archive_node).one()
+            self.graph.node_lookup(
+                label="project", property_matches={"code": "PAAD"}
+            ).with_edge_from_node(
+                models.ArchiveMemberOfProject,
+                archive_node
+            ).one()
+
             # make sure the files get tied to classification stuff
-            self.graph.node_lookup(label="data_subtype").with_edge_from_node("member_of", file).one()
-            center = self.graph.node_lookup(label="center").with_edge_from_node("submitted_by",file).one()
+            self.graph.node_lookup(label="data_subtype").with_edge_from_node(models.FileMemberOfDataSubtype, file).one()
+            center = self.graph.node_lookup(label="center").with_edge_from_node(models.FileSubmittedByCenter,file).one()
             self.assertEqual(center['code'],'20')
 
         # make sure file and archive are in storage

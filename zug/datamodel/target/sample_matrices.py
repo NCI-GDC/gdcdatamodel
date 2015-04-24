@@ -261,7 +261,8 @@ class TARGETSampleMatrixSyncer(object):
         old_nodes = self.graph.nodes()\
                               .labels(["aliquot", "participant", "sample"])\
                               .sysan({"group_id": self.project})\
-                              .filter(PsqlNode.system_annotations["version"].cast(Integer) < self.version).all()
+                              .filter(Node._sysan["version"].cast(Integer) < self.version)\
+                              .all()
         self.log.info("Found %s old nodes to remove.", len(old_nodes))
         for node in old_nodes:
             self.log.info("Deleting node %s", node)

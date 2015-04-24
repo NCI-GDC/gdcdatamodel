@@ -4,7 +4,7 @@ import tarfile
 import re
 import hashlib
 import random
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from functools import partial
 import copy
 import os
@@ -238,7 +238,7 @@ class TCGADCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_attr_node:
-                edge_to_attr_node = self.graph.get_PsqlEdge(
+                edge_to_attr_node = self.pg_driver.get_PsqlEdge(
                     label=LABEL_MAP[attr],
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id,
@@ -276,6 +276,7 @@ class TCGADCCEdgeBuilder(object):
                 self.log.warning("not tieing %s (node %s) to a %s",
                                  file_node["file_name"], file_node, attribute)
         return file_node
+
 
 class TCGADCCArchiveSyncer(object):
 
@@ -362,9 +363,10 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive["revision"],
                           submitter_id)
-            for file in self.graph.node_lookup(label="file")\
-                                  .with_edge_to_node("member_of", old_archive)\
-                                  .all():
+            for file in self.pg_driver.node_lookup(label="file", session=session)\
+                                      .with_edge_to_node(
+                                          models.FileMemberOfArchive,
+                                          old_archive).all():
                 self.delete_later(file)
             self.delete_later(old_archive)
 
@@ -415,12 +417,11 @@ class TCGADCCArchiveSyncer(object):
             self.graph.edge_insert(edge_to_project)
         return archive_node
 
-    def lookup_file_in_pg(self, archive_node, filename):
-        q = self.graph.node_lookup(
-            label="file",
-            property_matches={
-                "file_name": filename
-            }).with_edge_to_node("member_of", archive_node)
+    def lookup_file_in_pg(self, archive_node, filename, session):
+        q = self.pg_driver.node_lookup(label="file",
+                                       property_matches={"file_name": filename},
+                                       session=session)\
+                          .with_edge_to_node(models.FileMemberOfArchive, archive_node)
         file_nodes = q.all()
         if not file_nodes:
             return None

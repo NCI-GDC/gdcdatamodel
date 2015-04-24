@@ -5,15 +5,29 @@ from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
 import random
 import time
+from gdcdatamodel import models as md
 from libcloud.storage.providers import get_driver
 from libcloud.storage.types import Provider
 from multiprocessing import Process
+from psqlgraph import PsqlGraphDriver, Node, Edge, PolyNode
 from signpost import Signpost
 from psqlgraph import PsqlGraphDriver, Node, PsqlNode, PsqlEdge
 from signpostclient import SignpostClient
-from zug.datamodel.prelude import create_prelude_nodes
+from unittest import TestCase
 from zug.datamodel.tcga_filename_metadata_sync import TCGAFilenameMetadataSyncer
 import os
+
+from zug.datamodel.prelude import create_prelude_nodes
+from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
+from zug.datamodel.tcga_dcc_to_biospecimen import TCGADCCToBiospecimen
+from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer
+from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
+import os
+import pandas as pd
+import random
+import tempfile
+import time
+import uuid
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -21,8 +35,8 @@ FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "magetabs")
 
 
 def run_signpost(port):
-    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(host="localhost",
-                                                                  port=port)
+    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(
+        host="localhost", port=port)
 
 
 class TCGAFilenameMetadataSyncerTest(TestCase):
@@ -46,16 +60,26 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
         self.storage_client = Local(tempfile.mkdtemp())
         self.storage_client.create_container("tcga_dcc_public")
         self.storage_client.create_container("tcga_dcc_protected")
+<<<<<<< HEAD
         self.signpost_client = SignpostClient("http://localhost:{}".format(self.port),
                                               version="v0")
+=======
+        self.signpost_client = SignpostClient("http://localhost:{}".format(
+            self.port), version="v0")
+        self.parser = LatestURLParser()
+>>>>>>> test_target_sample_matrix passing
         create_prelude_nodes(self.pg_driver)
 
     def tearDown(self):
         with self.pg_driver.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            for table in Edge().get_subclass_table_names():
+                if table != Edge.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.pg_driver.engine.dispose()
         for container in self.storage_client.list_containers():
             for obj in container.list_objects():
@@ -72,10 +96,12 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
         )
 
     def fake_biospecimen(self, node_id, props, label):
-        bio = Node(label=label,
-                   properties=props,
-                   node_id=node_id)
+        bio = PolyNode(label=label,
+                       properties=props,
+                       node_id=node_id)
         self.pg_driver.node_insert(bio)
+        with self.pg_driver.session_scope() as s:
+            s.merge(bio)
         return bio
 
     def create_archive(self, archive):
@@ -95,33 +121,30 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
                 "file_name": file,
                 "md5sum": "bogus",
                 "file_size": 0,
-                "file_state": "live"
+                "state": "live"
             },
             system_annotations=sys_ann
         )
         if archive:
-            edge = PsqlEdge(
-                label="member_of",
+            edge = md.FileMemberOfArchive(
                 src_id=file.node_id,
                 dst_id=archive.node_id
             )
-            self.pg_driver.edge_insert(edge)
+            with self.pg_driver.session_scope() as s:
+                s.merge(edge)
         return file
-
-    def specimen_edge_builder_for(self, node):
-        return TCGAFilenameMetadataSyncer(node, self.pg_driver)
 
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
-        node = PsqlNode(
+        node = md.Archive(
             node_id=str(uuid.uuid4()),
-            label="archive",
             properties={
                 "submitter_id": fixture + "fake_test_archive.1",
                 "revision": rev
             }
         )
-        self.pg_driver.node_insert(node)
+        with self.pg_driver.session_scope() as s:
+            s.merge(node)
         return {
             "archive_name": fixture + "fake_test_archive.1." + str(rev) + ".0",
             "disease_code": "FAKE",
@@ -148,8 +171,10 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
             barcode = file_node.system_annotations['_participant_barcode']
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
-            participant = self.pg_driver.nodes().labels('participant').\
-                with_edge_from_node('data_from', file_node).one()
+            participant = self.pg_driver.nodes(md.Participant)\
+                                        .with_edge_from_node(
+                                            md.FileDataFromParticipant,
+                                            file_node).one()
             self.assertEqual(participant['submitter_id'], barcode)
             edge = self.pg_driver.edges().labels('data_from').\
                 src(file_node.node_id).\
@@ -159,7 +184,7 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
     def test_file_without_sysan(self):
         self.create_file(
             "nationwidechildrens.org_biospecimen_analyte_laml.txt")
-       # make sure archive gets tied to project
+        # make sure archive gets tied to project
         with self.pg_driver.session_scope():
             # make sure the files get ties to center
 
@@ -192,7 +217,7 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
 
     def test_tie_to_aliquot_with_magetab_first(self):
         file, aliquot = self.load_file_with_aliquot()
-        self.pg_driver.edge_insert(PsqlEdge(
+        self.pg_driver.edge_insert(md.FileDataFromAliquot(
             label="data_from",
             src_id=file.node_id,
             dst_id=aliquot.node_id,

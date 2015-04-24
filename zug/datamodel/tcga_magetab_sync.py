@@ -1,8 +1,3 @@
-import pandas as pd
-from lxml import html
-import requests
-import os
-import re
 import time
 from collections import defaultdict
 
@@ -13,8 +8,12 @@ from sqlalchemy import func
 from sqlalchemy.types import Integer
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound
+import requests
 
-from cdisutils.log import get_logger
+from gdcdatamodel.models import (
+    ArchiveRelatedToFile,
+    FileMemberOfArchive,
+)
 
 
 def sdrf_from_folder(url):
@@ -358,7 +357,8 @@ class TCGAMAGETABSyncer(object):
                 file_node = self.graph.nodes()\
                                       .labels("file")\
                                       .props({"file_name": file_name})\
-                                      .with_edge_to_node("member_of", archive_node)\
+                                      .with_edge_to_node(
+                                          FileMemberOfArchive, archive_node)\
                                       .one()
             # TODO might need to explicitly free the archive node here
             # to avoid connection leaks
@@ -390,7 +390,7 @@ class TCGAMAGETABSyncer(object):
                 self.log.warning("cghub file %s should be tied to %s %s but is not",
                                  file, label, (uuid, barcode))
                 return
-            edge = PsqlEdge(
+            edge = self.pg_driver.get_PsqlEdge(
                 label="data_from",
                 src_id=file.node_id,
                 dst_id=bio.node_id,
@@ -399,9 +399,12 @@ class TCGAMAGETABSyncer(object):
                     "revision": self.revision,
                     "source": "tcga_magetab",
                 },
+                src_label='file',
+                dst_label=bio.label,
             )
             self.log.info("tieing file to biospecemin: %s", edge)
-            self.graph.edge_insert(edge)
+            with self.graph.session_scope() as s:
+                s.merge(edge)
 
     def delete_old_edges(self):
         """We need to first find all the edges produced by previous runs of
@@ -422,7 +425,7 @@ class TCGAMAGETABSyncer(object):
                                           .src(self.archive.node_id)\
                                           .dst(file.node_id).scalar()
         if not maybe_edge_to_archive:
-            edge_to_archive = PsqlEdge(
+            edge_to_archive = ArchiveRelatedToFile(
                 label="related_to",
                 src_id=self.archive.node_id,
                 dst_id=file.node_id,
@@ -434,7 +437,8 @@ class TCGAMAGETABSyncer(object):
             )
             self.log.info("relating file to magetab archive %s",
                           edge_to_archive)
-            self.graph.edge_insert(edge_to_archive)
+            with self.edge.session_scope() as s:
+                s.merge(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
         self.delete_old_edges()
