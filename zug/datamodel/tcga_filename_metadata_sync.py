@@ -22,6 +22,8 @@ def sync(graph):
     """
     Build edges based on filename in the given db
     """
+    # TODO maybe optimize this so it doesn't pull files that already
+    # have edges from magetabs
     logger = get_logger("tcga_filename_metadata_sync")
     first = PROPS[0]
     rest = PROPS[1:]
@@ -71,9 +73,9 @@ class TCGAFilenameMetadataSyncer(object):
                               '_slide']:
             node = None
             if possible_attr + '_uuid' in attrs:
-                node = self.graph.nodes().ids([attrs[possible_attr + '_uuid']]).one()
+                node = self.graph.nodes().ids([attrs[possible_attr + '_uuid']]).scalar()
             elif possible_attr + '_barcode' in attrs:
-                node = self.graph.nodes().props({'submitter_id': attrs[possible_attr + '_barcode']}).one()
+                node = self.graph.nodes().props({'submitter_id': attrs[possible_attr + '_barcode']}).scalar()
             if node:
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
@@ -83,9 +85,9 @@ class TCGAFilenameMetadataSyncer(object):
         if not nodes:
             node = None
             if '_participant_uuid' in attrs:
-                node = self.graph.nodes().ids([attrs['_participant_uuid']]).one()
+                node = self.graph.nodes().ids([attrs['_participant_uuid']]).scalar()
             elif '_participant_barcode' in attrs:
-                node = self.graph.nodes().props({'submitter_id': attrs['_participant_barcode']}).one()
+                node = self.graph.nodes().props({'submitter_id': attrs['_participant_barcode']}).scalar()
             if node:
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
