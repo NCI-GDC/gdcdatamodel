@@ -34,7 +34,7 @@ def sync(graph):
         logger.info("About to tie to biospecemin from filename for %s files", len(files))
         for file in files:
             syncer = TCGAFilenameMetadataSyncer(file, graph)
-            syncer.sync()
+            syncer.build()
 
 
 class TCGAFilenameMetadataSyncer(object):
