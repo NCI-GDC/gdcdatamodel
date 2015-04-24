@@ -13,9 +13,8 @@ from psqlgraph import PsqlGraphDriver, Node, PsqlNode, PsqlEdge
 from signpostclient import SignpostClient
 from zug.datamodel.prelude import create_prelude_nodes
 from zug.datamodel.latest_urls import LatestURLParser
-from zug.datamodel.tcga_dcc_to_biospecimen import TCGADCCToBiospecimen
+from zug.datamodel.tcga_filename_metadata_sync import TCGAFilenameMetadataSyncer
 import os
-import pandas as pd
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +26,7 @@ def run_signpost(port):
                                                                   port=port)
 
 
-class TCGADCCToBiospecimenTest(TestCase):
+class TCGAFilenameMetadataSyncerTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -112,7 +111,7 @@ class TCGADCCToBiospecimenTest(TestCase):
         return file
 
     def specimen_edge_builder_for(self, node):
-        return TCGADCCToBiospecimen(node, self.pg_driver)
+        return TCGAFilenameMetadataSyncer(node, self.pg_driver)
 
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
