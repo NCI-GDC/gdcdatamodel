@@ -29,9 +29,9 @@ def sync(graph):
         q = graph.nodes().labels("file").not_sysan({"to_delete": True}).has_sysan(first)
         for key in rest:
             q = q.union(graph.nodes().labels("file").not_sysan({"to_delete": True}).has_sysan(key))
-        logger.log("Loading files to process")
+        logger.info("Loading files to process")
         files = q.all()
-        logger.log("About to tie to biospecemin from filename for %s files", len(files))
+        logger.info("About to tie to biospecemin from filename for %s files", len(files))
         for file in files:
             syncer = TCGAFilenameMetadataSyncer(file, graph)
             syncer.sync()
