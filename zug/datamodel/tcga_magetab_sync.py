@@ -1,14 +1,17 @@
 import time
+import pandas as pd
 from collections import defaultdict
 
+import os
+from lxml import html
+import re
 from psqlgraph import PsqlGraphDriver, PsqlEdge
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from gdcdatamodel import node_avsc_object, edge_avsc_object
 from sqlalchemy import func
 from sqlalchemy.types import Integer
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound
 import requests
+from cdisutils.log import get_logger
 
 from gdcdatamodel.models import (
     ArchiveRelatedToFile,
@@ -227,8 +230,6 @@ class TCGAMAGETABSyncer(object):
             os.environ["PG_PASS"],
             os.environ["PG_NAME"],
         )
-        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
-        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.archive_id = archive_id
         # this is to keep track of the number of edges we got out of
         # this magetab so we can record it on system_annotations and

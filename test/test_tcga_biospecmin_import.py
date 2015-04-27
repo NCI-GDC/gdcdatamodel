@@ -3,7 +3,7 @@ import unittest
 import os
 from zug.datamodel import xml2psqlgraph, extract_tar, bcr_xml_mapping
 from zug.datamodel.prelude import create_prelude_nodes
-from psqlgraph import Node
+from psqlgraph import Node, Edge
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -52,6 +52,9 @@ class TestTCGABiospeceminImport(unittest.TestCase):
         with self.converter.graph.engine.begin() as conn:
             for table in Node().get_subclass_table_names():
                 if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            for table in Edge().get_subclass_table_names():
+                if table != Edge.__tablename__:
                     conn.execute('delete from {}'.format(table))
             conn.execute('delete from _voided_nodes')
             conn.execute('delete from _voided_edges')

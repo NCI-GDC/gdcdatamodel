@@ -4,7 +4,7 @@ import time
 import random
 from multiprocessing import Process
 
-from psqlgraph import PsqlGraphDriver, PsqlNode
+from psqlgraph import PsqlGraphDriver, PolyNode, Node, Edge
 
 from signpost import Signpost
 from signpostclient import SignpostClient
@@ -42,15 +42,18 @@ class DataLocatorTest(unittest.TestCase):
         self.storage_client = Local(tempfile.mkdtemp())
         self.storage_client.create_container("test")
         self.storage_client.connection.host = "local"
-        self.signpost_client = SignpostClient("http://localhost:{}".format(self.port),
-                                              version="v0")
+        self.signpost_client = SignpostClient("http://localhost:{}".format(
+            self.port), version="v0")
 
     def tearDown(self):
         with self.graph.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+                if table != Edge.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         self.graph.engine.dispose()
         for container in self.storage_client.list_containers():
             for obj in container.list_objects():
@@ -58,12 +61,17 @@ class DataLocatorTest(unittest.TestCase):
 
     def test_data_locate(self):
         doc = self.signpost_client.create()
-        self.graph.node_insert(node=PsqlNode(node_id=doc.did,
-                                             label='file',
-                                             properties={"file_name": "baz.txt",
-                                                         "state": "submitted",
-                                                         "file_size": 4},
-                                             system_annotations={"analysis_id": "abc123"}))
+        self.graph.node_insert(node=PolyNode(
+            node_id=doc.did,
+            label='file',
+            properties={
+                "file_name": "baz.txt",
+                "state": "submitted",
+                "md5sum": "bogus",
+                "file_size": 4,
+            }, system_annotations={
+                "analysis_id": "abc123"
+            }))
         cont = self.storage_client.get_container("test")
         self.storage_client.upload_object_via_stream("data", cont, "abc123/baz.txt")
         self.locator = DataLocator(storage_client=self.storage_client,

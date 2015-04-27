@@ -3,12 +3,8 @@ import unittest
 import os
 from zug.datamodel import xml2psqlgraph, bcr_xml_mapping, prelude
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
-from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
-from gdcdatamodel import (
-    node_avsc_object, edge_avsc_object,
-    get_participant_es_mapping,
-)
-from psqlgraph import PsqlGraphDriver, Edge
+from gdcdatamodel import get_participant_es_mapping
+from psqlgraph import PsqlGraphDriver, Edge, Node
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -27,16 +23,12 @@ converter = xml2psqlgraph.xml2psqlgraph(
     user=user,
     password=password,
     database=database,
-    node_validator=AvroNodeValidator(node_avsc_object),
-    edge_validator=AvroEdgeValidator(edge_avsc_object),
 )
 g = PsqlGraphDriver(
     host=host,
     user=user,
     password=password,
     database=database,
-    node_validator=AvroNodeValidator(node_avsc_object),
-    edge_validator=AvroEdgeValidator(edge_avsc_object),
 )
 
 sample_props = {'sample_type_id',
@@ -156,7 +148,9 @@ class TestPsqlgraph2JSON(unittest.TestCase):
             ids = {'src_id': 'file1',
                    'dst_id': '84df0f82-69c4-4cd3-a4bd-f40d2d6ef916'}
             if not g.edge_lookup(**ids).count():
-                g.edge_insert(Edge(label='data_from', **ids))
+                g.edge_insert(g.get_PsqlEdge(
+                    src_label='file', label='data_from', dst_label='aliquot',
+                    **ids))
 
     def setUp(self):
         self.add_req_nodes()
@@ -174,10 +168,14 @@ class TestPsqlgraph2JSON(unittest.TestCase):
 
     def tearDown(self):
         with g.engine.begin() as conn:
-            conn.execute('delete from edges')
-            conn.execute('delete from nodes')
-            conn.execute('delete from voided_edges')
-            conn.execute('delete from voided_nodes')
+            for table in Node().get_subclass_table_names():
+                if table != Node.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            for table in Edge().get_subclass_table_names():
+                if table != Edge.__tablename__:
+                    conn.execute('delete from {}'.format(table))
+            conn.execute('delete from _voided_nodes')
+            conn.execute('delete from _voided_edges')
         g.engine.dispose()
 
     def test_participant_project(self):

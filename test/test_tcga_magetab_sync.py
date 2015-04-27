@@ -3,9 +3,13 @@ from mock import patch
 
 import os
 import uuid
-from psqlgraph import PsqlEdge, PsqlNode
 from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer, get_submitter_id_and_rev
+from psqlgraph import PsqlGraphDriver, Node, Edge
 import pandas as pd
+from gdcdatamodel.models import (
+    Archive,
+    FileMemberOfArchive,
+)
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +31,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
 
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
-        node = PsqlNode(
+        node = Archive(
             node_id=str(uuid.uuid4()),
             label="archive",
             properties={
@@ -85,14 +89,14 @@ class TestTCGAMAGETASync(ZugsTestBase):
                 "file_name": file,
                 "md5sum": "bogus",
                 "file_size": 0,
-                "file_state": "live"
+                "state": "live"
             },
             system_annotations={
                 "source": "cghub" if not archive else "tcga_dcc"
             }
         )
         if archive:
-            edge = PsqlEdge(
+            edge = FileMemberOfArchive(
                 label="member_of",
                 src_id=file.node_id,
                 dst_id=archive.node_id

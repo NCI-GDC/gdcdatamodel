@@ -867,9 +867,7 @@ class PsqlGraph2JSON(object):
         """
         with self.g.session_scope():
             pbar = self.pbar('Caching Database: ', self.g.edges().count())
-            for e in self.g.edges().options(joinedload(Edge.src))\
-                                   .options(joinedload(Edge.dst))\
-                                   .yield_per(int(1e5)):
+            for e in self.g.edges().yield_per(int(1e5)):
                 pbar.update(pbar.currval+1)
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)

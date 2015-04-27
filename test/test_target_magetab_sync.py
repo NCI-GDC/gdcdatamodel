@@ -3,8 +3,10 @@ from mock import patch
 from httmock import HTTMock, urlmatch
 
 import os
-from uuid import uuid4
-
+from gdcdatamodel.models import (
+    FileDataFromAliquot,
+    FileRelatedToFile,
+)
 from zug.datamodel.target.magetab_sync import TARGETMAGETABSyncer
 
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "target_magetabs")
@@ -43,13 +45,12 @@ class TARGETMAGETABSyncTest(ZugsTestBase):
                 "file_name": name,
                 "md5sum": "bogus",
                 "file_size": 1,
-                "file_state": "live"
+                "state": "live"
             },
             system_annotations={
                 "source": "target_dcc"
             }
         )
-
 
     @patch("zug.datamodel.target.magetab_sync.tree_walk", fake_tree_walk)
     def test_basic_magetab_sync(self):
@@ -63,9 +64,13 @@ class TARGETMAGETABSyncTest(ZugsTestBase):
         with self.graph.session_scope():
             self.graph.nodes()\
                       .labels("file")\
-                      .with_edge_to_node("data_from", aliquot)\
-                      .with_edge_from_node("related_to", sdrf)\
-                      .props({"file_name": file_name})\
+                      .with_edge_to_node(FileDataFromAliquot, aliquot)\
+                      .with_edge_from_node(FileRelatedToFile, sdrf)\
+                      .props(file_name=file_name)\
                       .one()
-            edges = self.graph.edges().sysan({"source": "target_magetab", "sdrf_name": "test_magetab", "sdrf_version": 727171}).all()
+            edges = self.graph.edges().sysan({
+                "source": "target_magetab",
+                "sdrf_name": "test_magetab",
+                "sdrf_version": 727171
+            }).all()
             self.assertEqual(len(edges), 2)
