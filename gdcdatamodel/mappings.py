@@ -12,6 +12,7 @@ from psqlgraph import Node, Edge
 
 STRING = {'index': 'not_analyzed', 'type': 'string'}
 LONG = {'type': 'long'}
+INTEGER = {'type': 'int'}
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
 
 MULTIFIELDS = {
