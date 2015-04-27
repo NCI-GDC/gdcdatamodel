@@ -1,17 +1,13 @@
-from node import *
-from gdcdatamodel.models import validate
+from psqlgraph import Node, pg_property
 
 
 class DataType(Node):
 
     __label__ = 'data_type'
-    __nonnull_properties__ = ['name']
+    __nonnull_properties__ = [
+        'name',
+    ]
 
-    @hybrid_property
-    def name(self):
-        return self._get_property('name')
-
-    @name.setter
-    @validate(str)
+    @pg_property(str)
     def name(self, value):
         self._set_property('name', value)

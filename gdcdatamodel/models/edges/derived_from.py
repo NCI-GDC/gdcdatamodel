@@ -1,4 +1,4 @@
-from edge import Edge
+from psqlgraph import Edge
 
 
 class DerivedFrom(object):

@@ -1,4 +1,3 @@
-from node import Node
 from participant import Participant
 from aliquot import Aliquot
 from program import Program

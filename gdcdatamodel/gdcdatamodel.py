@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from mappings import *
 from avro.schema import make_avsc_object, Names
 
 logging.debug('loading gdcdatamodel avro schema...')

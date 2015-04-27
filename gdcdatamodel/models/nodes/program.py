@@ -1,13 +1,8 @@
-from node import *
-from gdcdatamodel.models import validate
+from psqlgraph import Node, pg_property
 
 
 class Program(Node):
-    @hybrid_property
-    def name(self):
-        return self._get_property('name')
 
-    @name.setter
-    @validate(str)
+    @pg_property(str)
     def name(self, value):
         self._set_property('name', value)

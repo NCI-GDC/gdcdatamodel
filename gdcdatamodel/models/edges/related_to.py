@@ -1,4 +1,4 @@
-from edge import Edge
+from psqlgraph import Edge
 
 
 class RelatedTo(object):
@@ -8,8 +8,8 @@ class RelatedTo(object):
 class FileRelatedToFile(Edge, RelatedTo):
     __src_class__ = 'File'
     __dst_class__ = 'File'
-    __src_dst_assoc__ = 'parent_files'
-    __dst_src_assoc__ = 'related_files'
+    __src_dst_assoc__ = 'related_files'
+    __dst_src_assoc__ = 'parent_files'
 
 
 class ArchiveRelatedToFile(Edge, RelatedTo):
