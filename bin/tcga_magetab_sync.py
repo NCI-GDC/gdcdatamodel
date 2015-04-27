@@ -10,8 +10,6 @@ def main():
     args = parser.parse_args()
     syncer = TCGAMAGETABSyncer(archive_id=args.archive_id)
     syncer.sync()
-    # TODO attempt to biospecemin sync if we dont have an MAGETABs to
-    # do
 
 if __name__ == "__main__":
     main()
