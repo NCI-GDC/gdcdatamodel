@@ -223,9 +223,10 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
         with self.pg_driver.session_scope():
             file_node = self.pg_driver.node_lookup(
                 label='file',
-                property_matches={'file_name':
-                                  'TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt'}
-            ).one()
+                property_matches={
+                    'file_name':
+                    'TCGA-OR-A5J5-01A-11R-A29W-13.isoform.quantification.txt'
+                }).one()
 
             barcode = file_node.system_annotations['_aliquot_barcode']
             builder = self.specimen_edge_builder_for(file_node)

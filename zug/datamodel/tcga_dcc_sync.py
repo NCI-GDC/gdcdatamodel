@@ -165,13 +165,13 @@ class TCGADCCEdgeBuilder(object):
         return self.archive["archive_name"]
 
     def _get_archive(self):
-        with self.pg_driver.session_scope():
-            return self.pg_driver.nodes().labels('archive')\
-                                         .with_edge_from_node(
-                                             models.FileMemberOfArchive,
-                                             self.file_node)\
-                                         .first()\
-                                         .system_annotations
+        with self.graph.session_scope():
+            return self.graph.nodes().labels('archive')\
+                                     .with_edge_from_node(
+                                         models.FileMemberOfArchive,
+                                         self.file_node)\
+                                     .first()\
+                                     .system_annotations
 
     def build(self):
         with self.graph.session_scope():
@@ -203,7 +203,8 @@ class TCGADCCEdgeBuilder(object):
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id,
                 )
-                self.graph.edge_insert(edge_to_center)
+                with self.graph.session_scope() as s:
+                    s.merge(edge_to_center)
         elif count == 0:
             self.log.warning("center with type %s and namespace %s not found",
                              self.archive['center_type'],
@@ -238,14 +239,15 @@ class TCGADCCEdgeBuilder(object):
                 dst_id=attr_node.node_id
             )
             if not maybe_edge_to_attr_node:
-                edge_to_attr_node = self.pg_driver.get_PsqlEdge(
+                edge_to_attr_node = self.graph.get_PsqlEdge(
                     label=LABEL_MAP[attr],
                     src_id=file_node.node_id,
                     dst_id=attr_node.node_id,
                     src_label='file',
                     dst_label=attr,
                 )
-                self.graph.edge_insert(edge_to_attr_node)
+                with self.graph.session_scope() as s:
+                    s.merge(edge_to_attr_node)
 
     def classify(self, file_node):
         classification = classify(self.archive, file_node["file_name"])
@@ -361,10 +363,10 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive["revision"],
                           submitter_id)
-            for file in self.pg_driver.node_lookup(label="file", session=session)\
-                                      .with_edge_to_node(
-                                          models.FileMemberOfArchive,
-                                          old_archive).all():
+            for file in self.graph.node_lookup(label="file")\
+                                  .with_edge_to_node(
+                                      models.FileMemberOfArchive,
+                                      old_archive).all():
                 self.delete_later(file)
             self.delete_later(old_archive)
 
@@ -412,14 +414,16 @@ class TCGADCCArchiveSyncer(object):
                 src_id=archive_node.node_id,
                 dst_id=project_node.node_id,
             )
-            self.graph.edge_insert(edge_to_project)
+            with self.graph.session_scope() as s:
+                s.merge(edge_to_project)
         return archive_node
 
-    def lookup_file_in_pg(self, archive_node, filename, session):
-        q = self.pg_driver.node_lookup(label="file",
-                                       property_matches={"file_name": filename},
-                                       session=session)\
-                          .with_edge_to_node(models.FileMemberOfArchive, archive_node)
+    def lookup_file_in_pg(self, archive_node, filename):
+        q = self.graph.node_lookup(
+            label="file",
+            property_matches={
+                "file_name": filename
+            }).with_edge_to_node(models.FileMemberOfArchive, archive_node)
         file_nodes = q.all()
         if not file_nodes:
             return None
@@ -511,7 +515,8 @@ class TCGADCCArchiveSyncer(object):
                 src_id=file_node.node_id,
                 dst_id=self.archive_node.node_id,
             )
-            self.graph.edge_insert(edge_to_archive)
+            with self.graph.session_scope() as s:
+                s.merge(edge_to_archive)
         edge_builder = TCGADCCEdgeBuilder(file_node, self.graph, self.log)
         edge_builder.build()
         return file_node
