@@ -386,10 +386,6 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("inserting new archive node in postgres with id: %s", node_id)
         sysan = self.archive
         sysan["source"] = "tcga_dcc"
-        if not maybe_this_archive:
-            # the conditional is because we only want to mark it as
-            # not ready to release if we're creating it
-            sysan["ready_to_release"] = False
         archive_node = self.graph.node_merge(
             node_id=node_id,
             label='archive',
@@ -493,7 +489,6 @@ class TCGADCCArchiveSyncer(object):
                 system_annotations={
                     "source": "tcga_dcc",
                     "md5_source": md5_source,
-                    "ready_to_release": False,
                 },
             )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
