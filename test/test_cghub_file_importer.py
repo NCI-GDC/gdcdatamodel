@@ -52,6 +52,7 @@ class TestCGHubFileImporter(unittest.TestCase):
             database=database,
             signpost=TestSignpostClient(),
         )
+        self._clear_tables()
         self._add_required_nodes()
 
     def create_file(self, analysis_id, file_name):
@@ -82,6 +83,9 @@ class TestCGHubFileImporter(unittest.TestCase):
                     u'source_center': u'test', u'submitter_id': u'test'})
 
     def tearDown(self):
+        self._clear_tables()
+
+    def _clear_tables(self):
         with self.converter.graph.engine.begin() as conn:
             for table in Node().get_subclass_table_names():
                 if table != Node.__tablename__:

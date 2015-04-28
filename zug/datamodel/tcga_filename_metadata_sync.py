@@ -1,5 +1,5 @@
 from cdisutils.log import get_logger
-from psqlgraph import PsqlEdge, Node
+from psqlgraph import Node
 import os
 
 
@@ -64,7 +64,8 @@ class TCGAFilenameMetadataSyncer(object):
         attrs = file_node.system_annotations
         self.log.debug(attrs)
         for edge in file_node.edges_out:
-            if edge.label == 'data_from' and edge.system_annotations['source'] == 'tcga_magetab':
+            if edge.label == 'data_from'\
+               and edge.system_annotations['source'] == 'tcga_magetab':
                 self.log.info("File already has edge from magetab: %s, bailing", edge)
                 return
         nodes = []
@@ -73,9 +74,11 @@ class TCGAFilenameMetadataSyncer(object):
                               '_slide']:
             node = None
             if possible_attr + '_uuid' in attrs:
-                node = self.graph.nodes().ids([attrs[possible_attr + '_uuid']]).scalar()
+                node = self.graph.nodes().ids(
+                    [attrs[possible_attr + '_uuid']]).scalar()
             elif possible_attr + '_barcode' in attrs:
-                node = self.graph.nodes().props({'submitter_id': attrs[possible_attr + '_barcode']}).scalar()
+                node = self.graph.nodes().props(
+                    {'submitter_id': attrs[possible_attr + '_barcode']}).scalar()
             if node:
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
@@ -85,9 +88,11 @@ class TCGAFilenameMetadataSyncer(object):
         if not nodes:
             node = None
             if '_participant_uuid' in attrs:
-                node = self.graph.nodes().ids([attrs['_participant_uuid']]).scalar()
+                node = self.graph.nodes().ids(
+                    [attrs['_participant_uuid']]).scalar()
             elif '_participant_barcode' in attrs:
-                node = self.graph.nodes().props({'submitter_id': attrs['_participant_barcode']}).scalar()
+                node = self.graph.nodes().props(
+                    {'submitter_id': attrs['_participant_barcode']}).scalar()
             if node:
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
@@ -98,10 +103,12 @@ class TCGAFilenameMetadataSyncer(object):
                 src_id=file_node.node_id,
                 dst_id=node.node_id)
             if not maybe_edge_to_biospecimen:
-                edge_to_biospecimen = PsqlEdge(
+                edge_to_biospecimen = self.graph.get_PsqlEdge(
                     label='data_from',
                     src_id=file_node.node_id,
-                    dst_id=node.node_id
+                    dst_id=node.node_id,
+                    src_label='file',
+                    dst_label=node.label,
                 )
                 edge_to_biospecimen.system_annotations['source'] = 'filename'
                 self.log.info("inserting edge %s", edge_to_biospecimen)

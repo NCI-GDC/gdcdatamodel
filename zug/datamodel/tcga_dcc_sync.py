@@ -303,8 +303,6 @@ class TCGADCCArchiveSyncer(object):
         self.scratch_dir = os.environ["SCRATCH_DIR"]
         self.protected_bucket = os.environ["TCGA_PROTECTED_BUCKET"]
         self.public_bucket = os.environ["TCGA_PUBLIC_BUCKET"]
-        self.graph.node_validator = AvroNodeValidator(node_avsc_object)
-        self.graph.edge_validator = AvroEdgeValidator(edge_avsc_object)
         self.archive_id = archive_id
         self.archive_node = None  # this gets filled in later
         self.max_memory = max_memory

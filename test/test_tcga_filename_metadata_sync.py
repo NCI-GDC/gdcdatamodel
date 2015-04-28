@@ -1,17 +1,16 @@
-from unittest import TestCase
-import tempfile
-import uuid
-from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
-from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
-import random
-import time
 from gdcdatamodel import models as md
 from libcloud.storage.providers import get_driver
 from libcloud.storage.types import Provider
 from multiprocessing import Process
+from unittest import TestCase
+import os
+import random
+import tempfile
+import time
+import uuid
+
 from psqlgraph import PsqlGraphDriver, Node, Edge, PolyNode
 from signpost import Signpost
-from psqlgraph import PsqlGraphDriver, Node, PsqlNode, PsqlEdge
 from signpostclient import SignpostClient
 from unittest import TestCase
 from zug.datamodel.tcga_filename_metadata_sync import TCGAFilenameMetadataSyncer
@@ -19,15 +18,9 @@ import os
 
 from zug.datamodel.prelude import create_prelude_nodes
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
-from zug.datamodel.tcga_dcc_to_biospecimen import TCGADCCToBiospecimen
-from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
-import os
-import pandas as pd
-import random
-import tempfile
-import time
-import uuid
+from zug.datamodel.tcga_filename_metadata_sync import\
+    TCGAFilenameMetadataSyncer
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -134,6 +127,9 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
                 s.merge(edge)
         return file
 
+    def specimen_edge_builder_for(self, node):
+        return TCGAFilenameMetadataSyncer(node, self.pg_driver)
+
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
         node = md.Archive(
@@ -235,7 +231,7 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
             aliquot = self.pg_driver.nodes().labels('aliquot').\
-                with_edge_from_node('data_from', file_node).one()
+                with_edge_from_node(md.FileDataFromAliquot, file_node).one()
             self.assertEqual(aliquot['submitter_id'], barcode)
             edge = self.pg_driver.edges().labels('data_from').\
                 src(file_node.node_id).\

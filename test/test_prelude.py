@@ -12,6 +12,7 @@ class TestPrelude(unittest.TestCase):
     def setUp(self):
         self.driver = PsqlGraphDriver(
             'localhost', 'test', 'test', 'automated_test')
+        self.clear_tables()
 
     def tearDown(self):
         self.clear_tables()

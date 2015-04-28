@@ -9,6 +9,9 @@ import pandas as pd
 from gdcdatamodel.models import (
     Archive,
     FileMemberOfArchive,
+    FileDataFromAliquot,
+    ArchiveRelatedToFile,
+    FileDataFromPortion,
 )
 
 
@@ -119,8 +122,8 @@ class TestTCGAMAGETASync(ZugsTestBase):
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                .with_edge_to_node("data_from", aliquot)\
-                                .with_edge_from_node("related_to", fake_archive_node).count()
+                                .with_edge_to_node(FileDataFromAliquot, aliquot)\
+                                .with_edge_from_node(ArchiveRelatedToFile, fake_archive_node).count()
             magetab = self.graph.nodes().labels("archive")\
                                         .sysan({"data_level": "mage-tab"}).one()
             self.assertTrue(magetab.system_annotations["magetab_synced"])
@@ -141,19 +144,18 @@ class TestTCGAMAGETASync(ZugsTestBase):
         fake_archive_node = self.fake_archive_for("basic.sdrf.txt", rev=1)
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
-        with self.graph.session_scope():
+        with self.graph.session_scope() as s:
             self.graph.node_delete(node_id=fake_archive_node.node_id)
-            old_edge_ids = set([edge.edge_id for edge in
-                                self.graph.edges().labels("data_from").all()])
+            for edge in self.graph.edges().labels("data_from"):
+                edge.system_annotations['to_be_deleted'] = True
+                s.merge(edge)
 
         self.fake_archive_for("basic.sdrf.txt", rev=2)
         syncer = TCGAMAGETABSyncer()
         syncer.sync()
         with self.graph.session_scope():
-            new_edge_ids = set([edge.edge_id for edge in
-                                self.graph.edges().labels("data_from").all()])
-        for id in old_edge_ids:
-            self.assertNotIn(id, new_edge_ids)
+            self.assertEqual(
+                self.graph.edges().sysan(to_be_deleted=True).count(), 0)
 
     @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
            lambda path: BASIC_DF)
@@ -170,7 +172,8 @@ class TestTCGAMAGETASync(ZugsTestBase):
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                .with_edge_to_node("data_from", aliquot).count()
+                                .with_edge_to_node(
+                                    FileDataFromAliquot, aliquot).count()
         self.assertEqual(n_files, 1)
 
     @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
@@ -191,7 +194,8 @@ class TestTCGAMAGETASync(ZugsTestBase):
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                .with_edge_to_node("data_from", aliquot).count()
+                                .with_edge_to_node(
+                                    FileDataFromAliquot, aliquot).count()
         self.assertEqual(n_files, 3)
 
     @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",
@@ -212,5 +216,5 @@ class TestTCGAMAGETASync(ZugsTestBase):
         syncer.sync()
         with self.graph.session_scope():
             n_files = self.graph.node_lookup(label="file")\
-                                .with_edge_to_node("data_from", portion).count()
+                                .with_edge_to_node(FileDataFromPortion, portion).count()
         self.assertEqual(n_files, 4)

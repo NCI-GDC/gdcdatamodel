@@ -5,7 +5,7 @@ from collections import defaultdict
 import os
 from lxml import html
 import re
-from psqlgraph import PsqlGraphDriver, PsqlEdge
+from psqlgraph import PsqlGraphDriver, Edge
 from sqlalchemy import func
 from sqlalchemy.types import Integer
 from sqlalchemy.exc import OperationalError
@@ -16,6 +16,7 @@ from cdisutils.log import get_logger
 from gdcdatamodel.models import (
     ArchiveRelatedToFile,
     FileMemberOfArchive,
+    Archive,
 )
 
 
@@ -391,7 +392,7 @@ class TCGAMAGETABSyncer(object):
                 self.log.warning("cghub file %s should be tied to %s %s but is not",
                                  file, label, (uuid, barcode))
                 return
-            edge = self.pg_driver.get_PsqlEdge(
+            edge = self.graph.get_PsqlEdge(
                 label="data_from",
                 src_id=file.node_id,
                 dst_id=bio.node_id,
@@ -413,7 +414,7 @@ class TCGAMAGETABSyncer(object):
         to_delete = self.graph.edges()\
                               .sysan({"source": "tcga_magetab"})\
                               .sysan({"submitter_id": self.submitter_id})\
-                              .filter(PsqlEdge.system_annotations["revision"].cast(Integer) < self.revision)\
+                              .filter(Edge._sysan["revision"].cast(Integer) < self.revision)\
                               .all()
         self.log.info("found %s edges to delete from previous revisions", len(to_delete))
         for edge in to_delete:
@@ -438,7 +439,7 @@ class TCGAMAGETABSyncer(object):
             )
             self.log.info("relating file to magetab archive %s",
                           edge_to_archive)
-            with self.edge.session_scope() as s:
+            with self.graph.session_scope() as s:
                 s.merge(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
@@ -488,7 +489,7 @@ class TCGAMAGETABSyncer(object):
                         self.log.info("No unsynced magetab archives found, we're all caught up!")
                         return
                 self.log.info("Attempting to lock %s in postgres", try_archive)
-                archive = self.graph.nodes()\
+                archive = self.graph.nodes(Archive)\
                                     .ids(try_archive.node_id)\
                                     .with_for_update(nowait=True).one()
                 self.archive = archive
