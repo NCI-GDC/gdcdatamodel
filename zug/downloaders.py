@@ -26,7 +26,7 @@ from sqlalchemy.exc import OperationalError
 from cdisutils.log import get_logger
 from psqlgraph import PsqlGraphDriver, Node
 from signpostclient import SignpostClient
-from gdcdatamodel import node_avsc_object, edge_avsc_object
+from gdcdatamodel import models
 
 
 # buffer 10 MB in memory at once
