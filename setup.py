@@ -6,7 +6,8 @@ setup(
     install_requires=[
         'avro==1.7.7',
         'graphviz==0.4.2',
-        'addict==0.2.7'
+        'addict==0.2.7',
+        'psqlgraph',
     ],
     package_data={
         "gdcdatamodel": [
