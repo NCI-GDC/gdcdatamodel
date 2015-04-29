@@ -26,7 +26,7 @@ from sqlalchemy.exc import OperationalError
 from cdisutils.log import get_logger
 from psqlgraph import PsqlGraphDriver, Node
 from signpostclient import SignpostClient
-from gdcdatamodel import models
+from gdcdatamodel import models as md
 
 
 # buffer 10 MB in memory at once
@@ -265,19 +265,19 @@ class Downloader(object):
         while tries < 5:
             tries += 1
             if not self.analysis_id:
-                start_file = self.graph.nodes()\
-                                       .labels("file")\
+                start_file = self.graph.nodes(md.File)\
                                        .props({"state": "submitted"})\
                                        .sysan({"source": self.source})\
                                        .not_sysan({"to_delete": True})\
-                                       .filter(func.right(Node.properties["file_name"].astext, 4) != ".bai")\
+                                       .filter(func.right(
+                                           Node._props['file_name'].astext,
+                                           4) != ".bai")\
                                        .order_by(func.random())\
                                        .first()
                 self.analysis_id = start_file.system_annotations["analysis_id"]
             try:
                 # attempt to acquire a lock on all the files with this analysis id
-                files = self.graph.nodes()\
-                                  .labels("file")\
+                files = self.graph.nodes(md.File)\
                                   .sysan({
                                       "source": self.source,
                                       "analysis_id": self.analysis_id
