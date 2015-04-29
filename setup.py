@@ -27,7 +27,7 @@ setup(
         'signpostclient',
         'lockfile',
         'lxml==3.4.1',
-        'requests==2.6.2',
+        'requests==2.5.1',
         'apache-libcloud==0.15.1',
         'cssselect==0.9.1',
         'elasticsearch==1.4.0',
