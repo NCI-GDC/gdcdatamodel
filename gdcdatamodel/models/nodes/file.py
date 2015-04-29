@@ -18,7 +18,7 @@ class File(Node):
     def submitter_id(self, value):
         self._set_property('submitter_id', value)
 
-    @pg_property(int, long)
+    @pg_property(long, int)
     def file_size(self, value):
         self._set_property('file_size', value)
 
