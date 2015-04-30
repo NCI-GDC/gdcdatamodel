@@ -51,6 +51,24 @@ class TestCGHubFileImporter(unittest.TestCase):
         )
         self._add_required_nodes()
 
+    def create_file(self, analysis_id, file_name):
+        with self.converter.graph.session_scope():
+            self.converter.graph.node_merge(
+                str(uuid.uuid4()),
+                label="file",
+                properties={
+                    "file_name": file_name,
+                    "submitter_id": analysis_id,
+                    "md5sum": "bogus",
+                    "file_size": 0,
+                    "state_comment": None,
+                    "state": "submitted"
+                },
+                system_annotations={
+                    "analysis_id": analysis_id
+                }
+            )
+
     def _add_required_nodes(self):
         prelude.create_prelude_nodes(self.converter.graph)
         with self.converter.graph.session_scope():
@@ -85,6 +103,7 @@ class TestCGHubFileImporter(unittest.TestCase):
             self.assertEqual(len(self.converter.files_to_delete), 2)
             for file_key in to_delete:
                 self.assertTrue(file_key in self.converter.files_to_delete)
+                self.create_file(*file_key)
 
             # insert
             self.converter.rebase()
@@ -94,8 +113,10 @@ class TestCGHubFileImporter(unittest.TestCase):
                 node = graph.nodes().props(
                     {'file_name': file_key[1]}).one()
             for file_key in to_delete:
-                self.assertEqual(graph.nodes().props(
-                    {'file_name': file_key[1]}).count(), 0)
+                self.assertEqual(graph.nodes()\
+                                 .props({'file_name': file_key[1]})\
+                                 .sysan({"to_delete": True})\
+                                 .count(), 1)
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
 

@@ -154,6 +154,15 @@ class cghub2psqlgraph(object):
         else:
             raise RuntimeError('Unknown phsid! {}'.format(phsid))
 
+    def delete_later(self, node):
+        log.info("Marking %s as to_delete in system annotations", node)
+        self.graph.node_update(
+            node,
+            system_annotations={
+                "to_delete": True
+            }
+        )
+
     def rebase_file_nodes(self):
         """update file records in graph
 
@@ -173,7 +182,7 @@ class cghub2psqlgraph(object):
             node = self.get_file_by_key(file_key)
             if node:
                 log.debug('Redacting {}'.format(file_key))
-                self.graph.node_delete(node=node)
+                self.delete_later(node)
             else:
                 log.debug('Redaction not necessary {}'.format(file_key))
 
