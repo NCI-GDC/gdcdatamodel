@@ -161,6 +161,18 @@ class TestCGHubFileImporter(unittest.TestCase):
             with graph.session_scope():
                 self.assertEqual(
                     graph.nodes().ids(f.node_id).one()['state'], 'live')
+                bam = graph.nodes().props({'file_name': bamA}).one()
+                bai = graph.nodes().props({'file_name': baiA}).one()
+                self.assertEqual(len(list(bam.get_edges())), 7)
+                base = graph.nodes().ids(bam.node_id)
+                base.path_end(['center']).props({'code': '07'}).one()
+                base.path_end(['platform']).props({'name': 'Illumina GA'}).one()
+                base.path_end(['data_subtype']).props({'name': 'Aligned reads'}).one()
+                base.path_end(['data_format']).props({'name': 'BAM'}).one()
+                base.path_end(['experimental_strategy']).props({'name': 'RNA-Seq'}).one()
+                self.assertEqual(len(list(bai.get_edges())), 1)
+                self.converter.graph.nodes().ids(bai.node_id).path_in(['file']).one()
+
 
 
 TEST_DATA = ["""
