@@ -272,6 +272,7 @@ class Downloader(object):
                                        .labels("file")\
                                        .props({"state": "submitted"})\
                                        .sysan({"source": self.source})\
+                                       .not_sysan({"to_delete": True})\
                                        .filter(func.right(Node.properties["file_name"].astext, 4) != ".bai")\
                                        .order_by(func.random())\
                                        .first()

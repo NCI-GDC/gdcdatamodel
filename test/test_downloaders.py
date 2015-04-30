@@ -226,3 +226,15 @@ class DownloadersTest(ZugsTestBase):
         with self.graph.session_scope():
             for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
                 self.assertEqual(file["state"], "live")
+
+    def test_dont_download_to_delete_files(self):
+        self.setup_fake_s3()
+        self.setup_fake_files()
+        self.graph.node_update(
+            self.files[1],
+            system_annotations={"to_delete": True}
+        )
+        with self.downloader_monkey_patches():
+            downloader = Downloader(source="fake_cghub")
+            with self.assertRaises(RuntimeError):
+                downloader.get_files_to_download()
