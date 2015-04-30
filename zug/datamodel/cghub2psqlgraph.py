@@ -99,7 +99,7 @@ class cghub2psqlgraph(object):
         return self.graph.nodes().labels('file')\
                                  .props({'file_name': file_name})\
                                  .sysan({'analysis_id': analysis_id})\
-                                 .first()
+                                 .scalar()
 
     def merge_file_node(self, file_key, node, system_annotations):
         """either create or update file record
