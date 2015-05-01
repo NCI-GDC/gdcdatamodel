@@ -123,7 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
     parser.add_argument('-H', '--signpost-host',
-                        default='signpost.service.consul', type=str,
+                        default='http://signpost.service.consul', type=str,
                         help='signpost server host')
     parser.add_argument('-P', '--signpost-port', default=80,
                         help='signpost server port')
