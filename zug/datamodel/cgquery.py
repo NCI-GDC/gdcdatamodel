@@ -10,8 +10,7 @@ def query(cghub_study, **q):
     q.update({'study': cghub_study})
     log.info('Query for {}'.format(q))
     r = requests.get(url, params=q)
-    r.encoding = 'UTF-8'
-    return r.text
+    return r.content
 
 
 def get_changes_last_x_days(days, cghub_study):
