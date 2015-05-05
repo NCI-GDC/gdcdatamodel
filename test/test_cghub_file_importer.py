@@ -51,6 +51,24 @@ class TestCGHubFileImporter(unittest.TestCase):
         )
         self._add_required_nodes()
 
+    def create_file(self, analysis_id, file_name):
+        with self.converter.graph.session_scope():
+            self.converter.graph.node_merge(
+                str(uuid.uuid4()),
+                label="file",
+                properties={
+                    "file_name": file_name,
+                    "submitter_id": analysis_id,
+                    "md5sum": "bogus",
+                    "file_size": 0,
+                    "state_comment": None,
+                    "state": "submitted"
+                },
+                system_annotations={
+                    "analysis_id": analysis_id
+                }
+            )
+
     def _add_required_nodes(self):
         prelude.create_prelude_nodes(self.converter.graph)
         with self.converter.graph.session_scope():
@@ -68,43 +86,48 @@ class TestCGHubFileImporter(unittest.TestCase):
             conn.execute('delete from voided_nodes')
         self.converter.graph.engine.dispose()
 
-    def test_simple_parse(self):
-        graph = self.converter.graph
-        with graph.session_scope():
-            to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
-            to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
-            for root in TEST_DATA:
-                self.converter.parse('file', etree.fromstring(root))
-
-            # pre-insert files to add
-            self.assertEqual(len(self.converter.files_to_add), 2)
-            for file_key in to_add:
-                self.assertTrue(file_key in self.converter.files_to_add)
+    def insert_test_files(self):
+        with self.converter.graph.session_scope():
+            self.to_add = [(analysis_idA, bamA), (analysis_idA, baiA)]
+            self.to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
 
             # pre-insert files to delete
-            self.assertEqual(len(self.converter.files_to_delete), 2)
-            for file_key in to_delete:
-                self.assertTrue(file_key in self.converter.files_to_delete)
+            for file_key in self.to_delete:
+                self.create_file(*file_key)
 
-            # insert
-            self.converter.rebase()
+    def run_convert(self):
+        for root in TEST_DATA:
+            self.converter.parse('file', etree.fromstring(root))
+        self.assertEqual(len(self.converter.files_to_add), 2)
+        for file_key in self.to_add:
+            self.assertTrue(file_key in self.converter.files_to_add)
+        self.assertEqual(len(self.converter.files_to_delete), 2)
+        for file_key in self.to_delete:
+            self.assertTrue(file_key in self.converter.files_to_delete)
+        self.converter.rebase()
 
-            # post-insert
-            for file_key in to_add:
+    def test_simple_parse(self):
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope():
+            self.run_convert()
+            for file_key in self.to_add:
                 node = graph.nodes().props(
                     {'file_name': file_key[1]}).one()
-            for file_key in to_delete:
-                self.assertEqual(graph.nodes().props(
-                    {'file_name': file_key[1]}).count(), 0)
+            for file_key in self.to_delete:
+                self.assertEqual(graph.nodes()\
+                                 .props({'file_name': file_key[1]})\
+                                 .sysan({"to_delete": True})\
+                                 .count(), 1)
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
-
-            print self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
+            self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
 
     def test_related_to(self):
         graph = self.converter.graph
+        self.insert_test_files()
         with graph.session_scope():
-            self.test_simple_parse()
+            self.run_convert()
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bai.get_edges())), 1)
@@ -112,8 +135,9 @@ class TestCGHubFileImporter(unittest.TestCase):
 
     def test_categorization(self):
         graph = self.converter.graph
+        self.insert_test_files()
         with graph.session_scope():
-            self.test_simple_parse()
+            self.run_convert()
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.assertEqual(len(list(bam.get_edges())), 7)
@@ -126,19 +150,29 @@ class TestCGHubFileImporter(unittest.TestCase):
 
     def test_idempotency(self):
         graph = self.converter.graph
+        self.insert_test_files()
         for i in range(5):
-            self.test_simple_parse()
+            self.run_convert()
             with graph.session_scope() as s:
                 f = graph.nodes().labels('file').first()
                 f['state'] = 'live'
                 graph.node_merge(node_id=f.node_id, properties=f.properties)
-                s.commit()
-            self.test_simple_parse()
+            self.run_convert()
             with graph.session_scope():
                 self.assertEqual(
                     graph.nodes().ids(f.node_id).one()['state'], 'live')
-            self.test_related_to()
-            self.test_categorization()
+                bam = graph.nodes().props({'file_name': bamA}).one()
+                bai = graph.nodes().props({'file_name': baiA}).one()
+                self.assertEqual(len(list(bam.get_edges())), 7)
+                base = graph.nodes().ids(bam.node_id)
+                base.path_end(['center']).props({'code': '07'}).one()
+                base.path_end(['platform']).props({'name': 'Illumina GA'}).one()
+                base.path_end(['data_subtype']).props({'name': 'Aligned reads'}).one()
+                base.path_end(['data_format']).props({'name': 'BAM'}).one()
+                base.path_end(['experimental_strategy']).props({'name': 'RNA-Seq'}).one()
+                self.assertEqual(len(list(bai.get_edges())), 1)
+                self.converter.graph.nodes().ids(bai.node_id).path_in(['file']).one()
+
 
 
 TEST_DATA = ["""

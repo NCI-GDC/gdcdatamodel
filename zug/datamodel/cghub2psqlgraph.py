@@ -1,15 +1,12 @@
 import re
 import json
 import datetime
-import logging
 import psqlgraph
 from psqlgraph.edge import PsqlEdge
 from psqlgraph.node import PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
-
-log = get_logger(__name__)
 
 
 deletion_states = ['suppressed', 'redacted']
@@ -71,6 +68,7 @@ class cghub2psqlgraph(object):
             ignore_missing_properties=ignore_missing_properties)
         self.signpost = signpost  # should be a SignpostClient object
         self.reset()
+        self.log = get_logger("cghub_file_sync")
 
     def rebase(self):
         """Similar to export in xml2psqlgraph, but re-writes changes onto the
@@ -79,11 +77,11 @@ class cghub2psqlgraph(object):
         ..note: postcondition: node/edge state is cleared.
 
         """
-        log.info('Handling {} nodes'.format(len(self.files_to_add)))
+        self.log.info('Handling {} nodes'.format(len(self.files_to_add)))
         with self.graph.session_scope():
             self.rebase_file_nodes()
 
-        log.info('Handling {} edges'.format(
+        self.log.info('Handling {} edges'.format(
             len(self.edges) + len(self.related_to_edges)))
         with self.graph.session_scope():
             self.export_edges()
@@ -101,7 +99,7 @@ class cghub2psqlgraph(object):
         return self.graph.nodes().labels('file')\
                                  .props({'file_name': file_name})\
                                  .sysan({'analysis_id': analysis_id})\
-                                 .first()
+                                 .scalar()
 
     def merge_file_node(self, file_key, node, system_annotations):
         """either create or update file record
@@ -117,7 +115,7 @@ class cghub2psqlgraph(object):
         system_annotations.update({'analysis_id': analysis_id})
 
         if existing is not None:
-            log.debug('Merging {}'.format(file_key))
+            self.log.debug('Merging {}'.format(file_key))
             node_id = existing.node_id
             node['state'] = existing['state']
             self.graph.node_update(
@@ -125,7 +123,7 @@ class cghub2psqlgraph(object):
                 properties=node.properties,
                 system_annotations=system_annotations)
         else:
-            log.debug('Adding {}'.format(file_key))
+            self.log.debug('Adding {}'.format(file_key))
             doc = self.signpost.create()
             node_id = doc.did
             node.node_id = node_id
@@ -133,8 +131,8 @@ class cghub2psqlgraph(object):
             try:
                 self.graph.node_insert(node=node)
             except:
-                log.error(node)
-                log.error(node.properties)
+                self.log.error(node)
+                self.log.error(node.properties)
                 raise
 
         # Add the correct src_id to this file's edges now that we know it
@@ -154,6 +152,15 @@ class cghub2psqlgraph(object):
         else:
             raise RuntimeError('Unknown phsid! {}'.format(phsid))
 
+    def delete_later(self, node):
+        self.log.info("Marking %s as to_delete in system annotations", node)
+        self.graph.node_update(
+            node,
+            system_annotations={
+                "to_delete": True
+            }
+        )
+
     def rebase_file_nodes(self):
         """update file records in graph
 
@@ -172,10 +179,10 @@ class cghub2psqlgraph(object):
         for file_key in self.files_to_delete:
             node = self.get_file_by_key(file_key)
             if node:
-                log.debug('Redacting {}'.format(file_key))
-                self.graph.node_delete(node=node)
+                self.log.debug('Redacting {}'.format(file_key))
+                self.delete_later(node)
             else:
-                log.debug('Redaction not necessary {}'.format(file_key))
+                self.log.debug('Redaction not necessary {}'.format(file_key))
 
     def export_edge(self, edge):
         """
@@ -183,13 +190,13 @@ class cghub2psqlgraph(object):
 
         """
         existing = self.graph.edge_lookup(
-            src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label).first()
+            src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label).scalar()
         if not existing:
-            src = self.graph.nodes().ids(str(edge.dst_id)).first()
+            src = self.graph.nodes().ids(str(edge.dst_id)).scalar()
             if src:
                 self.graph.edge_insert(edge)
             else:
-                logging.warn('Missing {} destination {}'.format(
+                self.log.warn('Missing {} destination {}'.format(
                     edge.label, edge.dst_id))
         else:
             self.graph.edge_update(
@@ -292,7 +299,7 @@ class cghub2psqlgraph(object):
         else:
             node = self.get_file_by_key(file_key)
             if node:
-                log.warn("File {} is in {} state but was ".format(
+                self.log.warn("File {} is in {} state but was ".format(
                     node, state) + "already in the graph. DELETING!")
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
@@ -327,7 +334,7 @@ class cghub2psqlgraph(object):
 
             # Handle those without a destination name
             if not dst_name:
-                log.warn('No desination from {} to {} found'.format(
+                self.log.warn('No desination from {} to {} found'.format(
                     file_name, dst_label))
                 continue
 
@@ -340,9 +347,9 @@ class cghub2psqlgraph(object):
             normalized = names.get(dst_label, {}).get(str(dst_name), dst_name)
             dst = self.graph.nodes().labels(dst_label)\
                                     .props(dict(name=normalized))\
-                                    .first()
+                                    .scalar()
             if not dst:
-                log.warn('Missing dst {} name:{}, {}'.format(
+                self.log.warn('Missing dst {} name:{}, {}'.format(
                     dst_label, normalized, file_key))
             else:
                 dst_id = dst.node_id
@@ -354,12 +361,12 @@ class cghub2psqlgraph(object):
                                           root, single=True, nullable=False)
         code = self.center_regex.match(legacy_sample_id)
         if not code:
-            log.warn('Unable to parse center code from barcode: {}'.format(
+            self.log.warn('Unable to parse center code from barcode: {}'.format(
                 legacy_sample_id))
         else:
             node = self.graph.nodes().labels('center')\
                                      .props({'code': code.group(2)})\
-                                     .first()
+                                     .scalar()
             assert node, 'Missing center code:{}, {}'.format(
                 code.group(2), file_key)
             self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
