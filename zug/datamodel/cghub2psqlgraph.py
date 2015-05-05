@@ -190,9 +190,9 @@ class cghub2psqlgraph(object):
 
         """
         existing = self.graph.edge_lookup(
-            src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label).first()
+            src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label).scalar()
         if not existing:
-            src = self.graph.nodes().ids(str(edge.dst_id)).first()
+            src = self.graph.nodes().ids(str(edge.dst_id)).scalar()
             if src:
                 self.graph.edge_insert(edge)
             else:
@@ -347,7 +347,7 @@ class cghub2psqlgraph(object):
             normalized = names.get(dst_label, {}).get(str(dst_name), dst_name)
             dst = self.graph.nodes().labels(dst_label)\
                                     .props(dict(name=normalized))\
-                                    .first()
+                                    .scalar()
             if not dst:
                 self.log.warn('Missing dst {} name:{}, {}'.format(
                     dst_label, normalized, file_key))
@@ -366,7 +366,7 @@ class cghub2psqlgraph(object):
         else:
             node = self.graph.nodes().labels('center')\
                                      .props({'code': code.group(2)})\
-                                     .first()
+                                     .scalar()
             assert node, 'Missing center code:{}, {}'.format(
                 code.group(2), file_key)
             self.save_edge(file_key, node.node_id, node.label, 'submitted_by')
