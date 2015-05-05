@@ -89,7 +89,7 @@ DATA_TYPES = {
         "Diagnostic image", "Pathology report"
     ],
     "Structural rearrangement": [
-        "Structural germline variation", "Structural variation", "Structual junction"
+        "Structural germline variation", "Structural variation", "Structural junction"
     ],
     "Raw sequencing data": [
         "Coverage WIG", "Sequencing tag", "Sequencing tag counts",
