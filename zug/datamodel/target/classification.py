@@ -544,14 +544,14 @@ CLASSIFICATION = {
             "concatenatedjunctionfile.+txt": {
               "platform": "Complete Genomics",
               "data_format": "TXT",
-              "data_subtype": "Structual junction",
+              "data_subtype": "Structural junction",
               "data_type": "Structural rearrangement",
               "experimental_strategy": "DNA-Seq"
             },
             "concatenatedjunctionfile.+xlsx": {
               "platform": "Complete Genomics",
               "data_format": "xlsx",
-              "data_subtype": "Structual junction",
+              "data_subtype": "Structural junction",
               "data_type": "Structural rearrangement",
               "experimental_strategy": "DNA-Seq"
             }
