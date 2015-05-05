@@ -12,7 +12,6 @@ from signpost import Signpost
 from psqlgraph import PsqlGraphDriver, Node, PsqlNode, PsqlEdge
 from signpostclient import SignpostClient
 from zug.datamodel.prelude import create_prelude_nodes
-from zug.datamodel.latest_urls import LatestURLParser
 from zug.datamodel.tcga_filename_metadata_sync import TCGAFilenameMetadataSyncer
 import os
 
@@ -49,7 +48,6 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
         self.storage_client.create_container("tcga_dcc_protected")
         self.signpost_client = SignpostClient("http://localhost:{}".format(self.port),
                                               version="v0")
-        self.parser = LatestURLParser()
         create_prelude_nodes(self.pg_driver)
 
     def tearDown(self):

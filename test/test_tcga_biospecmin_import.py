@@ -24,10 +24,6 @@ def initialize():
     node_validator = AvroNodeValidator(node_avsc_object)
     edge_validator = AvroEdgeValidator(edge_avsc_object)
 
-    parser = latest_urls.LatestURLParser(
-        constraints={'data_level': 'Level_1', 'platform': 'bio'},
-        url_key='dcc_archive_url',
-    )
     extractor = extract_tar.ExtractTar(
         regex=".*(bio).*(Level_1).*\\.xml"
     )
@@ -40,7 +36,7 @@ def initialize():
         edge_validator=edge_validator,
         node_validator=node_validator,
     )
-    return parser, extractor, converter
+    return extractor, converter
 
 
 class TestTCGABiospeceminImport(unittest.TestCase):
@@ -48,11 +44,12 @@ class TestTCGABiospeceminImport(unittest.TestCase):
     IGNORED_LABELS = [
         'center', 'tissue_source_site', 'tag', 'experimental_strategy',
         'platform', 'data_subtype', 'data_type', 'program', 'project',
-        'data_format']
+        'data_format'
+    ]
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
-        self.parser, self.extrator, self.converter = initialize()
+        self.extrator, self.converter = initialize()
         create_prelude_nodes(self.converter.graph)
 
     def tearDown(self):
