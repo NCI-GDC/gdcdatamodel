@@ -5,7 +5,7 @@ from mock import patch
 from httmock import urlmatch, HTTMock
 
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
-from zug.datamodel.latest_urls import LatestURLParser
+from zug.datamodel.latest_urls import parse_archive
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "dcc_archives")
@@ -27,7 +27,6 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
 
     def setUp(self):
         super(TCGADCCArchiveSyncTest, self).setUp()
-        self.parser = LatestURLParser()
         self.storage_client.create_container("test_tcga_dcc_public")
         self.storage_client.create_container("test_tcga_dcc_protected")
         os.environ["PG_HOST"] = "localhost"
@@ -48,7 +47,7 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         )
 
     def test_syncing_an_archive_with_distinct_center(self):
-        archive = self.parser.parse_archive(
+        archive = parse_archive(
             "hms.harvard.edu_BLCA.IlluminaHiSeq_DNASeqC.Level_3.1.3.0",
             "12/16/2013",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/blca/cgcc/hms.harvard.edu/illuminahiseq_dnaseqc/cna/hms.harvard.edu_BLCA.IlluminaHiSeq_DNASeqC.Level_3.1.3.0.tar.gz"
@@ -68,7 +67,7 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         self.storage_client.get_object("test_tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
 
     def test_basic_sync(self):
-        archive = self.parser.parse_archive(
+        archive = parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
@@ -100,7 +99,7 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         self.storage_client.get_object("test_tcga_dcc_public", "/".join(["archives", archive["archive_name"]]))
 
     def test_syncing_is_idempotent(self):
-        archive = self.parser.parse_archive(
+        archive = parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz"
@@ -140,11 +139,11 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
             self.assertEqual(file.acl, ["open"])
 
     def test_replacing_old_archive_works(self):
-        old_archive = self.parser.parse_archive(
+        old_archive = parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.1.0",
             "somedate",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.1.0.tar.gz")
-        new_archive = self.parser.parse_archive(
+        new_archive = parse_archive(
             "mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0",
             "11/12/2014",
             "https://tcga-data.nci.nih.gov/tcgafiles/ftp_auth/distro_ftpusers/anonymous/tumor/paad/cgcc/mdanderson.org/mda_rppa_core/protein_exp/mdanderson.org_PAAD.MDA_RPPA_Core.Level_3.1.2.0.tar.gz")
