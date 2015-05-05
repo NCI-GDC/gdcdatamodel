@@ -146,7 +146,7 @@ PLATFORMS = [
     "Illumina DNA Methylation OMA002 CPI", "AgilentG4502A_07_1", "ABI SOLiD",
     "Mixed platforms", "Illumina MiSeq", "LS 454", "Ion Torrent PGM",
     "Affymetrix U133 Plus 2", "Complete Genomics", "Illumina HumanHap550",
-    "MegaPlex TaqMan",
+    "MegaPlex TaqMan", "HiSeq X Ten",
 ]
 
 
