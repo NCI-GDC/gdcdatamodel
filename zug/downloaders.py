@@ -135,7 +135,7 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
 
                 # Upload this segment
                 log.info("Posting part {}".format(index))
-                if bytes % PAGESIZE == 0:
+                if offset % PAGESIZE == 0:
                     log.info("chunk size is %s, mmaping chunk", bytes)
                     f = open(path, "r+b")
                     chunk_file = mmap(
