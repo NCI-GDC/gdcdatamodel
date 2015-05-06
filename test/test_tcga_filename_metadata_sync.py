@@ -1,5 +1,7 @@
 from gdcdatamodel import models as md
 from libcloud.storage.providers import get_driver
+from gdcdatamodel import models as md
+from libcloud.storage.providers import get_driver
 from libcloud.storage.types import Provider
 from multiprocessing import Process
 from unittest import TestCase
@@ -53,14 +55,8 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
         self.storage_client = Local(tempfile.mkdtemp())
         self.storage_client.create_container("tcga_dcc_public")
         self.storage_client.create_container("tcga_dcc_protected")
-<<<<<<< HEAD
         self.signpost_client = SignpostClient("http://localhost:{}".format(self.port),
                                               version="v0")
-=======
-        self.signpost_client = SignpostClient("http://localhost:{}".format(
-            self.port), version="v0")
-        self.parser = LatestURLParser()
->>>>>>> test_target_sample_matrix passing
         create_prelude_nodes(self.pg_driver)
 
     def tearDown(self):

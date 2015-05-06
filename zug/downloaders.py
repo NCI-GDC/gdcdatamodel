@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from urlparse import urlparse
 import shutil
 import hashlib
-from threading import Thread, Event, current_thread
+from threading import Thread, current_thread
 
 from consulate import Consul
 
