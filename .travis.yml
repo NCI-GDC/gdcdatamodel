@@ -14,6 +14,7 @@ before_install:
   - wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
   - unzip 0.5.0_linux_amd64.zip
   - ./consul agent -bootstrap-expect=1 -server -data-dir /tmp/consul &
+  - pip uninstall --yes psqlgraph gdcdatamodel || true
 install:
   - python setup.py install
   - pip install -r dev-requirements.txt
