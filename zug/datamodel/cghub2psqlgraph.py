@@ -200,6 +200,7 @@ class cghub2psqlgraph(object):
             self.graph.edge_update(
                 existing, edge.system_annotations, edge.properties)
 
+
     def export_edges(self):
         """Adds related_to edges then all other edges to psqlgraph from
         self.edges
