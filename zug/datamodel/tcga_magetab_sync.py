@@ -380,33 +380,26 @@ class TCGAMAGETABSyncer(object):
                             .one()
             self.log.info("found biospecemin by barcode: %s", bio)
 
-        maybe_edge = self.graph.edges()\
-                               .labels("data_from")\
-                               .src(file.node_id)\
-                               .dst(bio.node_id).scalar()
+        if file.system_annotations["source"] == "tcga_cghub":
+            self.log.warning("cghub file %s should be tied to %s %s but is not",
+                             file, label, (uuid, barcode))
+            return
+        edge = self.graph.get_PsqlEdge(
+            label="data_from",
+            src_id=file.node_id,
+            dst_id=bio.node_id,
+            system_annotations={
+                "submitter_id": self.submitter_id,
+                "revision": self.revision,
+                "source": "tcga_magetab",
+            },
+            src_label='file',
+            dst_label=bio.label,
+        )
+        self.log.info("tieing file to biospecemin: %s", edge)
         self.edges_from += 1
-        if maybe_edge:
-            self.log.info("edge already exists: %s", maybe_edge)
-        else:
-            if file.system_annotations["source"] == "tcga_cghub":
-                self.log.warning("cghub file %s should be tied to %s %s but is not",
-                                 file, label, (uuid, barcode))
-                return
-            edge = self.graph.get_PsqlEdge(
-                label="data_from",
-                src_id=file.node_id,
-                dst_id=bio.node_id,
-                system_annotations={
-                    "submitter_id": self.submitter_id,
-                    "revision": self.revision,
-                    "source": "tcga_magetab",
-                },
-                src_label='file',
-                dst_label=bio.label,
-            )
-            self.log.info("tieing file to biospecemin: %s", edge)
-            with self.graph.session_scope() as s:
-                s.merge(edge)
+        with self.graph.session_scope() as s:
+            s.merge(edge)
 
     def delete_old_edges(self):
         """We need to first find all the edges produced by previous runs of
@@ -422,25 +415,20 @@ class TCGAMAGETABSyncer(object):
             self.graph.edge_delete(edge)
 
     def tie_to_archive(self, file):
-        maybe_edge_to_archive = self.graph.edges()\
-                                          .labels("related_to")\
-                                          .src(self.archive.node_id)\
-                                          .dst(file.node_id).scalar()
-        if not maybe_edge_to_archive:
-            edge_to_archive = ArchiveRelatedToFile(
-                label="related_to",
-                src_id=self.archive.node_id,
-                dst_id=file.node_id,
-                system_annotations={
-                    "submitter_id": self.submitter_id,
-                    "revision": self.revision,
-                    "source": "tcga_magetab",
-                }
-            )
-            self.log.info("relating file to magetab archive %s",
-                          edge_to_archive)
-            with self.graph.session_scope() as s:
-                s.merge(edge_to_archive)
+        edge_to_archive = ArchiveRelatedToFile(
+            label="related_to",
+            src_id=self.archive.node_id,
+            dst_id=file.node_id,
+            system_annotations={
+                "submitter_id": self.submitter_id,
+                "revision": self.revision,
+                "source": "tcga_magetab",
+            }
+        )
+        self.log.info("relating file to magetab archive %s",
+                      edge_to_archive)
+        with self.graph.session_scope() as s:
+            s.merge(edge_to_archive)
 
     def put_mapping_in_pg(self, mapping):
         self.delete_old_edges()

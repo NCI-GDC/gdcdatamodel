@@ -98,18 +98,13 @@ class TCGAFilenameMetadataSyncer(object):
                 nodes.append(node)
 
         for node in nodes:
-            maybe_edge_to_biospecimen = self.graph.edge_lookup_one(
+            edge_to_biospecimen = self.graph.get_PsqlEdge(
                 label='data_from',
                 src_id=file_node.node_id,
-                dst_id=node.node_id)
-            if not maybe_edge_to_biospecimen:
-                edge_to_biospecimen = self.graph.get_PsqlEdge(
-                    label='data_from',
-                    src_id=file_node.node_id,
-                    dst_id=node.node_id,
-                    src_label='file',
-                    dst_label=node.label,
-                )
-                edge_to_biospecimen.system_annotations['source'] = 'filename'
-                self.log.info("inserting edge %s", edge_to_biospecimen)
-                self.graph.edge_insert(edge_to_biospecimen)
+                dst_id=node.node_id,
+                src_label='file',
+                dst_label=node.label,
+            )
+            edge_to_biospecimen.system_annotations['source'] = 'filename'
+            self.log.info("inserting edge %s", edge_to_biospecimen)
+            self.graph.edge_insert(edge_to_biospecimen)

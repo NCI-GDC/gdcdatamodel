@@ -3,7 +3,7 @@ import datetime
 import psqlgraph
 import pprint
 from uuid import uuid5, UUID
-from psqlgraph import PolyEdge as PsqlEdge
+from sqlalchemy.exc import IntegrityError
 from psqlgraph import PolyNode as PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
@@ -193,22 +193,15 @@ class xml2psqlgraph(object):
         self.nodes = {}
 
     def export_edges(self):
-        with self.graph.session_scope():
+        with self.graph.session_scope() as session:
             for edge_id, e in self.edges.iteritems():
-                existing = self.graph.edge_lookup(
-                    src_id=e.src_id, dst_id=e.dst_id, label=e.label).first()
-                if not existing:
-                    try:
-                        self.graph.edge_insert(e)
-                    except:
-                        log.error('Unable to add edge {} from {} to {}'.format(
-                            e.label, e.src, e.dst))
-                        log.error(e.properties)
-                        raise
-                else:
-                    self.graph.edge_update(
-                        existing, properties=e.properties,
-                        system_annotations=e.system_annotations)
+                try:
+                    session.merge(e)
+                except IntegrityError:
+                    log.error('Unable to add edge {} from {} to {}'.format(
+                        e.label, e.src, e.dst))
+                    log.error(e.properties)
+                    raise
         self.edges = {}
 
     def xml2psqlgraph(self, data):

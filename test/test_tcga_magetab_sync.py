@@ -127,7 +127,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
             magetab = self.graph.nodes().labels("archive")\
                                         .sysan({"data_level": "mage-tab"}).one()
             self.assertTrue(magetab.system_annotations["magetab_synced"])
-            self.assertTrue(magetab.system_annotations["magetab_edges_from"], 1)
+            self.assertEqual(magetab.system_annotations["magetab_edges_from"], 2)
         self.assertEqual(n_files, 2)
 
     @patch("zug.datamodel.tcga_magetab_sync.TCGAMAGETABSyncer.fetch_sdrf",

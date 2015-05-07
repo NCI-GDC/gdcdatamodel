@@ -19,6 +19,7 @@ from libcloud.storage.drivers.local import LocalStorageDriver
 from libcloud.common.types import LibcloudError
 
 from gdcdatamodel import models
+from gdcdatamodel.models import Archive, Center
 
 from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
@@ -50,7 +51,7 @@ def quickstats(graph):
     """
     archives_in_dcc = list(LatestURLParser())
     names_in_dcc = {a["archive_name"] for a in archives_in_dcc}
-    archive_nodes = graph.nodes().labels("archive").not_sysan({"to_delete": True}).all()
+    archive_nodes = graph.nodes(Archive).not_sysan({"to_delete": True}).all()
     names_in_graph = {n.system_annotations["archive_name"] for n in archive_nodes}
     removed = names_in_graph - names_in_dcc
     have = names_in_graph & names_in_dcc
@@ -166,12 +167,12 @@ class TCGADCCEdgeBuilder(object):
 
     def _get_archive(self):
         with self.graph.session_scope():
-            return self.graph.nodes().labels('archive')\
-                                     .with_edge_from_node(
-                                         models.FileMemberOfArchive,
-                                         self.file_node)\
-                                     .first()\
-                                     .system_annotations
+            return self.graph.nodes(Archive)\
+                             .with_edge_from_node(
+                                 models.FileMemberOfArchive,
+                                 self.file_node)\
+                             .first()\
+                             .system_annotations
 
     def build(self):
         with self.graph.session_scope():
@@ -182,29 +183,22 @@ class TCGADCCEdgeBuilder(object):
         center_type = self.archive['center_type']
         namespace = self.archive['center_name']
         if namespace == 'mdanderson.org' and center_type.upper() == 'CGCC':
-            query = self.graph.nodes().labels('center').props({'code':'20'})
+            query = self.graph.nodes(Center).props({'code':'20'})
         elif namespace == 'genome.wustl.edu' and center_type.upper() == 'CGCC':
-            query = self.graph.nodes().labels('center').props({'code':'21'})
+            query = self.graph.nodes(Center).props({'code':'21'})
         elif namespace == 'bcgsc.ca' and center_type.upper() == 'CGCC':
-            query = self.graph.nodes().labels('center').props({'code':'13'})
+            query = self.graph.nodes(Center).props({'code':'13'})
         else:
-            query = self.graph.nodes().labels('center').props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
+            query = self.graph.nodes(Center).props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
 
         count = query.count()
         if count == 1:
             attr_node = query.first()
-            maybe_edge_to_center = self.graph.edge_lookup_one(
-                label='submitted_by',
+            edge_to_center = models.FileSubmittedByCenter(
                 src_id=file_node.node_id,
-                dst_id=attr_node.node_id
+                dst_id=attr_node.node_id,
             )
-            if not maybe_edge_to_center:
-                edge_to_center = models.FileSubmittedByCenter(
-                    src_id=file_node.node_id,
-                    dst_id=attr_node.node_id,
-                )
-                with self.graph.session_scope() as s:
-                    s.merge(edge_to_center)
+            self.graph.current_session().merge(edge_to_center)
         elif count == 0:
             self.log.warning("center with type %s and namespace %s not found",
                              self.archive['center_type'],
@@ -233,21 +227,14 @@ class TCGADCCEdgeBuilder(object):
             )
             if not attr_node:
                 self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
-            maybe_edge_to_attr_node = self.graph.edge_lookup_one(
+            edge_to_attr_node = self.graph.get_PsqlEdge(
                 label=LABEL_MAP[attr],
                 src_id=file_node.node_id,
-                dst_id=attr_node.node_id
+                dst_id=attr_node.node_id,
+                src_label='file',
+                dst_label=attr,
             )
-            if not maybe_edge_to_attr_node:
-                edge_to_attr_node = self.graph.get_PsqlEdge(
-                    label=LABEL_MAP[attr],
-                    src_id=file_node.node_id,
-                    dst_id=attr_node.node_id,
-                    src_label='file',
-                    dst_label=attr,
-                )
-                with self.graph.session_scope() as s:
-                    s.merge(edge_to_attr_node)
+            self.graph.current_session().merge(edge_to_attr_node)
 
     def classify(self, file_node):
         classification = classify(self.archive, file_node["file_name"])
@@ -347,8 +334,7 @@ class TCGADCCArchiveSyncer(object):
 
     def remove_old_versions(self, submitter_id):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
-        all_versions = self.graph.nodes()\
-                                 .labels("archive")\
+        all_versions = self.graph.nodes(Archive)\
                                  .props({"submitter_id": submitter_id})\
                                  .not_sysan({"to_delete": True})\
                                  .all()
@@ -404,18 +390,11 @@ class TCGADCCArchiveSyncer(object):
             label="project",
             property_matches={"code": self.archive["disease_code"]},
         )
-        maybe_edge_to_project = self.graph.edge_lookup_one(
+        edge_to_project = models.ArchiveMemberOfProject(
             src_id=archive_node.node_id,
             dst_id=project_node.node_id,
-            label="member_of",
         )
-        if not maybe_edge_to_project:
-            edge_to_project = models.ArchiveMemberOfProject(
-                src_id=archive_node.node_id,
-                dst_id=project_node.node_id,
-            )
-            with self.graph.session_scope() as s:
-                s.merge(edge_to_project)
+        self.graph.current_session().merge(edge_to_project)
         return archive_node
 
     def lookup_file_in_pg(self, archive_node, filename):
@@ -505,18 +484,11 @@ class TCGADCCArchiveSyncer(object):
                 },
             )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
-        maybe_edge_to_archive = self.graph.edge_lookup_one(
+        edge_to_archive = models.FileMemberOfArchive(
             src_id=file_node.node_id,
             dst_id=self.archive_node.node_id,
-            label="member_of",
         )
-        if not maybe_edge_to_archive:
-            edge_to_archive = models.FileMemberOfArchive(
-                src_id=file_node.node_id,
-                dst_id=self.archive_node.node_id,
-            )
-            with self.graph.session_scope() as s:
-                s.merge(edge_to_archive)
+        self.graph.current_session().merge(edge_to_archive)
         edge_builder = TCGADCCEdgeBuilder(file_node, self.graph, self.log)
         edge_builder.build()
         return file_node
@@ -728,7 +700,7 @@ class TCGADCCArchiveSyncer(object):
         if self.archive_id:
             with self.graph.session_scope():
                 self.log.info("Archive with id %s requested, finding in database", self.archive_id)
-                archive_node = self.graph.nodes().ids(self.archive_id).one()
+                archive_node = self.graph.nodes(Archive).ids(self.archive_id).one()
                 assert archive_node.label == "archive"
                 self.log.info("Finding matching archive from DCC")
                 archive = [archive for archive in archives
@@ -749,7 +721,7 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("Finding archive to work on, try %s", tries)
             with self.graph.session_scope():
                 self.log.info("Fetching archive nodes from database")
-                archive_nodes = self.graph.nodes().labels("archive").all()
+                archive_nodes = self.graph.nodes(Archive).all()
                 current = self.list_locked_archives()
                 names_in_dcc = [archive["archive_name"] for archive in archives]
                 unuploaded = [node for node in archive_nodes

@@ -187,13 +187,10 @@ def insert_project_nodes(driver, path):
                         label='project',
                         properties=properties))
                 program_id = programs[program]
-                if not driver.edge_lookup_one(src_id=node_id,
-                                              dst_id=program_id,
-                                              label="member_of"):
-                    session.merge(ProjectMemberOfProgram(
-                        src_id=node_id,
-                        dst_id=program_id,
-                        label="member_of"))
+                session.merge(ProjectMemberOfProgram(
+                    src_id=node_id,
+                    dst_id=program_id,
+                    label="member_of"))
 
 
 def insert_classification_nodes(driver):
@@ -204,17 +201,13 @@ def insert_classification_nodes(driver):
             for subtype in subtypes:
                 subtype_node = idempotent_insert(driver, "data_subtype",
                                                  subtype, session)
-                edge = driver.edge_lookup_one(src_id=subtype_node.node_id,
-                                              dst_id=type_node.node_id,
-                                              label="member_of")
-                if not edge:
-                    edge = DataSubtypeMemberOfDataType(
-                        src_id=subtype_node.node_id,
-                        dst_id=type_node.node_id)
-                    try:
-                        session.merge(edge)
-                    except IntegrityError:
-                        pass  # assume someone beat us there
+                edge = DataSubtypeMemberOfDataType(
+                    src_id=subtype_node.node_id,
+                    dst_id=type_node.node_id)
+                try:
+                    session.merge(edge)
+                except IntegrityError:
+                    pass  # assume someone beat us there
         for tag in TAGS:
             idempotent_insert(driver, "tag", tag, session)
         for platform in PLATFORMS:

@@ -71,18 +71,13 @@ class TCGADCCToBiospecimen(object):
                 nodes.append(node)
 
         for node in nodes:
-            maybe_edge_to_biospecimen = self.pg_driver.edge_lookup_one(
+            edge_to_biospecimen = self.pg_driver.get_PsqlEdge(
                 label='data_from',
                 src_id=file_node.node_id,
-                dst_id=node.node_id)
-            if not maybe_edge_to_biospecimen:
-                edge_to_biospecimen = self.pg_driver.get_PsqlEdge(
-                    label='data_from',
-                    src_id=file_node.node_id,
-                    dst_id=node.node_id,
-                    src_label='file',
-                    dst_label=node.label,
-                )
-                edge_to_biospecimen.system_annotations['source'] = 'filename'
-                with self.pg_driver.session_scope() as s:
-                    s.merge(edge_to_biospecimen)
+                dst_id=node.node_id,
+                src_label='file',
+                dst_label=node.label,
+            )
+            edge_to_biospecimen.system_annotations['source'] = 'filename'
+            with self.pg_driver.session_scope() as s:
+                s.merge(edge_to_biospecimen)
