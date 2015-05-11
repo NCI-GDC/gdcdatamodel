@@ -195,6 +195,7 @@ def get_participant_es_mapping(include_file=True):
     participant = _get_header('participant')
     participant.properties = _walk_tree(
         participant_tree, _munge_properties('participant'))
+    participant.properties.days_to_index = LONG
 
     # Patch project
     patch_project(participant.properties.project.properties)
