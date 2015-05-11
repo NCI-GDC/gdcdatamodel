@@ -31,7 +31,7 @@ TCGA,THCA,legacy,Thyroid Carcinoma,Thyroid Carcinoma,Thyroid
 TCGA,UCS,legacy,Uterine Carcinosarcoma,Uterine Carcinosarcoma,Uterus
 TCGA,UCEC,legacy,Uterine Corpus Endometrial Carcinoma,Uterine Corpus Endometrial Carcinoma,Uterus
 TCGA,UVM,legacy,Uveal Melanoma,Uveal Melanoma,Eye
-TCGA,MISC,legacy,Miscellaneous,Not Applicable ,Not Applicable
+TCGA,MISC,legacy,Miscellaneous,Not Applicable
 TCGA,LCML,legacy,Chronic Myelogenous Leukemia,Chronic Myelogenous Leukemia,Blood
 TCGA,FPPP,legacy,FFPE Pilot Phase II,To Be Determined,To Be Determined
 TCGA,CNTL,legacy,Controls,Not Applicable,Not Applicable
