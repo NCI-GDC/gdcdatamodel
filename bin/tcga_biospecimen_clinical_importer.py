@@ -3,7 +3,6 @@ import logging
 import argparse
 import re
 from multiprocessing import Pool
-from gdcdatamodel import node_avsc_object, edge_avsc_object
 from gdcdatamodel import models
 from zug.datamodel import xml2psqlgraph, latest_urls,\
     extract_tar, bcr_xml_mapping, clinical_xml_mapping, prelude
