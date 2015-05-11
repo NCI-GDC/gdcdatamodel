@@ -34,7 +34,7 @@ TCGA,UVM,legacy,Uveal Melanoma,Uveal Melanoma,Eye
 TCGA,MISC,legacy,Miscellaneous,Not Applicable
 TCGA,LCML,legacy,Chronic Myelogenous Leukemia,Chronic Myelogenous Leukemia,Blood
 TCGA,FPPP,legacy,FFPE Pilot Phase II,To Be Determined,To Be Determined
-TCGA,CNTL,legacy,Controls,Not Applicable,Not Applicable
+TCGA,CNTL,legacy,Controls,Not Applicable
 TARGET,ALL-P1,legacy,Acute Lymphoblastic Leukemia - Phase I,Acute Lymphoblastic Leukemia,Blood
 TARGET,ALL-P2,legacy,Acute Lymphoblastic Leukemia - Phase II,Acute Lymphoblastic Leukemia,Blood
 TARGET,AML,legacy,Acute Myeloid Leukemia,Acute Myeloid Leukemia,Blood
