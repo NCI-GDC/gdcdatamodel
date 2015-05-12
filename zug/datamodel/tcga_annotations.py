@@ -6,7 +6,7 @@ from psqlgraph import Edge
 from time import mktime, strptime
 from uuid import UUID, uuid5
 
-log = get_logger('tcga_annotations')
+
 BASE_URL = "https://tcga-data.nci.nih.gov/annotations/resources/searchannotations/json"
 DATE_RE = re.compile('(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(-\d{1,2}:\d{2})')
 ANNOTATION_NAMESPACE = UUID('e61d5a88-7f5c-488e-9c42-a5f32b4d1c50')
@@ -24,27 +24,25 @@ class TCGAAnnotationImporter(object):
 
     def __init__(self, psqlgraphdriver):
         self.g = psqlgraphdriver
+        self.log = get_logger('tcga_annotation_sync')
 
     def download_annotations(self, params={}, url=BASE_URL):
         """Downloads all annotations from TCGA
-
         """
-        log.info('Downloading annotations from {} {}'.format(url, params))
+        self.log.info('Downloading annotations from {} {}'.format(url, params))
         r = requests.get(url, params=params)
         r.raise_for_status()
         return r.json()
 
     def from_url(self, *args, **kwargs):
         """start conversion by download and insert all annotations
-
         """
         self.from_json(self.download_annotations(*args, **kwargs))
 
     def from_json(self, doc):
         """Import json-like python object of annotations into graph
-
         """
-        log.info('Found {} annotations.'.format(len(doc['dccAnnotation'])))
+        self.log.info('Found {} annotations.'.format(len(doc['dccAnnotation'])))
         with self.g.session_scope():
             map(self.insert_annotation, doc['dccAnnotation'])
 
@@ -134,8 +132,8 @@ class TCGAAnnotationImporter(object):
         if not node:
             node = self.g.nodes().props({'submitter_id': item['item']}).first()
             if node:
-                log.error('Annotation {} to {} under wrong label {}'.format(
+                self.log.error('Annotation {} to {} under wrong label {}'.format(
                     itype, item['item']), node.label)
             else:
-                log.warn('No {} {}'.format(itype, item['item']))
+                self.log.warn('No {} {}'.format(itype, item['item']))
         return node
