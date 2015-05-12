@@ -14,6 +14,7 @@ from datetime import datetime
 from sqlalchemy import Integer
 from psqlgraph import Node, Edge
 from gdcdatamodel import models
+from gdcdatamodel.models import Aliquot, Participant, Sample
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
@@ -258,15 +259,15 @@ class TARGETSampleMatrixSyncer(object):
             self.remove_old_versions()
 
     def remove_old_versions(self):
-        old_nodes = self.graph.nodes()\
-                              .labels(["aliquot", "participant", "sample"])\
-                              .sysan({"group_id": self.project})\
-                              .filter(Node._sysan["version"].cast(Integer) < self.version)\
-                              .all()
-        self.log.info("Found %s old nodes to remove.", len(old_nodes))
-        for node in old_nodes:
-            self.log.info("Deleting node %s", node)
-            self.graph.node_delete(node=node)
+        models_to_remove = [Aliquot, Participant, Sample]
+        for model in models_to_remove:
+            q = self.graph.nodes(model)\
+                          .sysan({"group_id": self.project})\
+                          .filter(model._sysan["version"].cast(Integer) < self.version)
+            self.log.info("Found %s old %s to remove.", q.count(), model.__name__)
+            for node in q.all():
+                self.log.info("Deleting node %s", node)
+                self.graph.node_delete(node=node)
 
     def put_mapping_in_pg(self, mapping):
         self.log.info("Constructing dict from aliquot barcode -> cghub uuid")
