@@ -9,7 +9,7 @@ from uuid import UUID, uuid5
 log = get_logger('tcga_annotations')
 BASE_URL = "https://tcga-data.nci.nih.gov/annotations/resources/searchannotations/json"
 DATE_RE = re.compile('(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(-\d{1,2}:\d{2})')
-ANNOTATION_NS = 'e61d5a88-7f5c-488e-9c42-a5f32b4d1c50'
+ANNOTATION_NAMESPACE = UUID('e61d5a88-7f5c-488e-9c42-a5f32b4d1c50')
 ITEMS = [None, 'aliquot', 'analyte', 'participant', 'portion', 'sample',
          'slide', 'portion']
 
@@ -92,7 +92,7 @@ class TCGAAnnotationImporter(object):
         """UUID generated from key=(target barcode + noteID)
 
         """
-        return str(uuid5(UUID(ANNOTATION_NS), key))
+        return str(uuid5(ANNOTATION_NAMESPACE, key))
 
     def get_category(self, doc):
         return doc['annotationCategory']['categoryName']
