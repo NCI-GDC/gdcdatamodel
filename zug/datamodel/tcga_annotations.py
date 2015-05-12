@@ -22,8 +22,8 @@ def unix_time(dt):
 
 class TCGAAnnotationImporter(object):
 
-    def __init__(self, psqlgraphdriver):
-        self.g = psqlgraphdriver
+    def __init__(self, graph):
+        self.graph = graph
         self.log = get_logger('tcga_annotation_sync')
 
     def download_annotations(self, params={}, url=BASE_URL):
@@ -43,20 +43,20 @@ class TCGAAnnotationImporter(object):
         """Import json-like python object of annotations into graph
         """
         self.log.info('Found {} annotations.'.format(len(doc['dccAnnotation'])))
-        with self.g.session_scope():
+        with self.graph.session_scope():
             map(self.insert_annotation, doc['dccAnnotation'])
 
     def insert_annotation(self, doc):
         """Insert a single annotation dict into graph
 
         """
-        with self.g.session_scope():
+        with self.graph.session_scope():
             dsts = map(self.lookup_item_node, doc['items'])
             if set(dsts) == {None}:
                 return
-            for noteID, note in self.get_notes(doc).items():
-                src_id = self.generate_uuid(self.get_submitter_id(doc)+noteID)
-                self.g.node_merge(
+            for noteID, note in self.graphet_notes(doc).items():
+                src_id = self.graphenerate_uuid(self.graphet_submitter_id(doc)+noteID)
+                self.graph.node_merge(
                     node_id=src_id,
                     label='annotation',
                     properties=self.munge_annotation(doc, note))
@@ -68,21 +68,21 @@ class TCGAAnnotationImporter(object):
         """
         if not dst:
             return
-        edge = self.g.edge_lookup(src_id, dst.node_id, 'annotates').first()
+        edge = self.graph.edge_lookup(src_id, dst.node_id, 'annotates').first()
         if not edge:
-            self.g.edge_insert(Edge(src_id, dst.node_id, 'annotates'))
+            self.graph.edge_insert(Edge(src_id, dst.node_id, 'annotates'))
 
     def munge_annotation(self, doc, noteText):
         """Parse doc to get node properties
 
         """
         return {
-            'submitter_id': self.get_submitter_id(doc),
-            'category': self.get_category(doc),
-            'classification': self.get_classification(doc),
-            'creator': self.get_creator(doc),
-            'created_datetime': self.get_created_datetime(doc),
-            'status': self.get_status(doc),
+            'submitter_id': self.graphet_submitter_id(doc),
+            'category': self.graphet_category(doc),
+            'classification': self.graphet_classification(doc),
+            'creator': self.graphet_creator(doc),
+            'created_datetime': self.graphet_created_datetime(doc),
+            'status': self.graphet_status(doc),
             'notes': noteText,
         }
 
@@ -127,10 +127,10 @@ class TCGAAnnotationImporter(object):
 
         """
         itype = ITEMS[item['itemType']['itemTypeId']]
-        node = self.g.nodes().labels(itype).props(
+        node = self.graph.nodes().labels(itype).props(
             {'submitter_id': item['item']}).first()
         if not node:
-            node = self.g.nodes().props({'submitter_id': item['item']}).first()
+            node = self.graph.nodes().props({'submitter_id': item['item']}).first()
             if node:
                 self.log.error('Annotation {} to {} under wrong label {}'.format(
                     itype, item['item']), node.label)
