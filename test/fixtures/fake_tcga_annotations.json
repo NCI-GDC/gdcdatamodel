@@ -1,0 +1,85 @@
+{
+  "dccAnnotation":
+  [
+    {
+      "annotationCategory": {
+        "annotationClassification": {
+          "annotationClassificationId": 2,
+          "annotationClassificationName": "CenterNotification"
+        },
+        "categoryId": 28,
+        "categoryName": "Center QC failed"
+      },
+      "approved": true,
+      "createdBy": "DCC",
+      "dateCreated": "2009-03-13T00:00:00-04:00",
+      "id": 746,
+      "items": [
+        {
+          "disease": {
+            "abbreviation": "GBM",
+            "description": "Glioblastoma multiforme",
+            "diseaseId": 1
+          },
+          "id": 182,
+          "item": "TCGA-06-0237-01A-02D-0234-02",
+          "itemType": {
+            "itemTypeId": 1,
+            "itemTypeName": "Aliquot"
+          },
+          "uuid": "4436f06b-d90a-4171-8556-9b70a510d3d9"
+        }
+      ],
+      "notes": [
+        {
+          "addedBy": "DCC",
+          "dateAdded": "2009-03-13T00:00:00-04:00",
+          "noteId": 181,
+          "noteText": "[hms.harvard.edu]: failed DNA QC, not enough DNA. So these were not processed.  We performed in-house G WGA and submitted data. But as the protocol was not established for in-house  amp, the sample data was withdrawn.  Please remove L1 and L2 data for this sample too"
+        }
+      ],
+      "rescinded": false,
+      "status": "Approved"
+    },
+    {
+      "annotationCategory": {
+        "annotationClassification": {
+          "annotationClassificationId": 2,
+          "annotationClassificationName": "CenterNotification"
+        },
+        "categoryId": 28,
+        "categoryName": "Center QC failed"
+      },
+      "approved": true,
+      "createdBy": "DCC",
+      "dateCreated": "2009-03-13T00:00:00-04:00",
+      "id": 747,
+      "items": [
+        {
+          "disease": {
+            "abbreviation": "GBM",
+            "description": "Glioblastoma multiforme",
+            "diseaseId": 1
+          },
+          "id": 183,
+          "item": "TCGA-06-0237-10A-01D-0235-02",
+          "itemType": {
+            "itemTypeId": 1,
+            "itemTypeName": "Aliquot"
+          },
+          "uuid": "6e465e6a-0bbc-49d2-a866-33ca3d04d627"
+        }
+      ],
+      "notes": [
+        {
+          "addedBy": "DCC",
+          "dateAdded": "2009-03-13T00:00:00-04:00",
+          "noteId": 182,
+          "noteText": "[hms.harvard.edu]: failed DNA QC, not enough DNA. So these were not processed.  We performed in-house G WGA and submitted data. But as the protocol was not established for in-house  amp, the sample data was withdrawn.  Please remove L1 and L2 data for this sample too"
+        }
+      ],
+      "rescinded": false,
+      "status": "Approved"
+    }
+  ]
+}

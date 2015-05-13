@@ -1,17 +1,26 @@
 import re
+import os
 import requests
 from cdisutils.log import get_logger
 from datetime import datetime
-from psqlgraph import Edge
 from time import mktime, strptime
 from uuid import UUID, uuid5
+from psqlgraph import PsqlGraphDriver
+
+from psqlgraph import Node
+
+from gdcdatamodel.models import (
+    File, Aliquot, Analyte,
+    Sample, Portion, Participant,
+    Annotation
+)
 
 
 BASE_URL = "https://tcga-data.nci.nih.gov/annotations/resources/searchannotations/json"
+
 DATE_RE = re.compile('(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(-\d{1,2}:\d{2})')
+
 ANNOTATION_NAMESPACE = UUID('e61d5a88-7f5c-488e-9c42-a5f32b4d1c50')
-ITEMS = [None, 'aliquot', 'analyte', 'participant', 'portion', 'sample',
-         'slide', 'portion']
 
 
 def unix_time(dt):
@@ -20,75 +29,69 @@ def unix_time(dt):
     return long(delta.total_seconds())
 
 
-class TCGAAnnotationImporter(object):
+class TCGAAnnotationSyncer(object):
 
-    def __init__(self, graph):
-        self.graph = graph
+    def __init__(self):
+        self.graph = PsqlGraphDriver(
+            os.environ["PG_HOST"],
+            os.environ["PG_USER"],
+            os.environ["PG_PASS"],
+            os.environ["PG_NAME"],
+        )
         self.log = get_logger('tcga_annotation_sync')
 
-    def download_annotations(self, params={}, url=BASE_URL):
+    def download_annotations(self, url=BASE_URL):
         """Downloads all annotations from TCGA
         """
-        self.log.info('Downloading annotations from {} {}'.format(url, params))
-        r = requests.get(url, params=params)
-        r.raise_for_status()
-        return r.json()
+        self.log.info('Downloading annotations from %s', url)
+        resp = requests.get(url)
+        resp.raise_for_status()
+        return resp.json()["dccAnnotation"]
 
-    def from_url(self, *args, **kwargs):
-        """start conversion by download and insert all annotations
-        """
-        self.from_json(self.download_annotations(*args, **kwargs))
-
-    def from_json(self, doc):
-        """Import json-like python object of annotations into graph
-        """
-        self.log.info('Found {} annotations.'.format(len(doc['dccAnnotation'])))
+    def go(self):
+        annotations_doc = self.download_annotations()
         with self.graph.session_scope():
-            map(self.insert_annotation, doc['dccAnnotation'])
+            for annotation_doc in annotations_doc:
+                self.insert_annotation(annotation_doc)
 
     def insert_annotation(self, doc):
         """Insert a single annotation dict into graph
-
         """
-        with self.graph.session_scope():
-            dsts = map(self.lookup_item_node, doc['items'])
-            if set(dsts) == {None}:
-                return
-            for noteID, note in self.graphet_notes(doc).items():
-                src_id = self.graphenerate_uuid(self.graphet_submitter_id(doc)+noteID)
-                self.graph.node_merge(
-                    node_id=src_id,
-                    label='annotation',
-                    properties=self.munge_annotation(doc, note))
-                [self.add_edge(dst, src_id) for dst in dsts]
-
-    def add_edge(self, dst, src_id):
-        """Idempotently add an edge from annotation to item
-
-        """
+        assert len(doc["items"]) == 1
+        item = doc["items"][0]
+        dst = self.lookup_item_node(item)
         if not dst:
+            self.log.info("No item found for annotation %s, skipping", doc["id"])
             return
-        edge = self.graph.edge_lookup(src_id, dst.node_id, 'annotates').first()
-        if not edge:
-            self.graph.edge_insert(Edge(src_id, dst.node_id, 'annotates'))
-
-    def munge_annotation(self, doc, noteText):
-        """Parse doc to get node properties
-
-        """
-        return {
-            'submitter_id': self.graphet_submitter_id(doc),
-            'category': self.graphet_category(doc),
-            'classification': self.graphet_classification(doc),
-            'creator': self.graphet_creator(doc),
-            'created_datetime': self.graphet_created_datetime(doc),
-            'status': self.graphet_status(doc),
-            'notes': noteText,
-        }
+        for note_id, note_text in self.get_notes(doc).items():
+            annotation = Annotation(
+                node_id=self.generate_uuid(self.get_submitter_id(doc)+note_id),
+                submitter_id=self.get_submitter_id(doc),
+                category=self.get_category(doc),
+                classification=self.get_classification(doc),
+                creator=self.get_creator(doc),
+                created_datetime=self.get_created_datetime(doc),
+                status=self.get_status(doc),
+                notes=note_text,
+            )
+            if isinstance(dst, File):
+                annotation.files = [dst]
+            elif isinstance(dst, Sample):
+                annotation.samples = [dst]
+            elif isinstance(dst, Participant):
+                annotation.participants = [dst]
+            elif isinstance(dst, Portion):
+                annotation.portions = [dst]
+            elif isinstance(dst, Analyte):
+                annotation.analytes = [dst]
+            elif isinstance(dst, Aliquot):
+                annotation.aliquots = [dst]
+            else:
+                raise("annotations cannot annotate {}".format(dst))
+            self.graph.current_session().merge(annotation)
 
     def generate_uuid(self, key):
         """UUID generated from key=(target barcode + noteID)
-
         """
         return str(uuid5(ANNOTATION_NAMESPACE, key))
 
@@ -126,14 +129,8 @@ class TCGAAnnotationImporter(object):
         find it that way.
 
         """
-        itype = ITEMS[item['itemType']['itemTypeId']]
-        node = self.graph.nodes().labels(itype).props(
-            {'submitter_id': item['item']}).first()
-        if not node:
-            node = self.graph.nodes().props({'submitter_id': item['item']}).first()
-            if node:
-                self.log.error('Annotation {} to {} under wrong label {}'.format(
-                    itype, item['item']), node.label)
-            else:
-                self.log.warn('No {} {}'.format(itype, item['item']))
+        cls = Node.get_subclass(item['itemType']['itemTypeName'].lower())
+        node = self.graph.nodes(cls)\
+                         .props({'submitter_id': item['item']})\
+                         .scalar()
         return node
