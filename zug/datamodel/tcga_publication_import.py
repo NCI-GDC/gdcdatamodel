@@ -5,6 +5,9 @@ from uuid import uuid5, UUID
 from psqlgraph import Edge
 from pandas import read_table
 from cdisutils.log import get_logger
+from psqlgraph import PsqlGraphDriver
+from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
+from gdcdatamodel import node_avsc_object, edge_avsc_object
 
 
 PUBLICATION_NAMESPACE = UUID('b01299e1-4306-4fba-af07-2d6194320f10')
@@ -15,13 +18,18 @@ class TCGAPublicationImporter(object):
     publications and add publication - [refers_to] -> file edge
     to files specified in bamlist'''
 
-    def __init__(self, graph):
+    def __init__(self):
         self.logger = get_logger('tcga_publication_build')
+        self.graph = PsqlGraphDriver(
+            os.environ["ZUGS_PG_HOST"], os.environ["ZUGS_PG_USER"],
+            os.environ["ZUGS_PG_PASS"], os.environ["ZUGS_PG_NAME"],
+            edge_validator=AvroEdgeValidator(edge_avsc_object),
+            node_validator=AvroNodeValidator(node_avsc_object))
+
         self.publications = yaml.load(open(os.path.join(PKG_DIR,
                                       'publications.yml'), 'r'))
         self.bamlist = read_table(
             os.path.join(PKG_DIR, 'publication_bamlist.txt'))
-        self.graph = graph
 
     def run(self):
         with self.graph.session_scope():

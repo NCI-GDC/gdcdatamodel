@@ -2,6 +2,7 @@ import unittest
 from psqlgraph import PsqlGraphDriver
 from zug.datamodel.tcga_publication_import import TCGAPublicationImporter
 import uuid
+import os
 from gdcdatamodel import node_avsc_object, edge_avsc_object
 from psqlgraph.validate import AvroNodeValidator, AvroEdgeValidator
 
@@ -13,6 +14,10 @@ class TestTCGAPublicationImport(unittest.TestCase):
             'localhost', 'test', 'test', 'automated_test',
             edge_validator=AvroEdgeValidator(edge_avsc_object),
             node_validator=AvroNodeValidator(node_avsc_object))
+        os.environ["ZUGS_PG_HOST"] = 'localhost'
+        os.environ["ZUGS_PG_USER"] = 'test'
+        os.environ["ZUGS_PG_PASS"] = 'test'
+        os.environ["ZUGS_PG_NAME"] = 'automated_test'
 
     def tearDown(self):
         with self.driver.engine.begin() as conn:
@@ -39,7 +44,7 @@ class TestTCGAPublicationImport(unittest.TestCase):
         return file
 
     def test_publication_import(self):
-        importer = TCGAPublicationImporter(self.driver)
+        importer = TCGAPublicationImporter()
         importer.bamlist = {'disease': []}
         importer.run()
         with self.driver.session_scope():
@@ -63,7 +68,7 @@ class TestTCGAPublicationImport(unittest.TestCase):
                    'filename': ['test1', 'test2', 'test3'],
                    'cghub_uuid': ['a', 'b', 'c']}
 
-        importer = TCGAPublicationImporter(self.driver)
+        importer = TCGAPublicationImporter()
         importer.bamlist = bamlist
         importer.run()
         with self.driver.session_scope():
@@ -89,7 +94,7 @@ class TestTCGAPublicationImport(unittest.TestCase):
                    'filename': ['test1', 'test2'],
                    'cghub_uuid': ['a', 'b']}
 
-        importer = TCGAPublicationImporter(self.driver)
+        importer = TCGAPublicationImporter()
         importer.bamlist = bamlist
         importer.run()
         with self.driver.session_scope():
@@ -106,7 +111,7 @@ class TestTCGAPublicationImport(unittest.TestCase):
                    'filename': ['test1', 'test1'],
                    'cghub_uuid': ['a', 'a']}
 
-        importer = TCGAPublicationImporter(self.driver)
+        importer = TCGAPublicationImporter()
         importer.bamlist = bamlist
         importer.run()
         with self.driver.session_scope():
