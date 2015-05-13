@@ -88,11 +88,7 @@ def create_indexes(host, user, password, database):
     for cls in Node.get_subclasses():
         table = cls.__tablename__
         map(driver.engine.execute, index(
-            table, [
-                'node_id',
-                '_label',
-                'node_id, _label'
-            ]))
+            table, ['node_id']))
         map(driver.engine.execute, [
             "CREATE INDEX ON {} USING gin (_sysan)".format(table),
             "CREATE INDEX ON {} USING gin (_props)".format(table),
@@ -105,9 +101,7 @@ def create_indexes(host, user, password, database):
             table, [
                 'src_id',
                 'dst_id',
-                '_label',
                 'dst_id, src_id',
-                'dst_id, src_id, _label'
             ]))
         map(driver.engine.execute, [
             "CREATE INDEX ON {} USING gin (_sysan)".format(table),
