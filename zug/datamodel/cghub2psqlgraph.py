@@ -2,7 +2,7 @@ import re
 import json
 import datetime
 import psqlgraph
-from psqlgraph import PolyEdge, PolyNode
+from psqlgraph import PolyNode
 from lxml import etree
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
@@ -187,19 +187,11 @@ class cghub2psqlgraph(object):
         Does this edge already exist? If not, insert it, else update it
 
         """
-        existing = self.graph.edge_lookup(
-            src_id=edge.src_id, dst_id=edge.dst_id, label=edge.label).scalar()
-        if not existing:
-            src = self.graph.nodes().ids(str(edge.dst_id)).scalar()
-            if src:
-                self.graph.edge_insert(edge)
-            else:
+        with self.graph.session_scope() as session:
+            if not self.graph.nodes().ids(str(edge.dst_id)).scalar():
                 self.log.warn('Missing {} destination {}'.format(
                     edge.label, edge.dst_id))
-        else:
-            self.graph.edge_update(
-                existing, edge.system_annotations, edge.properties)
-
+            session.merge(edge)
 
     def export_edges(self):
         """Adds related_to edges then all other edges to psqlgraph from
@@ -363,7 +355,7 @@ class cghub2psqlgraph(object):
         legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
                                           root, single=True, nullable=True)
         if not legacy_sample_id:
-            log.error('No legacy_sample_id for {}'.format(file_key))
+            self.log.error('No legacy_sample_id for {}'.format(file_key))
             return
         code = self.center_regex.match(legacy_sample_id)
         if not code:
