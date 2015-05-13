@@ -3,6 +3,9 @@ import yaml
 import os
 from uuid import uuid5, UUID
 from psqlgraph import Edge
+from pandas import read_table
+from cdisutils.log import get_logger
+
 
 PUBLICATION_NAMESPACE = UUID('b01299e1-4306-4fba-af07-2d6194320f10')
 
@@ -12,23 +15,24 @@ class TCGAPublicationImporter(object):
     publications and add publication - [refers_to] -> file edge
     to files specified in bamlist'''
 
-    def __init__(self, bamlist, pg_driver, logger):
+    def __init__(self, graph):
+        self.logger = get_logger('tcga_publication_build')
         self.publications = yaml.load(open(os.path.join(PKG_DIR,
                                       'publications.yml'), 'r'))
-        self.bamlist = bamlist
-        self.g = pg_driver
-        self.logger = logger
+        self.bamlist = read_table(
+            os.path.join(PKG_DIR, 'publication_bamlist.txt'))
+        self.graph = graph
 
     def run(self):
-        with self.g.session_scope():
+        with self.graph.session_scope():
             self.create_publication_nodes()
             self.build_publication_edge()
 
     def create_publication_nodes(self):
         for disease, properties in self.publications.iteritems():
             node_id = str(uuid5(PUBLICATION_NAMESPACE, disease))
-            if self.g.nodes().ids(node_id).count() == 0:
-                self.g.node_merge(
+            if self.graph.nodes().ids(node_id).count() == 0:
+                self.graph.node_merge(
                     node_id=node_id,
                     properties=properties, label='publication')
             self.publications[disease]['node_id'] = node_id
@@ -37,40 +41,46 @@ class TCGAPublicationImporter(object):
         '''tool for collecting all missing files in bamlist'''
 
         print 'disease', 'filename', 'analysis_id'
-        with self.g.session_scope():
-            for bam in self.bamlist:
-                if 'analysis_id' in bam:
-                    query = self.g.nodes().sysan(
-                        {'analysis_id': bam['analysis_id']})\
-                        .props({'file_name': bam['filename']})
+        with self.graph.session_scope():
+            for i in xrange(len(self.bamlist['disease'])):
+                filename = self.bamlist['filename'][i]
+                analysis_id = self.bamlist['cghub_uuid'][i]
+                disease = self.bamlist['disease'][i]
+                if analysis_id == analysis_id:
+                    query = self.graph.nodes().sysan(
+                        {'analysis_id': analysis_id})\
+                        .props({'file_name': filename})
                 else:
-                    query = self.g.nodes()\
-                        .props({'file_name': bam['filename']})
+                    query = self.graph.nodes()\
+                        .props({'file_name': filename})
                 if query.count() == 0:
-                    print bam['disease'], bam['filename'],\
-                        bam.get('analysis_id', '')
+                    print disease, filename, analysis_id
 
     def build_publication_edge(self):
-        for bam in self.bamlist:
-            if 'analysis_id' in bam:
-                query = self.g.nodes().sysan(
-                    {'analysis_id': bam['analysis_id']})\
-                    .props({'file_name': bam['filename']})
+        for i in xrange(len(self.bamlist['disease'])):
+            filename = self.bamlist['filename'][i]
+            analysis_id = self.bamlist['cghub_uuid'][i]
+            disease = self.bamlist['disease'][i]
+            if analysis_id == analysis_id:
+
+                query = self.graph.nodes().sysan(
+                    {'analysis_id': analysis_id})\
+                    .props({'file_name': filename})
             else:
-                query = self.g.nodes()\
-                    .props({'file_name': bam['filename']})
+                query = self.graph.nodes()\
+                    .props({'file_name': filename})
 
             count = query.count()
             if count == 1:
-                src_id = self.publications[bam['disease']]['node_id']
+                src_id = self.publications[disease]['node_id']
                 dst_id = query.first().node_id
-                if not self.g.edge_lookup_one(src_id=src_id,
-                                              dst_id=dst_id,
-                                              label='refers_to'):
-                    self.g.edge_insert(Edge(
+                if not self.graph.edge_lookup_one(src_id=src_id,
+                                                  dst_id=dst_id,
+                                                  label='refers_to'):
+                    self.graph.edge_insert(Edge(
                         src_id=src_id,
                         dst_id=dst_id,
                         label='refers_to'))
             else:
                 self.logger.warn('filename {} has {} instance in graph'.
-                                 format(bam['filename'], count))
+                                 format(filename, count))
