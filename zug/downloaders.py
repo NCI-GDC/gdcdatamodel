@@ -11,9 +11,8 @@ from contextlib import contextmanager
 from urlparse import urlparse
 import shutil
 import hashlib
-from threading import Thread, current_thread
+from consul_mixin import ConsulMixin
 
-from consulate import Consul
 
 from filechunkio import FileChunkIO
 
@@ -34,21 +33,6 @@ from boto.s3.key import Key
 Key.BufferSize = 10 * 1024 * 1024
 
 
-class StoppableThread(Thread):
-    """Thread class with a stop() method. The thread itself has to check
-    regularly for the stopped() condition."""
-
-    def __init__(self, *args, **kwargs):
-        super(StoppableThread, self).__init__(*args, **kwargs)
-        self._stop = False
-
-    def stop(self):
-        self._stop = True
-
-    def stopped(self):
-        return self._stop
-
-
 class InvalidChecksumException(Exception):
     pass
 
@@ -60,10 +44,6 @@ def md5sum_with_size(iterable):
         md5.update(chunk)
         size += len(chunk)
     return md5.hexdigest(), size
-
-
-def consul_get(consul, path):
-    return consul.kv["/".join(path)]
 
 
 class TimeoutError(Exception):
@@ -163,52 +143,18 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
     raise RuntimeError("Retries exhausted, upload failed")
 
 
-def consul_heartbeat(session, interval):
-    """
-    Heartbeat with consul to keep `session` alive every `interval`
-    seconds. This must be called as the `target` of a `StoppableThread`.
-    """
-    consul = Consul()
-    logger = get_logger("consul_heartbeat_thread")
-    thread = current_thread()
-    logger.info("current thread is %s", thread)
-    while not thread.stopped():
-        logger.debug("renewing consul session %s", session)
-        consul.session.renew(session)
-        time.sleep(interval)
-
-
-class Downloader(object):
-
-    def consul_get(self, path):
-        return consul_get(self.consul, ["downloaders"] + path)
-
-    @property
-    def consul_key(self):
-        return "downloaders/current/{}".format(self.analysis_id)
-
-    def start_consul_session(self):
-        self.logger.info("Starting new consul session")
-        self.consul_session = self.consul.session.create(
-            behavior="delete",
-            ttl="60s",
-            delay="0s"
-        )
-        self.logger.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
-        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
-                                                args=(self.consul_session, 10))
-        self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
-
+class Downloader(ConsulMixin):
     def __init__(self, source=None, analysis_id=None):
         self.logger = get_logger("downloader_{}".format(socket.gethostname()))
+        super(Downloader, self).__init__(self.logger, 
+                                         prefix='downloaders',
+                                         consul_key='analysis_id')
         if not source:
             raise RuntimeError("Must specify a source")
         self.source = source
         assert self.source.endswith("_cghub")
         self.analysis_id = analysis_id
 
-        self.consul = Consul()
 
         self.signpost_url = self.consul_get(["signpost_url"])
         self.signpost = SignpostClient(self.signpost_url, version="v0")
@@ -283,16 +229,16 @@ class Downloader(object):
                                       "analysis_id": self.analysis_id
                                   }).with_for_update(nowait=True).all()
                 # also lock the relevant consul key
-                locked = self.consul.kv.acquire_lock(self.consul_key, self.consul_session)
+                locked = self.get_consul_lock()
                 if not locked:
-                    raise RuntimeError("Couldn't lock consul key {}!".format(self.consul_key))
-                self.consul.kv.set(
-                    self.consul_key,
+                    raise RuntimeError("Couldn't lock consul key {}!".format(self.analysis_id))
+                self.consul_key_set(
                     {
                         "host": socket.gethostname(),
                         "started": self.start_time
                     }
                 )
+ 
                 self.set_consul_state("downloading")
                 if not files:
                     raise RuntimeError(
@@ -407,11 +353,6 @@ class Downloader(object):
     def set_file_state(self, file, state):
         self.graph.node_update(file, properties={"state": state})
 
-    def set_consul_state(self, state):
-        current = self.consul.kv.get(self.consul_key)
-        current["state"] = state
-        self.logger.info("Setting %s to %s", self.consul_key, current)
-        self.consul.kv.set(self.consul_key, current)
 
     @contextmanager
     def state_transition(self, file, intermediate_state, final_state,
@@ -522,7 +463,7 @@ class Downloader(object):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
-        self.start_consul_session()
+        self.start_consul_session(delay='0s')
         self.start_time = int(time.time())
         try:
             with self.graph.session_scope():
