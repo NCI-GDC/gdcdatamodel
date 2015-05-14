@@ -1,0 +1,25 @@
+
+BLCA:
+  doi: 10.1038/nature12965  
+  pmid: '24476821'
+BRCA:
+  doi: 10.1038/nature11412  
+  pmid: '23000897'
+COADREAD:
+  doi: 10.1038/nature11252  
+  pmid: '22810696'
+HNSC:
+  doi: 10.1038/nature14129  
+  pmid: '25631445'
+LUAD:
+  doi: 10.1038/nature13385  
+  pmid: '25079552'
+LUSC:
+  doi: 10.1038/nature11404  
+  pmid: '22960745'
+OV:  
+  doi: 10.1038/nature10166  
+  pmid: '21720365'
+UCEC:
+  doi: 10.1038/nature12113  
+  pmid: '23636398'
