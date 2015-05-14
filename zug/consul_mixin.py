@@ -35,39 +35,69 @@ def consul_heartbeat(session, interval):
 
 
 class ConsulMixin(object):
-    def __init__(self, logger, prefix='', consul_key='key'):
-        self.logger = logger
-        self.key = consul_key
+    '''
+    Consul Mixin class for utilizing consul key value store
+    @param prefix: consul key prefix, default to class name
+    @param consul_key: class attribute that will be used to acquire lock, default to self.key
+    '''
+    def __init__(self, prefix='', consul_key='key'):
+        self._key = consul_key
         self.consul = Consul()
+        self.key_acquired = False
+        self.heartbeat_thread = None
+        self.consul_session = None
+        self.logger = get_logger('consul_mixin')
         if prefix:
-            self.prefix = prefix
+            self.consul_prefix = prefix
         else:
-            self.prefix = self.__class__.__name__.lower()
+            self.consul_prefix = self.__class__.__name__.lower()
 
     @property
     def consul_key(self):
         return "{}/current/{}".format(
-            self.prefix, object.__getattribute__(self, self.key))
+            self.consul_prefix, object.__getattribute__(self, self._key))
 
     def consul_get(self, path):
-        return self.consul.kv["/".join([self.prefix] + path)]
+        return self.consul.kv["/".join([self.consul_prefix] + path)]
 
     def consul_key_set(self, value):
-        self.consul.kv.set(self.consul_key, value)
+        if self.key_acquired:
+            self.consul.kv.set(self.consul_key, value)
+            return True
+        else:
+            self.logger.warn("the key is not acquired yet")
+            return False
 
     def set_consul_state(self, state):
-        current = self.consul.kv.get(self.consul_key)
-        print self.consul_key
-        print current
-        print type(current)
-        current["state"] = state
-        self.logger.info("Setting %s to %s", self.consul_key, current)
-        self.consul.kv.set(self.consul_key, current)
+        if self.key_acquired:
+            current = self.consul.kv.get(self.consul_key)
+            current["state"] = state
+            self.logger.info("Setting %s to %s", self.consul_key, current)
+            self.consul.kv.set(self.consul_key, current)
+            return True
+        else:
+            self.logger.warn("Lock is not acquired yet")
+            return False
 
     def get_consul_lock(self):
-        self.logger.info("Attempting to lock %s in consul", self.consul_key)
-        return self.consul.kv.acquire_lock(
-            self.consul_key, self.consul_session)
+        if self.consul_session:
+            self.logger.info(
+                "Attempting to lock %s in consul", self.consul_key)
+            self.key_acquired = self.consul.kv.acquire_lock(
+                self.consul_key, self.consul_session)
+            return self.key_acquired
+        else:
+            self.logger.error("Consul session not started")
+            return False
+
+    def list_locked_keys(self):
+        current = [key.split("/")[-1] for key in
+                   self.consul.kv.find(
+                       "/".join([self.consul_prefix, "current"]))]
+        self.logger.info(
+            "there are %s keys currently being synced: %s",
+            len(current), current)
+        return current
 
     def start_consul_session(self, behavior='delete', ttl='60s', delay='15s'):
         self.logger.info("Starting new consul session")
@@ -84,8 +114,14 @@ class ConsulMixin(object):
         self.heartbeat_thread.daemon = True
         self.heartbeat_thread.start()
 
-
-class Test(ConsulMixin):
-    def __init__(self):
-        super(Test, self).__init__('t', 'test', 'id')
-        self.id = 1
+    def cleanup(self):
+        self.logger.info("Stopping consul heartbeat thread")
+        if self.heartbeat_thread:
+            self.heartbeat_thread.stop()
+            self.logger.info("Waiting to join heartbeat thread . . .")
+            self.heartbeat_thread.join(20)
+            if self.heartbeat_thread.is_alive():
+                self.logger.warning(
+                    "Joining heartbeat thread failed after 20 seconds!")
+            self.logger.info("Invalidating consul session")
+            self.consul.session.destroy(self.consul_session)

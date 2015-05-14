@@ -10,7 +10,6 @@ import copy
 import os
 import time
 from contextlib import contextmanager
-
 import requests
 
 from libcloud.storage.drivers.s3 import S3StorageDriver
@@ -24,10 +23,10 @@ from gdcdatamodel.models import Archive, Center
 from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
 
+from zug.consul_mixin import ConsulMixin
 from zug.datamodel import tcga_classification
 from zug.datamodel.latest_urls import LatestURLParser
 # TODO put these somewhere that makes more sense
-from zug.downloaders import StoppableThread, consul_heartbeat
 
 from psqlgraph import PsqlGraphDriver
 from signpostclient import SignpostClient
@@ -35,7 +34,6 @@ from signpostclient import SignpostClient
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 
-from consulate import Consul
 
 S3 = get_driver(Provider.S3)
 
@@ -267,10 +265,13 @@ class TCGADCCEdgeBuilder(object):
         return file_node
 
 
-class TCGADCCArchiveSyncer(object):
+class TCGADCCArchiveSyncer(ConsulMixin):
 
     def __init__(self, archive_id=None, max_memory=2*10**9,
                  s3=None, consul_prefix="tcgadccsync"):
+        super(TCGADCCArchiveSyncer, self).__init__(
+            prefix=consul_prefix, consul_key='name')
+
         self.graph = PsqlGraphDriver(
             os.environ["PG_HOST"],
             os.environ["PG_USER"],
@@ -278,7 +279,6 @@ class TCGADCCArchiveSyncer(object):
             os.environ["PG_NAME"],
         )
         self.signpost = SignpostClient(os.environ["SIGNPOST_URL"])
-        self.consul = Consul()
         self.dcc_auth = (os.environ["DCC_USER"], os.environ["DCC_PASS"])
         if not s3:
             self.s3 = S3(
@@ -298,24 +298,11 @@ class TCGADCCArchiveSyncer(object):
         # these two also get filled in later
         self.temp_file = None
         self.tarball = None
-        self.consul_prefix = consul_prefix
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()))
 
     # TODO this is largely a copy paste job from
     # downloaders.py, would like to clean up at some point
-
-    def start_consul_session(self):
-        self.log.info("Starting new consul session")
-        self.consul_session = self.consul.session.create(
-            behavior="delete",
-            ttl="60s",
-        )
-        self.log.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
-        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
-                                                args=(self.consul_session, 10))
-        self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
 
     @property
     def name(self):
@@ -672,16 +659,7 @@ class TCGADCCArchiveSyncer(object):
             self.set_file_state(file, original_state)
             raise
 
-    def get_consul_lock(self, archive):
-        key = "{}/current/{}".format(self.consul_prefix, archive["archive_name"])
-        self.log.info("Attempting to lock %s in consul", key)
-        return self.consul.kv.acquire_lock(key, self.consul_session)
 
-    def list_locked_archives(self):
-        current = [key.split("/")[-1] for key in
-                   self.consul.kv.find("/".join([self.consul_prefix, "current"]))]
-        self.log.info("there are %s archives currently being synced: %s", len(current), current)
-        return current
 
 
     def get_archive(self):
@@ -703,9 +681,9 @@ class TCGADCCArchiveSyncer(object):
                 archive_node = self.graph.nodes(Archive).ids(self.archive_id).one()
                 assert archive_node.label == "archive"
                 self.log.info("Finding matching archive from DCC")
-                archive = [archive for archive in archives
+                self.archive = [archive for archive in archives
                            if archive["archive_name"] == archive_node.system_annotations["archive_name"]][0]
-                if not self.get_consul_lock(archive):
+                if not self.get_consul_lock():
                     msg = "Couldn't lock archive {} for requested id {}".format(
                         archive["archive_name"],
                         self.archive_id
@@ -713,7 +691,6 @@ class TCGADCCArchiveSyncer(object):
                     raise RuntimeError(msg)
                 else:
                     self.archive_node = archive_node
-                    self.archive = archive
                     return self.archive
         tries = 0
         while tries < 5:
@@ -722,7 +699,7 @@ class TCGADCCArchiveSyncer(object):
             with self.graph.session_scope():
                 self.log.info("Fetching archive nodes from database")
                 archive_nodes = self.graph.nodes(Archive).all()
-                current = self.list_locked_archives()
+                current = self.list_locked_keys()
                 names_in_dcc = [archive["archive_name"] for archive in archives]
                 unuploaded = [node for node in archive_nodes
                               if not node.system_annotations.get("uploaded")
@@ -735,12 +712,11 @@ class TCGADCCArchiveSyncer(object):
                     random.shuffle(unuploaded)
                     # there are unuploaded nodes
                     choice = unuploaded[0]
-                    archive = [archive for archive in archives
+                    self.archive = [archive for archive in archives
                                if archive["archive_name"] == choice.system_annotations["archive_name"]][0]
-                    if not self.get_consul_lock(archive):
+                    if not self.get_consul_lock():
                         self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
                         continue
-                    self.archive = archive
                     self.archive_node = choice
                 else:
                     self.log.info("Found no unuploaded nodes in the database, choosing new archive from DCC")
@@ -752,11 +728,10 @@ class TCGADCCArchiveSyncer(object):
                         self.log.info("No unuploaded nodes or unimported archives found, we're all caught up!")
                         return None
                     random.shuffle(unimported)
-                    archive = unimported[0]
-                    if not self.get_consul_lock(archive):
+                    self.archive = unimported[0]
+                    if not self.get_consul_lock():
                         self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
                         continue
-                    self.archive = unimported[0]
                 self.log.info("chose archive %s to work on", self.name)
                 return self.archive
         raise RuntimeError("Couldn't lock archive to download in five tries")
@@ -787,14 +762,7 @@ class TCGADCCArchiveSyncer(object):
         if self.temp_file:
             self.log.info("Closing temp file in which archive was stored")
             self.temp_file.close()
-        self.log.info("Stopping consul heartbeat thread")
-        self.heartbeat_thread.stop()
-        self.log.info("Waiting to join heartbeat thread . . .")
-        self.heartbeat_thread.join(20)
-        if self.heartbeat_thread.is_alive():
-            self.log.warning("Joining heartbeat thread failed after 20 seconds!")
-        self.log.info("Invalidating consul session")
-        self.consul.session.destroy(self.consul_session)
+        super(TCGADCCArchiveSyncer, self).cleanup()
 
     def transition_files_to_live(self, file_nodes):
         for node in file_nodes:

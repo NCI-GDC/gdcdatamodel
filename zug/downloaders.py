@@ -145,10 +145,9 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
 
 class Downloader(ConsulMixin):
     def __init__(self, source=None, analysis_id=None):
-        self.logger = get_logger("downloader_{}".format(socket.gethostname()))
-        super(Downloader, self).__init__(self.logger, 
-                                         prefix='downloaders',
+        super(Downloader, self).__init__(prefix='downloaders',
                                          consul_key='analysis_id')
+        self.logger = get_logger("downloader_{}".format(socket.gethostname()))
         if not source:
             raise RuntimeError("Must specify a source")
         self.source = source
