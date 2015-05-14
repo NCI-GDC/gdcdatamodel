@@ -82,8 +82,6 @@ def create_indexes(host, user, password, database):
         map(engine.execute, index(
             tablename, [
                 'node_id',
-                '_label',
-                'node_id, _label'
             ]))
         map(engine.execute, [
             "CREATE INDEX ON {} USING gin (_sysan)".format(tablename),
@@ -95,9 +93,7 @@ def create_indexes(host, user, password, database):
             scls.__tablename__, [
                 'src_id',
                 'dst_id',
-                '_label',
                 'dst_id, src_id',
-                'dst_id, src_id, _label'
             ]))
 
 if __name__ == '__main__':
