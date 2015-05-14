@@ -87,6 +87,7 @@ class TCGAAnnotationSyncer(object):
                 return
             # doing the assignment adds it to the session, so it gets
             # persisted when we flush
+            self.log.info("inserting annotation %s tied to %s", annotation, dst)
             if isinstance(dst, File):
                 annotation.files = [dst]
             elif isinstance(dst, Sample):
