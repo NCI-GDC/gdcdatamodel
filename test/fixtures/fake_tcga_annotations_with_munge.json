@@ -1,0 +1,84 @@
+{
+  "dccAnnotation": [
+    {
+      "status": "Approved",
+      "rescinded": false,
+      "annotationCategory": {
+        "annotationClassification": {
+          "annotationClassificationName": "Notification",
+          "annotationClassificationId": 3
+        },
+        "categoryId": 201,
+        "categoryName": "History of unacceptable prior treatment related to a prior/other malignancy"
+      },
+      "notes": [
+        {
+          "noteText": "Prior to resection of TCGA tumor, patient had pharmaceutical treatment for a prior left breast cancer. Following the mastectomy, patient had 5 years of Tamoxifen and 6-8 cycles of chemotherapy. ",
+          "dateAdded": "2015-05-05T15:28:58-04:00",
+          "noteId": 27889,
+          "addedBy": "LeraasK"
+        }
+      ],
+      "dateCreated": "2015-05-05T15:28:58-04:00",
+      "createdBy": "LeraasK",
+      "items": [
+        {
+          "id": 27826,
+          "item": "TCGA-BG-A0MS",
+          "disease": {
+            "diseaseId": 23,
+            "abbreviation": "UCEC",
+            "description": "Uterine Corpus Endometrial Carcinoma"
+          },
+          "uuid": "a798a8cc-4e72-4a8c-9e20-74a14deafd12",
+          "itemType": {
+            "itemTypeName": "Patient",
+            "itemTypeId": 3
+          }
+        }
+      ],
+      "id": 28351,
+      "approved": true
+    },
+    {
+      "status": "Approved",
+      "rescinded": false,
+      "annotationCategory": {
+        "annotationClassification": {
+          "annotationClassificationName": "Notification",
+          "annotationClassificationId": 3
+        },
+        "categoryId": 243,
+        "categoryName": "Barcode incorrect"
+      },
+      "notes": [
+        {
+          "noteText": "Originally identified as primary solid tumor, reclassified as metastatic.  Data associated with this barcode will be transitioned to the correct barcode.  Original barcode was TCGA-XV-AB01-01A-21-A444-20. Correct barcode is TCGA-XV-AB01-06A-21-A444-20\n",
+          "dateAdded": "2015-05-04T16:56:07-04:00",
+          "noteId": 27883,
+          "addedBy": "LeraasK"
+        }
+      ],
+      "dateCreated": "2015-05-04T16:56:07-04:00",
+      "createdBy": "LeraasK",
+      "items": [
+        {
+          "id": 27820,
+          "item": "TCGA-XV-AB01-06A-21-A444-20",
+          "disease": {
+            "diseaseId": 15,
+            "abbreviation": "SKCM",
+            "description": "Skin Cutaneous Melanoma"
+          },
+          "uuid": "a6077659-6c4f-4817-bd34-4ff94e8dbebd",
+          "itemType": {
+            "itemTypeName": "Shipped Portion",
+            "itemTypeId": 7
+          }
+        }
+      ],
+      "id": 28345,
+      "approved": true
+    }
+  ]
+}

@@ -46,18 +46,25 @@ class TCGAAnnotationSyncer(object):
         self.log.info('Downloading annotations from %s', url)
         resp = requests.get(url)
         resp.raise_for_status()
-        return resp.json()["dccAnnotation"]
+        annotation_docs = resp.json()["dccAnnotation"]
+        # sanity checks
+        for doc in annotation_docs:
+            assert len(doc["items"]) == 1
+        item_types = {doc["items"][0]["itemType"]["itemTypeName"].lower()
+                      for doc in annotation_docs}
+        assert item_types.issubset({"file", "patient", "aliquot", "analyte",
+                                    "portion", "shipped portion", "slide" "sample"})
+        return annotation_docs
 
     def go(self):
-        annotations_doc = self.download_annotations()
+        annotation_docs = self.download_annotations()
         with self.graph.session_scope():
-            for annotation_doc in annotations_doc:
+            for annotation_doc in annotation_docs:
                 self.insert_annotation(annotation_doc)
 
     def insert_annotation(self, doc):
         """Insert a single annotation dict into graph
         """
-        assert len(doc["items"]) == 1
         item = doc["items"][0]
         dst = self.lookup_item_node(item)
         if not dst:
@@ -129,7 +136,12 @@ class TCGAAnnotationSyncer(object):
         find it that way.
 
         """
-        cls = Node.get_subclass(item['itemType']['itemTypeName'].lower())
+        item_type = item['itemType']['itemTypeName'].lower()
+        if item_type == "shipped portion":
+            item_type = "portion"  # we just call shipped portions portions
+        if item_type == "patient":
+            item_type = "participant"  # they say patient, we say participant. this will have to be case eventually
+        cls = Node.get_subclass(item_type)
         node = self.graph.nodes(cls)\
                          .props({'submitter_id': item['item']})\
                          .scalar()
