@@ -67,15 +67,15 @@ class TCGAAnnotationTest(ZugsTestBase):
     def test_basic_sync_works(self):
         self.create_aliquot("TCGA-06-0237-01A-02D-0234-02")
         self.create_aliquot("TCGA-06-0237-10A-01D-0235-02")
-        with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):
-            syncer = TCGAAnnotationSyncer()
-            syncer.go()
-        with self.graph.session_scope():
-            self.assertEqual(self.graph.nodes(Annotation).count(), 2)
-            self.assertIsNotNone(self.graph.nodes(Aliquot)
-                                 .props(submitter_id="TCGA-06-0237-01A-02D-0234-02")
-                                 .one().annotations)
-
+        for _ in range(1):
+            with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):
+                syncer = TCGAAnnotationSyncer()
+                syncer.go()
+            with self.graph.session_scope():
+                self.assertEqual(self.graph.nodes(Annotation).count(), 2)
+                self.assertIsNotNone(self.graph.nodes(Aliquot)
+                                     .props(submitter_id="TCGA-06-0237-01A-02D-0234-02")
+                                     .one().annotations)
 
     def test_sync_with_name_munging(self):
         part = self.create_participant("TCGA-BG-A0MS")

@@ -82,6 +82,11 @@ class TCGAAnnotationSyncer(object):
                 status=self.get_status(doc),
                 notes=note_text,
             )
+            if annotation in dst.annotations:
+                self.log.info("%s already has %s, skipping", dst, annotation)
+                return
+            # doing the assignment adds it to the session, so it gets
+            # persisted when we flush
             if isinstance(dst, File):
                 annotation.files = [dst]
             elif isinstance(dst, Sample):
@@ -98,7 +103,6 @@ class TCGAAnnotationSyncer(object):
                 annotation.slides = [dst]
             else:
                 raise RuntimeError("annotations cannot annotate {}".format(dst))
-            self.graph.current_session().merge(annotation)
 
     def generate_uuid(self, key):
         """UUID generated from key=(target barcode + noteID)
