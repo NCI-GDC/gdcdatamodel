@@ -9,6 +9,7 @@ from zug.datamodel.target.sample_matrices import NAMESPACE_PARTICIPANTS
 from zug.datamodel.target.clinical import TARGETClinicalSyncer
 from gdcdatamodel.models import (
     File,
+    Clinical,
     ClinicalDescribesParticipant,
     FileDescribesParticipant
 )
@@ -61,7 +62,7 @@ class TARGETClinicalSyncerTest(ZugsTestBase):
         with HTTMock(target_clinical_mock):
             syncer.sync()
         with self.graph.session_scope():
-            clin = self.graph.nodes(File).with_edge_to_node(ClinicalDescribesParticipant, participant).one()
+            clin = self.graph.nodes(Clinical).filter(Clinical.participants.contains(participant)).one()
             self.assertEqual(clin["vital_status"], "dead")
             self.assertEqual(clin["gender"], "male")
             self.assertEqual(clin["race"], "white")
