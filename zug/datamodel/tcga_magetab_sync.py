@@ -357,7 +357,7 @@ class TCGAMAGETABSyncer(object):
                                          .props({"submitter_id": submitter_id,
                                                  "revision": revision})\
                                          .one()
-                file_node = self.graph.nodes(Archive)\
+                file_node = self.graph.nodes(File)\
                                       .props({"file_name": file_name})\
                                       .with_edge_to_node(
                                           FileMemberOfArchive, archive_node)\
