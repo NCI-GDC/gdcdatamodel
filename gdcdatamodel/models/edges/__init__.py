@@ -22,3 +22,4 @@ from annotates import (AnnotationAnnotatesParticipant,
                        AnnotationAnnotatesFile)
 from shipped_to import AliquotShippedToCenter, PortionShippedToCenter
 from submitted_by import FileSubmittedByCenter
+from refers_to import PublicationRefersToFile

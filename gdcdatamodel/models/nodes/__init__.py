@@ -18,3 +18,4 @@ from data_subtype import DataSubtype
 from tag import Tag
 from experimental_strategy import ExperimentalStrategy
 from data_format import DataFormat
+from publication import Publication
