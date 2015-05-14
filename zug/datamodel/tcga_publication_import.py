@@ -2,7 +2,11 @@ from zug.datamodel import PKG_DIR
 import yaml
 import os
 from uuid import uuid5, UUID
-from psqlgraph import Edge
+from psqlgraph import PolyEdge
+from pandas import read_table
+from cdisutils.log import get_logger
+from psqlgraph import PsqlGraphDriver
+
 
 PUBLICATION_NAMESPACE = UUID('b01299e1-4306-4fba-af07-2d6194320f10')
 
@@ -12,7 +16,12 @@ class TCGAPublicationImporter(object):
     publications and add publication - [refers_to] -> file edge
     to files specified in bamlist'''
 
-    def __init__(self, bamlist, pg_driver, logger):
+    def __init__(self):
+        self.logger = get_logger('tcga_publication_build')
+        self.graph = PsqlGraphDriver(
+            os.environ["ZUGS_PG_HOST"], os.environ["ZUGS_PG_USER"],
+            os.environ["ZUGS_PG_PASS"], os.environ["ZUGS_PG_NAME"])
+
         self.publications = yaml.load(open(os.path.join(PKG_DIR,
                                       'publications.yml'), 'r'))
         self.bamlist = bamlist
@@ -64,10 +73,10 @@ class TCGAPublicationImporter(object):
             if count == 1:
                 src_id = self.publications[bam['disease']]['node_id']
                 dst_id = query.first().node_id
-                if not self.g.edge_lookup_one(src_id=src_id,
-                                              dst_id=dst_id,
-                                              label='refers_to'):
-                    self.g.edge_insert(Edge(
+                if not self.graph.edge_lookup_one(src_id=src_id,
+                                                  dst_id=dst_id,
+                                                  label='refers_to'):
+                    self.graph.edge_insert(PolyEdge(
                         src_id=src_id,
                         dst_id=dst_id,
                         label='refers_to'))
