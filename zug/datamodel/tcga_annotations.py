@@ -53,7 +53,8 @@ class TCGAAnnotationSyncer(object):
         item_types = {doc["items"][0]["itemType"]["itemTypeName"].lower()
                       for doc in annotation_docs}
         assert item_types.issubset({"file", "patient", "aliquot", "analyte",
-                                    "portion", "shipped portion", "slide" "sample"})
+                                    "portion", "shipped portion", "slide",
+                                    "sample"})
         return annotation_docs
 
     def go(self):
