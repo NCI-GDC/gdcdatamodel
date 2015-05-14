@@ -10,7 +10,7 @@ from psqlgraph import PsqlGraphDriver
 from psqlgraph import Node
 
 from gdcdatamodel.models import (
-    File, Aliquot, Analyte,
+    File, Aliquot, Analyte, Slide,
     Sample, Portion, Participant,
     Annotation
 )
@@ -94,8 +94,10 @@ class TCGAAnnotationSyncer(object):
                 annotation.analytes = [dst]
             elif isinstance(dst, Aliquot):
                 annotation.aliquots = [dst]
+            elif isinstance(dst, Slide):
+                annotation.slides = [dst]
             else:
-                raise("annotations cannot annotate {}".format(dst))
+                raise RuntimeError("annotations cannot annotate {}".format(dst))
             self.graph.current_session().merge(annotation)
 
     def generate_uuid(self, key):
