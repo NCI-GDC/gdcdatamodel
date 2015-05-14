@@ -12,9 +12,7 @@ from uuid import UUID, uuid5
 from datetime import datetime
 
 from sqlalchemy import Integer
-from psqlgraph import Node, Edge
-from gdcdatamodel import models
-from gdcdatamodel.models import Aliquot, Participant, Sample
+from gdcdatamodel.models import Aliquot, Participant, Sample, Project
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
@@ -231,22 +229,16 @@ class TARGETSampleMatrixSyncer(object):
         return mapping
 
     def create_edge(self, label, src, dst):
-        maybe_edge = self.graph.edge_lookup(
+        self.graph.current_session().merge(self.graph.get_PsqlEdge(
             label=label,
             src_id=src.node_id,
             dst_id=dst.node_id,
-        ).scalar()
-        if not maybe_edge:
-            self.graph.edge_insert(self.graph.get_PsqlEdge(
-                label=label,
-                src_id=src.node_id,
-                dst_id=dst.node_id,
-                src_label=src.label,
-                dst_label=dst.label,
-            ))
+            src_label=src.label,
+            dst_label=dst.label,
+        ))
 
     def tie_to_project(self, part_node):
-        project_node = self.graph.nodes().labels("project").props({"code": self.project}).one()
+        project_node = self.graph.nodes(Project).props({"code": self.project}).one()
         self.create_edge("member_of", part_node, project_node)
 
     def sync(self):

@@ -8,6 +8,10 @@ from cdisutils.log import get_logger
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from sqlalchemy.orm import joinedload
 
+from gdcdatamodel.models import File, Participant
+
+# NOTE this file still will not work, needs to be updated for ORM
+
 log = get_logger("tcga_connect_bio_xml_nodes_to_participant")
 logging.root.setLevel(level=logging.ERROR)
 
@@ -44,16 +48,15 @@ def get_pbar(title, maxval):
 
 def connect_all(g):
     log.info('Loading participants')
-    participants = g.nodes().labels('participant')\
-                            .options(joinedload(Node.edges_in)).all()
+    participants = g.nodes(Participant).options(joinedload(Node.edges_in)).all()
     log.info('Found {} participants'.format(len(participants)))
     pbar = get_pbar('Connecting participants ', len(participants))
 
     log.info('Loading xml files')
     xmls = {
         n['file_name']: n
-        for n in g.nodes()
-        .labels('file').sysan({'source': 'tcga_dcc'})
+        for n in g.nodes(File)
+        .sysan({'source': 'tcga_dcc'})
         .filter(Node.properties['file_name'].astext.endswith('.xml'))
         .all()
     }

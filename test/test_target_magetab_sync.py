@@ -4,6 +4,7 @@ from httmock import HTTMock, urlmatch
 
 import os
 from gdcdatamodel.models import (
+    File,
     FileDataFromAliquot,
     FileRelatedToFile,
 )
@@ -62,8 +63,7 @@ class TARGETMAGETABSyncTest(ZugsTestBase):
         with HTTMock(sdrf_mock):
             syncer.sync()
         with self.graph.session_scope():
-            self.graph.nodes()\
-                      .labels("file")\
+            self.graph.nodes(File)\
                       .with_edge_to_node(FileDataFromAliquot, aliquot)\
                       .with_edge_from_node(FileRelatedToFile, sdrf)\
                       .props(file_name=file_name)\

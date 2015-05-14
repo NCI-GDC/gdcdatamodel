@@ -13,10 +13,13 @@ from sqlalchemy.orm.exc import NoResultFound
 import requests
 from cdisutils.log import get_logger
 
+from psqlgraph import Node
+
 from gdcdatamodel.models import (
     ArchiveRelatedToFile,
     FileMemberOfArchive,
     Archive,
+    File,
 )
 
 
@@ -343,21 +346,18 @@ class TCGAMAGETABSyncer(object):
     def get_file_node(self, archive_name, file_name):
             if archive_name is None:
                 # this is a cghub file
-                file_node = self.graph.nodes()\
-                                      .labels("file")\
+                file_node = self.graph.nodes(File)\
                                       .props({"file_name": file_name})\
                                       .sysan({"source": "tcga_cghub"})\
                                       .one()
             else:
                 # dcc file
                 submitter_id, revision = get_submitter_id_and_rev(archive_name)
-                archive_node = self.graph.nodes()\
-                                         .labels("archive")\
+                archive_node = self.graph.nodes(Archive)\
                                          .props({"submitter_id": submitter_id,
                                                  "revision": revision})\
                                          .one()
-                file_node = self.graph.nodes()\
-                                      .labels("file")\
+                file_node = self.graph.nodes(Archive)\
                                       .props({"file_name": file_name})\
                                       .with_edge_to_node(
                                           FileMemberOfArchive, archive_node)\
@@ -374,8 +374,7 @@ class TCGAMAGETABSyncer(object):
             if barcode:
                 assert bio["submitter_id"] == barcode
         elif barcode:
-            bio = self.graph.nodes()\
-                            .labels(label)\
+            bio = self.graph.nodes(Node.get_subclass(label))\
                             .props({"submitter_id": barcode})\
                             .one()
             self.log.info("found biospecemin by barcode: %s", bio)
@@ -467,8 +466,7 @@ class TCGAMAGETABSyncer(object):
                 else:
                     self.log.info("Searching for archive to work on")
                     # find an archive that we want to try to work on
-                    try_archive = self.graph.nodes()\
-                                            .labels("archive")\
+                    try_archive = self.graph.nodes(Archive)\
                                             .sysan({"data_level": "mage-tab"})\
                                             .not_sysan({"magetab_synced": True})\
                                             .order_by(func.random())\

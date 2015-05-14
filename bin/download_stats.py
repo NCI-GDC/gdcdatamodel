@@ -3,6 +3,8 @@ from psqlgraph import PsqlGraphDriver, Node
 import argparse
 from sqlalchemy import BigInteger, func
 
+from gdcdatamodel.models import File
+
 """This is a simple script for printing the downloaded and total
 amounts of data for [tcga, target] x [[cghub], [dcc]].
 
@@ -14,7 +16,7 @@ def base_query(g, state):
 
     """
 
-    return g.nodes().labels('file').props(dict(state=state))
+    return g.nodes(File).props(dict(state=state))
 
 
 def end_query(q):

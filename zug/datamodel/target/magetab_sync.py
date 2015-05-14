@@ -118,16 +118,16 @@ class TARGETMAGETABSyncer(object):
 
     def insert_mapping_in_graph(self, link, mapping):
         sdrf_name = link.split("/")[-1]
-        sdrf = self.graph.nodes().labels("file")\
-                                 .sysan({"source": "target_dcc"})\
-                                 .props({"file_name": sdrf_name}).scalar()
+        sdrf = self.graph.nodes(md.File)\
+                         .sysan({"source": "target_dcc"})\
+                         .props({"file_name": sdrf_name}).scalar()
         if not sdrf:
             self.log.warning("sdrf %s not found", sdrf_name)
             return
         for file_name, aliquot_barcodes in mapping.iteritems():
-            files = self.graph.nodes().labels("file")\
-                                      .sysan({"source": "target_dcc"})\
-                                      .props({"file_name": file_name}).all()
+            files = self.graph.nodes(md.File)\
+                              .sysan({"source": "target_dcc"})\
+                              .props({"file_name": file_name}).all()
             if len(files) == 0:
                 self.log.warning("file %s not found", file_name)
                 continue
@@ -158,7 +158,6 @@ class TARGETMAGETABSyncer(object):
                               file_name, barcode)
                 try:
                     aliquot = self.graph.nodes(md.Aliquot)\
-                                        .labels("aliquot")\
                                         .sysan({"source": "target_sample_matrices"})\
                                         .props({"submitter_id": barcode})\
                                         .one()
@@ -171,10 +170,10 @@ class TARGETMAGETABSyncer(object):
             # sdrf when we insert a new one
 
     def tie_file_to_aliquot(self, file, aliquot, sdrf):
-        maybe_edge_to_aliquot = self.graph.edges().labels("data_from")\
-                                                  .src(file.node_id)\
-                                                  .dst(aliquot.node_id)\
-                                                  .scalar()
+        maybe_edge_to_aliquot = self.graph.edges(md.FileDataFromAliquot)\
+                                          .src(file.node_id)\
+                                          .dst(aliquot.node_id)\
+                                          .scalar()
         sdrf_name, sdrf_version = get_name_and_version(sdrf["file_name"])
         if not maybe_edge_to_aliquot:
             edge_to_aliquot = md.FileDataFromAliquot(
@@ -190,10 +189,10 @@ class TARGETMAGETABSyncer(object):
                 s.merge(edge_to_aliquot)
 
     def tie_file_to_sdrf(self, file, sdrf):
-        maybe_edge = self.graph.edges().labels("related_to")\
-                                       .src(sdrf.node_id)\
-                                       .dst(file.node_id)\
-                                       .scalar()
+        maybe_edge = self.graph.edges(md.FileRelatedToFile)\
+                               .src(sdrf.node_id)\
+                               .dst(file.node_id)\
+                               .scalar()
         if not maybe_edge:
             sdrf_name, sdrf_version = get_name_and_version(sdrf["file_name"])
             edge = md.FileRelatedToFile(

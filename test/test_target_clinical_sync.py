@@ -8,6 +8,7 @@ from httmock import HTTMock, urlmatch
 from zug.datamodel.target.sample_matrices import NAMESPACE_PARTICIPANTS
 from zug.datamodel.target.clinical import TARGETClinicalSyncer
 from gdcdatamodel.models import (
+    File,
     ClinicalDescribesParticipant,
     FileDescribesParticipant
 )
@@ -60,15 +61,13 @@ class TARGETClinicalSyncerTest(ZugsTestBase):
         with HTTMock(target_clinical_mock):
             syncer.sync()
         with self.graph.session_scope():
-            clin = self.graph.nodes().labels("clinical").with_edge_to_node(
-                ClinicalDescribesParticipant, participant).one()
+            clin = self.graph.nodes(File).with_edge_to_node(ClinicalDescribesParticipant, participant).one()
             self.assertEqual(clin["vital_status"], "dead")
             self.assertEqual(clin["gender"], "male")
             self.assertEqual(clin["race"], "white")
             self.assertEqual(clin["ethnicity"], "not hispanic or latino")
             self.assertEqual(clin["age_at_diagnosis"], 123)
             # make sure the file now describes the participant
-            self.graph.nodes()\
-                      .labels("file")\
+            self.graph.nodes(File)\
                       .sysan({"url": "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx"})\
                       .with_edge_to_node(FileDescribesParticipant, participant).one()

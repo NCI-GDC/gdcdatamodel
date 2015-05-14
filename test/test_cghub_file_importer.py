@@ -175,7 +175,7 @@ class TestCGHubFileImporter(unittest.TestCase):
         for i in range(5):
             self.run_convert()
             with graph.session_scope() as s:
-                f = graph.nodes().labels('file').first()
+                f = graph.nodes(File).first()
                 f['state'] = 'live'
                 graph.node_merge(node_id=f.node_id, properties=f.properties)
             self.run_convert()

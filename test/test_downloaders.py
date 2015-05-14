@@ -12,6 +12,8 @@ from boto.s3.connection import OrdinaryCallingFormat
 
 from zug.downloaders import Downloader, md5sum_with_size
 
+from gdcdatamodel.models import File
+
 
 def get_in(dictionary, path):
     return reduce(lambda d, k: d[k], path, dictionary)
@@ -154,7 +156,7 @@ class DownloadersTest(ZugsTestBase):
             downloader = Downloader(source="fake_cghub")
             downloader.go()
         with self.graph.session_scope():
-            for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
+            for file in self.graph.nodes(File).sysan({"analysis_id": self.aid}).all():
                 self.assertEqual(file["state"], "live")
                 url = self.signpost_client.get(file.node_id).urls[0]
                 expected_url = "s3://s3.amazonaws.com/fake_cghub_protected/{}/{}".format(file.system_annotations["analysis_id"],
@@ -171,7 +173,7 @@ class DownloadersTest(ZugsTestBase):
             downloader = Downloader(source="fake_cghub", analysis_id=self.aid)
             downloader.go()
         with self.graph.session_scope():
-            for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
+            for file in self.graph.nodes(File).sysan({"analysis_id": self.aid}).all():
                 self.assertEqual(file["state"], "live")
                 url = self.signpost_client.get(file.node_id).urls[0]
                 expected_url = "s3://s3.amazonaws.com/fake_cghub_protected/{}/{}".format(file.system_annotations["analysis_id"],
@@ -183,13 +185,13 @@ class DownloadersTest(ZugsTestBase):
         self.setup_fake_s3()
         self.setup_fake_files()
         with self.graph.session_scope():
-            bam_file = self.graph.nodes().labels("file").props({"file_name": "foobar.bam"}).one()
+            bam_file = self.graph.nodes(File).props({"file_name": "foobar.bam"}).one()
             self.graph.node_update(bam_file, properties={"md5sum": "bogus"})
         with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub")
             downloader.go()
         with self.graph.session_scope():
-            bam_file = self.graph.nodes().labels("file").props({"file_name": "foobar.bam"}).one()
+            bam_file = self.graph.nodes(File).props({"file_name": "foobar.bam"}).one()
         self.assertEqual(bam_file["state"], "invalid")
 
     @patch("zug.downloaders.Pool", FakePool)
@@ -224,7 +226,7 @@ class DownloadersTest(ZugsTestBase):
             downloader = Downloader(source="fake_cghub")
             downloader.go()
         with self.graph.session_scope():
-            for file in self.graph.nodes().labels("file").sysan({"analysis_id": self.aid}).all():
+            for file in self.graph.nodes(File).sysan({"analysis_id": self.aid}).all():
                 self.assertEqual(file["state"], "live")
 
     def test_dont_download_to_delete_files(self):

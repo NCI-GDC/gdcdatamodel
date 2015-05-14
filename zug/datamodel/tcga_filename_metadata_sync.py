@@ -1,5 +1,5 @@
 from cdisutils.log import get_logger
-from psqlgraph import Node
+from gdcdatamodel.models import File
 import os
 
 
@@ -28,9 +28,9 @@ def sync(graph):
     first = PROPS[0]
     rest = PROPS[1:]
     with graph.session_scope():
-        q = graph.nodes().labels("file").not_sysan({"to_delete": True}).has_sysan(first)
+        q = graph.nodes(File).not_sysan({"to_delete": True}).has_sysan(first)
         for key in rest:
-            q = q.union(graph.nodes().labels("file").not_sysan({"to_delete": True}).has_sysan(key))
+            q = q.union(graph.nodes(File).not_sysan({"to_delete": True}).has_sysan(key))
         logger.info("Loading files to process")
         files = q.all()
         logger.info("About to tie to biospecemin from filename for %s files", len(files))

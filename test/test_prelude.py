@@ -2,6 +2,7 @@ from zug.datamodel.prelude import create_prelude_nodes
 import unittest
 from psqlgraph import PsqlGraphDriver, Node, Edge
 from gdcdatamodel.models import (
+    DataSubtype,
     ProjectMemberOfProgram,
     DataSubtypeMemberOfDataType,
 )
@@ -62,5 +63,5 @@ class TestPrelude(unittest.TestCase):
                 property_matches={"name": "Diagnostic image"}
             ).with_edge_to_node(DataSubtypeMemberOfDataType, clinical).one()
 
-            for dst in self.driver.nodes().labels('data_subtype'):
+            for dst in self.driver.nodes(DataSubtype):
                 self.assertEqual(len(dst.edges_out), 1)

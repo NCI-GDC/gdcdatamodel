@@ -1,6 +1,6 @@
 from base import ZugsTestBase
 
-from gdcdatamodel import models
+from gdcdatamodel.models import File
 from zug.datamodel.target.dcc_sync import TARGETDCCProjectSyncer
 
 from httmock import urlmatch, HTTMock
@@ -36,8 +36,7 @@ class TARGETDCCSyncTest(ZugsTestBase):
         with HTTMock(target_file_mock):
             syncer.sync()
             with self.graph.session_scope():
-                file = self.graph.nodes()\
-                                 .labels("file")\
+                file = self.graph.nodes(File)\
                                  .sysan({"source": "target_dcc"}).one()
                 subtype = file.data_subtypes[0]
             self.assertEqual(file["file_name"], "target-wt-snp-indel.mafplus.txt")

@@ -1,7 +1,5 @@
 from gdcdatamodel import models as md
 from libcloud.storage.providers import get_driver
-from gdcdatamodel import models as md
-from libcloud.storage.providers import get_driver
 from libcloud.storage.types import Provider
 from multiprocessing import Process
 from unittest import TestCase
@@ -14,15 +12,11 @@ import uuid
 from psqlgraph import PsqlGraphDriver, Node, Edge, PolyNode
 from signpost import Signpost
 from signpostclient import SignpostClient
-from unittest import TestCase
 from zug.datamodel.tcga_filename_metadata_sync import TCGAFilenameMetadataSyncer
-import os
 
 from zug.datamodel.prelude import create_prelude_nodes
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
-from zug.datamodel.tcga_filename_metadata_sync import\
-    TCGAFilenameMetadataSyncer
 
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -168,9 +162,9 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
                                             md.FileDataFromParticipant,
                                             file_node).one()
             self.assertEqual(participant['submitter_id'], barcode)
-            edge = self.pg_driver.edges().labels('data_from').\
-                src(file_node.node_id).\
-                dst(participant.node_id).one()
+            edge = self.pg_driver.edges(md.FileDataFromParticipant)\
+                                 .src(file_node.node_id)\
+                                 .dst(participant.node_id).one()
             self.assertEqual(edge.system_annotations['source'], 'filename')
 
     def test_file_without_sysan(self):
@@ -227,10 +221,10 @@ class TCGAFilenameMetadataSyncerTest(TestCase):
             barcode = file_node.system_annotations['_aliquot_barcode']
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
-            aliquot = self.pg_driver.nodes().labels('aliquot').\
-                with_edge_from_node(md.FileDataFromAliquot, file_node).one()
+            aliquot = self.pg_driver.nodes(md.Aliquot)\
+                                    .with_edge_from_node(md.FileDataFromAliquot, file_node).one()
             self.assertEqual(aliquot['submitter_id'], barcode)
-            edge = self.pg_driver.edges().labels('data_from').\
-                src(file_node.node_id).\
-                dst(aliquot.node_id).one()
+            edge = self.pg_driver.edges(md.FileDataFromAliquot)\
+                                 .src(file_node.node_id)\
+                                 .dst(aliquot.node_id).one()
             self.assertEqual(edge.system_annotations['source'], 'tcga_magetab')

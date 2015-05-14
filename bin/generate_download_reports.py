@@ -6,6 +6,8 @@ import json
 from zug.datamodel.latest_urls import LatestURLParser
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
 
+from gdcdatamodel.models import Archive, File
+
 
 def find_node(archive, nodes):
     submitter_id, rev = get_submitter_id_and_rev(archive["archive_name"])
@@ -18,7 +20,7 @@ def find_node(archive, nodes):
 def print_dcc(g):
     results = ["\t".join(["Archive name", "Source", "Protected", "Status", "Digital ID", "Integrity Check", "md5checksum", "Metadata Status", "Comments/Notes"])]
     archives = list(LatestURLParser())
-    nodes = g.nodes().labels("archive").all()
+    nodes = g.nodes(Archive).all()
     for archive in archives:
         node = find_node(archive, nodes)
         if not node:
@@ -43,7 +45,7 @@ def print_dcc(g):
 
 def print_target_dcc(g):
     results = ["\t".join(["File name", "Source", "Protected", "Status", "Digital ID", "Integrity Check", "md5checksum", "Metadata Status", "Comments/Notes"])]
-    nodes = g.nodes().labels("file").sysan(dict(source='target_dcc')).all()
+    nodes = g.nodes(File).sysan(dict(source='target_dcc')).all()
     for node in nodes:
         results.append("\t".join([node["file_name"],
                                   "TARGET_DCC",

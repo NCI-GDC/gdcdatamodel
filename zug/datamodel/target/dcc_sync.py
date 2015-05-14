@@ -7,10 +7,10 @@ import hashlib
 from functools import partial
 from lxml import html
 
-from gdcdatamodel import models
+from gdcdatamodel.models import File
 from signpostclient import SignpostClient
 
-from psqlgraph import Node, Edge, PsqlGraphDriver
+from psqlgraph import PsqlGraphDriver
 
 from zug.datamodel.target.classification import CLASSIFICATION
 from zug.datamodel.target import PROJECTS
@@ -233,8 +233,7 @@ class TARGETDCCFileSyncer(object):
         """
         with self.graph.session_scope():
             # we first look for this file and skip if it's already there
-            maybe_this_file = self.graph.nodes()\
-                                        .labels("file")\
+            maybe_this_file = self.graph.nodes(File)\
                                         .sysan({"source": "target_dcc", "url": self.url}).scalar()
             if maybe_this_file:
                 file_node = maybe_this_file
@@ -254,7 +253,7 @@ class TARGETDCCFileSyncer(object):
                 # ok, now we can allocate an id
                 self.log.info("allocating id for %s from signpost", key)
                 doc = self.signpost.create(urls=[url_for(obj)])
-                file_node = models.File(
+                file_node = File(
                     node_id=doc.did,
                     acl=self.acl,
                     properties={

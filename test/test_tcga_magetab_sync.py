@@ -124,8 +124,7 @@ class TestTCGAMAGETASync(ZugsTestBase):
             n_files = self.graph.node_lookup(label="file")\
                                 .with_edge_to_node(FileDataFromAliquot, aliquot)\
                                 .with_edge_from_node(ArchiveRelatedToFile, fake_archive_node).count()
-            magetab = self.graph.nodes().labels("archive")\
-                                        .sysan({"data_level": "mage-tab"}).one()
+            magetab = self.graph.nodes(Archive).sysan({"data_level": "mage-tab"}).one()
             self.assertTrue(magetab.system_annotations["magetab_synced"])
             self.assertEqual(magetab.system_annotations["magetab_edges_from"], 2)
         self.assertEqual(n_files, 2)
@@ -146,7 +145,10 @@ class TestTCGAMAGETASync(ZugsTestBase):
         syncer.sync()
         with self.graph.session_scope() as s:
             self.graph.node_delete(node_id=fake_archive_node.node_id)
-            for edge in self.graph.edges().labels("data_from"):
+            for edge in self.graph.edges(FileDataFromAliquot):
+                edge.system_annotations['to_be_deleted'] = True
+                s.merge(edge)
+            for edge in self.graph.edges(FileDataFromPortion):
                 edge.system_annotations['to_be_deleted'] = True
                 s.merge(edge)
 

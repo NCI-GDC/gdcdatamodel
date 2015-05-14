@@ -61,6 +61,6 @@ class TestTARGETSampleMatrixSync(unittest.TestCase):
             syncer.put_mapping_in_pg(mapping)
             syncer.remove_old_versions()
         with self.driver.session_scope():
-            self.assertEqual(self.driver.nodes().labels("aliquot").props({"submitter_id": "TARGET-20-PABHET-03A-02R"}).all(), [])
+            self.assertEqual(self.driver.nodes(Aliquot).props({"submitter_id": "TARGET-20-PABHET-03A-02R"}).all(), [])
             self.trace_participant("TARGET-20-PABGKN-09A-01R")
             self.trace_participant("TARGET-20-PABHKY-03A-02R")

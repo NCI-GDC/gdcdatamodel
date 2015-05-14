@@ -7,7 +7,7 @@ from datetime import datetime
 from uuid import UUID, uuid5
 
 from cdisutils.log import get_logger
-from gdcdatamodel import models
+from gdcdatamodel.models import File, Participant
 
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
@@ -90,8 +90,7 @@ class TARGETClinicalSyncer(object):
         self.log.info("loading clinical info into graph")
         with self.graph.session_scope():
             self.log.info("looking up the node corresponding to %s", self.url)
-            clinical_file = self.graph.nodes()\
-                                      .labels("file")\
+            clinical_file = self.graph.nodes(File)\
                                       .sysan({"source": "target_dcc",
                                               "url": self.url}).one()
             self.log.info("found clinical file %s as %s", self.url, clinical_file)
@@ -100,8 +99,7 @@ class TARGETClinicalSyncer(object):
                 # space after the name, e.g. 'TARGET-50-PAEAFB '
                 participant_barcode = row["TARGET Patient USI"].strip()
                 self.log.info("looking up participant %s", participant_barcode)
-                participant = self.graph.nodes()\
-                                        .labels("participant")\
+                participant = self.graph.nodes(Participant)\
                                         .props({"submitter_id": participant_barcode}).scalar()
                 if not participant:
                     self.log.warning("couldn't find participant %s, not inserting clinical data", participant_barcode)

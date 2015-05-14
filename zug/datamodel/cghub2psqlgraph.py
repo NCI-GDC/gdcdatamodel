@@ -2,11 +2,12 @@ import re
 import json
 import datetime
 import psqlgraph
-from psqlgraph import PolyNode
+from psqlgraph import PolyNode, Node
 from lxml import etree
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
 
+from gdcdatamodel.models import File, Center
 
 deletion_states = ['suppressed', 'redacted']
 
@@ -94,10 +95,9 @@ class cghub2psqlgraph(object):
 
     def get_file_by_key(self, file_key):
         analysis_id, file_name = file_key
-        return self.graph.nodes().labels('file')\
-                                 .props({'file_name': file_name})\
-                                 .sysan({'analysis_id': analysis_id})\
-                                 .scalar()
+        return self.graph.nodes(File).props({'file_name': file_name})\
+                                     .sysan({'analysis_id': analysis_id})\
+                                     .scalar()
 
     def merge_file_node(self, file_key, node, system_annotations):
         """either create or update file record
@@ -339,9 +339,9 @@ class cghub2psqlgraph(object):
 
             # Cache edge to categorization node
             normalized = names.get(dst_label, {}).get(str(dst_name), dst_name)
-            dst = self.graph.nodes().labels(dst_label)\
-                                    .props(dict(name=normalized))\
-                                    .scalar()
+            dst = self.graph.nodes(Node.get_subclass(dst_label))\
+                            .props(dict(name=normalized))\
+                            .scalar()
             if not dst:
                 self.log.warn('Missing dst {} name:{}, {}'.format(
                     dst_label, normalized, file_key))
@@ -362,9 +362,8 @@ class cghub2psqlgraph(object):
             self.log.warn('Unable to parse center code from barcode: {}'.format(
                 legacy_sample_id))
         else:
-            node = self.graph.nodes().labels('center')\
-                                     .props({'code': code.group(2)})\
-                                     .scalar()
+            node = self.graph.nodes(Center).props({'code': code.group(2)})\
+                                           .scalar()
             assert node, 'Missing center code:{}, {}'.format(
                 code.group(2), file_key)
             self.save_edge(
