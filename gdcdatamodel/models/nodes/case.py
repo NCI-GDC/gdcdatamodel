@@ -1,7 +1,7 @@
 from psqlgraph import Node, pg_property
 
 
-class Participant(Node):
+class Case(Node):
 
     __nonnull_properties__ = ['submitter_id']
 
