@@ -2,7 +2,7 @@ from base import ZugsTestBase
 from zug.datamodel.tcga_publication_import import TCGAPublicationImporter
 import uuid
 import os
-from gdcdatamodel.models import PublicationRefersToFile
+from gdcdatamodel.models import PublicationRefersToFile, Publication, File
 
 
 class TestTCGAPublicationImport(ZugsTestBase):
@@ -14,12 +14,10 @@ class TestTCGAPublicationImport(ZugsTestBase):
         os.environ["ZUGS_PG_PASS"] = 'test'
         os.environ["ZUGS_PG_NAME"] = 'automated_test'
 
-    def create_file(self, file, sys_ann={}):
-        file = self.graph.node_merge(
-            node_id=str(uuid.uuid4()),
-            label="file",
+    def create_file(self, session, filename, sys_ann={}):
+        node = File(str(uuid.uuid4()),
             properties={
-                "file_name": file,
+                "file_name": filename,
                 "md5sum": "bogus",
                 "file_size": long(0),
                 "state": "live",
@@ -28,7 +26,8 @@ class TestTCGAPublicationImport(ZugsTestBase):
             },
             system_annotations=sys_ann
         )
-        return file
+        session.merge(node)
+        return node
 
     def test_publication_import(self):
         importer = TCGAPublicationImporter([], self.driver, self.import_logger)
@@ -36,77 +35,82 @@ class TestTCGAPublicationImport(ZugsTestBase):
         with self.graph.session_scope():
             pubs = importer.publications
             for key in pubs:
-                del pubs[key]['node_id']
-            self.graph.nodes().labels('publication').props(pubs['BLCA']).one()
-            self.graph.nodes().labels('publication').props(pubs['BRCA']).one()
-            self.graph.nodes().labels('publication').\
+                del pubs[key]['pub_node']
+            self.graph.nodes(Publication).props(pubs['BLCA']).one()
+            self.graph.nodes(Publication).props(pubs['BRCA']).one()
+            self.graph.nodes(Publication).\
                 props(pubs['COADREAD']).one()
-            self.graph.nodes().labels('publication').props(pubs['HNSC']).one()
-            self.graph.nodes().labels('publication').props(pubs['LUAD']).one()
-            self.graph.nodes().labels('publication').props(pubs['OV']).one()
-            self.graph.nodes().labels('publication').props(pubs['UCEC']).one()
+            self.graph.nodes(Publication).props(pubs['HNSC']).one()
+            self.graph.nodes(Publication).props(pubs['LUAD']).one()
+            self.graph.nodes(Publication).props(pubs['OV']).one()
+            self.graph.nodes(Publication).props(pubs['UCEC']).one()
 
     def test_publication_edge_build(self):
-        file1 = self.create_file('test1', {'analysis_id': 'a'})
-        file2 = self.create_file('test2', {'analysis_id': 'b'})
-        file3 = self.create_file('test3', {'analysis_id': 'c'})
-        bamlist = [{'filename': 'test1', 'analysis_id': 'a', 'disease': 'OV'},
-                   {'filename': 'test2',
-                    'analysis_id': 'b', 'disease': 'BLCA'},
-                   {'filename': 'test3', 'disease': 'BLCA'}]
-        importer = TCGAPublicationImporter(bamlist,
-                                           self.driver, self.import_logger)
+        bamlist = {'disease': ['OV', 'BLCA', 'BLCA'],
+                   'filename': ['test1', 'test2', 'test3'],
+                   'cghub_uuid': ['a', 'b', 'c']}
+
+        importer = TCGAPublicationImporter()
+        importer.bamlist = bamlist
+        with self.graph.session_scope() as session:
+            file1 = self.create_file(session, 'test1', {'analysis_id': 'a'})
+            file2 = self.create_file(session, 'test2', {'analysis_id': 'b'})
+            file3 = self.create_file(session, 'test3', {'analysis_id': 'c'})
         importer.run()
-        with self.graph.session_scope():
+        with self.graph.session_scope() as session:
             self.graph.edges(PublicationRefersToFile).filter(
-                PublicationRefersToFile.src_id ==
-                importer.publications['OV']['node_id'])\
+                PublicationRefersToFile.src ==
+                importer.publications['OV']['pub_node'])\
                 .filter(
-                PublicationRefersToFile.dst_id ==
-                file1.node_id
+                PublicationRefersToFile.dst == file1
             ).one()
             self.graph.edges(PublicationRefersToFile).filter(
-                PublicationRefersToFile.src_id ==
-                importer.publications['BLCA']['node_id'])\
+                PublicationRefersToFile.src ==
+                importer.publications['BLCA']['pub_node'])\
                 .filter(
-                PublicationRefersToFile.dst_id == file2.node_id
+                PublicationRefersToFile.dst == file2
             ).one()
             self.graph.edges(PublicationRefersToFile).filter(
-                PublicationRefersToFile.src_id ==
-                importer.publications['BLCA']['node_id'])\
+                PublicationRefersToFile.src ==
+                importer.publications['BLCA']['pub_node'])\
                 .filter(
-                PublicationRefersToFile.dst_id == file3.node_id
+                PublicationRefersToFile.dst == file3
             ).one()
 
     def test_importer_with_bam_not_in_graph(self):
-        file1 = self.create_file('test1', {'analysis_id': 'a'})
-        bamlist = [{'filename': 'test1', 'analysis_id': 'a', 'disease': 'OV'},
-                   {'filename': 'test2',
-                    'analysis_id': 'b', 'disease': 'BLCA'}]
-        importer = TCGAPublicationImporter(bamlist,
-                                           self.driver, self.import_logger)
+        bamlist = {'disease': ['OV', 'BLCA'],
+                   'filename': ['test1', 'test2'],
+                   'cghub_uuid': ['a', 'b']}
+
+        importer = TCGAPublicationImporter()
+        importer.bamlist = bamlist
+        with self.graph.session_scope() as session:
+            file1 = self.create_file(session, 'test1', {'analysis_id': 'a'})
         importer.run()
-        with self.graph.session_scope():
+        with self.graph.session_scope() as session:
             self.graph.edges(PublicationRefersToFile).filter(
-                PublicationRefersToFile.src_id ==
-                importer.publications['OV']['node_id'])\
+                PublicationRefersToFile.src ==
+                importer.publications['OV']['pub_node'])\
                 .filter(
-                PublicationRefersToFile.dst_id == file1.node_id
+                PublicationRefersToFile.dst == file1
             ).one()
-            assert self.graph.edges().labels('refers_to').count() == 1
+            assert self.graph.edges(PublicationRefersToFile).count() == 1
 
     def test_importer_with_duplicate_edge(self):
-        file1 = self.create_file('test1', {'analysis_id': 'a'})
-        bamlist = [{'filename': 'test1', 'analysis_id': 'a', 'disease': 'OV'},
-                   {'filename': 'test1', 'analysis_id': 'a', 'disease': 'OV'}]
-        importer = TCGAPublicationImporter(bamlist,
-                                           self.driver, self.import_logger)
+        bamlist = {'disease': ['OV', 'OV'],
+                   'filename': ['test1', 'test1'],
+                   'cghub_uuid': ['a', 'a']}
+
+        importer = TCGAPublicationImporter()
+        importer.bamlist = bamlist
+        with self.graph.session_scope() as session:
+            file1 = self.create_file(session, 'test1', {'analysis_id': 'a'})
         importer.run()
-        with self.graph.session_scope():
+        with self.graph.session_scope() as session:
             self.graph.edges(PublicationRefersToFile).filter(
-                PublicationRefersToFile.src_id ==
-                importer.publications['OV']['node_id'])\
+                PublicationRefersToFile.src ==
+                importer.publications['OV']['pub_node'])\
                 .filter(
-                PublicationRefersToFile.dst_id == file1.node_id
+                PublicationRefersToFile.dst == file1
             ).one()
-            assert self.graph.edges().labels('refers_to').count() == 1
+            assert self.graph.edges(PublicationRefersToFile).count() == 1
