@@ -22,22 +22,18 @@ def try_drop_test_data(user, database, root_user='postgres', host=''):
     except Exception, msg:
         logging.warn("Unable to drop test data:" + str(msg))
 
-    try:
-        user_stmt = "DROP USER {user}".format(user=user)
-        conn.execute(user_stmt)
-    except Exception, msg:
-        logging.warn("Unable to drop test data:" + str(msg))
-
     conn.close()
 
 
-def setup_database(user, password, database, root_user='postgres', host=''):
+def setup_database(user, password, database, root_user='postgres',
+                   host='', no_drop=False):
     """
     setup the user and database
     """
     print('Setting up test database')
 
-    try_drop_test_data(user, database)
+    if not no_drop:
+        try_drop_test_data(user, database)
 
     engine = create_engine("postgres://{user}@{host}/postgres".format(
         user=root_user, host=host))
@@ -45,7 +41,10 @@ def setup_database(user, password, database, root_user='postgres', host=''):
     conn.execute("commit")
 
     create_stmt = 'CREATE DATABASE "{database}"'.format(database=database)
-    conn.execute(create_stmt)
+    try:
+        conn.execute(create_stmt)
+    except Exception, msg:
+        logging.warn('Unable to create database: {}'.format(msg))
 
     try:
         user_stmt = "CREATE USER {user} WITH PASSWORD '{password}'".format(
@@ -107,8 +106,11 @@ if __name__ == '__main__':
                         default='test', help="psql test password")
     parser.add_argument("--database", type=str, action="store",
                         default='automated_test', help="psql test database")
+    parser.add_argument("--no-drop", action="store_true",
+                        default=False, help="do not drop any data")
 
     args = parser.parse_args()
-    setup_database(args.user, args.password, args.database)
+    setup_database(args.user, args.password, args.database,
+                   no_drop=args.no_drop)
     create_tables(args.host, args.user, args.password, args.database)
     create_indexes(args.host, args.user, args.password, args.database)
