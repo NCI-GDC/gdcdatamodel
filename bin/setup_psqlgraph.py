@@ -26,7 +26,7 @@ def try_drop_test_data(user, database, root_user='postgres', host=''):
 
 
 def setup_database(user, password, database, root_user='postgres',
-                   host='', no_drop=False):
+                   host='', no_drop=False, no_user=False):
     """
     setup the user and database
     """
@@ -46,17 +46,18 @@ def setup_database(user, password, database, root_user='postgres',
     except Exception, msg:
         logging.warn('Unable to create database: {}'.format(msg))
 
-    try:
-        user_stmt = "CREATE USER {user} WITH PASSWORD '{password}'".format(
-            user=user, password=password)
-        conn.execute(user_stmt)
+    if not no_user:
+        try:
+            user_stmt = "CREATE USER {user} WITH PASSWORD '{password}'".format(
+                user=user, password=password)
+            conn.execute(user_stmt)
 
-        perm_stmt = 'GRANT ALL PRIVILEGES ON DATABASE {database} to {password}'\
-                    ''.format(database=database, password=password)
-        conn.execute(perm_stmt)
-        conn.execute("commit")
-    except Exception, msg:
-        logging.warn("Unable to add user:" + str(msg))
+            perm_stmt = 'GRANT ALL PRIVILEGES ON DATABASE {database} to {password}'\
+                        ''.format(database=database, password=password)
+            conn.execute(perm_stmt)
+            conn.execute("commit")
+        except Exception, msg:
+            logging.warn("Unable to add user:" + str(msg))
     conn.close()
 
 
@@ -108,9 +109,11 @@ if __name__ == '__main__':
                         default='automated_test', help="psql test database")
     parser.add_argument("--no-drop", action="store_true",
                         default=False, help="do not drop any data")
+    parser.add_argument("--no-user", action="store_true",
+                        default=False, help="do not create user")
 
     args = parser.parse_args()
     setup_database(args.user, args.password, args.database,
-                   no_drop=args.no_drop)
+                   no_drop=args.no_drop, no_user=args.no_user)
     create_tables(args.host, args.user, args.password, args.database)
     create_indexes(args.host, args.user, args.password, args.database)
