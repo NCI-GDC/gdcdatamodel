@@ -871,6 +871,9 @@ class PsqlGraph2JSON(object):
                 pbar.update(pbar.currval+1)
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)
+                if (e.src.system_annotations.get("to_delete")
+                    or e.dst.system_annotations.get("to_delete")):
+                    continue
                 if needs_differentiation and e.properties:
                     self.G.add_edge(
                         e.src, e.dst, label=e.label, props=e.properties)
