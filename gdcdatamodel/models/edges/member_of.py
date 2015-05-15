@@ -29,8 +29,8 @@ class ArchiveMemberOfProject(Edge, MemberOf):
 class FileMemberOfArchive(Edge, MemberOf):
     __src_class__ = 'File'
     __dst_class__ = 'Archive'
-    __src_dst_assoc__ = 'member_of_archives'
-    __dst_src_assoc__ = 'member_files'
+    __src_dst_assoc__ = 'archives'
+    __dst_src_assoc__ = 'files'
 
 
 class FileMemberOfExperimentalStrategy(Edge, MemberOf):

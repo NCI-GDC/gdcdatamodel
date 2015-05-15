@@ -15,5 +15,5 @@ class FileRelatedToFile(Edge, RelatedTo):
 class ArchiveRelatedToFile(Edge, RelatedTo):
     __src_class__ = 'Archive'
     __dst_class__ = 'File'
-    __src_dst_assoc__ = 'files'
-    __dst_src_assoc__ = 'archives'
+    __src_dst_assoc__ = 'related_to_files'
+    __dst_src_assoc__ = 'related_archives'
