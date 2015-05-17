@@ -38,7 +38,7 @@ setup(
         'filechunkio==1.6'
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@70dce6d1566d03240c13e7fffdd2837d6edc4f61#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@cf88e61e492695768e82f564b4da87dc31c6b1c7#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@fc98eee69aab5a8b17685c5497c244f3844f64d1#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@381e41d09dd7a0f9cd5f1ea5abea5bb1f34e9e70#egg=signpostclient',
