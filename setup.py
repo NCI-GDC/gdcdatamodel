@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+]from setuptools import setup, find_packages
 
 setup(
     name='gdcdatamodel',
@@ -16,6 +16,6 @@ setup(
         ]
     },
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@6a6f22999c06bfb31d404d94fb905d9c04e796f0#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@70dce6d1566d03240c13e7fffdd2837d6edc4f61#egg=psqlgraph',
     ],
 )
