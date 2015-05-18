@@ -20,34 +20,35 @@ except:
 
 
 class DataBackup(ConsulMixin):
-    def __init__(self, file_id='', bucket_prefix='', debug=False):
+    def __init__(self, file_id='', bucket_prefix='', debug=False, clear=True):
         super(DataBackup, self).__init__()
         self.graph = PsqlGraphDriver(
-            os.environ["ZUGS_PG_HOST"],
-            os.environ["ZUGS_PG_USER"],
-            os.environ["ZUGS_PG_PASS"],
-            os.environ["ZUGS_PG_NAME"],
+            self.consul_get(['pg', 'host']),
+            self.consul_get(['pg', 'user']),
+            self.consul_get(['pg', 'pass']),
+            self.consul_get(['pg', 'name'])
         )
         self.ds3 = ds3.client.Client(
-            os.environ["DS3_HOST"],
-            os.environ["DS3_PORT"],
-            access_key=os.environ["DS3_ACCESS_KEY"],
-            secret_key=os.environ["DS3_SECRET_KEY"],
+            self.consul_get(['ds3', 'host']),
+            self.consul_get(['ds3', 'port']),
+            access_key=self.consul_get(['ds3', 'access_key']),
+            secret_key=self.consul_get(['ds3', 'secret_key']),
             verify=False
         )
         self.download_path = self.consul_get("path")
+        self.clear = clear
         self.s3 = boto.connect_s3(
-            host=os.environ["S3_HOST"],
-            aws_access_key_id=os.environ["S3_ACCESS_KEY"],
-            aws_secret_access_key=os.environ["S3_SECRET_KEY"],
+            host=self.consul_get(['s3', 'host']),
+            aws_access_key_id=self.consul_get(['s3', 'access_key']),
+            aws_secret_access_key=self.consul_get(['s3', 'secret_key']),
             is_secure=False,
             calling_format=boto.s3.connection.OrdinaryCallingFormat()
         )
         self.signpost = SignpostClient(self.consul_get('signpost_url'))
         self.logger = get_logger('data_backup_{}'.format(str(os.getpid())))
-        self.debug=debug
+        self.debug = debug
         if not debug:
-            self.logger.level=30
+            self.logger.level = 30
         self.file_id = file_id
         self._bucket_prefix = bucket_prefix
 
@@ -99,9 +100,10 @@ class DataBackup(ConsulMixin):
         self.logger.info('File %s uploaded', self.file.file_name)
 
     def cleanup(self):
-        intermediate = os.path.join(self.download_path, self.file_id)
-        if os.path.exists(intermediate):
-            os.remove(intermediate)
+        if self.clear:
+            intermediate = os.path.join(self.download_path, self.file_id)
+            if os.path.exists(intermediate):
+                os.remove(intermediate)
         super(DataBackup, self).cleanup()
 
     def get_free_space(self):
