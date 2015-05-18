@@ -38,4 +38,4 @@ portion:
         type: long
       portion_number:
         path: ./test:text3.2
-        type: long
+        type: str
