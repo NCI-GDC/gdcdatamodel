@@ -5,6 +5,7 @@ from lxml import etree
 from gdcdatamodel.models import (
     File,
     Center,
+    Aliquot,
     Platform,
     ExperimentalStrategy,
     DataFormat,
@@ -142,6 +143,25 @@ class TestCGHubFileImporter(unittest.TestCase):
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
 
+    def test_missing_aliquot(self):
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope() as s:
+            s.delete(graph.nodes(Aliquot).one())
+            s.commit()
+            self.run_convert()
+            for file_key in self.to_add:
+                node = graph.nodes().props(
+                    {'file_name': file_key[1]}).one()
+            for file_key in self.to_delete:
+                self.assertEqual(graph.nodes()\
+                                 .props({'file_name': file_key[1]})\
+                                 .sysan({"to_delete": True})\
+                                 .count(), 1)
+            bam = graph.nodes().props({'file_name': bamA}).one()
+            bai = graph.nodes().props({'file_name': baiA}).one()
+            self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
+
     def test_related_to(self):
         graph = self.converter.graph
         self.insert_test_files()
@@ -191,11 +211,6 @@ class TestCGHubFileImporter(unittest.TestCase):
                 base.path('data_subtypes').props(name='Aligned reads').one()
                 base.path('data_formats').props(name='BAM').one()
                 base.path('experimental_strategies').props(name='RNA-Seq').one()
-                # base.path_end(['center']).props({'code': '07'}).one()
-                # base.path_end(['platform']).props({'name': 'Illumina GA'}).one()
-                # base.path_end(['data_subtype']).props({'name': 'Aligned reads'}).one()
-                # base.path_end(['data_format']).props({'name': 'BAM'}).one()
-                # base.path_end(['experimental_strategy']).props({'name': 'RNA-Seq'}).one()
                 self.assertEqual(len(list(bai.get_edges())), 1)
 
 

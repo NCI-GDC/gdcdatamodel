@@ -191,7 +191,8 @@ class cghub2psqlgraph(object):
             if not self.graph.nodes().ids(str(edge.dst_id)).scalar():
                 self.log.warn('Missing {} destination {}'.format(
                     edge.label, edge.dst_id))
-            session.merge(edge)
+            else:
+                session.merge(edge)
 
     def export_edges(self):
         """Adds related_to edges then all other edges to psqlgraph from
