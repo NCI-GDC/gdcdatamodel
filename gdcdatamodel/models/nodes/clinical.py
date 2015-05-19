@@ -5,7 +5,7 @@ class Clinical(Node):
 
     __nonnull_properties__ = []
 
-    @pg_property(str, enum=['male', 'femle'])
+    @pg_property(str, enum=['male', 'female'])
     def gender(self, value):
         self._set_property('gender', value)
 
