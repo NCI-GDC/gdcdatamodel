@@ -1,11 +1,13 @@
 import logging
 import unittest
 import os
-from zug.datamodel import xml2psqlgraph, bcr_xml_mapping, prelude
+from zug.datamodel import prelude
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from gdcdatamodel import get_participant_es_mapping
 from gdcdatamodel.models import File, Aliquot
 from psqlgraph import PsqlGraphDriver, Edge, Node
+
+import es_fixtures
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -18,13 +20,6 @@ password = 'test'
 database = 'automated_test'
 
 
-converter = xml2psqlgraph.xml2psqlgraph(
-    xml_mapping=bcr_xml_mapping,
-    host=host,
-    user=user,
-    password=password,
-    database=database,
-)
 g = PsqlGraphDriver(
     host=host,
     user=user,
@@ -163,10 +158,7 @@ class TestPsqlgraph2JSON(unittest.TestCase):
 
     def setUp(self):
         self.add_req_nodes()
-        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
-            xml = f.read()
-        converter.xml2psqlgraph(xml)
-        converter.export()
+        es_fixtures.insert(g)
         self.add_file_nodes()
         doc_conv = PsqlGraph2JSON(g)
         with g.session_scope():
