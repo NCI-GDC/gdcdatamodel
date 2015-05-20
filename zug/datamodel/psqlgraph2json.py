@@ -76,7 +76,6 @@ class PsqlGraph2JSON(object):
         """
         self.g = psqlgraph_driver
         self.G = nx.Graph()
-        self.patch_trees()
         self.ptree_mapping = {'participant': participant_tree.to_dict()}
         self.ftree_mapping = {'file': file_tree.to_dict()}
         self.atree_mapping = {'annotation': annotation_tree.to_dict()}
