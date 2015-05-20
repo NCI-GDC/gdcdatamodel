@@ -204,7 +204,7 @@ class TestPsqlgraph2JSON(unittest.TestCase):
         self.assertTrue('samples' in props)
         actual = set(props['samples'][0].keys())
         self.assertEqual(sample_props, actual.union(
-            {'annotations'}))
+            {'annotations', 'aliquots'}))
 
     def test_participant_portions(self):
         props = self.part_doc
