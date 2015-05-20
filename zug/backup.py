@@ -5,12 +5,10 @@ from psqlgraph import PsqlGraphDriver
 from cdisutils.log import get_logger
 import os
 from urlparse import urlparse
-from requests.exceptions import HTTPError
-import ds3client as ds3
 import boto
 import boto.s3.connection
-import subprocess
 from sqlalchemy import or_, not_
+from boto.s3.key import Key, KeyFile
 import requests
 
 try:
@@ -20,6 +18,10 @@ except:
 
 
 class DataBackup(ConsulMixin):
+    BACKUP_ACCEPT_STATE = ['backuped', 'verified']
+    BACKUP_FAIL_STATE = 'failed'
+    BACKUP_DRIVER = ['primary_backup', 'storage_backup']
+
     def __init__(self, file_id='', bucket_prefix='', debug=False, clear=True):
         super(DataBackup, self).__init__()
         self.graph = PsqlGraphDriver(
@@ -28,14 +30,16 @@ class DataBackup(ConsulMixin):
             self.consul_get(['pg', 'pass']),
             self.consul_get(['pg', 'name'])
         )
-        self.ds3 = ds3.client.Client(
-            self.consul_get(['ds3', 'host']),
-            self.consul_get(['ds3', 'port']),
-            access_key=self.consul_get(['ds3', 'access_key']),
-            secret_key=self.consul_get(['ds3', 'secret_key']),
-            verify=False
-        )
-        self.download_path = self.consul_get("path")
+        self.ds3 = {}
+        for driver in self.BACKUP_DRIVER:
+            self.ds3[driver] = boto.connect_s3(
+                host=self.consul_get(['ds3', driver, 'host']),
+                port=self.consul_get(['ds3', driver, 'port']),
+                aws_access_key_id=self.consul_get(['ds3', driver, 'access_key']),
+                aws_secret_access_key=self.consul_get(['ds3', driver, 'secret_key']),
+                is_secure=False,
+                calling_format=boto.s3.connection.OrdinaryCallingFormat()
+            )
         self.clear = clear
         self.s3 = boto.connect_s3(
             host=self.consul_get(['s3', 'host']),
@@ -60,10 +64,9 @@ class DataBackup(ConsulMixin):
         with self.consul_session_scope():
             if not self.get_file_to_backup():
                 return
-            if self.download():
-                self.upload()
+            self.upload()
 
-    def download(self):
+    def upload(self):
         urls = self.signpost.get(self.file.node_id).urls
         if not urls:
             self.logger.error(
@@ -73,61 +76,54 @@ class DataBackup(ConsulMixin):
         (self.bucket_name, self.object_name) =\
             parsed_url.path.split("/", 2)[1:]
         s3_bucket = self.s3.get_bucket(self.bucket_name)
-        free = self.get_free_space()
-        if free < self.file.file_size:
-            self.logger.error(
-                "Not enough space to download file %s File size is %s, free space is %s",
-                self.file.file_name, self.file.file_size, free)
-            return False
-        else:
-            key = s3_bucket.get_key(self.object_name)
-            self.logger.info("Downloading file %s", self.file.file_name)
-            key.get_contents_to_filename(
-                os.path.join(self.download_path, self.file.node_id))
-            self.logger.info("Download file %s complete", self.file.file_name)
-            return True
+        s3_key = s3_bucket.get_key(self.object_name)
+        keyfile = KeyFile(s3_key)
 
-    def upload(self):
         ds3_bucket_name = self._bucket_prefix+'_'+self.bucket_name
-        self.get_bucket(ds3_bucket_name)
-        f = open(os.path.join(self.download_path, self.file.node_id), 'r')
-        self.logger.info('Upload file %s to blackpearl', self.file.file_name)
-        try:
-            self.ds3.keys.put(f, self.object_name, ds3_bucket_name)
-        except HTTPError:
-            self.ds3.keys.delete(self.object_name, ds3_bucket_name)
-            self.ds3.keys.put(f, self.object_name, ds3_bucket_name)
-        self.logger.info('File %s uploaded', self.file.file_name)
+        for driver in self.BACKUP_DRIVER:
+            ds3_bucket = self.get_bucket(driver, ds3_bucket_name)
+            self.logger.info('Upload file %s to %s bucket %s',
+                             self.file.file_name, driver, ds3_bucket_name)
+            key = Key(ds3_bucket)
+            key.key = s3_key.key
 
-    def cleanup(self):
-        if self.clear:
-            intermediate = os.path.join(self.download_path, self.file_id)
-            if os.path.exists(intermediate):
-                os.remove(intermediate)
-        super(DataBackup, self).cleanup()
-
-    def get_free_space(self):
-        output = subprocess.check_output(["df", self.download_path])
-        device, size, used, available, percent, mountpoint = \
-            output.split("\n")[1].split()
-        return 1000 * int(available)  # 1000 because df reports in kB
-
-    def get_bucket(self, name):
-        try:
-            return self.ds3.buckets.get(name)
-        except HTTPError:
             try:
-                self.ds3.buckets.create(name)
+                key.set_contents_from_file(keyfile)
             except:
-                pass
-            return self.ds3.buckets.get(name)
+                ds3_bucket.delete_key(key.key)
+                key.set_contents_from_file(keyfile)
+            self.logger.info('File %s uploaded', self.file.file_name)
+            with self.graph.session_scope() as session:
+                self.file.system_annotations[driver] = 'backuped'
+                session.merge(self.file)
+
+    def get_bucket(self, driver, name):
+        '''
+        Get a bucket given a blackpearl driver name,
+        if the bucket does not exist, create a new one
+        '''
+        bucket = self.ds3[driver].lookup(name)
+        if not bucket:
+            bucket = self.ds3[driver].create_bucket(name)
+        return bucket
 
     def get_file_to_backup(self):
+        '''
+        If a file_id is specified at the beginning, it will try to
+        back up that file, otherwise select a random file that's
+        not backed up in psqlgraph
+        '''
         if not self.file_id:
             with self.graph.session_scope():
+                conditions = []
+                # Find all files who are not backuped or failed to 
+                # backup for either of the blackpearl
+                for driver in self.BACKUP_DRIVER:
+                    conditions.append(not_(File._sysan.has_key(driver)))
+                    conditions.append((File._sysan[driver].astext
+                                      == self.BACKUP_FAIL_STATE))
                 query = self.graph.nodes(File).props({'state': 'live'})\
-                    .filter(or_(not_(File._sysan.has_key('backup')),
-                                File._sysan['backup'].astext == 'failed'))
+                    .filter(or_(*conditions))
                 if query.count() == 0:
                     self.logger.info("We backed up all files")
                 else:
@@ -143,9 +139,19 @@ class DataBackup(ConsulMixin):
         else:
             with self.graph.session_scope():
                 self.file = self.graph.nodes(File).ids(self.file_id).one()
+                valid = False
+                for driver in self.BACKUP_DRIVER:
+                    if (driver not in self.file.system_annotations) or\
+                            (self.file.system_annotations[driver] ==
+                                self.BACKUP_FAIL_STATE):
+                        valid = True
+                if not valid:
+                    self.logger.error("File {} already backed up"
+                                      .format(self.file.file_name))
+                    return
                 if not self.get_consul_lock():
                     self.logger.error(
                         "Can't acquire lock for file {}".
                         format(self.file.file_name))
-                    return None
+                    return
                 return self.file
