@@ -36,7 +36,7 @@ sample_props = {'sample_type_id',
                 'is_ffpe', 'pathology_report_uuid', 'portions',
                 'sample_type', 'days_to_collection', 'initial_weight',
                 'current_weight', 'annotations', 'longest_dimension',
-                'tumor_code_id', 'tumor_code'}
+                'tumor_code_id', 'tumor_code', 'aliquots'}
 project_props = {'name', 'state', 'program', 'primary_site',
                  'project_id', 'disease_type'}
 summary_props = {'data_types', 'file_count',
@@ -67,6 +67,8 @@ file_props = {'data_format', 'related_files', 'center', 'tags',
               'uploaded_datetime', 'published_datetime', 'acl',
               'associated_entities', 'archive'}
 
+
+# TODO move these to gdcdatamodel, they don't belong here
 
 class TestElasticsearchMappings(unittest.TestCase):
 
