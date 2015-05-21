@@ -11,6 +11,7 @@ import boto.s3.connection
 from sqlalchemy import or_, not_
 from boto.s3.key import Key, KeyFile
 import requests
+from  sqlalchemy.sql.expression import func
 import json
 
 try:
@@ -122,13 +123,21 @@ class DataBackup(ConsulMixin):
 
     def cleanup(self):
         super(DataBackup, self).cleanup()
+        succeed = False
+
         if self.reportfile:
-            self.report['end'] = time.time()
-            self.report['node_id'] = self.file.node_id
-            self.report['size'] = self.file.file_size
-            with open(self.reportfile, 'a') as f:
-                f.write(json.dumps(self.report))
-                f.write('\n')
+            succeed = False
+            for driver in self.BACKUP_DRIVER:
+                if driver+'_end' in self.report:
+                    succeed = True
+            if succeed:
+                self.report['end'] = time.time()
+                self.report['node_id'] = self.file.node_id
+                self.report['size'] = self.file.file_size
+                with open(self.reportfile, 'a') as f:
+                    f.write(json.dumps(self.report))
+                    f.write('\n')
+
     def get_file_to_backup(self):
         '''
         If a file_id is specified at the beginning, it will try to
@@ -152,7 +161,7 @@ class DataBackup(ConsulMixin):
                     tries = 5
                     while tries > 0:
                         tries -= 1
-                        self.file = query.first()
+                        self.file = query.order_by(func.random()).first()
                         if self.get_consul_lock():
                             self.file_id = self.file.node_id
                             return self.file
