@@ -4,12 +4,14 @@ from gdcdatamodel.models import File
 from psqlgraph import PsqlGraphDriver
 from cdisutils.log import get_logger
 import os
+import time
 from urlparse import urlparse
 import boto
 import boto.s3.connection
 from sqlalchemy import or_, not_
 from boto.s3.key import Key, KeyFile
 import requests
+import json
 
 try:
     requests.packages.urllib3.disable_warnings()
@@ -22,7 +24,8 @@ class DataBackup(ConsulMixin):
     BACKUP_FAIL_STATE = 'failed'
     BACKUP_DRIVER = ['primary_backup', 'storage_backup']
 
-    def __init__(self, file_id='', bucket_prefix='', debug=False, clear=True):
+    def __init__(self, file_id='', bucket_prefix='', debug=False,
+                 reportfile=None):
         super(DataBackup, self).__init__()
         self.graph = PsqlGraphDriver(
             self.consul_get(['pg', 'host']),
@@ -30,6 +33,9 @@ class DataBackup(ConsulMixin):
             self.consul_get(['pg', 'pass']),
             self.consul_get(['pg', 'name'])
         )
+        self.reportfile = reportfile
+        if self.reportfile:
+            self.report = {'start': time.time()}
         self.ds3 = {}
         for driver in self.BACKUP_DRIVER:
             self.ds3[driver] = boto.connect_s3(
@@ -40,7 +46,6 @@ class DataBackup(ConsulMixin):
                 is_secure=False,
                 calling_format=boto.s3.connection.OrdinaryCallingFormat()
             )
-        self.clear = clear
         self.s3 = boto.connect_s3(
             host=self.consul_get(['s3', 'host']),
             aws_access_key_id=self.consul_get(['s3', 'access_key']),
@@ -76,16 +81,21 @@ class DataBackup(ConsulMixin):
         (self.bucket_name, self.object_name) =\
             parsed_url.path.split("/", 2)[1:]
         s3_bucket = self.s3.get_bucket(self.bucket_name)
-        s3_key = s3_bucket.get_key(self.object_name)
-        keyfile = KeyFile(s3_key)
-
-        ds3_bucket_name = self._bucket_prefix+'_'+self.bucket_name
+        if self._bucket_prefix:
+            ds3_bucket_name = self._bucket_prefix+'_'+self.bucket_name
+        else:
+            ds3_bucket_name = self.bucket_name
         for driver in self.BACKUP_DRIVER:
+            s3_key = s3_bucket.get_key(self.object_name)
+            keyfile = KeyFile(s3_key)
             ds3_bucket = self.get_bucket(driver, ds3_bucket_name)
-            self.logger.info('Upload file %s to %s bucket %s',
-                             self.file.file_name, driver, ds3_bucket_name)
             key = Key(ds3_bucket)
             key.key = s3_key.key
+            self.logger.info('Upload file %s to %s bucket %s',
+                             self.file.file_name, driver, ds3_bucket_name)
+            
+            if self.reportfile:
+                self.report[driver+'_start'] = time.time()
 
             try:
                 key.set_contents_from_file(keyfile)
@@ -93,6 +103,8 @@ class DataBackup(ConsulMixin):
                 ds3_bucket.delete_key(key.key)
                 key.set_contents_from_file(keyfile)
             self.logger.info('File %s uploaded', self.file.file_name)
+            if self.reportfile:
+                self.report[driver+'_end'] = time.time()
             with self.graph.session_scope() as session:
                 self.file.system_annotations[driver] = 'backuped'
                 session.merge(self.file)
@@ -107,6 +119,16 @@ class DataBackup(ConsulMixin):
             bucket = self.ds3[driver].create_bucket(name)
         return bucket
 
+
+    def cleanup(self):
+        super(DataBackup, self).cleanup()
+        if self.reportfile:
+            self.report['end'] = time.time()
+            self.report['node_id'] = self.file.node_id
+            self.report['size'] = self.file.file_size
+            with open(self.reportfile, 'a') as f:
+                f.write(json.dumps(self.report))
+                f.write('\n')
     def get_file_to_backup(self):
         '''
         If a file_id is specified at the beginning, it will try to

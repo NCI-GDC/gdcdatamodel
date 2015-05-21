@@ -107,7 +107,7 @@ class DataBackupTest(ZugsTestBase):
 
     def test_single_file_backup(self):
         backup = DataBackup(file_id=self.file1.node_id,
-                            clear=False, debug=True,
+                            debug=True,
                             bucket_prefix='ds3')
         with self.with_fake_s3():
             backup.backup()
@@ -124,8 +124,7 @@ class DataBackupTest(ZugsTestBase):
             s.add(self.file1)
             s.add(self.file2)
             s.commit()
-        backup = DataBackup(clear=False, debug=True,
-                            bucket_prefix='ds3')
+        backup = DataBackup(debug=True, bucket_prefix='ds3')
         with self.with_fake_s3():
             backup.backup()
 
@@ -136,7 +135,7 @@ class DataBackupTest(ZugsTestBase):
             self.file1 = s.merge(self.file1)
             self.file2 = s.merge(self.file2)
             s.commit()
-        backup = DataBackup(clear=False, debug=True,
+        backup = DataBackup(debug=True,
                             bucket_prefix='ds3')
         with self.with_fake_s3():
             backup.backup()
@@ -148,17 +147,17 @@ class DataBackupTest(ZugsTestBase):
 
 
     def test_backup_random_file(self):
-        backup = DataBackup(clear=False, debug=True,
+        backup = DataBackup(debug=True,
                             bucket_prefix='ds3')
         with self.with_fake_s3():
             backup.backup()
     
     def test_multiple_file_backup(self):
         backup = DataBackup(file_id=self.file1.node_id,
-                            clear=False, debug=True,
+                            debug=True,
                             bucket_prefix='ds3')
         backup2 = DataBackup(file_id=self.file2.node_id,
-                             clear=False, debug=True,
+                             debug=True,
                              bucket_prefix='ds3')
 
         with self.with_fake_s3():
@@ -167,7 +166,7 @@ class DataBackupTest(ZugsTestBase):
             uploaded = self.get_boto_key(self.file1.file_name)
             uploaded2 = self.get_boto_key(self.file2.file_name)
         self.assertEqual(self.file1.file_size, uploaded.size)
-        self.assertEqual(self.file2.file_size, uploaded.size)
+        self.assertEqual(self.file2.file_size, uploaded2.size)
 
 
     def test_backup_locked_file(self):
@@ -176,7 +175,7 @@ class DataBackupTest(ZugsTestBase):
         consul.start_consul_session()
         consul.get_consul_lock()
         backup = DataBackup(file_id=self.file1.node_id,
-                            clear=False, debug=True,
+                            debug=True,
                             bucket_prefix='ds3')
         with self.with_fake_s3():
             backup.backup()
