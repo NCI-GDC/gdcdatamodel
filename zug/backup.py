@@ -1,10 +1,13 @@
 from consul_mixin import ConsulMixin
+import random
 from signpostclient import SignpostClient
 from gdcdatamodel.models import File
 from psqlgraph import PsqlGraphDriver
 from cdisutils.log import get_logger
 import os
+from base64 import b64encode
 import time
+from binascii import unhexlify
 from urlparse import urlparse
 import boto
 import boto.s3.connection
@@ -26,7 +29,7 @@ class DataBackup(ConsulMixin):
     BACKUP_DRIVER = ['primary_backup', 'storage_backup']
 
     def __init__(self, file_id='', bucket_prefix='', debug=False,
-                 reportfile=None):
+                 reportfile=None, driver = ''):
         super(DataBackup, self).__init__()
         self.graph = PsqlGraphDriver(
             self.consul_get(['pg', 'host']),
@@ -98,17 +101,28 @@ class DataBackup(ConsulMixin):
             if self.reportfile:
                 self.report[driver+'_start'] = time.time()
 
-            try:
-                key.set_contents_from_file(keyfile)
-            except:
+        try:
+            if ds3_bucket.get_key(key.key):
+                self.logger.info("File already exists, delete old one")
                 ds3_bucket.delete_key(key.key)
-                key.set_contents_from_file(keyfile)
-            self.logger.info('File %s uploaded', self.file.file_name)
-            if self.reportfile:
-                self.report[driver+'_end'] = time.time()
-            with self.graph.session_scope() as session:
-                self.file.system_annotations[driver] = 'backuped'
-                session.merge(self.file)
+            key.set_contents_from_file(keyfile,
+                    md5=(self.file.md5sum, b64encode(unhexlify(self.file.md5sum))))
+        except Exception as e:
+            self.logger.error(str(e))
+            ds3_bucket.delete_key(key.key)
+            key.set_contents_from_file(keyfile)
+        self.logger.info('File %s uploaded', self.file.file_name)
+        if self.reportfile:
+            self.report[driver+'_end'] = time.time()
+        with self.graph.session_scope() as session:
+            self.file.system_annotations[driver] = 'backuped'
+            session.merge(self.file)
+
+
+    def key_exists(self, bucket, key):
+        if bucket.get_key(key):
+            return True
+        return False
 
     def get_bucket(self, driver, name):
         '''
@@ -170,12 +184,12 @@ class DataBackup(ConsulMixin):
         else:
             with self.graph.session_scope():
                 self.file = self.graph.nodes(File).ids(self.file_id).one()
+                self.logger.info(self.file.system_annotations)
                 valid = False
-                for driver in self.BACKUP_DRIVER:
-                    if (driver not in self.file.system_annotations) or\
-                            (self.file.system_annotations[driver] ==
-                                self.BACKUP_FAIL_STATE):
-                        valid = True
+                if (self.driver not in self.file.system_annotations) or\
+                        (self.file.system_annotations[self.driver] ==
+                            self.BACKUP_FAIL_STATE):
+                    valid = True
                 if not valid:
                     self.logger.error("File {} already backed up"
                                       .format(self.file.file_name))
