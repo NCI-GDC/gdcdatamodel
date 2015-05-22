@@ -50,13 +50,7 @@ class DataBackup(ConsulMixin):
                 is_secure=False,
                 calling_format=boto.s3.connection.OrdinaryCallingFormat()
             )
-        self.s3 = boto.connect_s3(
-            host=self.consul_get(['s3', 'host']),
-            aws_access_key_id=self.consul_get(['s3', 'access_key']),
-            aws_secret_access_key=self.consul_get(['s3', 'secret_key']),
-            is_secure=False,
-            calling_format=boto.s3.connection.OrdinaryCallingFormat()
-        )
+
         self.signpost = SignpostClient(self.consul_get('signpost_url'))
         self.logger = get_logger('data_backup_{}'.format(str(os.getpid())))
         self.debug = debug
@@ -68,6 +62,15 @@ class DataBackup(ConsulMixin):
     @property
     def key(self):
         return self.file.node_id
+
+    def get_s3(self, host):
+        self.s3 = boto.connect_s3(
+            host=host,
+            aws_access_key_id=self.consul_get(['s3', host, 'access_key']),
+            aws_secret_access_key=self.consul_get(['s3', host, 'secret_key']),
+            is_secure=False,
+            calling_format=boto.s3.connection.OrdinaryCallingFormat()
+        )
 
     def backup(self):
         with self.consul_session_scope():
@@ -82,6 +85,7 @@ class DataBackup(ConsulMixin):
                 "no urls in signpost for file {}".format(self.file.file_name))
             return False
         parsed_url = urlparse(urls[0])
+        self.get_s3(parsed_url.netloc)
         (self.bucket_name, self.object_name) =\
             parsed_url.path.split("/", 2)[1:]
         s3_bucket = self.s3.get_bucket(self.bucket_name)
@@ -89,17 +93,18 @@ class DataBackup(ConsulMixin):
             ds3_bucket_name = self._bucket_prefix+'_'+self.bucket_name
         else:
             ds3_bucket_name = self.bucket_name
-        for driver in self.BACKUP_DRIVER:
-            s3_key = s3_bucket.get_key(self.object_name)
-            keyfile = KeyFile(s3_key)
-            ds3_bucket = self.get_bucket(driver, ds3_bucket_name)
-            key = Key(ds3_bucket)
-            key.key = s3_key.key
-            self.logger.info('Upload file %s to %s bucket %s',
-                             self.file.file_name, driver, ds3_bucket_name)
-            
-            if self.reportfile:
-                self.report[driver+'_start'] = time.time()
+        self.logger.info(self.s3.host)
+        driver = self.driver
+        s3_key = s3_bucket.get_key(self.object_name)
+        keyfile = KeyFile(s3_key)
+        ds3_bucket = self.get_bucket(driver, ds3_bucket_name)
+        key = Key(ds3_bucket)
+        key.key = s3_key.key
+        self.logger.info('Upload file %s from %s to %s bucket %s',
+                         self.file.file_name, parsed_url.netloc, driver, ds3_bucket_name)
+        
+        if self.reportfile:
+            self.report[driver+'_start'] = time.time()
 
         try:
             if ds3_bucket.get_key(key.key):
