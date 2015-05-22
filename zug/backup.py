@@ -38,7 +38,7 @@ class DataBackup(ConsulMixin):
     BACKUP_DRIVER = ['primary_backup', 'storage_backup']
 
     def __init__(self, file_id='', bucket_prefix='', debug=False,
-                 reportfile=None, driver = ''):
+                 reportfile=None, driver = '', constant=False):
         super(DataBackup, self).__init__()
         self.graph = PsqlGraphDriver(
             self.consul_get(['pg', 'host']),
@@ -67,6 +67,7 @@ class DataBackup(ConsulMixin):
             self.logger.level = 30
         self.file_id = file_id
         self._bucket_prefix = bucket_prefix
+        self.constant = constant
 
     @property
     def key(self):
@@ -82,10 +83,17 @@ class DataBackup(ConsulMixin):
         )
 
     def backup(self):
-        with self.consul_session_scope():
-            if not self.get_file_to_backup():
-                return
-            self.upload()
+        if self.constant:
+            while(True):
+                if not self.get_file_to_backup():
+                    return
+                self.upload()
+                self.cleanup()
+        else:
+            with self.consul_session_scope():
+                if not self.get_file_to_backup():
+                    return
+                self.upload()
 
     def upload(self):
         urls = self.signpost.get(self.file.node_id).urls
@@ -148,9 +156,9 @@ class DataBackup(ConsulMixin):
 
 
     def cleanup(self):
-        super(DataBackup, self).cleanup()
+        if not self.constant:
+            super(DataBackup, self).cleanup()
         succeed = False
-
         if self.reportfile:
             succeed = False
             for driver in self.BACKUP_DRIVER:
@@ -163,6 +171,8 @@ class DataBackup(ConsulMixin):
                 with open(self.reportfile, 'a') as f:
                     f.write(json.dumps(self.report))
                     f.write('\n')
+        self.file_id = ''
+        self.file = None
 
     def get_file_to_backup(self):
         '''
@@ -187,8 +197,10 @@ class DataBackup(ConsulMixin):
                     tries = 5
                     while tries > 0:
                         tries -= 1
-                        self.file = query.order_by(func.random()).first()
-                        if self.get_consul_lock():
+                        max_count = query.limit(100).count()
+                        self.file = query.limit(100)[
+                            random.randint(0, max_count-1)]
+                        if self.constant or self.get_consul_lock():
                             self.file_id = self.file.node_id
                             return self.file
                     self.logger.error(
@@ -206,6 +218,8 @@ class DataBackup(ConsulMixin):
                     self.logger.error("File {} already backed up"
                                       .format(self.file.file_name))
                     return
+                if self.constant:
+                    return self.file
                 if not self.get_consul_lock():
                     self.logger.error(
                         "Can't acquire lock for file {}".

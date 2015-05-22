@@ -165,6 +165,18 @@ class DataBackupTest(ZugsTestBase):
         self.assertEqual(self.file1.file_size, uploaded.size)
         self.assertEqual(self.file2.file_size, uploaded2.size)
 
+    def test_constant_file_backup(self):
+        backup = DataBackup(constant=True,
+                            debug=True,
+                            bucket_prefix='ds3')
+
+        with self.with_fake_s3():
+            backup.backup()
+            uploaded = self.get_boto_key(self.file1.file_name)
+            uploaded2 = self.get_boto_key(self.file2.file_name)
+        self.assertEqual(self.file1.file_size, uploaded.size)
+        self.assertEqual(self.file2.file_size, uploaded2.size)
+
 
     def test_backup_locked_file(self):
         consul = ConsulMixin(prefix='databackup')
