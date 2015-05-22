@@ -190,15 +190,15 @@ class DataBackup(ConsulMixin):
                     conditions.append((File._sysan[driver].astext
                                       == self.BACKUP_FAIL_STATE))
                 query = self.graph.nodes(File).props({'state': 'live'})\
-                    .filter(or_(*conditions)).limit(100)
+                    .filter(or_(*conditions)).limit(10000)
                 if query.count() == 0:
                     self.logger.info("We backed up all files")
                 else:
                     tries = 5
                     while tries > 0:
                         tries -= 1
-                        max_count = query.limit(100).count()
-                        self.file = query.limit(100)[
+                        max_count = query.count()
+                        self.file = query[
                             random.randint(0, max_count-1)]
                         if self.constant or self.get_consul_lock():
                             self.file_id = self.file.node_id
