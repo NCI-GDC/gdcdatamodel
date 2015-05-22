@@ -14,7 +14,8 @@ def main():
     syncer = DataBackup(
         file_id=args.file_id,
         debug=args.debug,
-        reportfile=args.report_file
+        reportfile=args.report_file,
+        driver=args.driver
     )
     syncer.backup()
 

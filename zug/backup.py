@@ -14,13 +14,22 @@ import boto.s3.connection
 from sqlalchemy import or_, not_
 from boto.s3.key import Key, KeyFile
 import requests
-from  sqlalchemy.sql.expression import func
 import json
 
 try:
     requests.packages.urllib3.disable_warnings()
 except:
     pass
+
+
+# Monkey patch boto key close method, so when streaming from s3 to blackpearl,
+# timeout caused by blackpearl won't read the whole key
+def close(cls, fast=False):
+    cls.closed = True
+    cls.resp = None
+    cls.mode = None
+
+Key.close = close
 
 
 class DataBackup(ConsulMixin):
@@ -88,13 +97,16 @@ class DataBackup(ConsulMixin):
         self.get_s3(parsed_url.netloc)
         (self.bucket_name, self.object_name) =\
             parsed_url.path.split("/", 2)[1:]
+        self.logger.info("Get bucket from %s, %s, %s", self.s3.host, parsed_url.netloc, self.bucket_name)
         s3_bucket = self.s3.get_bucket(self.bucket_name)
         if self._bucket_prefix:
             ds3_bucket_name = self._bucket_prefix+'_'+self.bucket_name
         else:
             ds3_bucket_name = self.bucket_name
-        self.logger.info(self.s3.host)
-        driver = self.driver
+        if self.driver:
+            driver = self.driver
+        else:
+            driver = self.BACKUP_DRIVER[random.randint(0, len(self.BACKUP_DRIVER)-1)]
         s3_key = s3_bucket.get_key(self.object_name)
         keyfile = KeyFile(s3_key)
         ds3_bucket = self.get_bucket(driver, ds3_bucket_name)
@@ -106,17 +118,12 @@ class DataBackup(ConsulMixin):
         if self.reportfile:
             self.report[driver+'_start'] = time.time()
 
-        try:
-            if ds3_bucket.get_key(key.key):
-                self.logger.info("File already exists, delete old one")
-                ds3_bucket.delete_key(key.key)
-            key.set_contents_from_file(keyfile,
-                    md5=(self.file.md5sum, b64encode(unhexlify(self.file.md5sum))))
-        except Exception as e:
-            self.logger.error(str(e))
+        if ds3_bucket.get_key(key.key):
+            self.logger.info("File already exists, delete old one")
             ds3_bucket.delete_key(key.key)
-            key.set_contents_from_file(keyfile)
-        self.logger.info('File %s uploaded', self.file.file_name)
+        key.set_contents_from_file(keyfile,
+                md5=(self.file.md5sum, b64encode(unhexlify(self.file.md5sum))))
+        self.logger.info('File %s uploaded' % self.file.file_name)
         if self.reportfile:
             self.report[driver+'_end'] = time.time()
         with self.graph.session_scope() as session:
@@ -173,7 +180,7 @@ class DataBackup(ConsulMixin):
                     conditions.append((File._sysan[driver].astext
                                       == self.BACKUP_FAIL_STATE))
                 query = self.graph.nodes(File).props({'state': 'live'})\
-                    .filter(or_(*conditions))
+                    .filter(or_(*conditions)).limit(100)
                 if query.count() == 0:
                     self.logger.info("We backed up all files")
                 else:

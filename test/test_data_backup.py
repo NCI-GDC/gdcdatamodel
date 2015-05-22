@@ -10,7 +10,7 @@ from zug.backup import DataBackup
 import uuid
 from boto.s3.key import Key
 import boto
-
+from zug.downloaders import md5sum_with_size
 
 class DataBackupTest(ZugsTestBase):
     def setUp(self):
@@ -18,10 +18,9 @@ class DataBackupTest(ZugsTestBase):
         self.consul = Consul()
         assert self.consul.catalog.datacenters() == 'dc1'
         self.consul.kv.set("databackup/signpost_url", self.signpost_url)
-        self.consul.kv.set("databackup/s3/host", "s3.amazonaws.com")
-        self.consul.kv.set("databackup/s3/port", "80")
-        self.consul.kv.set("databackup/s3/access_key", "fake_access_key")
-        self.consul.kv.set("databackup/s3/secret_key", "fake_secret_key")
+        self.consul.kv.set("databackup/s3/s3.amazonaws.com/port", "80")
+        self.consul.kv.set("databackup/s3/s3.amazonaws.com/access_key", "fake_access_key")
+        self.consul.kv.set("databackup/s3/s3.amazonaws.com/secret_key", "fake_secret_key")
         self.consul.kv.set("databackup/ds3/test_backup/host", "s3.amazonaws.com")
         self.consul.kv.set("databackup/ds3/test_backup/port", "80")
         self.consul.kv.set("databackup/ds3/test_backup/access_key", "fake_access_key")
@@ -42,7 +41,6 @@ class DataBackupTest(ZugsTestBase):
 
 
     def delete_blackpearl_bucket(self):
-        print 'delete bucket'
         with self.with_fake_s3():
             conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
             if conn.lookup('ds3_fake_cghub_protected'):
@@ -50,18 +48,17 @@ class DataBackupTest(ZugsTestBase):
                 for key in bucket.list():
                     bucket.delete_key(key.name)
                 conn.delete_bucket(bucket.name)
-        print 'delete bucket finished'
                     
 
     def create_file(self, name, content, aid, session):
         doc = self.signpost_client.create()
-        doc.urls = ["s3://localhost/fake_cghub_protected/{}".format(name)]
+        doc.urls = ["s3://s3.amazonaws.com/fake_cghub_protected/{}".format(name)]
         doc.patch()
         file = File(
             node_id=doc.did,
             properties={
                 "file_name": name,
-                "md5sum": 'test',
+                "md5sum": md5sum_with_size(content)[0],
                 "file_size": len(content),
                 "state": "live",
                 "state_comment": None,
