@@ -3,6 +3,8 @@ import random
 from signpostclient import SignpostClient
 from gdcdatamodel.models import File
 from psqlgraph import PsqlGraphDriver
+from sqlalchemy import desc
+from sqlalchemy.types import BIGINT
 from cdisutils.log import get_logger
 import os
 from base64 import b64encode
@@ -87,6 +89,8 @@ class DataBackup(ConsulMixin):
             while(True):
                 if not self.get_file_to_backup():
                     return
+                self.logger.info("Get file %s size %s" % 
+                    (self.file_id, self.file.file_size))
                 self.upload()
                 self.cleanup()
         else:
@@ -120,8 +124,8 @@ class DataBackup(ConsulMixin):
         ds3_bucket = self.get_bucket(driver, ds3_bucket_name)
         key = Key(ds3_bucket)
         key.key = s3_key.key
-        self.logger.info('Upload file %s from %s to %s bucket %s',
-                         self.file.file_name, parsed_url.netloc, driver, ds3_bucket_name)
+        self.logger.info('Upload file %s size %s from %s to %s bucket %s',
+                         self.file.file_name, self.file.file_size, parsed_url.netloc, driver, ds3_bucket_name)
         
         if self.reportfile:
             self.report[driver+'_start'] = time.time()
@@ -137,7 +141,7 @@ class DataBackup(ConsulMixin):
         with self.graph.session_scope() as session:
             self.file.system_annotations[driver] = 'backuped'
             session.merge(self.file)
-
+            session.commit()
 
     def key_exists(self, bucket, key):
         if bucket.get_key(key):
@@ -190,10 +194,16 @@ class DataBackup(ConsulMixin):
                     conditions.append((File._sysan[driver].astext
                                       == self.BACKUP_FAIL_STATE))
                 query = self.graph.nodes(File).props({'state': 'live'})\
-                    .filter(or_(*conditions)).limit(10000)
+                    .filter(or_(*conditions))\
+                    .order_by(desc(File.file_size.cast(BIGINT)))\
+                    .limit(10000)
                 if query.count() == 0:
                     self.logger.info("We backed up all files")
                 else:
+                    if self.constant:
+                        self.file = query.first()
+                        self.file_id = self.file.node_id
+                        return self.file
                     tries = 5
                     while tries > 0:
                         tries -= 1
