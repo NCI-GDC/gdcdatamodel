@@ -261,8 +261,13 @@ class GDCElasticsearch(object):
                                        file_docs, ann_docs,
                                        project_docs, batch_size)
         if roll_alias:
-            # TODO sanity check that there are the right number of
-            # docs in this index
+            # ensure all writes are visible
+            self.es.indices.refresh(index=new_index)
+            # sanity checks that there are the correct number of docs in the new index
+            assert self.es.count(index=new_index, doc_type="file")["count"] == len(file_docs)
+            assert self.es.count(index=new_index, doc_type="participant")["count"] == len(part_docs)
+            assert self.es.count(index=new_index, doc_type="annotation")["count"] == len(ann_docs)
+            assert self.es.count(index=new_index, doc_type="project")["count"] == len(project_docs)
             self.log.info("Rolling alias and deleting old indices")
             old_index = self.lookup_index_by_alias()
             if old_index:
