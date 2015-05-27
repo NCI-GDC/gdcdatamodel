@@ -66,6 +66,10 @@ class GDCElasticsearchTest(ZugsTestBase):
         gdces = self.make_gdc_es()
         gdces.go()
         self.assertEqual(len(self.get_es_indices()), 1)
+        # also verify that the to_delete file is not in the index and
+        # got deleted
+        self.assertNot(self.graph.nodes(File).get('file2'))
+
 
     def test_old_index_deletion(self):
         for i in range(7):
