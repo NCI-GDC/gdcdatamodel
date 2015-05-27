@@ -68,8 +68,11 @@ class GDCElasticsearchTest(ZugsTestBase):
         self.assertEqual(len(self.get_es_indices()), 1)
         # also verify that the to_delete file is not in the index and
         # got deleted
-        self.assertNot(self.graph.nodes(File).get('file2'))
-
+        with self.graph.session_scope():
+            self.assertIsNone(self.graph.nodes(File).get('file2'))
+            self.assertFalse(self.es.exists(index="gdc_es_test",
+                                            doc_type="file",
+                                            id="file2"))
 
     def test_old_index_deletion(self):
         for i in range(7):
