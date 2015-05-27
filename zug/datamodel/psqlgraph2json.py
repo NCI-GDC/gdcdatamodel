@@ -2,13 +2,12 @@ from gdcdatamodel.mappings import (
     annotation_tree, participant_tree,
     file_tree, ONE_TO_ONE, ONE_TO_MANY
 )
+from zug.datamodel.prelude import DATA_TYPES
 import random
 import logging
 from cdisutils.log import get_logger
 import networkx as nx
-from psqlgraph import Edge
 import itertools
-from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy, deepcopy
 
@@ -823,13 +822,17 @@ class PsqlGraph2JSON(object):
     def validate_docs(self, part_docs, file_docs, ann_docs, project_docs):
         for project_doc in project_docs:
             self.validate_project_file_counts(project_doc, file_docs)
+            part_sample = random.sample(part_docs, min(len(part_docs), 100))
+            for part_doc in part_sample:
+                self.verify_data_type_count(part_doc)
 
-    def verify_data_type_count(self, participant, data_type):
-        calc = len([f for f in participant['files']
-                    if f['data_type'] == data_type])
-        act = ([d['file_count'] for d in participant['summary']['data_types']
-                if d['data_type'] == data_type][:1] or [0])[0]
-        assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
+    def verify_data_type_count(self, participant):
+        for data_type in DATA_TYPES.keys():
+            calc = len([f for f in participant['files']
+                        if f.get('data_type') == data_type])
+            act = ([d['file_count'] for d in participant['summary']['data_types']
+                    if d['data_type'] == data_type][:1] or [0])[0]
+            assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
 
     def validate_participant(self, node, participant):
         # Assert file count = summary.file_count
