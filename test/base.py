@@ -3,7 +3,9 @@ from unittest import TestCase
 import os
 import random
 import tempfile
+import string
 import time
+import uuid
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 from multiprocessing import Process
@@ -18,8 +20,13 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def run_signpost(port):
-    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(host="localhost",
-                                                                  port=port)
+    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(
+        host="localhost", port=port)
+
+
+def random_string(length=6):
+    return ''.join([random.choice(string.ascii_lowercase + string.digits)
+                    for _ in range(length)])
 
 
 class ZugsTestBase(TestCase):
@@ -36,14 +43,14 @@ class ZugsTestBase(TestCase):
         cls.signpost.terminate()
 
     def setUp(self):
-        self.graph = PsqlGraphDriver('localhost', 'test',
-                                     'test', 'automated_test')
         self.graph_info = {
             "host": "localhost",
             "user": "test",
-            "pass": "test",
+            "password": "test",
             "database": "automated_test"
         }
+        self.graph = PsqlGraphDriver(**self.graph_info)
+        self.graph_info['pass'] = self.graph_info['password']
         self.scratch_dir = tempfile.mkdtemp()
         Local = get_driver(Provider.LOCAL)
         self.storage_client = Local(self.scratch_dir)
@@ -67,3 +74,19 @@ class ZugsTestBase(TestCase):
             conn.execute('delete from _voided_nodes')
             conn.execute('delete from _voided_edges')
         self.graph.engine.dispose()
+
+    def get_fuzzed_node(self, cls, node_id=None, **kwargs):
+        if node_id is None:
+            node_id = str(uuid.uuid4())
+        for key, types in cls.get_pg_properties().iteritems():
+            if key in kwargs:
+                continue
+            elif not types or str in types:
+                kwargs[key] = random_string()
+            elif int in types or long in types:
+                kwargs[key] = random.randint(1e6, 1e7)
+            elif float in types:
+                kwargs[key] = random.random()
+            elif bool in types:
+                kwargs[key] = random.choice((True, False))
+        return cls(node_id, **kwargs)
