@@ -14,8 +14,11 @@ if __name__ == '__main__':
                         help='the password for import user')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='the postgres server host')
-    args = parser.parse_args()
+    parser.add_argument('--dry-run', action='store_true',
+                        help='rollback before commit')
 
+    args = vars(parser.parse_args())
+    dry_run = args.pop('dry_run')
     graph = PsqlGraphDriver(**args)
     connector = TCGABioXMLParticipantConnector(graph)
-    connector.run()
+    connector.run(dry_run)

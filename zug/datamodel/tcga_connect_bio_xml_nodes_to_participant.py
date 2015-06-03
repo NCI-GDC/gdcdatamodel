@@ -21,10 +21,15 @@ class TCGABioXMLParticipantConnector(object):
     def __init__(self, graph):
         self.g = graph
 
-    def run(self):
+    def run(self, dry_run=False):
         assert self.g, 'No driver provided'
-        with self.g.session_scope():
+        if dry_run:
+            log.info('User requested dry run.')
+        with self.g.session_scope() as session:
             self.connect_all()
+            if dry_run:
+                log.info('Rolling back dry run session.')
+                session.rollback()
 
     def connect_all(self):
         """Loops through all participants and creates an edge to any xml files
