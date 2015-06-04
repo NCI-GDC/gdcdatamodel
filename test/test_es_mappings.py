@@ -41,7 +41,8 @@ class TestElasticsearchMappings(unittest.TestCase):
         m = get_participant_es_mapping()['properties']
         properties = {'files', 'annotations', 'days_to_index', 'submitter_id',
                       'project', 'clinical', 'metadata_files', 'samples',
-                      'participant_id', 'summary', 'tissue_source_site'}
+                      'participant_id', 'summary', 'tissue_source_site',
+                      'aliquots'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_project_mapping_top_level(self):
