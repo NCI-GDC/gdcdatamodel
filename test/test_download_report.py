@@ -74,7 +74,8 @@ class DownloadStatsIndexBuilderTest(ZugsTestBase):
             file.tags = [tag]
             file.experimental_strategies = [strat]
             file.platforms = [platform]
-            self.builder.go(projects=[self.graph.nodes(Project).props(code="BRCA").one()])
+            brca = self.graph.nodes(Project).props(code="BRCA").one()
+            self.builder.go(projects=[brca])
             self.es.indices.refresh(index=self.index_name)
             result = self.es.get(
                 index=self.index_name,
@@ -93,3 +94,20 @@ class DownloadStatsIndexBuilderTest(ZugsTestBase):
             self.assertEqual(result["countries"][0]["size"], 1000)
             self.assertEqual(result["continents"][0]["continent"], "North America")
             self.assertEqual(result["continents"][0]["size"], 1000)
+            # confirm that we can update once index exists
+            self.create_download(file, country='CA', size=500)
+            self.builder.go(projects=[brca])
+            result = self.es.get(
+                index=self.index_name,
+                doc_type=self.builder.doc_type,
+                id="TCGA-BRCA"
+            )["_source"]
+            self.assertEqual(result["count"], 2)
+            self.assertEqual(result["tags"][0]["tag"], "snv")
+            self.assertEqual(result["tags"][0]["size"], 1500)
+            self.assertEqual([c for c in result["countries"]
+                              if c["country"] == "CA"][0]["size"],
+                             500)
+            self.assertEqual([c for c in result["user_access_types"]
+                              if c["user_access_type"] == "anonymous"][0]["size"],
+                             500)
