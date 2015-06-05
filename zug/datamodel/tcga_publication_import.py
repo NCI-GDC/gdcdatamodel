@@ -23,9 +23,8 @@ class TCGAPublicationImporter(object):
 
         self.publications = yaml.load(open(os.path.join(PKG_DIR,
                                       'publications.yml'), 'r'))
-        self.bamlist = bamlist
-        self.g = pg_driver
-        self.logger = logger
+        self.bamlist = read_table(
+            open(os.path.join(PKG_DIR, 'publication_bamlist.txt'), 'r'))
 
     def run(self):
         with self.graph.session_scope() as session:
@@ -51,7 +50,6 @@ class TCGAPublicationImporter(object):
             for i in xrange(len(self.bamlist['disease'])):
                 filename = self.bamlist['filename'][i]
                 analysis_id = self.bamlist['cghub_uuid'][i]
-                disease = self.bamlist['disease'][i]
                 if analysis_id == analysis_id:
                     query = self.graph.nodes(File).sysan(
                         {'analysis_id': analysis_id})\
@@ -60,9 +58,8 @@ class TCGAPublicationImporter(object):
                     query = self.graph.nodes(File)\
                         .props({'file_name': filename})
                 if query.count() == 0:
-                    print bam['disease'], bam['filename'],\
-                        bam.get('analysis_id', '')
-
+                    print self.bamlist['disease'][i], self.bamlist['filename'][i],\
+                        self.bamlist['analysis_id'][i]
 
     def build_publication_edge(self, session):
         for i in xrange(len(self.bamlist['disease'])):
@@ -87,4 +84,4 @@ class TCGAPublicationImporter(object):
                     session.merge(dst)
             else:
                 self.logger.warn('filename {} has {} instance in graph'.
-                                 format(bam['filename'], count))
+                                 format(self.bamlist['filename'][i], count))

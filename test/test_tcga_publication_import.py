@@ -30,7 +30,7 @@ class TestTCGAPublicationImport(ZugsTestBase):
         return node
 
     def test_publication_import(self):
-        importer = TCGAPublicationImporter([], self.driver, self.import_logger)
+        importer = TCGAPublicationImporter()
         importer.run()
         with self.graph.session_scope():
             pubs = importer.publications
