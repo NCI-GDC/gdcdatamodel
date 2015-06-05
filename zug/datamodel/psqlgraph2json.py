@@ -2,13 +2,12 @@ from gdcdatamodel.mappings import (
     annotation_tree, participant_tree,
     file_tree, ONE_TO_ONE, ONE_TO_MANY
 )
+from zug.datamodel.prelude import DATA_TYPES
 import random
 import logging
 from cdisutils.log import get_logger
 import networkx as nx
-from psqlgraph import Edge
 import itertools
-from sqlalchemy.orm import joinedload
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy, deepcopy
 
@@ -76,7 +75,9 @@ class PsqlGraph2JSON(object):
         """
         self.g = psqlgraph_driver
         self.G = nx.Graph()
-        self.patch_trees()
+        self.ptree_mapping = {'participant': participant_tree.to_dict()}
+        self.ftree_mapping = {'file': file_tree.to_dict()}
+        self.atree_mapping = {'annotation': annotation_tree.to_dict()}
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
@@ -138,26 +139,6 @@ class PsqlGraph2JSON(object):
             ETA(), ' '], maxval=maxval)
         pbar.update(0)
         return pbar
-
-    def patch_trees(self):
-        """This is a hack on top of the source of truth mappings to make the
-        trees work with the graph walking code
-
-        """
-        # Add leaves to root for things like target
-        participant_tree.aliquot = participant_tree.sample\
-                                                   .portion\
-                                                   .analyte\
-                                                   .aliquot
-        participant_tree.sample.aliquot = participant_tree.sample\
-                                                          .portion\
-                                                          .analyte\
-                                                          .aliquot
-
-        # Format tree in way that allows uniform walking
-        self.ptree_mapping = {'participant': participant_tree.to_dict()}
-        self.ftree_mapping = {'file': file_tree.to_dict()}
-        self.atree_mapping = {'annotation': annotation_tree.to_dict()}
 
     ###################################################################
     #                        Tree functions
@@ -841,13 +822,17 @@ class PsqlGraph2JSON(object):
     def validate_docs(self, part_docs, file_docs, ann_docs, project_docs):
         for project_doc in project_docs:
             self.validate_project_file_counts(project_doc, file_docs)
+            part_sample = random.sample(part_docs, min(len(part_docs), 100))
+            for part_doc in part_sample:
+                self.verify_data_type_count(part_doc)
 
-    def verify_data_type_count(self, participant, data_type):
-        calc = len([f for f in participant['files']
-                    if f['data_type'] == data_type])
-        act = ([d['file_count'] for d in participant['summary']['data_types']
-                if d['data_type'] == data_type][:1] or [0])[0]
-        assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
+    def verify_data_type_count(self, participant):
+        for data_type in DATA_TYPES.keys():
+            calc = len([f for f in participant['files']
+                        if f.get('data_type') == data_type])
+            act = ([d['file_count'] for d in participant['summary']['data_types']
+                    if d['data_type'] == data_type][:1] or [0])[0]
+            assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
 
     def validate_participant(self, node, participant):
         # Assert file count = summary.file_count
@@ -871,6 +856,9 @@ class PsqlGraph2JSON(object):
                 pbar.update(pbar.currval+1)
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)
+                if (e.src.system_annotations.get("to_delete")
+                    or e.dst.system_annotations.get("to_delete")):
+                    continue
                 if needs_differentiation and e.properties:
                     self.G.add_edge(
                         e.src, e.dst, label=e.label, props=e.properties)

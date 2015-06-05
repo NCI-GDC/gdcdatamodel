@@ -1,21 +1,27 @@
 from gdcdatamodel.mappings import (
-    get_project_es_mapping, index_settings,
-    annotation_tree, get_annotation_es_mapping,
-    participant_tree, participant_traversal, get_participant_es_mapping,
-    file_tree, file_traversal, get_file_es_mapping,
-    ONE_TO_ONE, ONE_TO_MANY
+    index_settings,
+    get_project_es_mapping,
+    get_annotation_es_mapping,
+    get_participant_es_mapping,
+    get_file_es_mapping,
 )
+import os
 import re
 import json
-import logging
 from cdisutils.log import get_logger
 from progressbar import ProgressBar, Percentage, Bar, ETA
-from elasticsearch import NotFoundError
+from elasticsearch import NotFoundError, Elasticsearch
 
-log = get_logger("gdc_elasticsearch")
-log.setLevel(level=logging.INFO)
+from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
+from psqlgraph import PsqlGraphDriver
 
+# TODO this could probably be bumped now that the number of bulk
+# threads in the config is higher, c.f.
+# https://github.com/NCI-GDC/tungsten/commit/3ac690d19dd49f8ad2f30bf55ca6fe70ff2cc51d
 BATCH_SIZE = 16
+
+
+INDEX_PATTERN = '{base}_{n}'
 
 
 class GDCElasticsearch(object):
@@ -23,14 +29,57 @@ class GDCElasticsearch(object):
     """
     """
 
-    def __init__(self, es=None, c=None):
+    def __init__(self, es=None, converter=None, index_base="gdc_from_graph"):
         """Walks the graph to produce elasticsearch json documents.
 
         :param es: An instance of Elasticsearch class
+        :param converter: A PsqlGraph2JSON instance
 
         """
-        self.index_pattern = '{base}_{n}'
-        self.es = es
+        self.index_base = index_base
+        self.log = get_logger("gdc_elasticsearch")
+        if es:
+            self.es = es
+        else:
+            # TODO sniff_on_start here?
+            self.es = Elasticsearch(hosts=[os.environ["ELASTICSEARCH_HOST"]],
+                                    timeout=9999)
+        if converter:
+            self.converter = converter
+        else:
+            self.graph = PsqlGraphDriver(
+                os.environ["PG_HOST"],
+                os.environ["PG_USER"],
+                os.environ["PG_PASS"],
+                os.environ["PG_NAME"],
+            )
+            self.converter = PsqlGraph2JSON(self.graph)
+
+    def go(self, roll_alias=True):
+        self.log.info("Caching database")
+        # having a transation out here is important, since it ensures
+        # that the cached database and which nodes get deleted is
+        # consistent
+        with self.graph.session_scope() as session:
+            self.converter.cache_database()
+            self.log.info("Denormalizing database into JSON docs")
+            part_docs, file_docs, ann_docs, project_docs = self.converter.denormalize_all()
+            self.log.info("%s participant docs, %s file docs, %s annotation docs, %s project docs",
+                          len(part_docs),
+                          len(file_docs),
+                          len(ann_docs),
+                          len(project_docs))
+            self.log.info("Validating docs produced")
+            self.converter.validate_docs(part_docs, file_docs, ann_docs, project_docs)
+            self.log.info("Deploying new ES index with new docs and bumping alias")
+            self.deploy(part_docs, file_docs, ann_docs, project_docs,
+                        roll_alias=roll_alias)
+            self.log.info("Querying for old nodes to delete")
+            to_delete = self.graph.nodes().sysan({"to_delete": True}).all()
+            self.log.info("Found %s to_delete nodes, deleteing them", len(to_delete))
+            for node in to_delete:
+                self.log.info("Deleting %s", node)
+                session.delete(node)
 
     def pbar(self, title, maxval):
         """Create and initialize a custom progressbar
@@ -59,8 +108,6 @@ class GDCElasticsearch(object):
         """
         if not docs:
             return
-        if not self.es:
-            log.error('No elasticsearch driver initialized')
         instruction = {"index": {"_index": index, "_type": doc_type}}
         pbar = self.pbar('{} upload '.format(doc_type), len(docs))
 
@@ -84,8 +131,6 @@ class GDCElasticsearch(object):
         :param str index: The elasticsearch index
 
         """
-        if not self.es:
-            log.error('No elasticsearch driver initialized')
         return [
             self.es.indices.put_mapping(
                 index=index,
@@ -136,13 +181,13 @@ class GDCElasticsearch(object):
         self.es.indices.create(index=index, body=index_settings())
         self.put_mappings(index)
         if not part_docs:
-            print("There were no participant docs passed to populate with!")
+            self.log.warning("There were no participant docs passed to populate with!")
         if not project_docs:
-            print("There were no participant docs passed to populate with!")
+            self.log.warning("There were no participant docs passed to populate with!")
         self.index_populate(index, part_docs, file_docs, ann_docs,
                             project_docs, batch_size)
 
-    def swap_index(self, old_index, new_index, alias):
+    def swap_index(self, old_index, new_index):
         """Atomically switch the resolution of `alias` from `old_index` to
         `new_index`
 
@@ -153,49 +198,83 @@ class GDCElasticsearch(object):
         """
 
         self.es.indices.update_aliases({'actions': [
-            {'remove': {'index': old_index, 'alias': alias}},
-            {'add': {'index': new_index, 'alias': alias}}]})
+            {'remove': {'index': old_index, 'alias': self.index_base}},
+            {'add': {'index': new_index, 'alias': self.index_base}}]})
 
-    def get_next_index(self, base):
-        """Using this class's `index_pattern` (1) find any old indices with
-
-        matching bases (2) take the maximum
-
+    def get_index_numbers(self):
+        """Return the numbers of the current set of indices. So concretely if we
+        have gdc_from_graph_23, gdc_from_graph_24, and
+        gdc_from_graph_25, this will return [23, 24, 25].
         """
-
         indices = set(self.es.indices.get_aliases().keys())
-        p = re.compile(self.index_pattern.format(base=base, n='(\d+)')+'$')
+        p = re.compile(INDEX_PATTERN.format(base=self.index_base, n='(\d+)')+'$')
         matches = [p.match(index) for index in indices if p.match(index)]
-        next_n = max(sorted([int(m.group(1)) for m in matches]+[0]))+1
-        return self.index_pattern.format(base=base, n=next_n)
+        numbers = sorted([int(m.group(1)) for m in matches])
+        return numbers
 
-    def lookup_index_by_alias(self, alias):
+    def lookup_index_by_alias(self):
         """Find the index that an Elasticsearch alias is poiting to. Return
         None if the index doesn't exist.
 
         """
-
         try:
-            keys = self.es.indices.get_alias(alias).keys()
+            keys = self.es.indices.get_alias(self.index_base).keys()
             if not keys:
                 return None
             return keys[0]
         except NotFoundError:
             return None
 
-    def deploy_alias(self, alias, part_docs=[], file_docs=[],
-                     ann_docs=[], project_docs=[], batch_size=BATCH_SIZE):
-        """Create a new index with an incremented name, populate it with
-        :func index_create_and_populate: and atomically switch the
-        alias to point to the new index
+    def delete_old_indices(self):
+        self.log.info("Deleting old indices")
+        numbers = self.get_index_numbers()
+        if len(numbers) <= 5:
+            self.log.info("less than 5 matching indices found, not deleting anything")
+            return
+        # everything before the last 5, as a string
+        to_delete = [INDEX_PATTERN.format(base=self.index_base, n=n)
+                     for n in numbers[0:-5]]
+        self.log.info("Deleting indices %s", to_delete)
+        for index in to_delete:
+            self.log.info("Deleting %s", index)
+            self.es.indices.delete(index=index)
+
+    def deploy(self, part_docs, file_docs, ann_docs,
+               project_docs, roll_alias=True,
+               batch_size=BATCH_SIZE):
+        """Create a new index with an incremented name based on
+        self.index_base, populate it with :func
+        index_create_and_populate:, atomically switch the alias to
+        point to the new index, and delete anything older than the
+        last 5 versions of this index.
 
         """
-        new_index = self.get_next_index(alias)
+        current_numbers = self.get_index_numbers()
+        self.log.info("Currently deployed indices are %s", current_numbers)
+        if not current_numbers:
+            n = 1
+        else:
+            n = max(current_numbers)+1
+        new_index = INDEX_PATTERN.format(base=self.index_base, n=n)
+        self.log.info("Deploying to index %s", new_index)
         self.index_create_and_populate(new_index, part_docs,
                                        file_docs, ann_docs,
                                        project_docs, batch_size)
-        old_index = self.lookup_index_by_alias(alias)
-        if old_index:
-            self.swap_index(old_index, new_index, alias)
+        if roll_alias:
+            # ensure all writes are visible
+            self.es.indices.refresh(index=new_index)
+            # sanity checks that there are the correct number of docs in the new index
+            assert self.es.count(index=new_index, doc_type="file")["count"] == len(file_docs)
+            assert self.es.count(index=new_index, doc_type="participant")["count"] == len(part_docs)
+            assert self.es.count(index=new_index, doc_type="annotation")["count"] == len(ann_docs)
+            assert self.es.count(index=new_index, doc_type="project")["count"] == len(project_docs)
+            self.log.info("Rolling alias and deleting old indices")
+            old_index = self.lookup_index_by_alias()
+            if old_index:
+                assert old_index.startswith(self.index_base)
+                self.swap_index(old_index, new_index)
+            else:
+                self.es.indices.put_alias(index=new_index, name=self.index_base)
+            self.delete_old_indices()
         else:
-            self.es.indices.put_alias(index=new_index, name=alias)
+            self.log.info("Skipping alias roll / old index deletion")

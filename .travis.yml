@@ -6,6 +6,8 @@ cache:
     - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages
     - $HOME/.pip-cache
   - apt
+services:
+  - elasticsearch
 addons:
   postgresql: '9.4'
 before_install:
