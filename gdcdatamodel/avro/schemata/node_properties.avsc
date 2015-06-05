@@ -2,7 +2,7 @@
   {
     "type": "record",
     "name": "aliquot_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "doc": "The properties of an aliquot",
     "fields": [
       {
@@ -12,7 +12,7 @@
       },
       {
         "name": "source_center",
-        "type": "string",
+        "type": ["null", "string"],
         "doc": "TODO: define, from BCR"
       },
       {
@@ -30,7 +30,7 @@
   {
     "type": "record",
     "name": "analyte_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "submitter_id",
@@ -77,7 +77,7 @@
   {
     "type": "record",
     "name": "portion_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "submitter_id",
@@ -109,7 +109,7 @@
   {
     "type": "record",
     "name": "sample_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "submitter_id",
@@ -124,6 +124,16 @@
       {
         "name": "sample_type",
         "type": "sample_type_enum",
+        "doc": "TODO: define"
+      },
+      {
+        "name": "tumor_code_id",
+        "type": ["null", "tumor_code_id_enum"],
+        "doc": "TODO: define"
+      },
+      {
+        "name": "tumor_code",
+        "type": ["null", "tumor_code_enum"],
         "doc": "TODO: define"
       },
       {
@@ -196,7 +206,7 @@
   {
     "type": "record",
     "name": "participant_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "submitter_id",
@@ -213,7 +223,7 @@
   {
     "type": "record",
     "name": "tissue_source_site_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "code",
@@ -240,15 +250,20 @@
   {
     "type": "record",
     "name": "project_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
+      {
+        "name": "code",
+        "type": "string",
+        "doc": "TOREVIEW: display name for the project"
+      },
       {
         "name": "name",
         "type": "string",
         "doc": "TOREVIEW: display name for the project"
       },
       {
-        "name": "project_name",
+        "name": "disease_type",
         "type": "string",
         "doc": "TOREVIEW: full name for the project"
       },
@@ -267,7 +282,7 @@
   {
     "type": "record",
     "name": "program_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -279,7 +294,7 @@
   {
     "type": "record",
     "name": "center_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "code",
@@ -311,7 +326,7 @@
   {
     "type": "record",
     "name": "platform_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -323,7 +338,7 @@
   {
     "type": "record",
     "name": "data_type_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -335,7 +350,7 @@
   {
     "type": "record",
     "name": "data_subtype_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -347,7 +362,7 @@
   {
     "type": "record",
     "name": "tag_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -359,7 +374,7 @@
   {
     "type": "record",
     "name": "experimental_strategy_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -371,7 +386,7 @@
   {
     "type": "record",
     "name": "data_format_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "name",
@@ -383,7 +398,7 @@
   {
     "type": "record",
     "name": "file_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "file_name",
@@ -420,7 +435,7 @@
   {
     "type": "record",
     "name": "archive_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "revision",
@@ -437,7 +452,7 @@
   {
     "type": "record",
     "name": "annotation_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "submitter_id",
@@ -479,7 +494,7 @@
   {
     "type": "record",
     "name": "clinical_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "gender",
@@ -526,7 +541,7 @@
   {
     "type": "record",
     "name": "slide_properties",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "submitter_id",

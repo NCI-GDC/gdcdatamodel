@@ -1,7 +1,7 @@
 [
   {
     "name": "shipment_reason_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "TBD"
     ],
@@ -10,7 +10,7 @@
   },
   {
     "name": "analyte_type_id_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "D",
       "G",
@@ -25,7 +25,7 @@
   },
   {
     "name": "analyte_type_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "DNA",
       "EBV Immortalized Normal",
@@ -40,7 +40,7 @@
   },
   {
     "name": "sample_type_id_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "01",
       "02",
@@ -56,7 +56,11 @@
       "12",
       "13",
       "14",
+      "15",
       "20",
+      "40",
+      "41",
+      "42",
       "50",
       "60",
       "61",
@@ -67,7 +71,7 @@
   },
   {
     "name": "sample_type_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "Blood Derived Normal",
       "Buccal Cell Normal",
@@ -91,17 +95,86 @@
       "Additional - New Primary",
       "Additional Metastatic",
       "Human Tumor Original Cells",
+      "Post neo-adjuvant therapy",
       "Primary Blood Derived Cancer - Bone Marrow",
+      "Blood Derived Cancer - Bone Marrow, Post-treatment",
+      "Blood Derived Cancer - Peripheral Blood, Post-treatment",
       "Cell Lines",
-      "Xenograft Tissue",
-      "Bone Marrow Normal"
+      "Bone Marrow Normal",
+      "Primary Xenograft Tissue",
+      "Cell Line Derived Xenograft Tissue",
+      "Fibroblasts from Bone Marrow Normal"
     ],
     "type": "enum",
     "doc": "Allowed analyte type IDs"
   },
   {
+    "name": "tumor_code_id_enum",
+    "namespace": "gov.nih.nci.gdc",
+    "symbols": [
+      "00",
+      "01",
+      "02",
+      "03",
+      "04",
+      "10",
+      "20",
+      "21",
+      "30",
+      "40",
+      "41",
+      "50",
+      "51",
+      "52",
+      "60",
+      "61",
+      "62",
+      "63",
+      "64",
+      "65",
+      "70",
+      "71",
+      "80",
+      "81"
+    ],
+    "type": "enum",
+    "doc": "Allowed tumor code IDs"
+  },
+  {
+    "name": "tumor_code_enum",
+    "namespace": "gov.nih.nci.gdc",
+    "symbols": [
+      "Non cancerous tissue",
+      "Diffuse Large B-Cell Lymphoma (DLBCL)",
+      "Lung Cancer (all types)",
+      "Cervical Cancer (all types)",
+      "Anal Cancer (all types)",
+      "Acute lymphoblastic leukemia (ALL)",
+      "Acute myeloid leukemia (AML)",
+      "Induction Failure AML (AML-IF)",
+      "Neuroblastoma (NBL)",
+      "Osteosarcoma (OS)",
+      "Ewing sarcoma",
+      "Wilms tumor (WT)",
+      "Clear cell sarcoma of the kidney (CCSK)",
+      "Rhabdoid tumor (kidney) (RT)",
+      "CNS, ependymoma",
+      "CNS, glioblastoma (GBM)",
+      "CNS, rhabdoid tumor",
+      "CNS, low grade glioma (LGG)",
+      "CNS, medulloblastoma",
+      "CNS, other",
+      "NHL, anaplastic large cell lymphoma",
+      "NHL, Burkitt lymphoma (BL)",
+      "Rhabdomyosarcoma",
+      "Soft tissue sarcoma, non-rhabdomyosarcoma"
+    ],
+    "type": "enum",
+    "doc": "Allowed tumor codes"
+  },
+  {
     "name": "freezing_method",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "LIQUID N2 VAPOR",
       "DRY ICE",
@@ -113,7 +186,7 @@
   },
   {
     "name": "file_state_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "submitted",
       "uploading",
@@ -130,7 +203,7 @@
   },
   {
     "name": "gender_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "male",
       "female"
@@ -140,21 +213,22 @@
   },
   {
     "name": "race_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "not reported",
       "white",
       "american indian or alaska native",
       "black or african american",
       "asian",
-      "native hawaiian or other pacific islander"
+      "native hawaiian or other pacific islander",
+      "other"
     ],
     "type": "enum",
     "doc": "TOREVIEW: Allowed races"
   },
   {
     "name": "ethnicity_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "hispanic or latino",
       "not hispanic or latino"
@@ -164,7 +238,7 @@
   },
   {
     "name": "vital_status_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "alive",
       "dead",
@@ -175,14 +249,14 @@
   },
   {
     "name": "fixed16",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "type": "fixed",
     "size": 16,
     "doc": "16 byte fixed field "
   },
   {
     "name": "annotation_classification_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "Observation",
       "CenterNotification",
@@ -194,7 +268,7 @@
   },
   {
     "name": "annotation_category_enum",
-    "namespace": "edu.uchicago.cdis",
+    "namespace": "gov.nih.nci.gdc",
     "symbols": [
       "Acceptable treatment for TCGA tumor",
       "Administrative Compliance",

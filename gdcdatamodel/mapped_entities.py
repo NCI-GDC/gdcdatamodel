@@ -8,7 +8,7 @@ ONE_TO_MANY = '__one_to_many__'
 file_tree = Dict()
 file_tree.corr = (ONE_TO_MANY, 'files')
 file_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
-file_tree.archive.corr = (ONE_TO_MANY, 'archives')
+file_tree.archive.corr = (ONE_TO_ONE, 'archive')
 file_tree.center.corr = (ONE_TO_ONE, 'center')
 file_tree.data_format.corr = (ONE_TO_ONE, 'data_format')
 file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_subtype')
@@ -57,20 +57,24 @@ participant_tree.file.corr = (ONE_TO_MANY, 'files')
 participant_traversal = Dict()
 participant_traversal.file = [
     ('sample', 'file'),
-    ('sample', 'file', 'file'),
     ('sample', 'aliquot', 'file'),
-    ('sample', 'aliquot', 'file', 'file'),
     ('sample', 'portion', 'analyte', 'file'),
-    ('sample', 'portion', 'analyte', 'file', 'file'),
     ('sample', 'portion', 'analyte', 'aliquot', 'file'),
-    ('sample', 'portion', 'analyte', 'aliquot', 'file', 'file'),
 ]
 
 # Annotation hierarchy
 annotation_tree = Dict()
+annotation_tree.corr = (ONE_TO_MANY, 'participants')
 annotation_tree.project.corr = (ONE_TO_ONE, 'project')
 annotation_tree.project.program.corr = (ONE_TO_ONE, 'program')
-annotation_tree.item.corr = (ONE_TO_ONE, 'item')
+annotation_tree.participant.corr = (ONE_TO_ONE, 'participant')
+annotation_tree.sample.corr = (ONE_TO_ONE, 'sample')
+annotation_tree.portion.corr = (ONE_TO_ONE, 'portion')
+annotation_tree.analyte.corr = (ONE_TO_ONE, 'analyte')
+annotation_tree.aliquot.corr = (ONE_TO_ONE, 'aliquot')
+annotation_tree.slide.corr = (ONE_TO_ONE, 'slide')
+annotation_tree.file.corr = (ONE_TO_ONE, 'file')
+
 
 annotation_traversal = Dict()
 annotation_traversal.file = [
