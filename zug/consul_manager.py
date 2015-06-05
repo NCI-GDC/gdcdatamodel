@@ -2,6 +2,7 @@ from consulate import Consul
 from threading import Thread, current_thread
 from cdisutils.log import get_logger
 import time
+from contextlib import contextmanager
 
 
 class StoppableThread(Thread):
@@ -19,13 +20,15 @@ class StoppableThread(Thread):
         return self._stop
 
 
-def consul_heartbeat(session, interval):
+def consul_heartbeat(session, interval, debug=True):
     """
     Heartbeat with consul to keep `session` alive every `interval`
     seconds. This must be called as the `target` of a `StoppableThread`.
     """
     consul = Consul()
     logger = get_logger("consul_heartbeat_thread")
+    if not debug:
+        logger.level = 30
     thread = current_thread()
     logger.info("current thread is %s", thread)
     while not thread.stopped():
@@ -34,19 +37,21 @@ def consul_heartbeat(session, interval):
         time.sleep(interval)
 
 
-class ConsulMixin(object):
+class ConsulManager(object):
     '''
-    Consul Mixin class for utilizing consul key value store
+    Consul Manager class for utilizing consul key value store
     @param prefix: consul key prefix, default to class name
     @param consul_key: class attribute that will be used to acquire lock, default to self.key
     '''
-    def __init__(self, prefix='', consul_key='key'):
-        self._key = consul_key
+    def __init__(self, prefix='', debug=True):
         self.consul = Consul()
         self.key_acquired = False
         self.heartbeat_thread = None
         self.consul_session = None
-        self.logger = get_logger('consul_mixin')
+        self.logger = get_logger('consul_manager')
+        self.debug = debug
+        if not debug:
+            self.logger.level = 30
         if prefix:
             self.consul_prefix = prefix
         else:
@@ -55,10 +60,17 @@ class ConsulMixin(object):
     @property
     def consul_key(self):
         return "{}/current/{}".format(
-            self.consul_prefix, object.__getattribute__(self, self._key))
+            self.consul_prefix, self._key)
 
     def consul_get(self, path):
+        if not hasattr(path, '__iter__'):
+            path = [path]
         return self.consul.kv["/".join([self.consul_prefix] + path)]
+
+    def consul_set(self, path, value):
+        if not hasattr(path, '__iter__'):
+            path = [path]
+        self.consul.kv["/".join([self.consul_prefix] + path)] = value
 
     def consul_key_set(self, value):
         if self.key_acquired:
@@ -79,7 +91,8 @@ class ConsulMixin(object):
             self.logger.warn("Lock is not acquired yet")
             return False
 
-    def get_consul_lock(self):
+    def get_consul_lock(self, key):
+        self._key = key
         if self.consul_session:
             self.logger.info(
                 "Attempting to lock %s in consul", self.consul_key)
@@ -110,9 +123,16 @@ class ConsulMixin(object):
             "Consul session %s started, forking thread to heartbeat",
             self.consul_session)
         self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
-                                                args=(self.consul_session, 10))
+                                                args=(self.consul_session, 10, self.debug))
         self.heartbeat_thread.daemon = True
         self.heartbeat_thread.start()
+
+    @contextmanager
+    def consul_session_scope(self, behavior='delete', ttl='60s', delay='15s'):
+        try:
+            yield self.start_consul_session(behavior=behavior, ttl=ttl, delay=delay)
+        finally:
+            self.cleanup()
 
     def cleanup(self):
         self.logger.info("Stopping consul heartbeat thread")

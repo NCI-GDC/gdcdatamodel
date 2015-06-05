@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from urlparse import urlparse
 import shutil
 import hashlib
-from consul_mixin import ConsulMixin
+from consul_manager import ConsulManager
 
 
 from filechunkio import FileChunkIO
@@ -143,10 +143,9 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
     raise RuntimeError("Retries exhausted, upload failed")
 
 
-class Downloader(ConsulMixin):
+class Downloader(object):
     def __init__(self, source=None, analysis_id=None):
-        super(Downloader, self).__init__(prefix='downloaders',
-                                         consul_key='analysis_id')
+        self.consul = ConsulManager(prefix='downloaders')
         self.logger = get_logger("downloader_{}".format(socket.gethostname()))
         if not source:
             raise RuntimeError("Must specify a source")
@@ -155,24 +154,24 @@ class Downloader(ConsulMixin):
         self.analysis_id = analysis_id
 
 
-        self.signpost_url = self.consul_get(["signpost_url"])
+        self.signpost_url = self.consul.consul_get(["signpost_url"])
         self.signpost = SignpostClient(self.signpost_url, version="v0")
 
         self.pg_info = {}
-        self.pg_info["host"] = self.consul_get(["pg", "host"])
-        self.pg_info["user"] = self.consul_get(["pg", "user"])
-        self.pg_info["name"] = self.consul_get(["pg", "name"])
-        self.pg_info["pass"] = self.consul_get(["pg", "pass"])
+        self.pg_info["host"] = self.consul.consul_get(["pg", "host"])
+        self.pg_info["user"] = self.consul.consul_get(["pg", "user"])
+        self.pg_info["name"] = self.consul.consul_get(["pg", "name"])
+        self.pg_info["pass"] = self.consul.consul_get(["pg", "pass"])
         self.graph = PsqlGraphDriver(self.pg_info["host"], self.pg_info["user"],
                                      self.pg_info["pass"], self.pg_info["name"])
         self.s3_info = {}
-        self.s3_info["host"] = self.consul_get(["s3", "host"])
-        self.s3_info["port"] = int(self.consul_get(["s3", "port"]))
-        self.s3_info["access_key"] = self.consul_get(["s3", "access_key"])
-        self.s3_info["secret_key"] = self.consul_get(["s3", "secret_key"])
-        self.s3_info["bucket"] = self.consul_get(["s3", "buckets", self.source])
+        self.s3_info["host"] = self.consul.consul_get(["s3", "host"])
+        self.s3_info["port"] = int(self.consul.consul_get(["s3", "port"]))
+        self.s3_info["access_key"] = self.consul.consul_get(["s3", "access_key"])
+        self.s3_info["secret_key"] = self.consul.consul_get(["s3", "secret_key"])
+        self.s3_info["bucket"] = self.consul.consul_get(["s3", "buckets", self.source])
         self.setup_s3()
-        self.download_path = self.consul_get(["path"])
+        self.download_path = self.consul.consul_get(["path"])
 
     def setup_s3(self):
         self.logger.info("Connecting to s3 at %s.", self.s3_info["host"])
@@ -228,17 +227,17 @@ class Downloader(ConsulMixin):
                                       "analysis_id": self.analysis_id
                                   }).with_for_update(nowait=True).all()
                 # also lock the relevant consul key
-                locked = self.get_consul_lock()
+                locked = self.consul.get_consul_lock(self.analysis_id)
                 if not locked:
                     raise RuntimeError("Couldn't lock consul key {}!".format(self.analysis_id))
-                self.consul_key_set(
+                self.consul.consul_key_set(
                     {
                         "host": socket.gethostname(),
                         "started": self.start_time
                     }
                 )
  
-                self.set_consul_state("downloading")
+                self.consul.set_consul_state("downloading")
                 if not files:
                     raise RuntimeError(
                         "File with analysis id {} seems to have disappeared, something is very wrong".format(
@@ -411,14 +410,7 @@ class Downloader(ConsulMixin):
     def cleanup(self):
         self.logger.info("Cleaning up before shutting down")
         self.delete_scratch()
-        self.logger.info("Stopping consul heartbeat thread")
-        self.heartbeat_thread.stop()
-        self.logger.info("Waiting to join heartbeat thread . . .")
-        self.heartbeat_thread.join(20)
-        if self.heartbeat_thread.is_alive():
-            self.logger.warning("Joining heartbeat thread failed after 20 seconds!")
-        self.logger.info("Invalidating consul session")
-        self.consul.session.destroy(self.consul_session)
+        self.consul.cleanup()
 
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
@@ -462,7 +454,7 @@ class Downloader(ConsulMixin):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
-        self.start_consul_session(delay='0s')
+        self.consul.start_consul_session(delay='0s')
         self.start_time = int(time.time())
         try:
             with self.graph.session_scope():
@@ -472,14 +464,14 @@ class Downloader(ConsulMixin):
                 self.logger.info("Downloading analysis id %s from cghub", self.analysis_id)
                 self.download()
                 # first upload all files in the same session
-                self.set_consul_state("uploading")
+                self.consul.set_consul_state("uploading")
                 for file in self.files:
                     if file["state"] == "submitted":
                         with self.state_transition(file, "uploading", "uploaded"):
                             self.upload(file)
             # once they've been uploaded, verify checksums in a separate session
             with self.graph.session_scope():
-                self.set_consul_state("validating")
+                self.consul.set_consul_state("validating")
                 for file in self.files:
                     if file["state"] == "uploaded":
                         with self.state_transition(file, "validating", "live",

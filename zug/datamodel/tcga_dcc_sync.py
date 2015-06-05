@@ -23,7 +23,7 @@ from gdcdatamodel.models import Archive, Center
 from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
 
-from zug.consul_mixin import ConsulMixin
+from zug.consul_manager import ConsulManager
 from zug.datamodel import tcga_classification
 from zug.datamodel.latest_urls import LatestURLParser
 # TODO put these somewhere that makes more sense
@@ -265,12 +265,11 @@ class TCGADCCEdgeBuilder(object):
         return file_node
 
 
-class TCGADCCArchiveSyncer(ConsulMixin):
+class TCGADCCArchiveSyncer(object):
 
     def __init__(self, archive_id=None, max_memory=2*10**9,
                  s3=None, consul_prefix="tcgadccsync"):
-        super(TCGADCCArchiveSyncer, self).__init__(
-            prefix=consul_prefix, consul_key='name')
+        self.consul=ConsulManager(prefix=consul_prefix)
 
         self.graph = PsqlGraphDriver(
             os.environ["PG_HOST"],
@@ -683,7 +682,7 @@ class TCGADCCArchiveSyncer(ConsulMixin):
                 self.log.info("Finding matching archive from DCC")
                 self.archive = [archive for archive in archives
                            if archive["archive_name"] == archive_node.system_annotations["archive_name"]][0]
-                if not self.get_consul_lock():
+                if not self.consul.get_consul_lock(self.name):
                     msg = "Couldn't lock archive {} for requested id {}".format(
                         archive["archive_name"],
                         self.archive_id
@@ -699,7 +698,7 @@ class TCGADCCArchiveSyncer(ConsulMixin):
             with self.graph.session_scope():
                 self.log.info("Fetching archive nodes from database")
                 archive_nodes = self.graph.nodes(Archive).all()
-                current = self.list_locked_keys()
+                current = self.consul.list_locked_keys()
                 names_in_dcc = [archive["archive_name"] for archive in archives]
                 unuploaded = [node for node in archive_nodes
                               if not node.system_annotations.get("uploaded")
@@ -714,7 +713,7 @@ class TCGADCCArchiveSyncer(ConsulMixin):
                     choice = unuploaded[0]
                     self.archive = [archive for archive in archives
                                if archive["archive_name"] == choice.system_annotations["archive_name"]][0]
-                    if not self.get_consul_lock():
+                    if not self.consul.get_consul_lock(self.name):
                         self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
                         continue
                     self.archive_node = choice
@@ -729,7 +728,7 @@ class TCGADCCArchiveSyncer(ConsulMixin):
                         return None
                     random.shuffle(unimported)
                     self.archive = unimported[0]
-                    if not self.get_consul_lock():
+                    if not self.consul.get_consul_lock(self.name):
                         self.log.warning("Couldn't acquire consul lock on %s, retrying", archive["archive_name"])
                         continue
                 self.log.info("chose archive %s to work on", self.name)
@@ -762,7 +761,7 @@ class TCGADCCArchiveSyncer(ConsulMixin):
         if self.temp_file:
             self.log.info("Closing temp file in which archive was stored")
             self.temp_file.close()
-        super(TCGADCCArchiveSyncer, self).cleanup()
+        self.consul.cleanup()
 
     def transition_files_to_live(self, file_nodes):
         for node in file_nodes:
@@ -794,7 +793,7 @@ class TCGADCCArchiveSyncer(ConsulMixin):
             return file_nodes
 
     def sync(self):
-        self.start_consul_session()
+        self.consul.start_consul_session()
         # this sets self.archive and potentially self.archive_node
         if not self.get_archive():
             # if this returns None, it means we're all done
