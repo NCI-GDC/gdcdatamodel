@@ -58,6 +58,7 @@ docs/_build/
 
 #vim
 *.swp
+*.swo
 #venv
 .venv
 

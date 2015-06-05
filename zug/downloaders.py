@@ -11,9 +11,8 @@ from contextlib import contextmanager
 from urlparse import urlparse
 import shutil
 import hashlib
-from threading import Thread, current_thread
+from consul_manager import ConsulManager
 
-from consulate import Consul
 
 from filechunkio import FileChunkIO
 
@@ -34,21 +33,6 @@ from boto.s3.key import Key
 Key.BufferSize = 10 * 1024 * 1024
 
 
-class StoppableThread(Thread):
-    """Thread class with a stop() method. The thread itself has to check
-    regularly for the stopped() condition."""
-
-    def __init__(self, *args, **kwargs):
-        super(StoppableThread, self).__init__(*args, **kwargs)
-        self._stop = False
-
-    def stop(self):
-        self._stop = True
-
-    def stopped(self):
-        return self._stop
-
-
 class InvalidChecksumException(Exception):
     pass
 
@@ -60,10 +44,6 @@ def md5sum_with_size(iterable):
         md5.update(chunk)
         size += len(chunk)
     return md5.hexdigest(), size
-
-
-def consul_get(consul, path):
-    return consul.kv["/".join(path)]
 
 
 class TimeoutError(Exception):
@@ -163,44 +143,9 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
     raise RuntimeError("Retries exhausted, upload failed")
 
 
-def consul_heartbeat(session, interval):
-    """
-    Heartbeat with consul to keep `session` alive every `interval`
-    seconds. This must be called as the `target` of a `StoppableThread`.
-    """
-    consul = Consul()
-    logger = get_logger("consul_heartbeat_thread")
-    thread = current_thread()
-    logger.info("current thread is %s", thread)
-    while not thread.stopped():
-        logger.debug("renewing consul session %s", session)
-        consul.session.renew(session)
-        time.sleep(interval)
-
-
 class Downloader(object):
-
-    def consul_get(self, path):
-        return consul_get(self.consul, ["downloaders"] + path)
-
-    @property
-    def consul_key(self):
-        return "downloaders/current/{}".format(self.analysis_id)
-
-    def start_consul_session(self):
-        self.logger.info("Starting new consul session")
-        self.consul_session = self.consul.session.create(
-            behavior="delete",
-            ttl="60s",
-            delay="0s"
-        )
-        self.logger.info("Consul session %s started, forking thread to heartbeat", self.consul_session)
-        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
-                                                args=(self.consul_session, 10))
-        self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
-
     def __init__(self, source=None, analysis_id=None):
+        self.consul = ConsulManager(prefix='downloaders')
         self.logger = get_logger("downloader_{}".format(socket.gethostname()))
         if not source:
             raise RuntimeError("Must specify a source")
@@ -208,26 +153,25 @@ class Downloader(object):
         assert self.source.endswith("_cghub")
         self.analysis_id = analysis_id
 
-        self.consul = Consul()
 
-        self.signpost_url = self.consul_get(["signpost_url"])
+        self.signpost_url = self.consul.consul_get(["signpost_url"])
         self.signpost = SignpostClient(self.signpost_url, version="v0")
 
         self.pg_info = {}
-        self.pg_info["host"] = self.consul_get(["pg", "host"])
-        self.pg_info["user"] = self.consul_get(["pg", "user"])
-        self.pg_info["name"] = self.consul_get(["pg", "name"])
-        self.pg_info["pass"] = self.consul_get(["pg", "pass"])
+        self.pg_info["host"] = self.consul.consul_get(["pg", "host"])
+        self.pg_info["user"] = self.consul.consul_get(["pg", "user"])
+        self.pg_info["name"] = self.consul.consul_get(["pg", "name"])
+        self.pg_info["pass"] = self.consul.consul_get(["pg", "pass"])
         self.graph = PsqlGraphDriver(self.pg_info["host"], self.pg_info["user"],
                                      self.pg_info["pass"], self.pg_info["name"])
         self.s3_info = {}
-        self.s3_info["host"] = self.consul_get(["s3", "host"])
-        self.s3_info["port"] = int(self.consul_get(["s3", "port"]))
-        self.s3_info["access_key"] = self.consul_get(["s3", "access_key"])
-        self.s3_info["secret_key"] = self.consul_get(["s3", "secret_key"])
-        self.s3_info["bucket"] = self.consul_get(["s3", "buckets", self.source])
+        self.s3_info["host"] = self.consul.consul_get(["s3", "host"])
+        self.s3_info["port"] = int(self.consul.consul_get(["s3", "port"]))
+        self.s3_info["access_key"] = self.consul.consul_get(["s3", "access_key"])
+        self.s3_info["secret_key"] = self.consul.consul_get(["s3", "secret_key"])
+        self.s3_info["bucket"] = self.consul.consul_get(["s3", "buckets", self.source])
         self.setup_s3()
-        self.download_path = self.consul_get(["path"])
+        self.download_path = self.consul.consul_get(["path"])
 
     def setup_s3(self):
         self.logger.info("Connecting to s3 at %s.", self.s3_info["host"])
@@ -283,17 +227,17 @@ class Downloader(object):
                                       "analysis_id": self.analysis_id
                                   }).with_for_update(nowait=True).all()
                 # also lock the relevant consul key
-                locked = self.consul.kv.acquire_lock(self.consul_key, self.consul_session)
+                locked = self.consul.get_consul_lock(self.analysis_id)
                 if not locked:
-                    raise RuntimeError("Couldn't lock consul key {}!".format(self.consul_key))
-                self.consul.kv.set(
-                    self.consul_key,
+                    raise RuntimeError("Couldn't lock consul key {}!".format(self.analysis_id))
+                self.consul.consul_key_set(
                     {
                         "host": socket.gethostname(),
                         "started": self.start_time
                     }
                 )
-                self.set_consul_state("downloading")
+ 
+                self.consul.set_consul_state("downloading")
                 if not files:
                     raise RuntimeError(
                         "File with analysis id {} seems to have disappeared, something is very wrong".format(
@@ -407,11 +351,6 @@ class Downloader(object):
     def set_file_state(self, file, state):
         self.graph.node_update(file, properties={"state": state})
 
-    def set_consul_state(self, state):
-        current = self.consul.kv.get(self.consul_key)
-        current["state"] = state
-        self.logger.info("Setting %s to %s", self.consul_key, current)
-        self.consul.kv.set(self.consul_key, current)
 
     @contextmanager
     def state_transition(self, file, intermediate_state, final_state,
@@ -471,14 +410,7 @@ class Downloader(object):
     def cleanup(self):
         self.logger.info("Cleaning up before shutting down")
         self.delete_scratch()
-        self.logger.info("Stopping consul heartbeat thread")
-        self.heartbeat_thread.stop()
-        self.logger.info("Waiting to join heartbeat thread . . .")
-        self.heartbeat_thread.join(20)
-        if self.heartbeat_thread.is_alive():
-            self.logger.warning("Joining heartbeat thread failed after 20 seconds!")
-        self.logger.info("Invalidating consul session")
-        self.consul.session.destroy(self.consul_session)
+        self.consul.cleanup()
 
     def verify(self, file):
         self.logger.info("Reconstructing boto key for %s from signpost url", file)
@@ -522,7 +454,7 @@ class Downloader(object):
     def go(self):
         self.sanity_checks()
         # claim a file and upload it as a single session
-        self.start_consul_session()
+        self.consul.start_consul_session(delay='0s')
         self.start_time = int(time.time())
         try:
             with self.graph.session_scope():
@@ -532,14 +464,14 @@ class Downloader(object):
                 self.logger.info("Downloading analysis id %s from cghub", self.analysis_id)
                 self.download()
                 # first upload all files in the same session
-                self.set_consul_state("uploading")
+                self.consul.set_consul_state("uploading")
                 for file in self.files:
                     if file["state"] == "submitted":
                         with self.state_transition(file, "uploading", "uploaded"):
                             self.upload(file)
             # once they've been uploaded, verify checksums in a separate session
             with self.graph.session_scope():
-                self.set_consul_state("validating")
+                self.consul.set_consul_state("validating")
                 for file in self.files:
                     if file["state"] == "uploaded":
                         with self.state_transition(file, "validating", "live",
