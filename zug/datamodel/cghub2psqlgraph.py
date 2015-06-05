@@ -194,6 +194,7 @@ class cghub2psqlgraph(object):
             else:
                 session.merge(edge)
 
+
     def export_edges(self):
         """Adds related_to edges then all other edges to psqlgraph from
         self.edges
