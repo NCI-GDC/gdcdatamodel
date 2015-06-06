@@ -1,9 +1,11 @@
-from gdcdatamodel import node_avsc_object, edge_avsc_object
+from avro_objects import node_avsc_object, edge_avsc_object
 from subprocess import check_call
 from tempfile import NamedTemporaryFile
-import json
 import sys
 import os
+import json
+
+
 
 # Load directory tree info
 bin_dir = os.path.dirname(os.path.realpath(__file__))
