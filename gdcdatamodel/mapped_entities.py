@@ -54,6 +54,10 @@ participant_tree.sample.portion.slide.annotation.corr = (ONE_TO_MANY, 'annotatio
 participant_tree.tissue_source_site.corr = (ONE_TO_ONE, 'tissue_source_site')
 participant_tree.file.corr = (ONE_TO_MANY, 'files')
 
+# for target
+participant_tree.aliquot = participant_tree.sample.portion.analyte.aliquot
+participant_tree.sample.aliquot = participant_tree.sample.portion.analyte.aliquot
+
 participant_traversal = Dict()
 participant_traversal.file = [
     ('sample', 'file'),
