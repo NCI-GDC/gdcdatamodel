@@ -1,0 +1,485 @@
+[
+  {
+    "type": "record",
+    "name": "aliquot",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "Pertaining to a portion of the whole; any one of two or more samples of something, of the same volume or weight.",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "doc": "Aliquot ID"
+      },
+      {
+        "name": "label",
+        "type": [
+          "aliquot_enum"
+        ],
+        "doc": "String constant representing the aliquot type"
+      },
+      {
+        "name": "properties",
+        "type": [
+          "aliquot_properties"
+        ],
+        "doc": "Key-values representing aliquot properties"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "analyte",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "analyte_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "analyte_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "portion",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "portion_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "portion_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "sample",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "sample_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "sample_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "participant",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "participant_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "participant_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "project",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "project_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "project_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "program",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "program_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "program_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "center",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "center_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "center_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "platform",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "platform_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "platform_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_type",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "data_type_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "data_type_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_subtype",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "data_subtype_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "data_subtype_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "tag",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "tag_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "tag_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "experimental_strategy",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "experimental_strategy_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "experimental_strategy_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "data_format",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "data_format_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "data_format_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "file",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "file_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "file_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "archive",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "archive_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "archive_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "annotation",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "annotation_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "annotation_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "clinical",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "clinical_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "clinical_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "slide",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "slide_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "slide_properties"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "name": "tissue_source_site",
+    "namespace": "gov.nih.nci.gdc",
+    "doc": "TODO: document",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string"
+      },
+      {
+        "name": "label",
+        "type": [
+          "tissue_source_site_enum"
+        ]
+      },
+      {
+        "name": "properties",
+        "type": [
+          "tissue_source_site_properties"
+        ]
+      }
+    ]
+  }
+]
