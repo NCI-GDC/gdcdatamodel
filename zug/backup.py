@@ -41,6 +41,63 @@ class RangeKeyFile(KeyFile):
         self.offset = offset
         self.seek(offset)
 
+def upload_file_wrapper(args):
+    return upload_file(*args)
+
+def upload_file(signpost, ds3_bucket, job, ds3_key, offset, length):
+    '''
+    Upload a single file within current job
+    '''
+    consul = ConsulManager(prefix='databackup')
+    graph = PsqlGraphDriver(
+        consul.consul_get(['pg', 'host']),
+        consul.consul_get(['pg', 'user']),
+        consul.consul_get(['pg', 'pass']),
+        consul.consul_get(['pg', 'name'])
+    )
+
+    logger = get_logger('data_backup_{}_{}'.format(ds3_key.name, offset))
+    logger.info('Start upload file %s with offset %s and length %s', ds3_key.name, offset,length)
+    with graph.session_scope():
+        current_file =  graph.nodes().ids(ds3_key.name).one()
+
+    urls = signpost.get(current_file.node_id).urls
+    if not urls:
+        logger.error(
+            "no urls in signpost for file {}".format(current_file.file_name))
+        return False
+    parsed_url = urlparse(urls[0])
+    if parsed_url.netloc == 'ceph.service.consul':
+        netloc = 'kh10-9.osdc.io'
+    if parsed_url.netloc == 'cleversafe.service.consul':
+        netloc = 'gdc-accessor2.osdc.io'
+   
+    (bucket_name, object_name) =\
+        parsed_url.path.split("/", 2)[1:]
+    s3 = boto.connect_s3(
+        host=netloc,
+        aws_access_key_id=consul.consul_get(['s3', netloc, 'access_key']),
+        aws_secret_access_key=consul.consul_get(['s3', netloc, 'secret_key']),
+        is_secure=False,
+        calling_format=boto.s3.connection.OrdinaryCallingFormat()
+    )
+
+    logger.info("Get bucket from %s, %s, %s", s3.host, parsed_url.netloc, bucket_name)
+    s3_bucket = s3.get_bucket(bucket_name)
+    s3_key = s3_bucket.get_key(object_name)
+    tmp_file = '/home/ubuntu/{}_{}'.format(current_file.node_id, offset)
+    logger.info("Download file %s offset %s length %s", current_file.file_name, offset,length)
+    s3_key.get_contents_to_filename(tmp_file,
+        headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
+    logger.info('Upload file %s size %s from %s to %s bucket',
+                     current_file.file_name, current_file.file_size, parsed_url.netloc, ds3_bucket)
+    
+    with open(tmp_file, 'r') as f:
+        ds3_key.put(f, job=job, offset=offset)
+    logger.info('File %s uploaded' % current_file.file_name)
+    os.remove(tmp_file)
+
+
 class DataBackup(object):
     BACKUP_ACCEPT_STATE = ['backing_up', 'backuped', 'verified']
     BACKUP_FAIL_STATE = 'failed'
@@ -90,62 +147,27 @@ class DataBackup(object):
         Create a job with a list of files that's going to be uploaded
         '''
         file_list = [(node.node_id, node.file_size) for node in self.files]
-        self.job = self.ds3.jobs.put(self.BUCKET, *file_list)
+        self.job = self.ds3.jobs.put(self.BUCKET, *file_list, max_upload_size=104857600)
 
     def upload_chunks(self):
         '''
         Upload files in chunk
         '''
+        
+        ds3_bucket = self.get_bucket(self.BUCKET)
         while(not self.job.is_completed):
             for chunk in self.job.chunks(num_of_chunks=100):
-
-                for args in chunk:
-                    self.upload_file(*args)
-
+                pool = Pool(processes=10)
+                args = []
+                for arg in chunk:
+                    args.append((self.signpost, ds3_bucket, self.job)+arg)
+                pool.map_async(upload_file_wrapper, args).get()
+                pool.close()
+                pool.join()
 
         self._record_file_state('backuped')
 
         
-    def upload_file(self, ds3_key, offset, length):
-        '''
-        Upload a single file within current job
-        '''
-        self.logger.info('Start upload file %s with offset %s and length %s', ds3_key.name, offset,length)
-        with self.graph.session_scope():
-            current_file =  self.graph.nodes().ids(ds3_key.name).one()
-
-        urls = self.signpost.get(current_file.node_id).urls
-        if not urls:
-            self.logger.error(
-                "no urls in signpost for file {}".format(current_file.file_name))
-            return False
-        parsed_url = urlparse(urls[0])
-        if parsed_url.netloc == 'ceph.service.consul':
-            netloc = 'kh10-9.osdc.io'
-        if parsed_url.netloc == 'cleversafe.service.consul':
-            netloc = 'gdc-accessor2.osdc.io'
-       
-        self.get_s3(netloc)
-        (self.bucket_name, self.object_name) =\
-            parsed_url.path.split("/", 2)[1:]
-        self.logger.info("Get bucket from %s, %s, %s", self.s3.host, parsed_url.netloc, self.bucket_name)
-        s3_bucket = self.s3.get_bucket(self.bucket_name)
-        s3_key = s3_bucket.get_key(self.object_name)
-        tmp_file = '/home/ubuntu/{}_{}'.format(current_file.node_id, offset)
-        s3_key.get_contents_to_filename(tmp_file,
-            headers={'Range': 'bytes={}-{}'.format(offset, length)})
-        ds3_bucket = self.get_bucket(self.BUCKET)
-        self.logger.info('Upload file %s size %s from %s to %s bucket %s',
-                         current_file.file_name, current_file.file_size, parsed_url.netloc, self.driver, self.BUCKET)
-        
-        if self.reportfile:
-            self.report[self.driver+'_start'] = time.time()
-        with open(tmp_file, 'r') as f:
-            ds3_key.put(f, job=self.job, offset=offset)
-        self.logger.info('File %s uploaded' % current_file.file_name)
-        if self.reportfile:
-            self.report[self.driver+'_end'] = time.time()
-
 
     @property
     def key(self):
@@ -159,6 +181,7 @@ class DataBackup(object):
             is_secure=False,
             calling_format=boto.s3.connection.OrdinaryCallingFormat()
         )
+        return self.s3
 
     def backup(self):
         self.get_files()
