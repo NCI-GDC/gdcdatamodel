@@ -1,4 +1,4 @@
-from consul_mixin import ConsulMixin
+from consul_manager import ConsulManager
 import random
 from signpostclient import SignpostClient
 from gdcdatamodel.models import File
@@ -41,7 +41,7 @@ class RangeKeyFile(KeyFile):
         self.offset = offset
         self.seek(offset)
 
-class DataBackup(ConsulMixin):
+class DataBackup(object):
     BACKUP_ACCEPT_STATE = ['backing_up', 'backuped', 'verified']
     BACKUP_FAIL_STATE = 'failed'
     BACKUP_DRIVER = ['primary_backup', 'storage_backup']
@@ -51,12 +51,12 @@ class DataBackup(ConsulMixin):
 
     def __init__(self, file_id='', bucket_prefix='', debug=False,
                  reportfile=None, driver = '', constant=False):
-        super(DataBackup, self).__init__()
+        self.consul = ConsulManager(prefix='databackup')
         self.graph = PsqlGraphDriver(
-            self.consul_get(['pg', 'host']),
-            self.consul_get(['pg', 'user']),
-            self.consul_get(['pg', 'pass']),
-            self.consul_get(['pg', 'name'])
+            self.consul.consul_get(['pg', 'host']),
+            self.consul.consul_get(['pg', 'user']),
+            self.consul.consul_get(['pg', 'pass']),
+            self.consul.consul_get(['pg', 'name'])
         )
         if driver:
             self.driver = driver
@@ -67,14 +67,14 @@ class DataBackup(ConsulMixin):
         if self.reportfile:
             self.report = {'start': time.time()}
         self.ds3 = client.Client(
-            host=self.consul_get(['ds3', self.driver, 'host']),
-            port=self.consul_get(['ds3', self.driver, 'port']),
-            access_key=self.consul_get(['ds3', self.driver, 'access_key']),
-            secret_key=self.consul_get(['ds3', self.driver, 'secret_key']),
+            host=self.consul.consul_get(['ds3', self.driver, 'host']),
+            port=self.consul.consul_get(['ds3', self.driver, 'port']),
+            access_key=self.consul.consul_get(['ds3', self.driver, 'access_key']),
+            secret_key=self.consul.consul_get(['ds3', self.driver, 'secret_key']),
             verify=False,
         )
 
-        self.signpost = SignpostClient(self.consul_get('signpost_url'))
+        self.signpost = SignpostClient(self.consul.consul_get('signpost_url'))
         self.logger = get_logger('data_backup_{}'.format(str(os.getpid())))
         self.debug = debug
         if not debug:
@@ -120,7 +120,12 @@ class DataBackup(ConsulMixin):
                 "no urls in signpost for file {}".format(current_file.file_name))
             return False
         parsed_url = urlparse(urls[0])
-        self.get_s3(parsed_url.netloc)
+        if parsed_url.netloc == 'ceph.service.consul':
+            netloc = 'kh10-9.osdc.io'
+        if parsed_url.netloc == 'cleversafe.service.consul':
+            netloc = 'gdc-accessor2.osdc.io'
+       
+        self.get_s3(netloc)
         (self.bucket_name, self.object_name) =\
             parsed_url.path.split("/", 2)[1:]
         self.logger.info("Get bucket from %s, %s, %s", self.s3.host, parsed_url.netloc, self.bucket_name)
@@ -149,8 +154,8 @@ class DataBackup(ConsulMixin):
     def get_s3(self, host):
         self.s3 = boto.connect_s3(
             host=host,
-            aws_access_key_id=self.consul_get(['s3', host, 'access_key']),
-            aws_secret_access_key=self.consul_get(['s3', host, 'secret_key']),
+            aws_access_key_id=self.consul.consul_get(['s3', host, 'access_key']),
+            aws_secret_access_key=self.consul.consul_get(['s3', host, 'secret_key']),
             is_secure=False,
             calling_format=boto.s3.connection.OrdinaryCallingFormat()
         )
@@ -306,7 +311,7 @@ class DataBackup(ConsulMixin):
                         max_count = query.count()
                         self.file = query[
                             random.randint(0, max_count-1)]
-                        if self.constant or self.get_consul_lock():
+                        if self.constant or self.get_consul_lock(self.file_id):
                             self.file_id = self.file.node_id
                             return self.file
                     self.logger.error(
@@ -326,7 +331,7 @@ class DataBackup(ConsulMixin):
                     return
                 if self.constant:
                     return self.file
-                if not self.get_consul_lock():
+                if not self.get_consul_lock(self.file_id):
                     self.logger.error(
                         "Can't acquire lock for file {}".
                         format(self.file.file_name))
