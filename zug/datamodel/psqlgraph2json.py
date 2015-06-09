@@ -559,7 +559,7 @@ class PsqlGraph2JSON(object):
         if node.acl == ['open']:
             doc['access'] = 'open'
         else:
-            doc['access'] = 'protected'
+            doc['access'] = 'controlled'
         doc['acl'] = node.acl
 
     def add_file_derived_from_entities(self, node, doc, participant_id):
