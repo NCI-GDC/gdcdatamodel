@@ -90,6 +90,10 @@ class TCGABioXMLParticipantConnector(object):
             self.log.info('Found matching {} files: {}'.format(
                 len(xmls), xmls))
 
+            if not xmls:
+                self.log.info("No files matching regex found, returning early")
+                return
+
             # Get barcodes
             barcodes = {self.file_matches_regexes(file_name)
                         for file_name in xmls.keys()}
