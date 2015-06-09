@@ -819,10 +819,6 @@ class PsqlGraph2JSON(object):
         assert actual == expected, '{} file count mismatch: {} != {}'.format(
             project_doc['project_id'], actual, expected)
 
-    # def validate_annotation_participant_associations(self, ann_docs):
-        # for ann_doc in ann_docs:
-        #     if
-
     def validate_docs(self, part_docs, file_docs, ann_docs, project_docs):
         for project_doc in project_docs:
             self.validate_project_file_counts(project_doc, file_docs)
