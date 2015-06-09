@@ -26,7 +26,7 @@ from cdisutils.net import no_proxy
 from zug.consul_manager import ConsulManager
 from zug.datamodel import tcga_classification
 from zug.datamodel.latest_urls import LatestURLParser
-# TODO put these somewhere that makes more sense
+from zug.datamodel.tcga_connect_bio_xml_nodes_to_participant import TCGABioXMLParticipantConnector
 
 from psqlgraph import PsqlGraphDriver
 from signpostclient import SignpostClient
@@ -792,6 +792,11 @@ class TCGADCCArchiveSyncer(object):
                         file_nodes.append(file_node)
             return file_nodes
 
+    def tie_biospecemin_xmls(self, file_nodes):
+        self.log.info("Trying to connect %s file nodes to relevant xml files (describes edge)")
+        xml_connector = TCGABioXMLParticipantConnector(self.graph)
+        xml_connector.connect_files_to_participant(file_nodes)
+
     def sync(self):
         self.consul.start_consul_session()
         # this sets self.archive and potentially self.archive_node
@@ -803,6 +808,7 @@ class TCGADCCArchiveSyncer(object):
         self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
         try:
             file_nodes = self.download_archive_and_sync_files()
+            self.tie_biospecemin_xmls(file_nodes)
             self.transition_files_to_live(file_nodes)
             # finally, upload the archive itself
             self.upload_archive()
