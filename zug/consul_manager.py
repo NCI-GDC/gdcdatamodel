@@ -62,10 +62,10 @@ class ConsulManager(object):
         return "{}/current/{}".format(
             self.consul_prefix, self._key)
 
-    def consul_get(self, path):
+    def consul_get(self, path, default=''):
         if not hasattr(path, '__iter__'):
             path = [path]
-        return self.consul.kv["/".join([self.consul_prefix] + path)]
+        return self.consul.kv.get("/".join([self.consul_prefix] + path),default)
 
     def consul_set(self, path, value):
         if not hasattr(path, '__iter__'):
