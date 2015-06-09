@@ -178,6 +178,9 @@ class DataBackup(object):
         return self.s3
 
     def backup(self):
+        if self.consul.consul_get('kill'):
+            self.logger.info("Safe kill from consul")
+            return
         self.get_files()
         if self.files:
             try:
