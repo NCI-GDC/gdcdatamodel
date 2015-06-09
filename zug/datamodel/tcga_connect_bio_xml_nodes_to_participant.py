@@ -1,7 +1,7 @@
 from cdisutils.log import get_logger
 from gdcdatamodel.models import File, Participant, FileDescribesParticipant
-
-log = get_logger("tcga_connect_bio_xml_nodes_to_participant")
+import random
+import re
 
 
 class TCGABioXMLParticipantConnector(object):
@@ -20,15 +20,23 @@ class TCGABioXMLParticipantConnector(object):
 
     def __init__(self, graph):
         self.g = graph
+        barcode_regex = '([a-zA-Z0-9-]+)'
+        self.bio_regexes = [re.compile(n.format(barcode=barcode_regex))
+                            for n in self.biospecimen_names]
+        self.clinical_regexes = [re.compile(n.format(barcode=barcode_regex))
+                                 for n in self.clinical_names]
+        self.log = get_logger(
+            "tcga_connect_bio_xml_nodes_to_participant_{}".format(
+                random.randint(1e5, 1e6)))
 
     def run(self, dry_run=False):
         assert self.g, 'No driver provided'
         if dry_run:
-            log.info('User requested dry run.')
+            self.log.info('User requested dry run.')
         with self.g.session_scope() as session:
             self.connect_all()
             if dry_run:
-                log.info('Rolling back dry run session.')
+                self.log.info('Rolling back dry run session.')
                 session.rollback()
 
     def connect_all(self):
@@ -37,21 +45,68 @@ class TCGABioXMLParticipantConnector(object):
 
         """
 
-        log.info('Loading participants')
+        self.log.info('Loading participants')
         participants = self.g.nodes(Participant).all()
-        log.info('Found {} participants'.format(len(participants)))
+        self.log.info('Found {} participants'.format(len(participants)))
 
-        log.info('Loading xml files')
+        self.log.info('Loading xml files')
         xmls = {
             n['file_name']: n for n in self.g.nodes(File)
             .sysan({'source': 'tcga_dcc'})
             .filter(File.file_name.astext.endswith('.xml'))
             .all()
         }
-        log.info('Found {} xml files'.format(len(xmls)))
+        self.log.info('Found {} xml files'.format(len(xmls)))
 
         for participant in participants:
             self.connect_participant(xmls, participant)
+
+    def file_matches_regexes(self, file_name):
+        """Returns the barcode if matches class regexes.  If it doesn't match,
+        return ``None``.
+
+        """
+        print file_name
+        for regex in self.bio_regexes+self.clinical_regexes:
+            match = regex.match(file_name)
+            if match:
+                return match.group(1)
+
+    def connect_files_to_participant(self, file_nodes):
+        """Takes a list of file nodes and, if applicable, connects them to
+        participants. If not applicale, no action is taken.
+
+        :param file_nodes: iterable containing file node instances
+
+        """
+
+        with self.g.session_scope():
+            self.log.info('Attempting to connect {} to participants'.format(
+                file_nodes))
+
+            # Filter for applicability
+            xmls = {n.file_name: n for n in file_nodes
+                    if self.file_matches_regexes(n.file_name)}
+            self.log.info('Found matching {} files: {}'.format(
+                len(xmls), xmls))
+
+            # Get barcodes
+            barcodes = {self.file_matches_regexes(file_name)
+                        for file_name in xmls.keys()}
+            self.log.info('Found matching {} files with barcodes: {}'.format(
+                len(barcodes), barcodes))
+
+            # Get participants
+            participants = {
+                p for p in self.g.nodes(Participant)
+                .prop_in('submitter_id', list(barcodes)).all()
+            }
+            self.log.info('Found matching {} participants: {}'.format(
+                len(participants), participants))
+
+            # Create edges
+            for participant in participants:
+                self.connect_participant(xmls, participant)
 
     def connect_participant(self, xmls, participant):
         """Takes a dictionary of xml file nodes (keyed by name) and a
@@ -64,7 +119,7 @@ class TCGABioXMLParticipantConnector(object):
 
         """
 
-        log.info('Looking for xml files for {}'.format(participant))
+        self.log.info('Looking for xml files for {}'.format(participant))
         barcode = participant['submitter_id']
         p_neighbor_ids = [e.src_id for e in participant.edges_in]
 
@@ -74,7 +129,7 @@ class TCGABioXMLParticipantConnector(object):
                           if xmls.get(n.format(barcode=barcode))]
         for clinical in clinical_nodes:
             if clinical.node_id not in p_neighbor_ids:
-                log.info('Adding edge to clinical xml {} for {}'.format(
+                self.log.info('Adding edge to clinical xml {} for {}'.format(
                     clinical, participant))
                 self.g.current_session().merge(FileDescribesParticipant(
                     src_id=clinical.node_id,
@@ -87,7 +142,7 @@ class TCGABioXMLParticipantConnector(object):
                              if xmls.get(n.format(barcode=barcode))]
         for biospecimen in biospecimen_nodes:
             if biospecimen.node_id not in p_neighbor_ids:
-                log.info('Adding edge to biospecimen xml {} for {}'.format(
+                self.log.info('Adding edge to biospecimen xml {} for {}'.format(
                     biospecimen, participant))
                 self.g.current_session().merge(FileDescribesParticipant(
                     src_id=biospecimen.node_id,
@@ -96,5 +151,5 @@ class TCGABioXMLParticipantConnector(object):
 
         # If we didn't find any biospecimen nodes, log a warning
         if not biospecimen_nodes:
-            log.warn('Missing biospecimen file for {} with barcode {}'.format(
+            self.log.warn('Missing biospecimen file for {} with barcode {}'.format(
                 participant, barcode))

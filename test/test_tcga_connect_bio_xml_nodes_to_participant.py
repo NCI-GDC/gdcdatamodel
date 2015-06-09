@@ -7,7 +7,7 @@ from gdcdatamodel.models import Participant, File, FileDescribesParticipant
 class TestTCGABioXMLParticipantConnector(ZugsTestBase):
 
     def insert_required_nodes(self):
-        self.barcode = 'test_barcode'
+        self.barcode = 'test-barcode'
         self.bio_name = Connector.biospecimen_names[0].format(
             barcode=self.barcode)
         self.clin_name = Connector.clinical_names[0].format(
@@ -29,6 +29,14 @@ class TestTCGABioXMLParticipantConnector(ZugsTestBase):
         self.insert_required_nodes()
         conn = Connector(self.graph)
         conn.run()
+        with self.graph.session_scope():
+            self.assertEqual(
+                self.graph.edges(FileDescribesParticipant).count(), 2)
+
+    def test_single_edge_connection(self):
+        self.insert_required_nodes()
+        conn = Connector(self.graph)
+        conn.connect_files_to_participant([self.biospec, self.clinical])
         with self.graph.session_scope():
             self.assertEqual(
                 self.graph.edges(FileDescribesParticipant).count(), 2)
