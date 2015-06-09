@@ -24,12 +24,11 @@ def run_signpost(port):
         host="localhost", port=port)
 
 
-def random_string(length=6):
-    return ''.join([random.choice(string.ascii_lowercase + string.digits)
-                    for _ in range(length)])
-
-
 class ZugsTestBase(TestCase):
+
+    def random_string(self, length=6):
+        return ''.join([random.choice(string.ascii_lowercase + string.digits)
+                        for _ in range(length)])
 
     @classmethod
     def setUpClass(cls):
@@ -82,7 +81,7 @@ class ZugsTestBase(TestCase):
             if key in kwargs:
                 continue
             elif not types or str in types:
-                kwargs[key] = random_string()
+                kwargs[key] = self.random_string()
             elif int in types or long in types:
                 kwargs[key] = random.randint(1e6, 1e7)
             elif float in types:
