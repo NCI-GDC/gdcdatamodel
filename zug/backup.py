@@ -33,55 +33,61 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
     '''
     Upload a single file within current job
     '''
-    consul = ConsulManager(prefix='databackup')
-    graph = PsqlGraphDriver(
-        consul.consul_get(['pg', 'host']),
-        consul.consul_get(['pg', 'user']),
-        consul.consul_get(['pg', 'pass']),
-        consul.consul_get(['pg', 'name'])
-    )
+    try:
+        consul = ConsulManager(prefix='databackup')
+        graph = PsqlGraphDriver(
+            consul.consul_get(['pg', 'host']),
+            consul.consul_get(['pg', 'user']),
+            consul.consul_get(['pg', 'pass']),
+            consul.consul_get(['pg', 'name'])
+        )
 
-    with graph.session_scope():
-        current_file = graph.nodes().ids(ds3_key.name).one()
+        with graph.session_scope():
+            current_file = graph.nodes().ids(ds3_key.name).one()
 
-    logger = get_logger('data_backup_{}_{}'.format(current_file.node_id[0:8], offset))
-    logger.info('Start upload file %s with offset %s and length %s',
-                ds3_key.name, offset, length)
+        logger = get_logger('data_backup_{}_{}'.format(current_file.node_id[0:8], offset))
+        logger.info('Start upload file %s with offset %s and length %s',
+                    ds3_key.name, offset, length)
 
-    urls = signpost.get(current_file.node_id).urls
-    if not urls:
-        logger.error(
-            "no urls in signpost for file {}".format(current_file.file_name))
-        return False
-    parsed_url = urlparse(urls[0])
-    (bucket_name, object_name) =\
-        parsed_url.path.split("/", 2)[1:]
-    s3 = boto.connect_s3(
-        host=parsed_url.netloc,
-        aws_access_key_id=consul.consul_get(['s3', parsed_url.netloc, 'access_key']),
-        aws_secret_access_key=consul.consul_get(['s3', parsed_url.netloc, 'secret_key']),
-        is_secure=False,
-        calling_format=boto.s3.connection.OrdinaryCallingFormat()
-    )
+        urls = signpost.get(current_file.node_id).urls
+        if not urls:
+            logger.error(
+                "no urls in signpost for file {}".format(current_file.file_name))
+            return False
+        parsed_url = urlparse(urls[0])
+        (bucket_name, object_name) =\
+            parsed_url.path.split("/", 2)[1:]
+        s3 = boto.connect_s3(
+            host=parsed_url.netloc,
+            aws_access_key_id=consul.consul_get(['s3', parsed_url.netloc, 'access_key']),
+            aws_secret_access_key=consul.consul_get(['s3', parsed_url.netloc, 'secret_key']),
+            is_secure=False,
+            calling_format=boto.s3.connection.OrdinaryCallingFormat()
+        )
 
-    logger.info("Get bucket from %s, %s, %s",
-                s3.host, parsed_url.netloc, bucket_name)
-    s3_bucket = s3.get_bucket(bucket_name)
-    s3_key = s3_bucket.get_key(object_name)
-    tmp_file = '{}/{}_{}'.format(path, current_file.node_id, offset)
-    logger.info("Download file %s offset %s length %s",
-                current_file.file_name, offset, length)
-    s3_key.get_contents_to_filename(
-        tmp_file,
-        headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
-    logger.info('Upload file %s size %s from %s to %s bucket',
-                current_file.file_name,
-                current_file.file_size,
-                parsed_url.netloc, ds3_bucket)
-    with open(tmp_file, 'r') as f:
-        ds3_key.put(f, job=job, offset=offset)
-    logger.info('Part of file %s uploaded for job %s', current_file.file_name, job.id)
-    os.remove(tmp_file)
+        logger.info("Get bucket from %s, %s, %s",
+                    s3.host, parsed_url.netloc, bucket_name)
+        s3_bucket = s3.get_bucket(bucket_name)
+        s3_key = s3_bucket.get_key(object_name)
+        tmp_file = '{}/{}_{}'.format(path, current_file.node_id, offset)
+        logger.info("Download file %s offset %s length %s",
+                    current_file.file_name, offset, length)
+        s3_key.get_contents_to_filename(
+            tmp_file,
+            headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
+        logger.info('Upload file %s size %s from %s to %s bucket',
+                    current_file.file_name,
+                    current_file.file_size,
+                    parsed_url.netloc, ds3_bucket)
+        with open(tmp_file, 'r') as f:
+            ds3_key.put(f, job=job, offset=offset)
+        logger.info('Part of file %s uploaded for job %s', current_file.file_name, job.id)
+        os.remove(tmp_file)
+
+    except Exception as e:
+        logger.info("Exception %s" % str(e))
+        logger.info(traceback.print_tb(e.__traceback__))
+        raise e
 
 
 class DataBackup(object):
