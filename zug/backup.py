@@ -33,6 +33,7 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
     '''
     Upload a single file within current job
     '''
+    logger = get_logger('data_backup_{}_{}'.format(ds3_key.name[0:8], offset))
     try:
         consul = ConsulManager(prefix='databackup')
         graph = PsqlGraphDriver(
@@ -45,7 +46,6 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
         with graph.session_scope():
             current_file = graph.nodes().ids(ds3_key.name).one()
 
-        logger = get_logger('data_backup_{}_{}'.format(current_file.node_id[0:8], offset))
         logger.info('Start upload file %s with offset %s and length %s',
                     ds3_key.name, offset, length)
 
@@ -86,7 +86,6 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
 
     except Exception as e:
         logger.info("Exception %s" % str(e))
-        logger.info(traceback.print_tb(e.__traceback__))
         raise e
 
 
