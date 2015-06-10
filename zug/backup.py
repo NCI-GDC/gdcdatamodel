@@ -36,23 +36,15 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
     logger = get_logger('data_backup_{}_{}'.format(ds3_key.name[0:8], offset))
     try:
         consul = ConsulManager(prefix='databackup')
-        graph = PsqlGraphDriver(
-            consul.consul_get(['pg', 'host']),
-            consul.consul_get(['pg', 'user']),
-            consul.consul_get(['pg', 'pass']),
-            consul.consul_get(['pg', 'name'])
-        )
-
-        with graph.session_scope():
-            current_file = graph.nodes().ids(ds3_key.name).one()
+        
 
         logger.info('Start upload file %s with offset %s and length %s',
                     ds3_key.name, offset, length)
 
-        urls = signpost.get(current_file.node_id).urls
+        urls = signpost.get(ds3_key.name).urls
         if not urls:
             logger.error(
-                "no urls in signpost for file {}".format(current_file.file_name))
+                "no urls in signpost for file {}".format(ds3_key.name))
             return False
         parsed_url = urlparse(urls[0])
         (bucket_name, object_name) =\
@@ -69,19 +61,18 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
                     s3.host, parsed_url.netloc, bucket_name)
         s3_bucket = s3.get_bucket(bucket_name)
         s3_key = s3_bucket.get_key(object_name)
-        tmp_file = '{}/{}_{}'.format(path, current_file.node_id, offset)
+        tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
         logger.info("Download file %s offset %s length %s",
-                    current_file.file_name, offset, length)
+                    ds3_key.name, offset, length)
         s3_key.get_contents_to_filename(
             tmp_file,
             headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
-        logger.info('Upload file %s size %s from %s to %s bucket',
-                    current_file.file_name,
-                    current_file.file_size,
+        logger.info('Upload file %s from %s to %s bucket',
+                    ds3_key.name,
                     parsed_url.netloc, ds3_bucket)
         with open(tmp_file, 'r') as f:
             ds3_key.put(f, job=job, offset=offset)
-        logger.info('Part of file %s uploaded for job %s', current_file.file_name, job.id)
+        logger.info('Part of file %s uploaded for job %s', ds3_key.name, job.id)
         os.remove(tmp_file)
 
     except Exception as e:
@@ -164,7 +155,6 @@ class DataBackup(object):
                 pool.close()
                 pool.join()
 
-        self._record_file_state('backuped')
 
     @property
     def key(self):
@@ -191,12 +181,14 @@ class DataBackup(object):
             try:
                 self.create_job()
                 self.upload_chunks()
+
+                self._record_file_state('backuped')
                 self.logger.info('Job %s succeed for files %s',
                                  self.job, self.files)
             except Exception as e:
+                self._record_file_state('failed')
                 self.logger.error('Job %s failed for files %s, exception %s',
                                   self.job, self.files, str(e))
-                self._record_file_state('failed')
                 self.job.delete()
             finally:
                 self.cleanup()
@@ -271,6 +263,7 @@ class DataBackup(object):
                 self._record_file_state('backing_up')
 
     def _record_file_state(self, state):
+        self.logger.info("Mark files %s as state %s", self.files, state)
         with self.graph.session_scope() as session:
             for node in self.files:
                 if not state:
