@@ -730,7 +730,7 @@ class PsqlGraph2JSON(object):
         """
         ann_doc = self._get_base_doc(node)
         entities = self.G.neighbors(node)
-        assert len(entities) == 1
+        assert len(entities) == 1, 'Annotation has multiple entities'
         entity = entities[0]
         ann_doc['entity_type'] = entity.label
         ann_doc['entity_id'] = entity.node_id
