@@ -142,6 +142,8 @@ class TestCGHubFileImporter(unittest.TestCase):
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
+            # there are two files uploaded on this date, the bam and the bai
+            self.assertEqual(self.converter.graph.nodes().sysan(cghub_upload_date=1368401409).count(), 2)
 
     def test_missing_aliquot(self):
         graph = self.converter.graph

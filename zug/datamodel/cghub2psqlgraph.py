@@ -4,6 +4,8 @@ import datetime
 import psqlgraph
 from psqlgraph import PolyNode, Node
 from lxml import etree
+from dateutil.parser import parse as date_parse
+import calendar
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
 
@@ -291,6 +293,7 @@ class cghub2psqlgraph(object):
         elif state == 'live':
             self.categorize_file(root, file_key)
             node = self.save_file_node(file_key, node_type, props, acl)
+            self.add_datetime_system_annotations(root, file_key)
             self.add_edges(root, node_type, params, file_key, node)
         else:
             node = self.get_file_by_key(file_key)
@@ -299,6 +302,18 @@ class cghub2psqlgraph(object):
                     node, state) + "already in the graph. DELETING!")
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
+
+    def add_datetime_system_annotations(self, root, file_key):
+        for key in ["last_modified", "upload_date", "published_date"]:
+            val_as_iso8601 = self.xml.xpath(
+                'ancestor::Result/{}'.format(key),
+                root=root,
+                single=True
+            )
+            val_as_seconds_since_epoch = calendar.timegm(
+                date_parse(val_as_iso8601).timetuple())
+            self.files_to_add[file_key].merge(
+                system_annotations={"cghub_"+key: val_as_seconds_since_epoch})
 
     def categorize_by_switch(self, root, cases):
         for dst_name, case in cases.iteritems():
