@@ -47,9 +47,10 @@ class WorkflowRegistry(object):
         self.store = {}
         self.log = get_logger("workflow_registry")
         self.cwl_loader = Loader()
-        # the rest of this is a copy/paste from cwltool/main.py this
-        # information could be known statically, this should be
-        # refactored into the library
+        # the rest of this is a copy/paste from cwltool/main.py, it's
+        # just extracting the list of fields that are allowed to be
+        # URLs. This information could be known statically, this should
+        # be refactored into the CWL library.
         url_fields = []
         for c in CWL_JSONLD_CONTEXT:
             if (c != "id" and (CWL_JSONLD_CONTEXT[c] == "@id")
@@ -64,17 +65,28 @@ class WorkflowRegistry(object):
         Validate a workflow per CWL.
         """
         self.log.info("Validating new workflow")
-        # Since we haven't resolved links, this basically verifies
-        # that there are no links, which is what we want. We disallow
-        # links because the whole point here is reproducibility and
-        # links can change, 404, etc. No links allowed, the entire
-        # workflow has to be specified in the json doc passed in.
-
+        # First we need to validate that links (URI fragments like
+        # #file1) are internally consistent. This is pretty
+        # gnarly. The CWL reference implementation requires that all
+        # links are resolved to completed URIs before validating
+        # them. When you use it from the command line it just
+        # generates a file:// URI. In our case we don't have a URI, so
+        # we supply the bogus URI "workflow", just so we can have it
+        # validate that the links are internally consistent.
+        #
+        # The deepcopy beforehand is because Loader.resolve_all
+        # actually mutates the dictionary you pass in to it (changing
+        # e.g. the URI fragment #file1 into, in our case,
+        # workflow#file1) and we don't want to store the workflow
+        # reformatted like that, so we make a copy to let the
+        # validator mutate and keep the original around to hash /
+        # store.
+        #
         to_validate_links = copy.deepcopy(workflow)
         try:
             self.cwl_loader.resolve_all(to_validate_links, "workflow")
             self.cwl_loader.validate_links(to_validate_links)
-        except Exception as e:
+        except Exception as e:  # sometimes it raises ValueError if links are unparsable
             raise ValidationException(e.message)
         # Next, we need to validate the workflow according to the relevant avro schema
         klass = workflow.get("class")
@@ -138,8 +150,11 @@ class WorkflowRegistry(object):
             encoding='ascii',
         )
         uuid = str(uuid5(WORKFLOW_NAMESPACE, workflow_str))
-        self.log.info("Workflow id is %s, storing", uuid)
-        self.store[uuid] = workflow
+        self.log.info("Workflow id is %s", uuid)
+        if self.store.get(uuid):
+            self.log.info("Workflow %s is already registered.", uuid)
+        else:
+            self.store[uuid] = workflow
         return uuid
 
 
