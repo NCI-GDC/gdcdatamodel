@@ -29,6 +29,15 @@ class WorkflowRegistryTest(TestCase):
         self.assertEqual(workflow["baseCommand"], "cat")
         self.assertEqual(workflow["outputs"], [])
 
+    def test_get_input_schema(self):
+        id = self.registry.register(
+            self.get_cwl_fixture("simple-tool.cwl")
+        )
+        schema = self.registry.get_input_schema(id)
+        # TODO better test
+        self.assertEqual(len(schema["fields"]), 2)
+
+
     def test_simple_validation_failure(self):
         with self.assertRaises(ValidationException):
             self.registry.register({})

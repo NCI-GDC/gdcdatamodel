@@ -2,6 +2,7 @@ from cwltool.avro_ld.validate import validate_ex as cwl_validate_ex
 from cwltool.avro_ld.ref_resolver import Loader
 from cwltool.avro_ld.validate import ValidationException
 from cwltool.process import get_schema
+from cwltool.workflow import makeTool
 from cwltool.avro_ld.jsonld_context import avrold_to_jsonld_context
 import json
 import copy
@@ -23,6 +24,10 @@ WORKFLOW_CLASSES = [
     "ExpressionTool",
     "Workflow",
 ]
+
+
+class WorkflowNotFoundException(Exception):
+    pass
 
 
 class WorkflowRegistry(object):
@@ -86,7 +91,21 @@ class WorkflowRegistry(object):
         cwl_validate_ex(klass_schema, workflow)
 
     def get(self, id):
-        return self.store.get(id)
+        wf = self.store.get(id)
+        if not wf:
+            raise WorkflowNotFoundException("{} not found".format(id))
+        else:
+            return wf
+
+    def get_input_schema(self, id):
+        """
+        Given a workflow id, return a json-y (python dict) representation
+        of the accpetable input schema for the workflow.
+        """
+        wf = self.get(id)
+        # the second argument is a directory to search for inputs in
+        tool = makeTool(wf, "irrelevant")
+        return tool.names.get_name("input_record_schema", "").to_json()
 
     def register(self, workflow):
         """Register a workflow (python dict). It must be json-serializble as
@@ -122,6 +141,7 @@ class WorkflowRegistry(object):
         self.log.info("Workflow id is %s, storing", uuid)
         self.store[uuid] = workflow
         return uuid
+
 
 # singleton registry
 REGISTRY = WorkflowRegistry()
