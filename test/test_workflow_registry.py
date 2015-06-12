@@ -29,6 +29,16 @@ class WorkflowRegistryTest(TestCase):
         self.assertEqual(workflow["baseCommand"], "cat")
         self.assertEqual(workflow["outputs"], [])
 
+    def test_double_register(self):
+        for _ in range(2):
+            id = self.registry.register(
+                self.get_cwl_fixture("simple-tool.cwl")
+            )
+            self.assertEqual(id, 'c85ef77b-af19-5030-a3d9-ed62c6f37259')
+            workflow = self.registry.get('c85ef77b-af19-5030-a3d9-ed62c6f37259')
+            self.assertEqual(workflow["baseCommand"], "cat")
+            self.assertEqual(workflow["outputs"], [])
+
     def test_get_input_schema(self):
         id = self.registry.register(
             self.get_cwl_fixture("simple-tool.cwl")
@@ -36,7 +46,6 @@ class WorkflowRegistryTest(TestCase):
         schema = self.registry.get_input_schema(id)
         # TODO better test
         self.assertEqual(len(schema["fields"]), 2)
-
 
     def test_simple_validation_failure(self):
         with self.assertRaises(ValidationException):
@@ -64,4 +73,10 @@ class WorkflowRegistryTest(TestCase):
         with self.assertRaises(ValidationException):
             self.registry.register(
                 self.get_cwl_fixture("violates-schema.cwl")
+            )
+
+    def test_nonexistant_tool_class(self):
+        with self.assertRaises(ValidationException):
+            self.registry.register(
+                self.get_cwl_fixture("fake-class.cwl")
             )
