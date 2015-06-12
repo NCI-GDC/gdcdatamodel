@@ -1,8 +1,14 @@
 from unittest import TestCase
+from base import TEST_DIR
+
+import os
+import yaml
 
 from zug.harmonize.workflow_registry import WorkflowRegistry
 
 from cwltool.avro_ld.validate import ValidationException
+
+FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "cwl")
 
 
 class WorkflowRegistryTest(TestCase):
@@ -10,30 +16,14 @@ class WorkflowRegistryTest(TestCase):
     def setUp(self):
         self.registry = WorkflowRegistry()
 
+    def get_cwl_fixture(self, name):
+        with open(os.path.join(FIXTURES_DIR, name)) as f:
+            return yaml.load(f)
+
     def test_simple_tool_regsiter(self):
-        id = self.registry.register({
-            'baseCommand': 'cat',
-            'class': 'CommandLineTool',
-            'description': u"Print the contents of a file to stdout using 'cat' running in a docker container.",
-            'hints': [
-                {
-                    'class': 'DockerRequirement',
-                    'dockerPull': 'debian:wheezy'
-                }
-            ],
-            'inputs': [
-                {
-                    'id': '#file1',
-                    'inputBinding': {'position': 1},
-                    'type': 'File'
-                },
-                {
-                    'id': '#numbering',
-                    'inputBinding': {'position': 0, 'prefix': '-n'},
-                    'type': ['null', 'boolean']}
-            ],
-            'outputs': []
-        })
+        id = self.registry.register(
+            self.get_cwl_fixture("simple-tool.cwl")
+        )
         self.assertEqual(id, 'c85ef77b-af19-5030-a3d9-ed62c6f37259')
         workflow = self.registry.get('c85ef77b-af19-5030-a3d9-ed62c6f37259')
         self.assertEqual(workflow["baseCommand"], "cat")
@@ -43,120 +33,26 @@ class WorkflowRegistryTest(TestCase):
         with self.assertRaises(ValidationException):
             self.registry.register({})
 
-    def test_workflows_with_links_fail(self):
+    def test_workflow_with_links_fails(self):
         with self.assertRaises(ValidationException):
-            self.registry.register({
-                'class': 'Workflow',
-                'inputs': [
-                    {
-                        'id': '#file1',
-                        'type': 'File'
-                    }
-                ],
-                'outputs': [
-                    {
-                        'connect': {'source': '#step2_output'},
-                        'id': '#count_output',
-                        'type': 'int'
-                    }
-                ],
-                'steps': [
-                    {
-                        'inputs': [
-                            {
-                                'connect': {'source': '#file1'},
-                                'param': 'wc-tool.cwl#file1'
-                            }
-                        ],
-                        'outputs': [
-                            {
-                                'id': '#step1_output',
-                                'param': 'wc-tool.cwl#output'
-                            }
-                        ],
-                        'run': {'import': 'wc-tool.cwl'}
-                    },
-                    {
-                        'inputs': [
-                            {
-                                'connect': {'source': '#step1_output'},
-                                'param': 'parseInt-tool.cwl#file1'}],
-                        'outputs': [
-                            {
-                                'id': '#step2_output',
-                                'param': 'parseInt-tool.cwl#output'
-                            }
-                        ],
-                        'run': {'import': 'parseInt-tool.cwl'}
-                    }
-                ]
-            })
+            self.registry.register(
+                self.get_cwl_fixture("with-links.cwl")
+            )
 
-    def test_handles_explicit_workflows(self):
-        id = self.registry.register({
-            'class': 'Workflow',
-            'inputs': [
-                {
-                    'id': '#file1',
-                    'type': 'File'
-                }
-            ],
-            'outputs': [
-                {
-                    'connect': {'source': '#step2_output'},
-                    'id': '#count_output',
-                    'type': 'int'
-                }
-            ],
-            'steps': [
-                {
-                    'inputs': [
-                        {
-                            'connect': {'source': '#file1'},
-                            'param': '#wc_file1'
-                        }
-                    ],
-                    'outputs': [
-                        {
-                            'id': '#step1_output',
-                            'param': '#wc_output'
-                        }
-                    ],
-                    'run': {'baseCommand': ['wc'],
-                            'class': 'CommandLineTool',
-                            'inputs': [{'id': '#wc_file1', 'type': 'File'}],
-                            'outputs': [{'id': '#wc_output',
-                                         'outputBinding': {'glob': 'output'},
-                                         'type': 'File'}],
-                            'stdin': {'engine': 'cwl:JsonPointer', 'script': 'job/file1/path'},
-                            'stdout': 'output'}
-                },
-                {
-                    'inputs': [
-                        {
-                            'connect': {'source': '#step1_output'},
-                            'param': '#parseInt_file1'}],
-                    'outputs': [
-                        {
-                            'id': '#step2_output',
-                            'param': '#parseInt_output'
-                        }
-                    ],
-                    'run': {'class': 'ExpressionTool',
-                            'expression': {'engine': '#nodeengine',
-                                           'script': "{return {'output': parseInt($job.file1.contents)};}"},
-                            'inputs': [{'id': '#parseInt_file1',
-                                        'inputBinding': {'loadContents': True},
-                                        'type': 'File'}],
-                            'outputs': [{'id': '#parseInt_output', 'type': 'int'}],
-                            'requirements': [
-                                {'id': '#nodeengine',
-                                 'class': 'ExpressionEngineRequirement',
-                                 'engineCommand': 'cwlNodeEngine.js',
-                                 'requirements': [{'class': 'DockerRequirement',
-                                                   'dockerImageId': 'commonworkflowlanguage/nodejs-engine'}]}
+    def test_explicit_workflows_succeed(self):
+        id = self.registry.register(
+            self.get_cwl_fixture("simple-workflow.cwl")
+        )
+        self.assertEqual(id, "a7af6799-d7ba-5c7e-b46b-6eb0f58fc536")
 
-                            ]}
-                }
-            ]
-        })
+    def test_workflow_with_broken_link_fails(self):
+        with self.assertRaises(ValidationException):
+            self.registry.register(
+                self.get_cwl_fixture("broken-link-workflow.cwl")
+            )
+
+    def test_flagant_schema_violation(self):
+        with self.assertRaises(ValidationException):
+            self.registry.register(
+                self.get_cwl_fixture("violates-schema.cwl")
+            )
