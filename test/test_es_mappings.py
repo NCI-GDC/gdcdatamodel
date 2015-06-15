@@ -4,7 +4,8 @@ from gdcdatamodel.mappings import (
     get_file_es_mapping,
     get_participant_es_mapping,
     get_annotation_es_mapping,
-    get_project_es_mapping
+    get_project_es_mapping,
+    TOP_LEVEL_IDS,
 )
 
 
@@ -39,10 +40,15 @@ class TestElasticsearchMappings(unittest.TestCase):
 
     def test_participant_mapping_top_level(self):
         m = get_participant_es_mapping()['properties']
-        properties = {'files', 'annotations', 'days_to_index', 'submitter_id',
-                      'project', 'clinical', 'metadata_files', 'samples',
-                      'participant_id', 'summary', 'tissue_source_site',
-                      'aliquots'}
+        properties = {'files', 'annotations', 'days_to_index',
+                      'submitter_id', 'project', 'clinical',
+                      'metadata_files', 'samples', 'participant_id',
+                      'summary', 'tissue_source_site', 'aliquots',
+                      'sample_ids', 'portion_ids',
+                      'submitter_portion_ids',
+                      'submitter_aliquot_ids',
+                      'submitter_analyte_ids', 'analyte_ids',
+                      'aliquot_ids', 'submitter_sample_ids'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_project_mapping_top_level(self):
