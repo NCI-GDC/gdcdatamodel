@@ -159,6 +159,7 @@ class TestPsqlgraph2JSON(unittest.TestCase):
             aliquot.files.append(to_delete_file)
 
     def setUp(self):
+        self.tearDown()
         self.add_req_nodes()
         es_fixtures.insert(g)
         self.add_file_nodes()

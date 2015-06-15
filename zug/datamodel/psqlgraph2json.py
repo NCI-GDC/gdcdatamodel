@@ -1,6 +1,9 @@
 from gdcdatamodel.mappings import (
     annotation_tree, participant_tree,
-    file_tree, ONE_TO_ONE, ONE_TO_MANY
+    file_tree, ONE_TO_ONE, ONE_TO_MANY,
+    get_participant_es_mapping, get_file_es_mapping,
+    get_project_es_mapping, get_annotation_es_mapping,
+    TOP_LEVEL_IDS,
 )
 from zug.datamodel.prelude import DATA_TYPES
 import random
@@ -10,6 +13,7 @@ import networkx as nx
 import itertools
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy, deepcopy
+from collections import defaultdict
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -172,12 +176,12 @@ class PsqlGraph2JSON(object):
             self.create_tree(child, submap, tree[child])
         return tree
 
-    def walk_tree(self, node, tree, mapping, doc, level=0):
+    def walk_tree(self, node, tree, mapping, doc, level=0,
+                  ids=None):
         """Recursively walk from a node to all possible neighbors that are
         allowed in the tree structure.  Add the node's properties to the doc.
 
         """
-
         corr, plural = mapping[node.label]['corr']
         subdoc = self._get_base_doc(node)
         for child in tree[node]:
@@ -187,7 +191,15 @@ class PsqlGraph2JSON(object):
             elif child_plural not in subdoc:
                 subdoc[child_plural] = []
             self.walk_tree(child, tree[node], mapping[node.label],
-                           subdoc[child_plural], level+1)
+                           subdoc[child_plural], level+1, ids=ids)
+
+            # Aggregate ids as we walk the tree
+            if ids is not None and child.label in TOP_LEVEL_IDS:
+                ids['{}_ids'.format(child.label)].append(child.node_id)
+                if child.props.get('submitter_id'):
+                    ids['submitter_{}_ids'.format(child.label)].append(
+                        child.props.get('submitter_id'))
+
         if corr == ONE_TO_MANY:
             doc.append(subdoc)
         else:
@@ -248,7 +260,7 @@ class PsqlGraph2JSON(object):
 
     ###################################################################
     #                          Participants
-    ###################################################################
+    ##################################################################
 
     def denormalize_participant(self, node):
         """Given a participant node, return the entire participant document,
@@ -259,8 +271,15 @@ class PsqlGraph2JSON(object):
 
         # Walk graph naturally for tree of node objects
         ptree = {node: self.create_tree(node, self.ptree_mapping, {})}
+
         # Use tree to create nested json
-        participant = self.walk_tree(node, ptree, self.ptree_mapping, [])[0]
+        visited_ids = defaultdict(list)
+        participant = self.walk_tree(
+            node, ptree, self.ptree_mapping, [], ids=visited_ids)[0]
+
+        # Inject a dictionary of ids for each visited entity (in TOP_LEVEL_IDS)
+        participant.update(visited_ids)
+
         # Walk from participant to all file leaves
         files = self.remove_bam_index_files(
             self.walk_paths(node, self.part_to_file_paths))
@@ -278,7 +297,7 @@ class PsqlGraph2JSON(object):
 
         # Denormalize the participants files
         def get_file(f):
-            return self.denormalize_file(f, self.copy_tree(ptree, {}))
+            return self.denormalize_file(f, ptree)
         participant['files'] = map(get_file, files)
 
         # Add properties to all annotations
@@ -410,8 +429,14 @@ class PsqlGraph2JSON(object):
 
         """
 
+        # Create a copy to avoid mutation of passed argument
+        ptree = self.copy_tree(ptree, {})
+
+        # Create base file doc
         participant_id = ptree.keys()[0].node_id if ptree.keys() else None
         doc = self._get_base_doc(node)
+
+        # Add file fields
         self.patch_file_datetimes(doc)
         self.add_file_origin(node, doc)
         self.add_file_neighbors(node, doc)
@@ -423,6 +448,7 @@ class PsqlGraph2JSON(object):
         self.add_file_derived_from_entities(node, doc, participant_id)
         self.add_annotations(node, relevant, doc)
         self.add_acl(node, doc)
+
         return doc
 
     def prune_participant(self, relevant_nodes, ptree, keys):
@@ -606,32 +632,32 @@ class PsqlGraph2JSON(object):
 
         # Get programs
         program = self.neighbors_labeled(p, 'program').next()
-        log.debug('Program: {}'.format(program))
+        log.info('Program: {}'.format(program))
         doc['program'] = self._get_base_doc(program)
 
         # project_id <- program.name-project.code
         self.patch_project(doc)
 
-        log.debug('Finding participants')
+        log.info('Finding participants')
         parts = list(self.neighbors_labeled(p, 'participant'))
-        log.debug('Got {} participants'.format(len(parts)))
+        log.info('Got {} participants'.format(len(parts)))
 
         # Get files
-        log.debug('Getting files')
+        log.info('Getting files')
         files = set()
         part_files = {}
         for part in parts:
             part_files[part] = self.remove_bam_index_files(
                 self.walk_paths(part, self.part_to_file_paths))
             files = files.union(part_files[part])
-        log.debug('Got {} files from {} participants'.format(
+        log.info('Got {} files from {} participants'.format(
             len(files), len(part_files)))
 
         # Get data types
         exp_strat_summaries = []
         self._cache_experimental_strategies()
         for exp_strat in self.experimental_strategies.keys():
-            log.debug('{} {}'.format(exp_strat, exp_strat['name']))
+            log.info('{} {}'.format(exp_strat, exp_strat['name']))
             exp_files = (self.experimental_strategies[exp_strat] & files)
             if not len(exp_files):
                 continue
@@ -648,7 +674,7 @@ class PsqlGraph2JSON(object):
         data_type_summaries = []
         self._cache_data_types()
         for data_type in self.data_types.keys():
-            log.debug('{} {}'.format(data_type, data_type['name']))
+            log.info('{} {}'.format(data_type, data_type['name']))
             dt_files = (self.data_types[data_type] & files)
             if not len(dt_files):
                 continue
@@ -835,12 +861,36 @@ class PsqlGraph2JSON(object):
                     if d['data_type'] == data_type][:1] or [0])[0]
             assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
 
+    def validate_against_mapping(self, doc, mapping):
+        """Recursively verify that all keys in the document are in the
+        provided Elasticsearch mapping
+
+        """
+        if isinstance(doc, dict):
+            # Recurse through all keys in dictionary
+            for doc_key, child in doc.iteritems():
+                assert doc_key in mapping['properties'].keys(),\
+                    "Key '{}' was not found in mapping keys {}".format(
+                        doc_key, mapping['properties'].keys())
+                self.validate_against_mapping(
+                    child, mapping['properties'][doc_key])
+        elif isinstance(doc, list):
+            # Loop over all all items in the list. Note that ES
+            # mappings do not distinguish between lists of subdocs and
+            # single subdocs.
+            for list_entry in doc:
+                self.validate_against_mapping(list_entry, mapping)
+
     def validate_participant(self, node, participant):
         # Assert file count = summary.file_count
         assert len(participant['files'])\
             == participant['summary']['file_count'],\
             '{}: {} != {}'.format(node.node_id, len(participant['files']),
                                   participant['summary']['file_count'])
+
+        # Check for keys that are in the doc but not in the mapping
+        self.validate_against_mapping(
+            participant, get_participant_es_mapping())
 
     ###################################################################
     #                       Caching functions
@@ -858,7 +908,7 @@ class PsqlGraph2JSON(object):
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)
                 if (e.src.system_annotations.get("to_delete")
-                    or e.dst.system_annotations.get("to_delete")):
+                   or e.dst.system_annotations.get("to_delete")):
                     continue
                 if needs_differentiation and e.properties:
                     self.G.add_edge(
