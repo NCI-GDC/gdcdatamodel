@@ -14,6 +14,7 @@ STRING = {'index': 'not_analyzed', 'type': 'string'}
 LONG = {'type': 'long'}
 INTEGER = {'type': 'integer'}
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
+TOP_LEVEL_IDS = ['sample', 'portion', 'analyte', 'aliquot']
 
 MULTIFIELDS = {
     'project': ['code', 'disease_type', 'name', 'primary_site'],
@@ -209,6 +210,11 @@ def get_participant_es_mapping(include_file=True):
     participant.properties.metadata_files.properties.data_type = STRING
     participant.properties.metadata_files.properties.data_subtype = STRING
     participant.properties.metadata_files.properties.acl = STRING
+
+    # Add top level id aggregation
+    for label in TOP_LEVEL_IDS:
+        participant.properties['{}_ids'.format(label)] = STRING
+        participant.properties['submitter_{}_ids'.format(label)] = STRING
 
     # Add pop whatever file is present and add correct files
     participant.properties.pop('file', None)
