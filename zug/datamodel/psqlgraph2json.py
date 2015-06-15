@@ -535,6 +535,7 @@ class PsqlGraph2JSON(object):
             ptree)
         for p in doc['participants']:
             self.patch_project(p['project'])
+            self.reconstruct_biospecimen_paths(p)
         return relevant
 
     def add_annotations(self, node, relevant, doc):
