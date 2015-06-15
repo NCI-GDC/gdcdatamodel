@@ -215,6 +215,21 @@ class TestCGHubFileImporter(unittest.TestCase):
                 base.path('experimental_strategies').props(name='RNA-Seq').one()
                 self.assertEqual(len(list(bai.get_edges())), 1)
 
+    def test_datetime_system_annotations(self):
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope() as s:
+            # Insert a file without the sysans to simulate being run on
+            # existing nodes without the correct sysasn
+            s.add(File(str(uuid.uuid4()), file_name=bamA, state='submitted',
+                       file_size=1, md5sum='test',
+                       system_annotations={'analysis_id': analysis_idA}))
+        self.run_convert()
+        with graph.session_scope() as s:
+            f = graph.nodes().props(file_name=bamA).one()
+            for key in ["last_modified", "upload_date", "published_date"]:
+                self.assertIn("cghub_"+key, f.sysan)
+
 
 
 TEST_DATA = ["""
