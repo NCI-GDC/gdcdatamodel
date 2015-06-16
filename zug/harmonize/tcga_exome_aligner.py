@@ -114,7 +114,7 @@ class TCGAExomeAligner(object):
                             .filter(File.node_id.in_(tcga_exome_bam_ids))\
                             .order_by(func.random())\
                             .first()
-        self.log.info("Selected aliquot %s to work on, files: %s", aliquot)
+        self.log.info("Selected aliquot %s to work on", aliquot)
         sorted_files = sorted([f for f in aliquot.files],
                               key=lambda f: f.sysan["cghub_last_modified"])
         self.log.info("Aliquot has %s files", len(sorted_files))
@@ -183,7 +183,6 @@ class TCGAExomeAligner(object):
         self.log.info("Creating docker container")
         self.log.info("Docker image id: %s", image["Id"])
         self.docker_cmd = self.build_docker_cmd()
-        self.log.info("Docker command: %s", self.docker_cmd)
         self.log.info("Mapping host volume %s to container volume %s",
                       self.workdir, self.container_workdir)
         host_config = docker.utils.create_host_config(binds={
@@ -192,6 +191,7 @@ class TCGAExomeAligner(object):
                 "ro": False,
             },
         })
+        self.log.info("Docker command: %s", self.docker_cmd)
         container = self.docker.create_container(
             image=image["Id"],
             command=self.docker_cmd,
@@ -199,11 +199,11 @@ class TCGAExomeAligner(object):
         )
         self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(container)
-        for log in self.docker.logs(container, stream=True):
+        for log in self.docker.logs(container, stream=True, stdout=True, stderr=True):
             self.log.info(log)  # TODO maybe something better
         retcode = self.docker.wait(container)
         if retcode != 0:
-            raise RuntimeError("Docker container failed with exit code %s", retcode)
+            raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(container, v=True)
 
