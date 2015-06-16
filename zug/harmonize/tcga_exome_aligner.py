@@ -2,9 +2,12 @@ import os
 
 from sqlalchemy import func
 import docker
+from boto.s3.connection import OrdinaryCallingFormat
 
 from psqlgraph import PsqlGraphDriver
 from cdisutils.log import get_logger
+from cdisutils.net import BotoManager
+from signpostclient import SignpostClient
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
     FileMemberOfExperimentalStrategy,
@@ -12,9 +15,44 @@ from gdcdatamodel.models import (
 )
 
 
+def first_s3_url(doc):
+    for url in doc.urls:
+        parsed = urlparse(url)
+        if parsed.scheme == "s3":
+            return url
+    raise RuntimeError("File {} does not have s3 urls.".format(doc.id))
+
+
+def boto_config():
+    """
+    Prepare a configuration dict suitable to pass to
+    cdisutils.net.BotoManager from the process environment.  This is a
+    bit hardcode-y and I would prefer this to get passed in via the
+    process environment somehow but it's a complicated nested structure
+    that involves python variables and stuff and the alternative is trying to
+    like import a python file so I'm just gonna do it here
+
+    """
+    return {
+        "cleversafe.service.consul": {
+            "aws_access_key_id": os.environ["CLEV_ACCESS_KEY"],
+            "aws_secret_access_key": os.environ["CLEV_SECRET_KEY"],
+            "is_secure": False,
+            "calling_format": OrdinaryCallingFormat()
+        },
+        "ceph.service.consul": {
+            "aws_access_key_id": os.environ["CEPH_ACCESS_KEY"],
+            "aws_secret_access_key": os.environ["CEPH_SECRET_KEY"],
+            "is_secure": False,
+            "calling_format": OrdinaryCallingFormat()
+        },
+    }
+
+
 class TCGAExomeAligner(object):
 
-    def __init__(self, graph=None):
+    def __init__(self, graph=None, s3=None,
+                 signpost=None):
         if graph:
             self.graph = graph
         else:
@@ -24,6 +62,15 @@ class TCGAExomeAligner(object):
                 os.environ["PG_PASS"],
                 os.environ["PG_NAME"],
             )
+        if s3:
+            self.s3 = s3
+        else:
+            self.s3 = BotoManager(boto_config())
+        if signpost:
+            self.signpost = signpost
+        else:
+            self.signpost = SignpostClient(os.environ["SIGNPOST_URL"])
+
         self.workdir = os.environ.get("ALIGNMENT_WORKDIR", "/mnt/alignment")
         self.container_workdir = "/alignment"
         self.docker_image_id = os.environ["DOCKER_IMAGE_ID"]
@@ -36,7 +83,7 @@ class TCGAExomeAligner(object):
         self.cores = int(os.environ.get("ALIGNMENT_CORES" "8"))
         # TODO initialize this lazily
         self.docker = docker.Client()
-        self.log = get_logger("tcga_exome_alignmer")
+        self.log = get_logger("tcga_exome_aligner")
 
     def choose_bam_to_align(self):
         """The strategy is as follows:
@@ -67,22 +114,20 @@ class TCGAExomeAligner(object):
         self.input_bam = sorted_files[0]
         self.log.info("Choosing file %s to align", self.input_bam)
 
-    def download_file_to_tmpdir(self):
-        """TODO: need to decide how to do this. One interesting possibility
-        is to just download via the API. This is simpler in the sense
-        that it abstracts the object stores away so that this code
-        does not need access to them. However, this would configuring
-        this code with credentials to the API (and making sure they
-        didn't get rotated, etc.), and would potentially interfere
-        with the API for testing users (altough we'd prefer to
-        discover scalability issues now rather than later I
-        suppose). It would also probably be faster to hit the object
-        stores directly.
-
-        Regardless, this will need to set self.input_bam_path (which
-        should be in self.scratch_dir)
+    def download_file(self):
         """
-        raise NotImplementedError()
+        This hist the object stores directly, although we should consider
+        hitting the API instead in the future.
+        """
+        self.log.info("Querying signpost for file urls")
+        doc = self.signpost.get(self.input_bam.node_id)
+        url = first_s3_url(doc)
+        self.log.info("Getting key for url %s", url)
+        key = self.s3.get_url(url)
+        path = os.path.join(self.scratch_dir, self.input_bam.file_name)
+        with open(path, "w") as f:
+            self.log.info("Saving file from s3 to %s", path)
+            key.get_contents_to_file(f)
 
     def host_abspath(self, relative_path):
         return os.path.join(self.workdir, relative_path)
@@ -96,24 +141,26 @@ class TCGAExomeAligner(object):
         if not filtered_images:
             raise RuntimeError("No docker image with id {} found!".format(self.docker_image_id))
         image = filtered_images[1]
-        cmd = ("/home/ubuntu/.virtualenvs/p3/bin/python /home/ubuntu/apipe/aln.py "
-               "-r {reference_path} "
-               "-b {bam_path} "
-               "-u {file_id} "
-               "-s {scratch_dir} "
-               "-t {cores} "
-               "-l {log_dir} "
-               "-d").format(
-                   reference_path=self.container_abspath(self.reference),
-                   bam_path=self.container_abspath(self.input_bam_path),
-                   file_id=self.input_bam.node_id,
-                   scratch_dir=self.container_abspath(self.scratch_dir),
-                   cores=self.cores,
-                   log_dir=self.container_abspath(self.scratch_dir),
-               )
+        self.docker_cmd = (
+            "/home/ubuntu/.virtualenvs/p3/bin/python /home/ubuntu/apipe/aln.py "
+            "-r {reference_path} "
+            "-b {bam_path} "
+            "-u {file_id} "
+            "-s {scratch_dir} "
+            "-t {cores} "
+            "-l {log_dir} "
+            "-d"
+        ).format(
+            reference_path=self.container_abspath(self.reference),
+            bam_path=self.container_abspath(self.input_bam_path),
+            file_id=self.input_bam.node_id,
+            scratch_dir=self.container_abspath(self.scratch_dir),
+            cores=self.cores,
+            log_dir=self.container_abspath(self.scratch_dir),
+        )
         self.log.info("Creating docker container")
         self.log.info("Docker image id: %s", image["Id"])
-        self.log.info("Docker command: %s", cmd)
+        self.log.info("Docker command: %s", self.docker_cmd)
         self.log.info("Mapping host volume %s to container volume %s",
                       self.workdir, self.container_workdir)
         host_config = docker.utils.create_host_config(binds={
@@ -124,12 +171,17 @@ class TCGAExomeAligner(object):
         })
         container = self.docker.create_container(
             image=image["Id"],
-            command=cmd,
+            command=self.docker_cmd,
             host_config=host_config,
         )
-        self.log.info("Starting docker container")
+        self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(container)
-        self.log.info("Container run finished, removing")
+        for log in self.docker.logs(container, stream=True):
+            self.log.info(log)  # TODO maybe something better
+        retcode = self.docker.wait(container)
+        if retcode != 0:
+            raise RuntimeError("Docker container failed with exit code %s", retcode)
+        self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(container, v=True)
 
     def upload_output(self):
@@ -141,7 +193,7 @@ class TCGAExomeAligner(object):
         raise NotImplementedError()
 
     def align(self):
-        self.download_file_to_tmpdir()
+        self.download()
         self.run_docker_alignment()
         self.upload_output()
         self.create_output_node()
