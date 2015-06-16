@@ -153,11 +153,11 @@ class TCGAExomeAligner(object):
         url = first_s3_url(doc)
         self.log.info("Getting key for url %s", url)
         key = self.s3.get_url(url)
-        path = os.path.join(self.workdir, self.scratch_dir,
-                            file.file_name)
+        workdir_relative_path = os.path.join(self.scratch_dir, file.file_name)
+        abs_path = os.path.join(self.workdir, workdir_relative_path)
         md5 = hashlib.md5()
-        with open(path, "w") as f:
-            self.log.info("Saving file from s3 to %s", path)
+        with open(abs_path, "w") as f:
+            self.log.info("Saving file from s3 to %s", abs_path)
             key.BufferSize = 10 * 1024 * 1024
             for chunk in key:
                 md5.update(chunk)
@@ -167,7 +167,7 @@ class TCGAExomeAligner(object):
             raise RuntimeError("Downloaded md5sum {} != "
                                "database md5sum {}".format(md5sum, file.md5sum))
         else:
-            return os.path.join(self.scratch_dir, file.file_name)
+            return workdir_relative_path
 
     def download_inputs(self):
         """
