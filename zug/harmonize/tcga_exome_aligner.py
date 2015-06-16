@@ -113,13 +113,15 @@ class TCGAExomeAligner(object):
 
         We then set self.input_bam to that file.
         """
+        # NOTE you would think that second .filter would be unnecessary, but
+        # we have some TCGA exomes that end with
+        # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
+        # for now I am ignoring them
         tcga_exome_bam_ids = self.graph.nodes(File.node_id)\
                                        .sysan(source="tcga_cghub")\
-                                       .join(FileMemberOfExperimentalStrategy)\
-                                       .join(ExperimentalStrategy)\
-                                       .filter(ExperimentalStrategy.name.astext == "WXS")\
+                                       .filter(File.experimental_strategies.any(ExperimentalStrategy.name.astext == "WXS"))\
+                                       .filter(File.file_name.astext.endswith(".bam"))\
                                        .subquery()
-
         aliquot = self.graph.nodes(Aliquot)\
                             .join(FileDataFromAliquot)\
                             .join(File)\
