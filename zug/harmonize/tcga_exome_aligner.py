@@ -1,4 +1,5 @@
 import os
+import hashlib
 
 from sqlalchemy import func
 import docker
@@ -125,9 +126,17 @@ class TCGAExomeAligner(object):
         self.log.info("Getting key for url %s", url)
         key = self.s3.get_url(url)
         path = os.path.join(self.scratch_dir, self.input_bam.file_name)
+        md5 = hashlib.md5()
         with open(path, "w") as f:
             self.log.info("Saving file from s3 to %s", path)
-            key.get_contents_to_file(f)
+            key.BufferSize = 10 * 1024 * 1024
+            for chunk in key:
+                md5.update(chunk)
+                f.write(chunk)
+        md5sum = md5.hexdigest()
+        if md5sum != file.md5sum:
+            raise RuntimeError("Downloaded md5sum {} != "
+                               "database md5sum {}".format(md5sum, file.md5sum))
 
     def host_abspath(self, relative_path):
         return os.path.join(self.workdir, relative_path)
@@ -135,13 +144,8 @@ class TCGAExomeAligner(object):
     def container_abspath(self, relative_path):
         return os.path.join(self.container_workdir, relative_path)
 
-    def run_docker_alignment(self):
-        filtered_images = [i for i in self.docker.images()
-                           if i["Id"] == self.docker_image_id]
-        if not filtered_images:
-            raise RuntimeError("No docker image with id {} found!".format(self.docker_image_id))
-        image = filtered_images[1]
-        self.docker_cmd = (
+    def build_docker_cmd(self):
+        return (
             "/home/ubuntu/.virtualenvs/p3/bin/python /home/ubuntu/apipe/aln.py "
             "-r {reference_path} "
             "-b {bam_path} "
@@ -158,8 +162,16 @@ class TCGAExomeAligner(object):
             cores=self.cores,
             log_dir=self.container_abspath(self.scratch_dir),
         )
+
+    def run_docker_alignment(self):
+        filtered_images = [i for i in self.docker.images()
+                           if i["Id"] == self.docker_image_id]
+        if not filtered_images:
+            raise RuntimeError("No docker image with id {} found!".format(self.docker_image_id))
+        image = filtered_images[1]
         self.log.info("Creating docker container")
         self.log.info("Docker image id: %s", image["Id"])
+        self.docker_cmd = self.build_docker_cmd()
         self.log.info("Docker command: %s", self.docker_cmd)
         self.log.info("Mapping host volume %s to container volume %s",
                       self.workdir, self.container_workdir)
