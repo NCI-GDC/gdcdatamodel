@@ -24,6 +24,7 @@ def fake_build_docker_cmd(self):
         "set -e",
         # assert that input bam exists
         "test -e {bam_path}",
+        "test -e {bai_path}",
         # create fake outputs
         "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
         "mkfile {output_bam_path}",
@@ -49,6 +50,7 @@ def fake_build_docker_cmd(self):
     return template.format(
         reference_path=self.container_abspath(self.reference),
         bam_path=self.container_abspath(self.input_bam_path),
+        bai_path=self.container_abspath(self.input_bai_path),
         output_bam_path=output_bam_path,
         output_log_path=output_log_path,
         output_db_path=output_db_path,
@@ -97,9 +99,10 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         )
 
     def create_file(self, name, content):
-        doc = self.signpost_client.create()
-        file = File(
-            node_id=doc.did,
+        bam_doc = self.signpost_client.create()
+        assert name.endswith(".bam")
+        bam_file = File(
+            node_id=bam_doc.did,
             file_name=name,
             md5sum=md5sum_with_size(content)[0],
             file_size=len(content),
@@ -107,24 +110,40 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
             state_comment=None,
             submitter_id=None
         )
-        file.system_annotations = {
+        bai_content = "fake_bam_index"
+        bai_doc = self.signpost_client.create()
+        bai_file = File(
+            node_id=bai_doc.did,
+            file_name=name+".bai",
+            md5sum=md5sum_with_size(bai_content)[0],
+            file_size=len(bai_content),
+            state="live",
+            state_comment=None,
+            submitter_id=None
+        )
+        bam_file.system_annotations = {
             "source": "tcga_cghub",
             "cghub_last_modified": 12345567
         }
         with self.graph.session_scope():
             strat = self.graph.nodes(ExperimentalStrategy)\
                               .props(name="WXS").one()
-            file.experimental_strategies = [strat]
+            bam_file.experimental_strategies = [strat]
+            bam_file.related_files = [bai_file]
         # have to put it in s3
         self.fake_s3.start()
         bucket = self.boto_manager["s3.amazonaws.com"].get_bucket("test")
         key = bucket.new_key(name)
         key.set_contents_from_string(content)
+        key = bucket.new_key(name+".bai")
+        key.set_contents_from_string(bai_content)
         self.fake_s3.stop()
         # and then the url in signpost
-        doc.urls = ["s3://s3.amazonaws.com/test/{}".format(name)]
-        doc.patch()
-        return file
+        bam_doc.urls = ["s3://s3.amazonaws.com/test/{}".format(name)]
+        bam_doc.patch()
+        bai_doc.urls = ["s3://s3.amazonaws.com/test/{}".format(name+".bai")]
+        bai_doc.patch()
+        return bam_file
 
     def create_aliquot(self):
         aliquot = Aliquot(
@@ -139,14 +158,14 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
     def monkey_patches(self):
         return patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
-            download_input_bam=self.with_fake_s3(TCGAExomeAligner.download_input_bam),
+            download_inputs=self.with_fake_s3(TCGAExomeAligner.download_inputs),
             build_docker_cmd=fake_build_docker_cmd
         )
 
     def test_basic_align(self):
         with self.graph.session_scope():
             aliquot = self.create_aliquot()
-            file = self.create_file("test1", "fake_test_content")
+            file = self.create_file("test1.bam", "fake_test_content")
             file.aliquots = [aliquot]
         aligner = self.get_aligner()
         with self.monkey_patches():

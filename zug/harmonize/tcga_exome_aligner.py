@@ -135,19 +135,26 @@ class TCGAExomeAligner(object):
         # TODO LOCK IT (probably in consul) so no one else gets it
         self.input_bam = sorted_files[0]
         self.log.info("Choosing file %s to align", self.input_bam)
+        self.log.info("Finding associated bai file")
+        potential_bais = [f for f in self.input_bam.related_files if f.file_name.endswith(".bai")]
+        if not potential_bais:
+            raise RuntimeError("No bai files associated with bam {}".format(self.input_bam))
+        if len(potential_bais) > 1:
+            raise RuntimeError("Multiple potential bais found for bam {}".format(potential_bais))
+        self.input_bai = potential_bais[0]
 
-    def download_input_bam(self):
+    def download_file(self, file):
         """
-        This hist the object stores directly, although we should consider
-        hitting the API instead in the future.
+        Download a file node from s3, returning it's workdir relative path.
         """
+        self.log.info("Downloading file %s", file)
         self.log.info("Querying signpost for file urls")
-        doc = self.signpost.get(self.input_bam.node_id)
+        doc = self.signpost.get(file.node_id)
         url = first_s3_url(doc)
         self.log.info("Getting key for url %s", url)
         key = self.s3.get_url(url)
         path = os.path.join(self.workdir, self.scratch_dir,
-                            self.input_bam.file_name)
+                            file.file_name)
         md5 = hashlib.md5()
         with open(path, "w") as f:
             self.log.info("Saving file from s3 to %s", path)
@@ -156,18 +163,25 @@ class TCGAExomeAligner(object):
                 md5.update(chunk)
                 f.write(chunk)
         md5sum = md5.hexdigest()
-        if md5sum != self.input_bam.md5sum:
+        if md5sum != file.md5sum:
             raise RuntimeError("Downloaded md5sum {} != "
                                "database md5sum {}".format(md5sum, file.md5sum))
         else:
-            self.input_bam_path = os.path.join(self.scratch_dir,
-                                               self.input_bam.file_name)
+            return os.path.join(self.scratch_dir, file.file_name)
 
-    def host_abspath(self, relative_path):
-        return os.path.join(self.workdir, relative_path)
+    def download_inputs(self):
+        """
+        This hist the object stores directly, although we should consider
+        hitting the API instead in the future.
+        """
+        self.input_bam_path = self.download_file(self.input_bam)
+        self.input_bai_path = self.download_file(self.input_bai)
 
-    def container_abspath(self, relative_path):
-        return os.path.join(self.container_workdir, relative_path)
+    def host_abspath(self, *relative_path):
+        return os.path.join(self.workdir, os.path.join(*relative_path))
+
+    def container_abspath(self, *relative_path):
+        return os.path.join(self.container_workdir, os.path.join(*relative_path))
 
     def build_docker_cmd(self):
         return (
@@ -269,7 +283,7 @@ class TCGAExomeAligner(object):
         # TODO more fine grained transactions?
         with self.graph.session_scope():
             self.choose_bam_to_align()
-            self.download_input_bam()
+            self.download_inputs()
             self.run_docker_alignment()
             # self.upload_output()
             # self.create_output_node()
