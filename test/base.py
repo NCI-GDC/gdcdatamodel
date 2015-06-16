@@ -15,6 +15,9 @@ from zug.datamodel.prelude import create_prelude_nodes
 from signpost import Signpost
 from signpostclient import SignpostClient
 
+from moto import mock_s3bucket_path
+import boto
+from boto.s3.connection import OrdinaryCallingFormat
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -89,3 +92,25 @@ class ZugsTestBase(TestCase):
             elif bool in types:
                 kwargs[key] = random.choice((True, False))
         return cls(node_id, **kwargs)
+
+
+class FakeS3Mixin(object):
+
+    def with_fake_s3(self, f):
+        def wrapper(*args, **kwargs):
+            self.fake_s3.start()
+            try:
+                f(*args, **kwargs)
+            finally:
+                self.fake_s3.stop()
+        return wrapper
+
+    def setup_fake_s3(self, bucket_name):
+        self.fake_s3 = mock_s3bucket_path()
+        for backend in self.fake_s3.backends.values():
+            # lololol TODO write explaination for this nonsense
+            backend.reset = lambda: None
+        self.fake_s3.start()
+        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+        conn.create_bucket(bucket_name)
+        self.fake_s3.stop()

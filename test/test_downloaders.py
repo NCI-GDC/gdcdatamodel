@@ -1,14 +1,10 @@
 import os
 import uuid
-import boto
 import hashlib
 from itertools import islice
-from base import ZugsTestBase
+from base import ZugsTestBase, FakeS3Mixin
 from mock import patch, Mock
-from moto import mock_s3bucket_path
 from consulate import Consul
-
-from boto.s3.connection import OrdinaryCallingFormat
 
 from zug.downloaders import Downloader, md5sum_with_size
 
@@ -61,7 +57,7 @@ class FailingMD5SumWithSize(object):
         return md5.hexdigest(), length
 
 
-class DownloadersTest(ZugsTestBase):
+class DownloadersTest(ZugsTestBase, FakeS3Mixin):
 
     def setUp(self):
         super(DownloadersTest, self).setUp()
@@ -114,25 +110,6 @@ class DownloadersTest(ZugsTestBase):
         self.gtdownload_dict[file] = content
         return file
 
-    def with_fake_s3(self, f):
-        def wrapper(*args, **kwargs):
-            self.fake_s3.start()
-            try:
-                f(*args, **kwargs)
-            finally:
-                self.fake_s3.stop()
-        return wrapper
-
-    def setup_fake_s3(self):
-        self.fake_s3 = mock_s3bucket_path()
-        for backend in self.fake_s3.backends.values():
-            # lololol TODO write explaination for this nonsense
-            backend.reset = lambda: None
-        self.fake_s3.start()
-        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-        conn.create_bucket("fake_cghub_protected")
-        self.fake_s3.stop()
-
     def setup_fake_files(self):
         self.aid = str(uuid.uuid4())
         self.files = []
@@ -150,7 +127,7 @@ class DownloadersTest(ZugsTestBase):
 
     @patch("zug.downloaders.Pool", FakePool)
     def test_basic_download(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub")

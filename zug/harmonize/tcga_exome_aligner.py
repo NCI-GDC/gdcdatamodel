@@ -1,5 +1,7 @@
 import os
 import hashlib
+import tempfile
+from urlparse import urlparse
 
 from sqlalchemy import func
 import docker
@@ -71,7 +73,7 @@ class TCGAExomeAligner(object):
             self.signpost = signpost
         else:
             self.signpost = SignpostClient(os.environ["SIGNPOST_URL"])
-
+        # TODO make more of this stuff passable by kwargs
         self.workdir = os.environ.get("ALIGNMENT_WORKDIR", "/mnt/alignment")
         self.container_workdir = "/alignment"
         self.docker_image_id = os.environ["DOCKER_IMAGE_ID"]
@@ -80,10 +82,14 @@ class TCGAExomeAligner(object):
         # the docker container relative to the path we mount the
         # workdir into the container at
         self.reference = os.environ.get("REFERENCE", "reference/GRCh38.d1.vd1.fa")
-        self.scratch_dir = os.environ.get("SCRATCH_DIR", "scratch")
-        self.cores = int(os.environ.get("ALIGNMENT_CORES" "8"))
+        scratch_dir = tempfile.mkdtemp(prefix="scratch", dir=self.workdir)
+        # make it relative to workdir
+        self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
+        self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         # TODO initialize this lazily
-        self.docker = docker.Client()
+        self.docker = docker.Client(
+            **docker.utils.kwargs_from_env(assert_hostname=False)
+        )
         self.log = get_logger("tcga_exome_aligner")
 
     def choose_bam_to_align(self):
@@ -112,10 +118,11 @@ class TCGAExomeAligner(object):
         sorted_files = sorted([f for f in aliquot.files],
                               key=lambda f: f.sysan["cghub_last_modified"])
         self.log.info("Aliquot has %s files", len(sorted_files))
+        # TODO LOCK IT (probably in consul) so no one else gets it
         self.input_bam = sorted_files[0]
         self.log.info("Choosing file %s to align", self.input_bam)
 
-    def download_file(self):
+    def download_input_bam(self):
         """
         This hist the object stores directly, although we should consider
         hitting the API instead in the future.
@@ -125,7 +132,8 @@ class TCGAExomeAligner(object):
         url = first_s3_url(doc)
         self.log.info("Getting key for url %s", url)
         key = self.s3.get_url(url)
-        path = os.path.join(self.scratch_dir, self.input_bam.file_name)
+        path = os.path.join(self.workdir, self.scratch_dir,
+                            self.input_bam.file_name)
         md5 = hashlib.md5()
         with open(path, "w") as f:
             self.log.info("Saving file from s3 to %s", path)
@@ -134,9 +142,12 @@ class TCGAExomeAligner(object):
                 md5.update(chunk)
                 f.write(chunk)
         md5sum = md5.hexdigest()
-        if md5sum != file.md5sum:
+        if md5sum != self.input_bam.md5sum:
             raise RuntimeError("Downloaded md5sum {} != "
                                "database md5sum {}".format(md5sum, file.md5sum))
+        else:
+            self.input_bam_path = os.path.join(self.scratch_dir,
+                                               self.input_bam.file_name)
 
     def host_abspath(self, relative_path):
         return os.path.join(self.workdir, relative_path)
@@ -168,7 +179,7 @@ class TCGAExomeAligner(object):
                            if i["Id"] == self.docker_image_id]
         if not filtered_images:
             raise RuntimeError("No docker image with id {} found!".format(self.docker_image_id))
-        image = filtered_images[1]
+        image = filtered_images[0]
         self.log.info("Creating docker container")
         self.log.info("Docker image id: %s", image["Id"])
         self.docker_cmd = self.build_docker_cmd()
@@ -205,7 +216,10 @@ class TCGAExomeAligner(object):
         raise NotImplementedError()
 
     def align(self):
-        self.download()
-        self.run_docker_alignment()
-        self.upload_output()
-        self.create_output_node()
+        # TODO more fine grained transactions?
+        with self.graph.session_scope():
+            self.choose_bam_to_align()
+            self.download_input_bam()
+            self.run_docker_alignment()
+            # self.upload_output()
+            # self.create_output_node()
