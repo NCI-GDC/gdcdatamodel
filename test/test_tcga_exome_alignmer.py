@@ -85,6 +85,9 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         os.environ["ALIGNMENT_WORKDIR"] = tempfile.mkdtemp(dir=dir)
         # this is the id for ubuntu:14.04
         os.environ["DOCKER_IMAGE_ID"] = "6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6"
+        os.environ["UPLOAD_S3_HOST"] = "s3.amazonaws.com"
+        os.environ["BAM_S3_BUCKET"] = "tcga_exome_alignments"
+        os.environ["LOGS_S3_BUCKET"] = "tcga_exome_alignment_logs"
 
     def get_aligner(self):
         return TCGAExomeAligner(

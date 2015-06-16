@@ -74,6 +74,14 @@ class TCGAExomeAligner(object):
         else:
             self.signpost = SignpostClient(os.environ["SIGNPOST_URL"])
         # TODO make more of this stuff passable by kwargs
+        upload_host = os.environ["UPLOAD_S3_HOST"]
+        if upload_host not in self.s3.hosts:
+            raise RuntimeError("Host {} not one of known hosts: {}".format(upload_host, self.s3.hosts))
+        else:
+            self.upload_host = upload_host
+        # TODO verify that these buckets exist
+        self.bam_bucket = os.environ["BAM_S3_BUCKET"]
+        self.logs_bucket = os.environ["LOGS_S3_BUCKET"]
         self.workdir = os.environ.get("ALIGNMENT_WORKDIR", "/mnt/alignment")
         self.container_workdir = "/alignment"
         self.docker_image_id = os.environ["DOCKER_IMAGE_ID"]
@@ -86,13 +94,15 @@ class TCGAExomeAligner(object):
         # make it relative to workdir
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
-        # TODO initialize this lazily
+        self.init_docker()
+        self.log = get_logger("tcga_exome_aligner")
+
+    def init_docker(self):
         kwargs = docker.utils.kwargs_from_env(assert_hostname=False)
         # let's be very conservative here since I'm not sure how long
         # the pipeline might block without any output
         kwargs["timeout"] = 3*60*60
         self.docker = docker.Client(**kwargs)
-        self.log = get_logger("tcga_exome_aligner")
 
     def choose_bam_to_align(self):
         """The strategy is as follows:
@@ -209,12 +219,48 @@ class TCGAExomeAligner(object):
         self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(container, v=True)
 
+    @property
+    def output_bam_path(self):
+        return self.host_abspath(
+            self.scratch_dir,
+            "realn", "bwa_mem_pe", "md",
+            self.input_bam.file_name
+        )
+
+    @property
+    def output_logs_path(self):
+        return self.host_abspath(
+            self.scratch_dir,
+            "aln_" + self.input_bam.node_id
+        )
+
+    @property
+    def output_db_path(self):
+        return self.host_abspath(
+            self.scratch_dir,
+            self.input_bam.node_id + "_harmonize.db"
+        )
+
+    @property
+    def output_paths(self):
+        return [
+            self.output_bam_path,
+            self.output_logs_path,
+            self.output_db_path,
+        ]
+
+    def check_outputs(self):
+        for path in self.output_paths:
+            self.log.info("Checking for existance %s", path)
+            if not os.path.exists(path):
+                raise RuntimeError("Output path does not exist: {}".format(path))
+
     def upload_output(self):
-        """
-        1) Locate output bam
-        2) Use config to decide where to put it
-        3) Upload (this will have to use boto)
-        """
+        bucket = self.s3[self.upload_host].get_bucket(self.upload_bucket)
+        new_name = self.input_bam.file_name
+        bucket.create_key(self.input_bam.file_name)
+
+    def create_output_node(self):
         raise NotImplementedError()
 
     def align(self):
