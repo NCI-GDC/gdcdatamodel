@@ -87,9 +87,11 @@ class TCGAExomeAligner(object):
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         # TODO initialize this lazily
-        self.docker = docker.Client(
-            **docker.utils.kwargs_from_env(assert_hostname=False)
-        )
+        kwargs = docker.utils.kwargs_from_env(assert_hostname=False)
+        # let's be very conservative here since I'm not sure how long
+        # the pipeline might block without any output
+        kwargs["timeout"] = 3*60*60
+        self.docker = docker.Client(**kwargs)
         self.log = get_logger("tcga_exome_aligner")
 
     def choose_bam_to_align(self):
