@@ -222,9 +222,9 @@ class TCGAExomeAligner(object):
                            if i["Id"] == self.docker_image_id]
         if not filtered_images:
             raise RuntimeError("No docker image with id {} found!".format(self.docker_image_id))
-        image = filtered_images[0]
+        self.docker_image = filtered_images[0]
         self.log.info("Creating docker container")
-        self.log.info("Docker image id: %s", image["Id"])
+        self.log.info("Docker image id: %s", self.docker_image["Id"])
         self.docker_cmd = self.build_docker_cmd()
         self.log.info("Mapping host volume %s to container volume %s",
                       self.workdir, self.container_workdir)
@@ -236,7 +236,7 @@ class TCGAExomeAligner(object):
         })
         self.log.info("Docker command: %s", self.docker_cmd)
         container = self.docker.create_container(
-            image=image["Id"],
+            image=self.docker_image["Id"],
             command=self.docker_cmd,
             host_config=host_config,
         )
