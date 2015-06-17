@@ -1,5 +1,5 @@
 from gdcdatamodel import get_participant_es_mapping
-from gdcdatamodel.models import File, Aliquot
+from gdcdatamodel.models import File, Aliquot, Participant, Annotation, Project
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from base import ZugTestBase, PreludeMixin
 import es_fixtures
@@ -137,7 +137,8 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         non_live_file = self.get_fuzzed_node(File, state='uploaded')
         to_delete_file.system_annotations["to_delete"] = True
         with self.g.session_scope():
-            aliquot = self.g.nodes(Aliquot).ids('84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
+            aliquot = self.g.nodes(Aliquot).ids(
+                '84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
             aliquot.files.append(file)
             aliquot.files.append(to_delete_file)
             aliquot.files.append(non_live_file)
@@ -146,6 +147,9 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         super(TestPsqlgraph2JSON, self).setUp()
         es_fixtures.insert(self.g)
         self.add_file_nodes()
+        self.convert_documents()
+
+    def convert_documents(self):
         doc_conv = PsqlGraph2JSON(self.g)
         with self.g.session_scope():
             doc_conv.cache_database()
@@ -158,6 +162,22 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.assertTrue('clinical' in props)
         clinical = props['clinical']
         self.assertEqual(clinical['age_at_diagnosis'], 12419)
+
+    def test_filter_non_relevant_annotations(self):
+        participant = self.get_fuzzed_node(Participant)
+        annotation = self.get_fuzzed_node(
+            Annotation, category='Item flagged DNU')
+        with self.g.session_scope() as s:
+            f = self.g.nodes(File).ids('file1').first()
+            participant.projects.append(self.g.nodes(Project).first())
+            participant.files.append(f)
+            participant.annotations.append(annotation)
+            map(s.merge, (participant, annotation))
+        self.convert_documents()
+        for annotation in self.ann_docs:
+            if annotation['entity_type'] == 'participant':
+                self.assertEqual(
+                    annotation['participant_id'], annotation['entity_id'])
 
     def test_participant_project(self):
         props = self.part_doc

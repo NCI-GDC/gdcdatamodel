@@ -183,6 +183,7 @@ class PsqlGraph2JSON(object):
         allowed in the tree structure.  Add the node's properties to the doc.
 
         """
+
         corr, plural = mapping[node.label]['corr']
         subdoc = self._get_base_doc(node)
         for child in tree[node]:
@@ -325,12 +326,20 @@ class PsqlGraph2JSON(object):
                   for a in f.get('annotations', [])]:
             a['participant_id'] = node.node_id
 
+        # Create a flattened copy of visited_ids to filter relevant
+        # annotations by entity id
+        relevant_ids = [eid for etype in visited_ids.itervalues()
+                        for eid in etype] + [node.node_id]
+
         # Create copy of annotations and add properties
         annotations = {a['annotation_id']: copy(a)
                        for f in participant['files']
-                       for a in f.get('annotations', [])}
+                       for a in f.get('annotations', [])
+                       if a['entity_id'] in relevant_ids}
+        # Patch annotation documents with project and participant
         for a in annotations.itervalues():
             a['project'] = project
+            a['participant_id'] = node.node_id
 
         # Copy the files with all participants
         files = deepcopy(participant['files'])
@@ -872,6 +881,12 @@ class PsqlGraph2JSON(object):
             part_sample = random.sample(part_docs, min(len(part_docs), 100))
             for part_doc in part_sample:
                 self.verify_data_type_count(part_doc)
+        self.validate_annotations(ann_docs)
+
+    def validate_annotations(self, ann_docs):
+        for ann_doc in ann_docs:
+            if ann_doc['entity_type'] == 'participant':
+                assert ann_doc['entity_id'] == ann_doc['participant_id']
 
     def verify_data_type_count(self, participant):
         for data_type in DATA_TYPES.keys():
