@@ -262,7 +262,7 @@ class TCGAExomeAligner(object):
     def output_logs_path(self):
         return self.host_abspath(
             self.scratch_dir,
-            "aln_" + self.input_bam.node_id
+            "aln_" + self.input_bam.node_id + ".log"
         )
 
     @property
