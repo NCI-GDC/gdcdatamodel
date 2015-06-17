@@ -309,11 +309,12 @@ class TCGAExomeAligner(object):
                     tries += 1
                     try:
                         mp.upload_part_from_file(sio, i)
+                        break
                     except KeyboardInterrupt:
                         raise
                     except:
                         self.log.exception(
-                            "caught exception while uploading part %s, try %s"
+                            "caught exception while uploading part %s, try %s "
                             "sleeping for 2 seconds and retrying", i, tries
                         )
                         time.sleep(2)
