@@ -110,6 +110,7 @@ class TCGAExomeAligner(object):
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         self.init_docker()
+        self.start_time = int(time.time())
         self.log = get_logger("tcga_exome_aligner")
 
     def init_docker(self):
