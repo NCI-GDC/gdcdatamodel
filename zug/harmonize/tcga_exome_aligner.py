@@ -361,17 +361,20 @@ class TCGAExomeAligner(object):
             logs_path,
             self.logs_bucket,
             os.path.basename(logs_path),
+            verify=False,
         )
         db_path = os.path.normpath(self.host_abspath(self.output_db_path))
         self.upload_file(
             db_path,
             self.logs_bucket,
             os.path.basename(db_path),
+            verify=False,
         )
 
     def upload_output(self):
         self.check_output_paths()
         self.upload_secondary_files()
+        # TODO upload bai
         bam_doc = self.signpost.create()
         bam_name = self.input_bam.file_name.replace(".bam", "_gdc_realn.bam")
         bam_s3_key_name = "/".join([
