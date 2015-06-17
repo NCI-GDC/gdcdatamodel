@@ -40,7 +40,7 @@ setup(
         'docker-py==1.2.2',
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@299945c4cc24547bb9748165803b3b032e2ddf70#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@85ed1f3728039de7ce9cff4b026446e362f5ce7d#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@2c6fa6b454a45fdb9e3ca39039b07ee67057c90d#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@c02b2d37a36e6c3eb1b902f56f0a672d40f13cd3#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@63b3c1894299708d568506bce1ed3120fadbdf44#egg=signpostclient',
