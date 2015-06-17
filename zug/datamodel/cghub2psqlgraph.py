@@ -4,6 +4,8 @@ import datetime
 import psqlgraph
 from psqlgraph import PolyNode, Node
 from lxml import etree
+from dateutil.parser import parse as date_parse
+import calendar
 from cdisutils.log import get_logger
 from zug.datamodel import xml2psqlgraph, cghub_categorization_mapping
 
@@ -99,7 +101,7 @@ class cghub2psqlgraph(object):
                                      .sysan({'analysis_id': analysis_id})\
                                      .scalar()
 
-    def merge_file_node(self, file_key, node, system_annotations):
+    def merge_file_node(self, file_key, node):
         """either create or update file record
 
         1. does this file_key already exist
@@ -109,25 +111,22 @@ class cghub2psqlgraph(object):
         """
 
         analysis_id, file_name = file_key
+        node.sysan['analysis_id'] = analysis_id
         existing = self.get_file_by_key(file_key)
-        system_annotations.update({'analysis_id': analysis_id})
 
         if existing is not None:
-            self.log.debug('Merging {}'.format(file_key))
-            node_id = existing.node_id
-            node['state'] = existing['state']
-            self.graph.node_update(
-                node=existing,
-                properties=node.properties,
-                system_annotations=system_annotations)
+            self.log.debug('Merging existing node {}'.format(file_key))
+            # save node_id for later edge creation
+            node.node_id = existing.node_id
+            # save file state
+            node.state = existing.state
+            existing.props.update(node.props)
+            existing.sysan.update(node.sysan)
         else:
-            self.log.debug('Adding {}'.format(file_key))
-            doc = self.signpost.create()
-            node_id = doc.did
-            node.node_id = node_id
-            node.system_annotations.update(system_annotations)
+            self.log.debug('Adding new {}'.format(file_key))
+            node.node_id = self.signpost.create().did
             try:
-                self.graph.node_insert(node=node)
+                self.graph.current_session().add(node)
             except:
                 self.log.error(node)
                 self.log.error(node.properties)
@@ -135,8 +134,8 @@ class cghub2psqlgraph(object):
 
         # Add the correct src_id to this file's edges now that we know it
         for edge in self.edges.get(file_key, []):
-            edge.src_id = node_id
-        return node_id
+            edge.src_id = node.node_id
+        return node.node_id
 
     def get_source(self, acl):
         assert len(acl) == 1, 'Not sure how to parse acls with > 1 entry!'
@@ -169,8 +168,8 @@ class cghub2psqlgraph(object):
 
         # Loop through files to add and merge them into the graph
         for file_key, node in self.files_to_add.iteritems():
-            system_annotations = {'source': self.get_source(node.acl)}
-            node_id = self.merge_file_node(file_key, node, system_annotations)
+            node.sysan['source'] = self.get_source(node.acl)
+            node_id = self.merge_file_node(file_key, node)
             self.files_to_add[file_key].node_id = node_id
 
         # Loop through files to remove and delete them from the graph
@@ -193,7 +192,6 @@ class cghub2psqlgraph(object):
                     edge.label, edge.dst_id))
             else:
                 session.merge(edge)
-
 
     def export_edges(self):
         """Adds related_to edges then all other edges to psqlgraph from
@@ -291,6 +289,7 @@ class cghub2psqlgraph(object):
         elif state == 'live':
             self.categorize_file(root, file_key)
             node = self.save_file_node(file_key, node_type, props, acl)
+            self.add_datetime_system_annotations(root, file_key)
             self.add_edges(root, node_type, params, file_key, node)
         else:
             node = self.get_file_by_key(file_key)
@@ -299,6 +298,18 @@ class cghub2psqlgraph(object):
                     node, state) + "already in the graph. DELETING!")
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
+
+    def add_datetime_system_annotations(self, root, file_key):
+        for key in ["last_modified", "upload_date", "published_date"]:
+            val_as_iso8601 = self.xml.xpath(
+                'ancestor::Result/{}'.format(key),
+                root=root,
+                single=True
+            )
+            val_as_seconds_since_epoch = calendar.timegm(
+                date_parse(val_as_iso8601).timetuple())
+            self.files_to_add[file_key].merge(
+                system_annotations={"cghub_"+key: val_as_seconds_since_epoch})
 
     def categorize_by_switch(self, root, cases):
         for dst_name, case in cases.iteritems():

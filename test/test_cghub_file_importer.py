@@ -142,6 +142,8 @@ class TestCGHubFileImporter(unittest.TestCase):
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
             self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
+            # there are two files uploaded on this date, the bam and the bai
+            self.assertEqual(self.converter.graph.nodes().sysan(cghub_upload_date=1368401409).count(), 2)
 
     def test_missing_aliquot(self):
         graph = self.converter.graph
@@ -212,6 +214,21 @@ class TestCGHubFileImporter(unittest.TestCase):
                 base.path('data_formats').props(name='BAM').one()
                 base.path('experimental_strategies').props(name='RNA-Seq').one()
                 self.assertEqual(len(list(bai.get_edges())), 1)
+
+    def test_datetime_system_annotations(self):
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope() as s:
+            # Insert a file without the sysans to simulate being run on
+            # existing nodes without the correct sysasn
+            s.add(File(str(uuid.uuid4()), file_name=bamA, state='submitted',
+                       file_size=1, md5sum='test',
+                       system_annotations={'analysis_id': analysis_idA}))
+        self.run_convert()
+        with graph.session_scope() as s:
+            f = graph.nodes().props(file_name=bamA).one()
+            for key in ["last_modified", "upload_date", "published_date"]:
+                self.assertIn("cghub_"+key, f.sysan)
 
 
 
