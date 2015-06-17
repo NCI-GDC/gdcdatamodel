@@ -260,6 +260,14 @@ class TCGAExomeAligner(object):
         )
 
     @property
+    def output_bai_path(self):
+        return self.host_abspath(
+            self.scratch_dir,
+            "realn", "bwa_mem_pe", "md",
+            self.input_bam.file_name+".bai"
+        )
+
+    @property
     def output_logs_path(self):
         return self.host_abspath(
             self.scratch_dir,
@@ -372,37 +380,63 @@ class TCGAExomeAligner(object):
             verify=False,
         )
 
-    def upload_output(self):
-        self.check_output_paths()
-        self.upload_secondary_files()
-        # TODO upload bai
-        bam_doc = self.signpost.create()
-        bam_name = self.input_bam.file_name.replace(".bam", "_gdc_realn.bam")
-        bam_s3_key_name = "/".join([
-            bam_doc.did,
-            bam_name
+    def upload_file_and_save_to_db(self, abs_path, bucket, file_name):
+        """
+        Upload a file and save it in the db/signpost such that it's
+        downloadable. The s3 key name is computed as {node_id}/{file_name}
+        """
+        self.log.info("Allocating id from signpost")
+        doc = self.signpost.create()
+        self.log.info("New id: %s", doc.did)
+        s3_key_name = "/".join([
+            doc.did,
+            file_name
         ])
-        bam_s3_key, bam_md5 = self.upload_file(
-            self.host_abspath(self.output_bam_path),
-            self.bam_bucket,
-            bam_s3_key_name
+        self.log.info("Uploading file with s3 key %s to bucket %s",
+                      s3_key_name, bucket)
+        s3_key, md5 = self.upload_file(
+            abs_path,
+            bucket,
+            s3_key_name
         )
-        bam_doc.urls = [url_for_boto_key(bam_s3_key)]
-        bam_doc.patch()
-        new_bam_node = File(
-            node_id=bam_doc.did,
-            file_name=bam_name,
-            md5sum=bam_md5,
-            file_size=int(bam_s3_key.size),
+        url = url_for_boto_key(s3_key)
+        self.log.info("Patching signpost with url %s", url)
+        doc.urls = [url]
+        doc.patch()
+        file_node = File(
+            node_id=doc.did,
+            file_name=file_name,
+            md5sum=md5,
+            file_size=int(s3_key.size),
             # TODO ????? should this be live? idk
             state="uploaded",
             state_comment=None,
             submitter_id=None,
         )
-        new_bam_node.system_annotations = {
+        file_node.system_annotations = {
             "source": "tcga_exome_alignment",
             # TODO anything else here?
         }
+        self.log.info("File node: %s", file_node)
+        return file_node
+
+    def upload_output(self):
+        self.check_output_paths()
+        self.upload_secondary_files()
+        # TODO upload bai
+        bam_name = self.input_bam.file_name.replace(".bam", "_gdc_realn.bam")
+        new_bam_node = self.upload_file_and_save_to_db(
+            self.host_abspath(self.output_bam_path),
+            self.bam_bucket,
+            bam_name
+        )
+        bai_name = self.input_bai.file_name.replace(".bam", "_gdc_realn.bam")
+        new_bai_node = self.upload_file_and_save_to_db(
+            self.host_abspath(self.output_bai_path),
+            self.bam_bucket,
+            bai_name
+        )
+        new_bam_node.related_files = [new_bai_node]
         docker_tag = (self.docker_image["RepoTags"][0]
                       if self.docker_image["RepoTags"] else None)
         edge = FileDataFromFile(
@@ -420,14 +454,11 @@ class TCGAExomeAligner(object):
             }
         )
         self.graph.current_session().merge(edge)
-        # classify new bam file
-        wxs = self.graph.nodes(ExperimentalStrategy).props(name="WXS").one()
-        new_bam_node.experimental_strategies = [wxs]
-        bam_format = self.graph.nodes(DataFormat).props(name="BAM").one()
-        new_bam_node.data_formats = [bam_format]
-        aligned_reads = self.graph.nodes(DataSubtype).props(name="Aligned reads").one()
-        new_bam_node.data_subtypes = [aligned_reads]
-        # TODO tags? platform?
+        # classify new bam file, same as the old bam file
+        new_bam_node.experimental_strategies = self.input_bam.experimental_strategies
+        new_bam_node.data_formats = self.input_bam.data_formats
+        new_bam_node.data_subtypes = self.input_bam.data_subtypes
+        new_bam_node.platforms = self.input_bam.platforms
 
     def align(self):
         # TODO more fine grained transactions?

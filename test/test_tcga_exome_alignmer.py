@@ -10,7 +10,10 @@ from zug.harmonize.tcga_exome_aligner import TCGAExomeAligner
 # TODO really need to find a better place for this
 from zug.downloaders import md5sum_with_size
 from cdisutils.net import BotoManager
-from gdcdatamodel.models import File, Aliquot, ExperimentalStrategy
+from gdcdatamodel.models import (
+    File, Aliquot, ExperimentalStrategy,
+    DataFormat, Platform
+)
 
 from boto.s3.connection import OrdinaryCallingFormat
 
@@ -134,7 +137,13 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         with self.graph.session_scope():
             strat = self.graph.nodes(ExperimentalStrategy)\
                               .props(name="WXS").one()
+            format = self.graph.nodes(DataFormat)\
+                               .props(name="BAM").one()
+            platform = self.graph.nodes(Platform)\
+                                 .props(name="Illumina GA").one()
             bam_file.experimental_strategies = [strat]
+            bam_file.platforms = [platform]
+            bam_file.data_formats = [format]
             bam_file.related_files = [bai_file]
         # have to put it in s3
         self.fake_s3.start()
@@ -180,8 +189,14 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         # query for new node and verify pull down from s3
         with self.graph.session_scope():
             new_bam = self.graph.nodes(File)\
+                                .filter(File.file_name.astext.endswith(".bam"))\
                                 .sysan(source="tcga_exome_alignment")\
                                 .one()
+            new_bai = self.graph.nodes(File)\
+                                .filter(File.file_name.astext.endswith(".bam.bai"))\
+                                .sysan(source="tcga_exome_alignment")\
+                                .one()
+            self.assertEqual(new_bam.related_files, [new_bai])
             new_bam_doc = self.signpost_client.get(new_bam.node_id)
             self.assertEqual(
                 new_bam_doc.urls,
@@ -190,7 +205,7 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
                  .format(new_bam.node_id)]
             )
             self.assertEqual(new_bam.data_formats[0].name, "BAM")
-            self.assertEqual(new_bam.data_subtypes[0].name, "Aligned reads")
+            self.assertEqual(new_bam.platforms[0].name, "Illumina GA")
             self.assertEqual(new_bam.experimental_strategies[0].name, "WXS")
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
