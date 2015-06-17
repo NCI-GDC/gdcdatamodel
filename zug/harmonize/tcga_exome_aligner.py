@@ -1,7 +1,9 @@
 import os
 import hashlib
 import tempfile
+import time
 from urlparse import urlparse
+from cStringIO import StringIO
 
 from sqlalchemy import func
 import docker
@@ -10,15 +12,25 @@ from boto.s3.connection import OrdinaryCallingFormat
 # buffer 10 MB in memory at once
 from boto.s3.key import Key
 Key.BufferSize = 10 * 1024 * 1024
+
+
 from psqlgraph import PsqlGraphDriver
+from cdisutils import md5sum
 from cdisutils.log import get_logger
-from cdisutils.net import BotoManager
+from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
-    FileMemberOfExperimentalStrategy,
     FileDataFromAliquot,
 )
+
+
+def read_in_chunks(file_object, chunk_size=10*1024*1024):
+    while True:
+        data = file_object.read(chunk_size)
+        if not data:
+            break
+        yield data
 
 
 def first_s3_url(doc):
@@ -164,10 +176,10 @@ class TCGAExomeAligner(object):
             for chunk in key:
                 md5.update(chunk)
                 f.write(chunk)
-        md5sum = md5.hexdigest()
-        if md5sum != file.md5sum:
+        digest = md5.hexdigest()
+        if digest != file.md5sum:
             raise RuntimeError("Downloaded md5sum {} != "
-                               "database md5sum {}".format(md5sum, file.md5sum))
+                               "database md5sum {}".format(digest, file.md5sum))
         else:
             return workdir_relative_path
 
@@ -267,19 +279,118 @@ class TCGAExomeAligner(object):
             self.output_db_path,
         ]
 
-    def check_outputs(self):
+    def check_output_paths(self):
+        self.log.info("Checking output paths")
         for path in self.output_paths:
             self.log.info("Checking for existance %s", path)
             if not os.path.exists(path):
                 raise RuntimeError("Output path does not exist: {}".format(path))
 
-    def upload_output(self):
-        bucket = self.s3[self.upload_host].get_bucket(self.upload_bucket)
-        new_name = self.input_bam.file_name
-        bucket.create_key(self.input_bam.file_name)
+    def upload_file(self, abs_path, bucket, name, verify=True):
+        """Upload the file at abs_path to bucket with key named name. Then
+        download again, verify md5sum and return it.
+        """
+        self.log.info("Uploading %s to bucket %s from path %s",
+                      name, bucket, abs_path)
+        self.log.info("Getting bucket")
+        bucket = self.s3[self.upload_host].get_bucket(bucket)
+        self.log.info("Initiating multipart upload")
+        mp = bucket.initiate_multipart_upload(name)
+        md5 = hashlib.md5()
+        with open(abs_path) as f:
+            num_parts = 0
+            for i, chunk in enumerate(read_in_chunks(f), start=1):
+                self.log.info("Uploading chunk %s", i)
+                md5.update(chunk)
+                sio = StringIO(chunk)
+                tries = 0
+                while tries < 30:
+                    tries += 1
+                    try:
+                        mp.upload_part_from_file(sio, i)
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        self.log.exception(
+                            "caught exception while uploading part %s, try %s"
+                            "sleeping for 2 seconds and retrying", i, tries
+                        )
+                        time.sleep(2)
+                num_parts += 1
+                self.log.info("Reading next chunk from disk")
+        self.log.info("Completing multipart upload")
+        parts_on_s3 = len(mp.get_all_parts())
+        if num_parts != parts_on_s3:
+            raise RuntimeError("Number of parts sent %s "
+                               "does not equal number of parts on s3 %s",
+                               num_parts, parts_on_s3)
+        key = mp.complete_upload()
+        uploaded_md5 = md5.hexdigest()
+        self.log.info("Uploaded md5 is %s", uploaded_md5)
+        if verify:
+            # TODO check that the size on disk matches the size on s3
+            disk_size = os.path.getsize(abs_path)
+            s3_size = int(key.size)
+            if disk_size != s3_size:
+                raise RuntimeError("Size on disk {} does not "
+                                   "match size on s3 {}"
+                                   .format(disk_size, s3_size))
+            self.log.info("md5ing from s3 to verify")
+            md5_on_s3 = md5sum(key)
+            if uploaded_md5 != md5_on_s3:
+                raise RuntimeError("checksums do not match: "
+                                   "uploaded {}, s3 has {}"
+                                   .format(uploaded_md5, md5_on_s3))
+            else:
+                self.log.info("md5s match: %s", uploaded_md5)
+        else:
+            self.log.info("skipping md5 verification")
+        return key, uploaded_md5
 
-    def create_output_node(self):
-        raise NotImplementedError()
+    def upload_secondary_files(self):
+        """
+        Upload the log file and sqlite db to the relevant bucket
+        """
+        # TODO put the normpath inside the abspath functions?
+        logs_path = os.path.normpath(self.host_abspath(self.output_logs_path))
+        self.upload_file(
+            logs_path,
+            self.logs_bucket,
+            os.path.basename(logs_path),
+        )
+        db_path = os.path.normpath(self.host_abspath(self.output_db_path))
+        self.upload_file(
+            db_path,
+            self.logs_bucket,
+            os.path.basename(db_path),
+        )
+
+    def upload_output(self):
+        self.check_output_paths()
+        self.upload_secondary_files()
+        bam_doc = self.signpost.create()
+        bam_name = self.input_bam.file_name.replace(".bam", "_gdc_realn.bam")
+        bam_s3_key_name = "/".join([
+            bam_doc.did,
+            bam_name
+        ])
+        bam_s3_key, bam_md5 = self.upload_file(
+            self.host_abspath(self.output_bam_path),
+            self.bam_bucket,
+            bam_s3_key_name
+        )
+        bam_doc.urls = [url_for_boto_key(bam_s3_key)]
+        new_bam_node = File(
+            node_id=bam_doc.did,
+            file_name=bam_name,
+            md5sum=bam_md5,
+            file_size=int(bam_s3_key.size),
+            # TODO ????? should this be live? idk
+            state="uploaded",
+            state_comment=None,
+            submitter_id=None,
+        )
+        self.input_bam.derived_files.append(new_bam_node)
 
     def align(self):
         # TODO more fine grained transactions?
@@ -288,4 +399,3 @@ class TCGAExomeAligner(object):
             self.download_inputs()
             self.run_docker_alignment()
             # self.upload_output()
-            # self.create_output_node()
