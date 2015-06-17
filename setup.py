@@ -36,7 +36,7 @@ setup(
         'xlrd==0.9.3',
         'consulate==0.4',
         'boto==2.36.0',
-        'filechunkio==1.6'
+        'filechunkio==1.6',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@299945c4cc24547bb9748165803b3b032e2ddf70#egg=psqlgraph',
