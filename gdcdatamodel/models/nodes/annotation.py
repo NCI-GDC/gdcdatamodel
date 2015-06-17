@@ -11,7 +11,6 @@ class Annotation(Node):
         'creator',
         'created_datetime',
         'status',
-        'notes'
     ]
 
     @pg_property(str)
