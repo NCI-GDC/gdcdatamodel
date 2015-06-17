@@ -387,6 +387,7 @@ class TCGAExomeAligner(object):
             bam_s3_key_name
         )
         bam_doc.urls = [url_for_boto_key(bam_s3_key)]
+        bam_doc.patch()
         new_bam_node = File(
             node_id=bam_doc.did,
             file_name=bam_name,
