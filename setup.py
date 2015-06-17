@@ -28,7 +28,7 @@ setup(
         'ds3client',
         'lockfile',
         'lxml==3.4.1',
-        'requests==2.5.1',
+        'requests==2.5.2',
         'apache-libcloud==0.15.1',
         'cssselect==0.9.1',
         'elasticsearch==1.4.0',
