@@ -28,13 +28,13 @@ def fake_build_docker_cmd(self):
         # create fake outputs
         "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
         "mkfile {output_bam_path}",
-        "echo fake_output_bam > {output_bam_path}",
+        "echo -n fake_output_bam > {output_bam_path}",
         "mkfile {output_bam_path}.bai",
-        "echo fake_output_bai > {output_bam_path},bai",
+        "echo -n fake_output_bai > {output_bam_path},bai",
         "mkfile {output_log_path}",
-        "echo fake_logs > {output_log_path}",
+        "echo -n fake_logs > {output_log_path}",
         "mkfile {output_db_path}",
-        "echo fake_db > {output_db_path}",
+        "echo -n fake_db > {output_db_path}",
     ]
     # yes i know this is kind of gross but it works just work with me
     # here ok
@@ -92,6 +92,10 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         os.environ["UPLOAD_S3_HOST"] = "s3.amazonaws.com"
         os.environ["BAM_S3_BUCKET"] = "tcga_exome_alignments"
         os.environ["LOGS_S3_BUCKET"] = "tcga_exome_alignment_logs"
+        self.fake_s3.start()
+        self.boto_manager["s3.amazonaws.com"].create_bucket("tcga_exome_alignments")
+        self.boto_manager["s3.amazonaws.com"].create_bucket("tcga_exome_alignment_logs")
+        self.fake_s3.stop()
 
     def get_aligner(self):
         return TCGAExomeAligner(
@@ -161,6 +165,7 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         return patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
             download_inputs=self.with_fake_s3(TCGAExomeAligner.download_inputs),
+            upload_file=self.with_fake_s3(TCGAExomeAligner.upload_file),
             build_docker_cmd=fake_build_docker_cmd
         )
 
@@ -172,8 +177,22 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         aligner = self.get_aligner()
         with self.monkey_patches():
             aligner.align()
-        assert os.path.exists(os.path.join(
-            aligner.workdir, aligner.scratch_dir,
-            "realn", "bwa_mem_pe", "md",
-            aligner.input_bam.file_name)
-        )
+        # query for new node and verify pull down from s3
+        with self.graph.session_scope():
+            new_bam = self.graph.nodes(File)\
+                                .sysan(source="tcga_exome_alignment")\
+                                .one()
+            new_bam_doc = self.signpost_client.get(new_bam.node_id)
+            self.assertEqual(
+                new_bam_doc.urls,
+                ['s3://s3.amazonaws.com/'
+                 'tcga_exome_alignments/{}/test1_gdc_realn.bam'
+                 .format(new_bam.node_id)]
+            )
+            self.assertEqual(new_bam.data_formats[0].name, "BAM")
+            self.assertEqual(new_bam.data_subtypes[0].name, "Aligned reads")
+            self.assertEqual(new_bam.experimental_strategies[0].name, "WXS")
+            self.fake_s3.start()
+            bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
+            self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
+            self.fake_s3.stop()

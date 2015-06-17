@@ -100,7 +100,7 @@ class FakeS3Mixin(object):
         def wrapper(*args, **kwargs):
             self.fake_s3.start()
             try:
-                f(*args, **kwargs)
+                return f(*args, **kwargs)
             finally:
                 self.fake_s3.stop()
         return wrapper

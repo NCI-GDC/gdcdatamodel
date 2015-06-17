@@ -435,4 +435,5 @@ class TCGAExomeAligner(object):
             self.choose_bam_to_align()
             self.download_inputs()
             self.run_docker_alignment()
-            # self.upload_output()
+            self.upload_output()
+            # TODO cleanup scratch directory
