@@ -326,7 +326,9 @@ class TCGAExomeAligner(object):
             raise RuntimeError("Number of parts sent %s "
                                "does not equal number of parts on s3 %s",
                                num_parts, parts_on_s3)
-        key = mp.complete_upload()
+        completed_mp = mp.complete_upload()
+        key = bucket.get_key(completed_mp.key_name)
+        assert key.name == name
         uploaded_md5 = md5.hexdigest()
         self.log.info("Uploaded md5 is %s", uploaded_md5)
         if verify:
