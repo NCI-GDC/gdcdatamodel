@@ -341,7 +341,6 @@ class TCGAExomeAligner(object):
         uploaded_md5 = md5.hexdigest()
         self.log.info("Uploaded md5 is %s", uploaded_md5)
         if verify:
-            # TODO check that the size on disk matches the size on s3
             disk_size = os.path.getsize(abs_path)
             s3_size = int(key.size)
             if disk_size != s3_size:
@@ -423,7 +422,6 @@ class TCGAExomeAligner(object):
     def upload_output(self):
         self.check_output_paths()
         self.upload_secondary_files()
-        # TODO upload bai
         bam_name = self.input_bam.file_name.replace(".bam", "_gdc_realn.bam")
         new_bam_node = self.upload_file_and_save_to_db(
             self.host_abspath(self.output_bam_path),
