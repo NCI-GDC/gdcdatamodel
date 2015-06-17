@@ -21,7 +21,8 @@ from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
-    FileDataFromAliquot,
+    DataFormat, DataSubtype,
+    FileDataFromAliquot, FileDataFromFile
 )
 
 
@@ -398,7 +399,35 @@ class TCGAExomeAligner(object):
             state_comment=None,
             submitter_id=None,
         )
-        self.input_bam.derived_files.append(new_bam_node)
+        new_bam_node.system_annotations = {
+            "source": "tcga_exome_alignment",
+            # TODO anything else here?
+        }
+        docker_tag = (self.docker_image["RepoTags"][0]
+                      if self.docker_image["RepoTags"] else None)
+        edge = FileDataFromFile(
+            src=new_bam_node,
+            dst=self.input_bam,
+            system_annotations={
+                "alignment_started": self.start_time,
+                "alignment_finished": int(time.time()),
+                # raw_docker as opposed to whatever we might use in
+                # the future, e.g. CWL
+                "alignment_method": "raw_docker",
+                "alignment_docker_image_id": self.docker_image["Id"],
+                "alignment_docker_image_tag": docker_tag,
+                "alignment_docker_cmd": self.docker_cmd,
+            }
+        )
+        self.graph.current_session().merge(edge)
+        # classify new bam file
+        wxs = self.graph.nodes(ExperimentalStrategy).props(name="WXS").one()
+        new_bam_node.experimental_strategies = [wxs]
+        bam_format = self.graph.nodes(DataFormat).props(name="BAM").one()
+        new_bam_node.data_formats = [bam_format]
+        aligned_reads = self.graph.nodes(DataSubtype).props(name="Aligned reads").one()
+        new_bam_node.data_subtypes = [aligned_reads]
+        # TODO tags? platform?
 
     def align(self):
         # TODO more fine grained transactions?
