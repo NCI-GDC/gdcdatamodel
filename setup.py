@@ -42,6 +42,6 @@ setup(
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@d7e7aa1aaf37abe5e02a9f106e3f4a64f5781522#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@e7feedc81ae638fcf6e4e3be1cc4eb08057b352b#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@5bc39d3fc40e84850d96379601633e43fee4012c#egg=gdcdatamodel',
-        'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@d4cebdf26bfe4c4076dab30e80664aa072e94140#egg=signpostclient',
+        'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@4a6db7c192f65f838fad8a7efd43484b9380728f#egg=signpostclient',
     ]
 )
