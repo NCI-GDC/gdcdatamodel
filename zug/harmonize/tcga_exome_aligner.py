@@ -7,6 +7,9 @@ from sqlalchemy import func
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 
+# buffer 10 MB in memory at once
+from boto.s3.key import Key
+Key.BufferSize = 10 * 1024 * 1024
 from psqlgraph import PsqlGraphDriver
 from cdisutils.log import get_logger
 from cdisutils.net import BotoManager
@@ -158,7 +161,6 @@ class TCGAExomeAligner(object):
         md5 = hashlib.md5()
         with open(abs_path, "w") as f:
             self.log.info("Saving file from s3 to %s", abs_path)
-            key.BufferSize = 10 * 1024 * 1024
             for chunk in key:
                 md5.update(chunk)
                 f.write(chunk)
