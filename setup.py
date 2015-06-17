@@ -37,6 +37,7 @@ setup(
         'consulate==0.4',
         'boto==2.36.0',
         'filechunkio==1.6',
+        'docker-py==1.2.2',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@299945c4cc24547bb9748165803b3b032e2ddf70#egg=psqlgraph',
