@@ -71,12 +71,6 @@
         }
       ],
       "notes": [
-        {
-          "addedBy": "DCC",
-          "dateAdded": "2009-03-13T00:00:00-04:00",
-          "noteId": 182,
-          "noteText": "[hms.harvard.edu]: failed DNA QC, not enough DNA. So these were not processed.  We performed in-house G WGA and submitted data. But as the protocol was not established for in-house  amp, the sample data was withdrawn.  Please remove L1 and L2 data for this sample too"
-        }
       ],
       "rescinded": false,
       "status": "Approved"
