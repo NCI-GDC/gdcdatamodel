@@ -2,6 +2,7 @@ import os
 import hashlib
 import tempfile
 import time
+import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
 
@@ -21,7 +22,6 @@ from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
-    DataFormat, DataSubtype,
     FileDataFromAliquot, FileDataFromFile
 )
 
@@ -458,11 +458,18 @@ class TCGAExomeAligner(object):
         new_bam_node.data_subtypes = self.input_bam.data_subtypes
         new_bam_node.platforms = self.input_bam.platforms
 
+    def cleanup(self):
+        scratch_abspath = self.host_abspath(self.scratch_dir)
+        self.log.info("Removing scatch dir %s", scratch_abspath)
+        shutil.rmtree(scratch_abspath)
+
     def align(self):
-        # TODO more fine grained transactions?
-        with self.graph.session_scope():
-            self.choose_bam_to_align()
-            self.download_inputs()
-            self.run_docker_alignment()
-            self.upload_output()
-            # TODO cleanup scratch directory
+        try:
+            # TODO more fine grained transactions?
+            with self.graph.session_scope():
+                self.choose_bam_to_align()
+                self.download_inputs()
+                self.run_docker_alignment()
+                self.upload_output()
+        finally:
+            self.cleanup()
