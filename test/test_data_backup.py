@@ -1,54 +1,78 @@
 from consulate import Consul
+from multiprocessing import Process
+import time
 from moto import mock_s3bucket_path
 from gdcdatamodel.models import File
 from boto.s3.connection import OrdinaryCallingFormat
 from base import ZugsTestBase
-from zug.consul_mixin import ConsulMixin
-from cdisutils.log import get_logger
 from contextlib import contextmanager
-from zug.backup import DataBackup
+from zug import backup
 import uuid
 from boto.s3.key import Key
 import boto
+import os
+from ds3client import client, mock
 from zug.downloaders import md5sum_with_size
+from test_downloaders import FakePool
+from mock import patch
+
+
+def run_ds3(port):
+    return mock.app.run(host='localhost', port=port)
+
 
 class DataBackupTest(ZugsTestBase):
+    @classmethod
+    def setUpClass(cls):
+        super(DataBackupTest, cls).setUpClass()
+        cls.ds3 = Process(target=run_ds3, args=[cls.port+1])
+        cls.ds3.start()
+        time.sleep(1)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(DataBackupTest, cls).tearDownClass()
+        cls.ds3.terminate()
+
     def setUp(self):
         super(DataBackupTest, self).setUp()
         self.consul = Consul()
         assert self.consul.catalog.datacenters() == 'dc1'
         self.consul.kv.set("databackup/signpost_url", self.signpost_url)
-        self.consul.kv.set("databackup/s3/s3.amazonaws.com/port", "80")
-        self.consul.kv.set("databackup/s3/s3.amazonaws.com/access_key", "fake_access_key")
-        self.consul.kv.set("databackup/s3/s3.amazonaws.com/secret_key", "fake_secret_key")
-        self.consul.kv.set("databackup/ds3/test_backup/host", "s3.amazonaws.com")
-        self.consul.kv.set("databackup/ds3/test_backup/port", "80")
-        self.consul.kv.set("databackup/ds3/test_backup/access_key", "fake_access_key")
-        self.consul.kv.set("databackup/ds3/test_backup/secret_key", "fake_secret_key")
+        self.consul.kv.set("databackup/s3/s3.amazonaws.com/port", 80)
+        self.consul.kv.set("databackup/s3/s3.amazonaws.com/access_key",
+                           "fake_access_key")
+        self.consul.kv.set("databackup/s3/s3.amazonaws.com/secret_key",
+                           "fake_secret_key")
+        self.consul.kv.set("databackup/ds3/test_backup/host", "localhost")
+        self.consul.kv.set("databackup/ds3/test_backup/port", self.port+1)
         self.consul.kv.set("databackup/pg/host", "localhost")
+        self.consul.kv.set("databackup/path", os.path.dirname(os.path.realpath(__file__)))
+        self.consul.kv.set("databackup/processes", 1)
         self.consul.kv.set("databackup/pg/user", "test")
         self.consul.kv.set("databackup/pg/pass", "test")
         self.consul.kv.set("databackup/pg/name", "automated_test")
         self.setup_fake_s3()
         self.setup_fake_files()
-        DataBackup.BACKUP_DRIVER = ['test_backup']
+        self.ds3 = client.Client(host='localhost', port=self.port+1, protocol='http',
+                                 access_key='', secret_key='')
 
 
     def tearDown(self):
         super(DataBackupTest, self).tearDown()
         self.consul.kv.delete("databackup/", recurse=True)
-        self.delete_blackpearl_bucket()
+        
+        for job in self.ds3.jobs:
+            job.delete()
+        for key in self.ds3.keys:
+            key.delete()
+        for bucket in self.ds3.buckets:
+            bucket.delete()
 
-
-    def delete_blackpearl_bucket(self):
-        with self.with_fake_s3():
-            conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-            if conn.lookup('ds3_fake_cghub_protected'):
-                bucket = conn.get_bucket('ds3_fake_cghub_protected')
-                for key in bucket.list():
-                    bucket.delete_key(key.name)
-                conn.delete_bucket(bucket.name)
-                    
+    def s3_patch(self):
+        return patch.multiple('backup',
+                              download_file=self.wrap_fake_s3(backup.download_file))
+           
 
     def create_file(self, name, content, aid, session):
         doc = self.signpost_client.create()
@@ -96,23 +120,36 @@ class DataBackupTest(ZugsTestBase):
         yield
         self.fake_s3.stop()
 
+
+    def wrap_fake_s3(self, f):
+        def wrapper(*args, **kwargs):
+            self.fake_s3.start()
+            try:
+                f(*args, **kwargs)
+            finally:
+                self.fake_s3.stop()
+        return wrapper
+
     def get_boto_key(self, name):
         with self.with_fake_s3():
             conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-            bucket = conn.get_bucket('ds3_fake_cghub_protected')
+            bucket = conn.get_bucket('fake_cghub_protected')
             return bucket.get_key(name)
 
-    def test_single_file_backup(self):
-        backup = DataBackup(file_id=self.file1.node_id,
-                            debug=True,
-                            bucket_prefix='ds3')
-        with self.with_fake_s3():
-            backup.backup()
-            uploaded = self.get_boto_key(self.file1.file_name)
-        self.assertEqual(self.file1.file_size, uploaded.size)
+    @patch("zug.backup.Pool", FakePool)
+    def test_file_backup(self):
+        backup_process = backup.DataBackup(driver='test_backup', debug=True,
+                            protocol='http')
+        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+            backup_process.backup()
         with self.graph.session_scope():
-            node = self.graph.nodes(File).ids(self.file1.node_id).one()
-            self.assertEqual(node.system_annotations['test_backup'],'backuped')
+            for node in self.graph.nodes(File).all():
+                ds3_file = self.ds3.keys(node.node_id).one()
+                with self.with_fake_s3():
+                    s3_file = self.get_boto_key(node.file_name)
+                    content = s3_file.get_contents_as_string()
+                self.assertEqual(ds3_file.get_contents_to_string(), content)
+                self.assertEqual(node.system_annotations['test_backup'], 'backuped')
 
     def test_backup_with_all_files_backuped(self):
         with self.graph.session_scope() as s:
@@ -121,9 +158,9 @@ class DataBackupTest(ZugsTestBase):
             s.add(self.file1)
             s.add(self.file2)
             s.commit()
-        backup = DataBackup(debug=True, bucket_prefix='ds3')
-        with self.with_fake_s3():
-            backup.backup()
+        backup_process = backup.DataBackup(debug=True, driver='test_backup', protocol='http')
+        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+            backup_process.backup()
 
     def test_backup_file_whose_verification_failed(self):
         with self.graph.session_scope() as s:
@@ -132,64 +169,34 @@ class DataBackupTest(ZugsTestBase):
             self.file1 = s.merge(self.file1)
             self.file2 = s.merge(self.file2)
             s.commit()
-        backup = DataBackup(debug=True,
-                            bucket_prefix='ds3')
+        backup_process = backup.DataBackup(debug=True,driver='test_backup', protocol='http')
+        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+            backup_process.backup()
+        ds3_file = self.ds3.keys(self.file2.node_id).one()
         with self.with_fake_s3():
-            backup.backup()
-            uploaded = self.get_boto_key(self.file2.file_name)
-        self.assertEqual(self.file2.file_size, uploaded.size)
+            s3_file = self.get_boto_key(self.file2.file_name)
+            content = s3_file.get_contents_as_string()
+        self.assertEqual(ds3_file.get_contents_to_string(), content)
+
         with self.graph.session_scope():
             node = self.graph.nodes(File).ids(self.file2.node_id).one()
             self.assertEqual(node.system_annotations['test_backup'],'backuped')
 
 
-    def test_backup_random_file(self):
-        backup = DataBackup(debug=True,
-                            bucket_prefix='ds3')
-        with self.with_fake_s3():
-            backup.backup()
-    
-    def test_multiple_file_backup(self):
-        backup = DataBackup(file_id=self.file1.node_id,
-                            debug=True,
-                            bucket_prefix='ds3')
-        backup2 = DataBackup(file_id=self.file2.node_id,
-                             debug=True,
-                             bucket_prefix='ds3')
+    def test_backup_with_md5_failed(self):
+        with self.graph.session_scope() as s:
+            self.file1.system_annotations['md5_verify_status']='failed'
+            self.file2.system_annotations['md5_verify_status']='failed'
+            self.file1 = s.merge(self.file1)
+            self.file2 = s.merge(self.file2)
+            s.commit()
+        backup_process = backup.DataBackup(debug=True,driver='test_backup', protocol='http')
+        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+            backup_process.backup()
 
-        with self.with_fake_s3():
-            backup.backup()
-            backup2.backup()
-            uploaded = self.get_boto_key(self.file1.file_name)
-            uploaded2 = self.get_boto_key(self.file2.file_name)
-        self.assertEqual(self.file1.file_size, uploaded.size)
-        self.assertEqual(self.file2.file_size, uploaded2.size)
-
-    def test_constant_file_backup(self):
-        backup = DataBackup(constant=True,
-                            debug=True,
-                            bucket_prefix='ds3')
-
-        with self.with_fake_s3():
-            backup.backup()
-            uploaded = self.get_boto_key(self.file1.file_name)
-            uploaded2 = self.get_boto_key(self.file2.file_name)
-        self.assertEqual(self.file1.file_size, uploaded.size)
-        self.assertEqual(self.file2.file_size, uploaded2.size)
-
-
-    def test_backup_locked_file(self):
-        consul = ConsulMixin(prefix='databackup')
-        consul.key = self.file1.node_id
-        consul.start_consul_session()
-        consul.get_consul_lock()
-        backup = DataBackup(file_id=self.file1.node_id,
-                            debug=True,
-                            bucket_prefix='ds3')
-        with self.with_fake_s3():
-            backup.backup()
-            conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-            self.assertIsNone(conn.lookup('ds3_fake_cghub_protected'))
+        with self.graph.session_scope():
+            nodes = self.graph.nodes(File).not_sysan({'test_backup': 'backuped'})
+            self.assertEqual(nodes.count(), 2)
 
     def setup_fake_s3(self):
         self.fake_s3 = mock_s3bucket_path()

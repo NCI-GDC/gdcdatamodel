@@ -1,14 +1,18 @@
 from consul_manager import ConsulManager
+import datetime
 import random
 from signpostclient import SignpostClient
 from gdcdatamodel.models import File
 from psqlgraph import PsqlGraphDriver
 from sqlalchemy import desc
+from dateutil import parser
 from sqlalchemy.types import BIGINT
 from cdisutils.log import get_logger
 import os
 import glob
 import time
+import math
+import json
 from urlparse import urlparse
 import boto
 import boto.s3.connection
@@ -36,7 +40,6 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
     logger = get_logger('data_backup_{}_{}'.format(ds3_key.name[0:8], offset))
     try:
         consul = ConsulManager(prefix='databackup')
-        
 
         logger.info('Start upload file %s with offset %s and length %s',
                     ds3_key.name, offset, length)
@@ -49,36 +52,118 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
         parsed_url = urlparse(urls[0])
         (bucket_name, object_name) =\
             parsed_url.path.split("/", 2)[1:]
-        s3 = boto.connect_s3(
-            host=parsed_url.netloc,
-            aws_access_key_id=consul.consul_get(['s3', parsed_url.netloc, 'access_key']),
-            aws_secret_access_key=consul.consul_get(['s3', parsed_url.netloc, 'secret_key']),
-            is_secure=False,
-            calling_format=boto.s3.connection.OrdinaryCallingFormat()
-        )
-
-        logger.info("Get bucket from %s, %s, %s",
-                    s3.host, parsed_url.netloc, bucket_name)
-        s3_bucket = s3.get_bucket(bucket_name)
-        s3_key = s3_bucket.get_key(object_name)
-        tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
-        logger.info("Download file %s offset %s length %s",
-                    ds3_key.name, offset, length)
-        s3_key.get_contents_to_filename(
-            tmp_file,
-            headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
+        host = parsed_url.netloc
+        download_file(ds3_key, offset, length,
+                                 bucket_name, object_name, path,
+                                 host,
+                                 consul.consul_get(['s3', host, 'port']),
+                                 consul.consul_get(['s3', host, 'access_key']),
+                                 consul.consul_get(['s3', host, 'secret_key']),
+                                 consul, logger)
         logger.info('Upload file %s from %s to %s bucket',
                     ds3_key.name,
                     parsed_url.netloc, ds3_bucket)
+
+        tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
         with open(tmp_file, 'r') as f:
             ds3_key.put(f, job=job, offset=offset)
-        logger.info('Part of file %s uploaded for job %s', ds3_key.name, job.id)
+        logger.info('Part of file %s uploaded for job %s',
+                    ds3_key.name, job.id)
         os.remove(tmp_file)
 
     except Exception as e:
         logger.info("Exception %s" % str(e))
         raise e
 
+
+def download_file(ds3_key, offset, length, bucket_name,
+                  object_name, path, host, port, access_key, secret_key,
+                  consul, logger):
+    logger.info("start download file %s", host)
+    s3 = boto.connect_s3(
+        host=host,
+        port=port,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        is_secure=False,
+        calling_format=boto.s3.connection.OrdinaryCallingFormat()
+    )
+
+    logger.info("Get bucket from %s, %s, %s",
+                s3.host, host, bucket_name)
+    s3_bucket = s3.get_bucket(bucket_name)
+    s3_key = s3_bucket.get_key(object_name)
+    tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
+    logger.info("Download file %s offset %s length %s",
+                ds3_key.name, offset, length)
+    s3_key.get_contents_to_filename(
+        tmp_file,
+        headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
+    return tmp_file
+
+
+def get_statistics(bucket='gdc_backup', driver='primary_backup', summary=False, output=''):
+    consul = ConsulManager(prefix='databackup')
+    graph = PsqlGraphDriver(
+        consul.consul_get(['pg', 'host']),
+        consul.consul_get(['pg', 'user']),
+        consul.consul_get(['pg', 'pass']),
+        consul.consul_get(['pg', 'name'])
+    )
+    ds3 = client.Client(
+        host=consul.consul_get(['ds3', driver, 'host']),
+        port=consul.consul_get(['ds3', driver, 'port']),
+        access_key=consul.consul_get(
+            ['ds3', driver, 'access_key']),
+        secret_key=consul.consul_get(
+            ['ds3', driver, 'secret_key']),
+        verify=False,
+    )
+    keys = [[parser.parse(k.creation_date), k.name] 
+            for k in ds3.keys(bucket_id=bucket) if k.creation_date is None]
+
+    with graph.session_scope():
+        for item in keys:
+            item.append(graph.nodes().ids(item[1]).first().file_size)
+    
+    keys.sort()
+    keys.reverse()
+    total = sum(item[2] for item in keys)
+    print "total size %s" % convert_size(total)
+    end = datetime.datetime.now()
+    start = end-datetime.timedelta(days=1)
+    start_date = str(start.date())
+    today = start_date 
+    result = {start_date: 0}
+    for item in keys:
+        while not (item[0] >= start and item[0] <= end):
+            end = start
+            start = end-datetime.timedelta(days=1)
+            start_date = str(start.date())
+            result[start_date] = 0
+        result[start_date] += item[2] 
+    for key, value in result.iteritems():
+        result[key] = convert_size(value)
+
+    if summary:
+        if output:
+            with open(output, 'w') as f:
+                json.dump(result, f)
+        else:
+            print result
+    else:
+        print 'Backed up last day: %s' % result[today]
+    return result
+
+def convert_size(size):
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size,1024)))
+    p = math.pow(1024,i)
+    s = round(size/p,2)
+    if (s > 0):
+        return '%s %s' % (s,size_name[i])
+    else:
+        return '0B'
 
 class DataBackup(object):
     BACKUP_ACCEPT_STATE = ['backing_up', 'backuped', 'verified']
@@ -87,7 +172,7 @@ class DataBackup(object):
     CHUNK_SIZE = 107374182400
     BUCKET = 'gdc_backup'
 
-    def __init__(self, debug=False, driver=''):
+    def __init__(self, debug=False, driver='', protocol='https'):
         self.consul = ConsulManager(prefix='databackup')
         self.upload_size = self.consul.consul_get('upload_size', 104857600)
         self.processes = self.consul.consul_get('processes', 5)
@@ -108,9 +193,10 @@ class DataBackup(object):
             host=self.consul.consul_get(['ds3', self.driver, 'host']),
             port=self.consul.consul_get(['ds3', self.driver, 'port']),
             access_key=self.consul.consul_get(
-                ['ds3', self.driver, 'access_key']),
+                ['ds3', self.driver, 'access_key'], ''),
             secret_key=self.consul.consul_get(
-                ['ds3', self.driver, 'secret_key']),
+                ['ds3', self.driver, 'secret_key'], ''),
+            protocol=protocol,
             verify=False,
         )
 
@@ -212,7 +298,7 @@ class DataBackup(object):
             bucket = self.ds3.buckets.create(name)
             with self.ds3.put('/_rest_/bucket/{}/?default_write_optimization=PERFORMANCE'
                               .format(name)):
-                self.logger("create bucket with performance mode")
+                self.logger.info("create bucket with performance mode")
             return bucket
         else:
             return results[0]
@@ -236,7 +322,6 @@ class DataBackup(object):
                 conditions.append(not_(File._sysan.has_key(self.driver)))
                 conditions.append((File._sysan[self.driver].astext
                                   == self.BACKUP_FAIL_STATE))
-
                 query = self.graph.nodes(File).props({'state': 'live'})\
                     .not_sysan({'md5_verify_status': 'failed'})\
                     .filter(or_(*conditions))\
@@ -248,6 +333,7 @@ class DataBackup(object):
                     total_size = 0
                     for node in nodes:
                         # delete the file if it's already in blackpearl
+                        self.logger.info('check file')
                         if len(list(self.ds3.keys(
                                 name=node.node_id, bucket_id=self.BUCKET))) != 0:
                             self.ds3.keys.delete(self.BUCKET, node.node_id)
