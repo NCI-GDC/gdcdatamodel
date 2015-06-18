@@ -108,7 +108,9 @@ class TCGAExomeAligner(object):
         # self.workdir. this is useful since we can describe them to
         # the docker container relative to the path we mount the
         # workdir into the container at
-        self.reference = os.environ.get("REFERENCE", "reference/GRCh38.d1.vd1.fa")
+        self.reference = os.path.normpath(
+            os.environ.get("REFERENCE", "reference/GRCh38.d1.vd1.fa")
+        )
         scratch_dir = tempfile.mkdtemp(prefix="scratch", dir=self.workdir)
         # make it relative to workdir
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
