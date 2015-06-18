@@ -1,8 +1,9 @@
 import os
 import random
-from base import ZugTestBase, StorageMixin, SignpostMixin
+from base import ZugTestBase, StorageMixin, SignpostMixin, PreludeMixin
 from mock import patch
 from httmock import urlmatch, HTTMock
+
 
 from gdcdatamodel import models
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
@@ -24,7 +25,8 @@ def dcc_archives_fixture(url, request):
             "status_code": 200}
 
 
-class TCGADCCArchiveSyncTest(StorageMixin, SignpostMixin, ZugTestBase):
+class TCGADCCArchiveSyncTest(PreludeMixin, StorageMixin,
+                             SignpostMixin, ZugTestBase):
 
     def setUp(self):
         super(TCGADCCArchiveSyncTest, self).setUp()

@@ -1,12 +1,11 @@
 from gdcdatamodel import models as md
 from psqlgraph import PolyNode
-from signpost import Signpost
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
 from zug.datamodel.tcga_filename_metadata_sync\
     import TCGAFilenameMetadataSyncer
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
 
-from base import ZugTestBase
+from base import ZugTestBase, StorageMixin, SignpostMixin
 import os
 import uuid
 
@@ -14,15 +13,10 @@ TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "magetabs")
 
 
-def run_signpost(port):
-    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(
-        host="localhost", port=port)
-
-
-class TCGAFilenameMetadataSyncerTest(ZugTestBase):
+class TCGAFilenameMetadataSyncerTest(StorageMixin, SignpostMixin, ZugTestBase):
 
     def setUp(self):
-        super(TCGAFilenameMetadataSyncer, self).setUp()
+        super(TCGAFilenameMetadataSyncerTest, self).setUp()
         self.pg_driver = self.graph
         self.storage_client.create_container("tcga_dcc_public")
         self.storage_client.create_container("tcga_dcc_protected")

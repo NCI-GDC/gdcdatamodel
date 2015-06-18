@@ -1,6 +1,7 @@
 from base import ZugTestBase
 from zug.datamodel.tcga_publication_import import TCGAPublicationImporter
 import uuid
+import os
 from gdcdatamodel.models import PublicationRefersToFile, Publication, File
 
 
@@ -8,6 +9,10 @@ class TestTCGAPublicationImport(ZugTestBase):
 
     def setUp(self):
         super(TestTCGAPublicationImport, self).setUp()
+        os.environ["ZUGS_PG_HOST"] = self.graph_info['host']
+        os.environ["ZUGS_PG_USER"] = self.graph_info['user']
+        os.environ["ZUGS_PG_PASS"] = self.graph_info['password']
+        os.environ["ZUGS_PG_NAME"] = self.graph_info['database']
 
     def create_file(self, session, filename, sys_ann={}):
         node = File(str(uuid.uuid4()),
