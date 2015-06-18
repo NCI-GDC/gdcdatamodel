@@ -14,52 +14,52 @@ file_tree.data_format.corr = (ONE_TO_ONE, 'data_format')
 file_tree.data_subtype.corr = (ONE_TO_ONE, 'data_subtype')
 file_tree.data_subtype.data_type.corr = (ONE_TO_ONE, 'data_type')
 file_tree.experimental_strategy.corr = (ONE_TO_ONE, 'experimental_strategy')
-file_tree.participant.corr = (ONE_TO_MANY, 'participants')
+file_tree.case.corr = (ONE_TO_MANY, 'cases')
 file_tree.platform.corr = (ONE_TO_ONE, 'platform')
 file_tree.tag.corr = (ONE_TO_MANY, 'tags')
 file_tree.file.corr = (ONE_TO_MANY, 'related_files')
 
 file_traversal = Dict()
 file_traversal.center = [('center'), ('aliquot', 'center')]
-file_traversal.participant = [
-    ('sample', 'participant'),
-    ('file', 'sample', 'participant'),
-    ('aliquot', 'sample', 'participant'),
-    ('file', 'aliquot', 'sample', 'participant'),
-    ('analyte', 'portion', 'sample', 'participant'),
-    ('file', 'analyte', 'portion', 'sample', 'participant'),
-    ('aliquot', 'analyte', 'portion', 'sample', 'participant'),
-    ('file', 'aliquot', 'analyte', 'portion', 'sample', 'participant'),
+file_traversal.case = [
+    ('sample', 'case'),
+    ('file', 'sample', 'case'),
+    ('aliquot', 'sample', 'case'),
+    ('file', 'aliquot', 'sample', 'case'),
+    ('analyte', 'portion', 'sample', 'case'),
+    ('file', 'analyte', 'portion', 'sample', 'case'),
+    ('aliquot', 'analyte', 'portion', 'sample', 'case'),
+    ('file', 'aliquot', 'analyte', 'portion', 'sample', 'case'),
 ]
 
 # Participant hierarchy
-participant_tree = Dict()
-participant_tree.corr = (ONE_TO_MANY, 'participants')
-participant_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
-participant_tree.clinical.corr = (ONE_TO_ONE, 'clinical')
-participant_tree.project.corr = (ONE_TO_ONE, 'project')
-participant_tree.project.program.corr = (ONE_TO_ONE, 'program')
-participant_tree.sample.corr = (ONE_TO_MANY, 'samples')
-participant_tree.sample.annotation.corr = (ONE_TO_MANY, 'annotations')
-participant_tree.sample.portion.corr = (ONE_TO_MANY, 'portions')
-participant_tree.sample.portion.analyte.corr = (ONE_TO_MANY, 'analytes')
-participant_tree.sample.portion.analyte.annotation.corr = (ONE_TO_MANY, 'annotations')
-participant_tree.sample.portion.analyte.aliquot.corr = (ONE_TO_MANY, 'aliquots')
-participant_tree.sample.portion.analyte.aliquot.annotation.corr = (ONE_TO_MANY, 'annotations')
-participant_tree.sample.portion.analyte.aliquot.center.corr = (ONE_TO_ONE, 'center')
-participant_tree.sample.portion.annotation.corr = (ONE_TO_MANY, 'annotations')
-participant_tree.sample.portion.center.corr = (ONE_TO_ONE, 'center')
-participant_tree.sample.portion.slide.corr = (ONE_TO_MANY, 'slides')
-participant_tree.sample.portion.slide.annotation.corr = (ONE_TO_MANY, 'annotations')
-participant_tree.tissue_source_site.corr = (ONE_TO_ONE, 'tissue_source_site')
-participant_tree.file.corr = (ONE_TO_MANY, 'files')
+case_tree = Dict()
+case_tree.corr = (ONE_TO_MANY, 'cases')
+case_tree.annotation.corr = (ONE_TO_MANY, 'annotations')
+case_tree.clinical.corr = (ONE_TO_ONE, 'clinical')
+case_tree.project.corr = (ONE_TO_ONE, 'project')
+case_tree.project.program.corr = (ONE_TO_ONE, 'program')
+case_tree.sample.corr = (ONE_TO_MANY, 'samples')
+case_tree.sample.annotation.corr = (ONE_TO_MANY, 'annotations')
+case_tree.sample.portion.corr = (ONE_TO_MANY, 'portions')
+case_tree.sample.portion.analyte.corr = (ONE_TO_MANY, 'analytes')
+case_tree.sample.portion.analyte.annotation.corr = (ONE_TO_MANY, 'annotations')
+case_tree.sample.portion.analyte.aliquot.corr = (ONE_TO_MANY, 'aliquots')
+case_tree.sample.portion.analyte.aliquot.annotation.corr = (ONE_TO_MANY, 'annotations')
+case_tree.sample.portion.analyte.aliquot.center.corr = (ONE_TO_ONE, 'center')
+case_tree.sample.portion.annotation.corr = (ONE_TO_MANY, 'annotations')
+case_tree.sample.portion.center.corr = (ONE_TO_ONE, 'center')
+case_tree.sample.portion.slide.corr = (ONE_TO_MANY, 'slides')
+case_tree.sample.portion.slide.annotation.corr = (ONE_TO_MANY, 'annotations')
+case_tree.tissue_source_site.corr = (ONE_TO_ONE, 'tissue_source_site')
+case_tree.file.corr = (ONE_TO_MANY, 'files')
 
 # for target
-participant_tree.aliquot = participant_tree.sample.portion.analyte.aliquot
-participant_tree.sample.aliquot = participant_tree.sample.portion.analyte.aliquot
+case_tree.aliquot = case_tree.sample.portion.analyte.aliquot
+case_tree.sample.aliquot = case_tree.sample.portion.analyte.aliquot
 
-participant_traversal = Dict()
-participant_traversal.file = [
+case_traversal = Dict()
+case_traversal.file = [
     ('sample', 'file'),
     ('sample', 'aliquot', 'file'),
     ('sample', 'portion', 'analyte', 'file'),
@@ -68,10 +68,10 @@ participant_traversal.file = [
 
 # Annotation hierarchy
 annotation_tree = Dict()
-annotation_tree.corr = (ONE_TO_MANY, 'participants')
+annotation_tree.corr = (ONE_TO_MANY, 'cases')
 annotation_tree.project.corr = (ONE_TO_ONE, 'project')
 annotation_tree.project.program.corr = (ONE_TO_ONE, 'program')
-annotation_tree.participant.corr = (ONE_TO_ONE, 'participant')
+annotation_tree.case.corr = (ONE_TO_ONE, 'case')
 annotation_tree.sample.corr = (ONE_TO_ONE, 'sample')
 annotation_tree.portion.corr = (ONE_TO_ONE, 'portion')
 annotation_tree.analyte.corr = (ONE_TO_ONE, 'analyte')
@@ -86,8 +86,8 @@ annotation_traversal.file = [
     ('sample', 'file', 'file'),
     ('analyte', 'file'),
     ('analyte', 'file', 'file'),
-    ('participant', 'file'),
-    ('participant', 'file', 'file'),
+    ('case', 'file'),
+    ('case', 'file', 'file'),
     ('sample', 'aliquot', 'file'),
     ('sample', 'aliquot', 'file', 'file'),
     ('sample', 'portion', 'analyte', 'file'),

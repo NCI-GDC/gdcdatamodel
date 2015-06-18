@@ -1,4 +1,4 @@
-from participant import Participant
+from case import Participant
 from aliquot import Aliquot
 from program import Program
 from project import Project

@@ -1,7 +1,7 @@
 import models as m
 from mapped_entities import (
     file_tree, file_traversal,
-    participant_tree, participant_traversal,
+    case_tree, case_traversal,
     annotation_tree, annotation_traversal,
     project_tree, annotation_tree,
     ONE_TO_MANY, ONE_TO_ONE
@@ -20,7 +20,7 @@ MULTIFIELDS = {
     'project': ['code', 'disease_type', 'name', 'primary_site'],
     'annotation': ['annotation_id', 'entity_id'],
     'files': ['file_id', 'file_name'],
-    'participant': ['participant_id', 'submitter_id'],
+    'case': ['case_id', 'submitter_id'],
 }
 
 
@@ -152,7 +152,7 @@ def patch_project(doc):
     doc.pop('code')
 
 
-def get_file_es_mapping(include_participant=True):
+def get_file_es_mapping(include_case=True):
     files = _get_header('file')
     files.properties = _walk_tree(file_tree, _munge_properties('file'))
     flatten_data_type(files.properties)
@@ -161,7 +161,7 @@ def get_file_es_mapping(include_participant=True):
     files.properties.associated_entities.type = 'nested'
     files.properties.associated_entities.properties.entity_type = STRING
     files.properties.associated_entities.properties.entity_id = STRING
-    files.properties.associated_entities.properties.participant_id = STRING
+    files.properties.associated_entities.properties.case_id = STRING
 
     # Patch file mutlifields
     add_multifields(files, 'files')
@@ -185,49 +185,49 @@ def get_file_es_mapping(include_participant=True):
     files.properties.origin = STRING
 
     # Participant
-    files.properties.pop('participant', None)
-    if include_participant:
-        files.properties.participants = get_participant_es_mapping(False)
-        files.properties.participants.type = 'nested'
+    files.properties.pop('case', None)
+    if include_case:
+        files.properties.cases = get_case_es_mapping(False)
+        files.properties.cases.type = 'nested'
     return files.to_dict()
 
 
-def get_participant_es_mapping(include_file=True):
-    # participant body
-    participant = _get_header('participant')
-    participant.properties = _walk_tree(
-        participant_tree, _munge_properties('participant'))
-    participant.properties.days_to_index = LONG
+def get_case_es_mapping(include_file=True):
+    # case body
+    case = _get_header('case')
+    case.properties = _walk_tree(
+        case_tree, _munge_properties('case'))
+    case.properties.days_to_index = LONG
 
     # Patch project
-    patch_project(participant.properties.project.properties)
+    patch_project(case.properties.project.properties)
 
-    # Patch participant mutlifields
-    add_multifields(participant, 'participant')
+    # Patch case mutlifields
+    add_multifields(case, 'case')
 
     # Metadata files
-    participant.properties.metadata_files = nested('file')
-    participant.properties.metadata_files.properties.data_type = STRING
-    participant.properties.metadata_files.properties.data_subtype = STRING
-    participant.properties.metadata_files.properties.acl = STRING
+    case.properties.metadata_files = nested('file')
+    case.properties.metadata_files.properties.data_type = STRING
+    case.properties.metadata_files.properties.data_subtype = STRING
+    case.properties.metadata_files.properties.acl = STRING
 
     # Add top level id aggregation
     for label in TOP_LEVEL_IDS:
-        participant.properties['{}_ids'.format(label)] = STRING
-        participant.properties['submitter_{}_ids'.format(label)] = STRING
+        case.properties['{}_ids'.format(label)] = STRING
+        case.properties['submitter_{}_ids'.format(label)] = STRING
 
     # Add pop whatever file is present and add correct files
-    participant.properties.pop('file', None)
+    case.properties.pop('file', None)
     if include_file:
-        participant.properties.files = get_file_es_mapping(True)
-        participant.properties.files.type = 'nested'
+        case.properties.files = get_file_es_mapping(True)
+        case.properties.files.type = 'nested'
 
     # Adjust file properties
-    participant.properties.files.properties.pop('associated_entities', None)
-    participant.properties.files.properties.pop('annotations', None)
+    case.properties.files.properties.pop('associated_entities', None)
+    case.properties.files.properties.pop('annotations', None)
 
     # Summary
-    summary = participant.properties.summary.properties
+    summary = case.properties.summary.properties
     summary.file_count = LONG
     summary.file_size = LONG
 
@@ -242,17 +242,17 @@ def get_participant_es_mapping(include_file=True):
     summary.data_types.properties.file_count = LONG
 
     # Clinical
-    clinical = participant.properties.clinical.properties
+    clinical = case.properties.clinical.properties
     clinical.age_at_diagnosis = INTEGER
     clinical.days_to_death = INTEGER
 
-    return participant.to_dict()
+    return case.to_dict()
 
 
 def annotation_body(nested=True):
     annotation = Dict()
     annotation.properties = _munge_properties('annotation', nested)
-    annotation.properties.participant_id = STRING
+    annotation.properties.case_id = STRING
     annotation.properties.entity_type = STRING
     annotation.properties.entity_id = STRING
     annotation.properties.entity_submitter_id = STRING
@@ -291,17 +291,17 @@ def get_project_es_mapping():
     summary = project.properties.summary.properties
     summary.file_count = LONG
     summary.file_size = LONG
-    summary.participant_count = LONG
+    summary.case_count = LONG
 
     # Summary experimental strategies
     summary.experimental_strategies.type = 'nested'
-    summary.experimental_strategies.properties.participant_count = LONG
+    summary.experimental_strategies.properties.case_count = LONG
     summary.experimental_strategies.properties.experimental_strategy = STRING
     summary.experimental_strategies.properties.file_count = LONG
 
     # Summary data types
     summary.data_types.type = 'nested'
-    summary.data_types.properties.participant_count = LONG
+    summary.data_types.properties.case_count = LONG
     summary.data_types.properties.data_type = STRING
     summary.data_types.properties.file_count = LONG
 
