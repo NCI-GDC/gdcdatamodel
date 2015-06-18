@@ -3,8 +3,8 @@ from mock import patch
 
 import os
 import uuid
-from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer, get_submitter_id_and_rev
-from psqlgraph import PsqlGraphDriver, Node, Edge
+from zug.datamodel.tcga_magetab_sync import\
+    TCGAMAGETABSyncer, get_submitter_id_and_rev
 import pandas as pd
 from gdcdatamodel.models import (
     Archive,

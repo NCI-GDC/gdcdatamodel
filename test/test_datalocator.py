@@ -1,9 +1,9 @@
 from psqlgraph import PolyNode
-from base import ZugTestBase
+from base import ZugTestBase, SignpostMixin, StorageMixin
 from zug.datalocator import DataLocator
 
 
-class DataLocatorTest(ZugTestBase):
+class DataLocatorTest(SignpostMixin, StorageMixin, ZugTestBase):
 
     def test_data_locate(self):
         doc = self.signpost_client.create()
@@ -19,7 +19,8 @@ class DataLocatorTest(ZugTestBase):
                 "analysis_id": "abc123"
             }))
         cont = self.storage_client.get_container("test")
-        self.storage_client.upload_object_via_stream("data", cont, "abc123/baz.txt")
+        self.storage_client.upload_object_via_stream(
+            "data", cont, "abc123/baz.txt")
         self.locator = DataLocator(storage_client=self.storage_client,
                                    graph=self.graph,
                                    signpost_client=self.signpost_client)

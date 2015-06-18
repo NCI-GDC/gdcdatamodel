@@ -5,7 +5,7 @@ from elasticsearch import Elasticsearch
 # don't know what to do about it
 import es_fixtures
 
-from base import ZugTestBase, SignpostMixin
+from base import ZugTestBase, SignpostMixin, PreludeMixin
 from gdcdatamodel.models import (
     File, FileReport, Aliquot, Tag,
     ExperimentalStrategy, Platform, Project
@@ -13,7 +13,7 @@ from gdcdatamodel.models import (
 from zug.download_report import DownloadStatsIndexBuilder
 
 
-class DownloadStatsIndexBuilderTest(SignpostMixin, ZugTestBase):
+class DownloadStatsIndexBuilderTest(SignpostMixin, PreludeMixin, ZugTestBase):
 
     def setUp(self):
         super(DownloadStatsIndexBuilderTest, self).setUp()
@@ -42,7 +42,6 @@ class DownloadStatsIndexBuilderTest(SignpostMixin, ZugTestBase):
             md5sum="fake_md5sum",
             state="live",
         )
-        # self.graph.current_session().merge(file)
         return file
 
     def create_download(self, file, size=None, username='', country='US'):
