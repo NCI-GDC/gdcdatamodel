@@ -40,10 +40,9 @@ setup(
         'docker-py==1.2.2',
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@85ed1f3728039de7ce9cff4b026446e362f5ce7d#egg=psqlgraph',
-        'git+ssh://git@github.com/NCI-GDC/cdisutils.git@99c87f23c6f955fed5971f987dbe36c92c9e4596#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@c02b2d37a36e6c3eb1b902f56f0a672d40f13cd3#egg=gdcdatamodel',
-        'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@63b3c1894299708d568506bce1ed3120fadbdf44#egg=signpostclient',
-        'git+ssh://git@github.com/NCI-GDC/python-ds3-sdk.git@6a3382b3766d7e0898e9b70221d7e43f767acb8f#egg=ds3client'
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@299945c4cc24547bb9748165803b3b032e2ddf70#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
+        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@be91b0d59539bc6dcc8e02ac1f334cc434b68357#egg=gdcdatamodel',
+        'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@381e41d09dd7a0f9cd5f1ea5abea5bb1f34e9e70#egg=signpostclient',
     ]
 )
