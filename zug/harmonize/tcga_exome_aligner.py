@@ -456,8 +456,8 @@ class TCGAExomeAligner(object):
         docker_tag = (self.docker_image["RepoTags"][0]
                       if self.docker_image["RepoTags"] else None)
         edge = FileDataFromFile(
-            src=new_bam_node,
-            dst=self.input_bam,
+            src=self.input_bam,
+            dst=new_bam_node,
             system_annotations={
                 "alignment_started": self.start_time,
                 "alignment_finished": int(time.time()),
