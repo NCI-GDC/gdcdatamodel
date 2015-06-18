@@ -1,7 +1,7 @@
 from gdcdatamodel.mappings import (
-    annotation_tree, participant_tree,
+    annotation_tree, case_tree,
     file_tree, ONE_TO_ONE, ONE_TO_MANY,
-    get_participant_es_mapping, get_file_es_mapping,
+    get_case_es_mapping, get_file_es_mapping,
     get_project_es_mapping, get_annotation_es_mapping,
     TOP_LEVEL_IDS,
 )
@@ -30,31 +30,31 @@ class PsqlGraph2JSON(object):
 
     Currently, the entire batch of JSON documents is produced at once
     for reasons that follow. There are two topmost denormalization
-    functions that are called, denormalize_participants() and
+    functions that are called, denormalize_cases() and
     denormalize_projects(). The former produces all of the
-    participant, file, and annotations documents. The latter produces
+    case, file, and annotations documents. The latter produces
     the project summaries.
 
-    The participant denormalization takes the participant tree from
-    gdcdatamodel and, starting at a participant, walks recursively to
+    The case denormalization takes the case tree from
+    gdcdatamodel and, starting at a case, walks recursively to
     all possible children.  Each child's properties are added to the
-    participant document at the appropriate level depending on the
+    case document at the appropriate level depending on the
     correlation (one to one=singleton, or one to many=list).  The leaf
-    node for most paths from participant are files, which have a
+    node for most paths from case are files, which have a
     special denormalization.
 
-    When a file is gathered from walking the participant path, a deep
-    copy is both added to the participants file list returned for
-    later collection.  Denormalizing a participant produces a list of
+    When a file is gathered from walking the case path, a deep
+    copy is both added to the cases file list returned for
+    later collection.  Denormalizing a case produces a list of
     files and annotations. Each file is upserted into a persisting
-    list of files.  If after denormalizing participant 1 who produced
+    list of files.  If after denormalizing case 1 who produced
     file A, the upsert involves adding to A the list if not present.
-    If we have already gotten file A from another participant, it
-    means that the file came from multiple participants and we have to
-    update file A to also reference participant 1.
+    If we have already gotten file A from another case, it
+    means that the file came from multiple cases and we have to
+    update file A to also reference case 1.
 
     In order to make decrease the processing time, there are a lot of
-    caching initiatives.  The paths from participants to files are
+    caching initiatives.  The paths from cases to files are
     cached. The set of files using each data type and experimental
     strategy are cached.  There is also a caching scheme for
     remembering which nodes are walked through a lot and remembering
@@ -63,7 +63,7 @@ class PsqlGraph2JSON(object):
     NOTE: An attempt was made to do this whole thing in parallel,
     however the memory footprint grew to large.  The best method for
     doing this is to use the main process as a workload distributer,
-    and have child processes denormalizing participants.  This way,
+    and have child processes denormalizing cases.  This way,
     the main thread can upsert files on an outbound queue from child
     processes.
 
@@ -80,19 +80,19 @@ class PsqlGraph2JSON(object):
         """
         self.g = psqlgraph_driver
         self.G = nx.Graph()
-        self.ptree_mapping = {'participant': participant_tree.to_dict()}
+        self.ptree_mapping = {'case': case_tree.to_dict()}
         self.ftree_mapping = {'file': file_tree.to_dict()}
         self.atree_mapping = {'annotation': annotation_tree.to_dict()}
         self.leaf_nodes = ['center', 'tissue_source_site']
         self.experimental_strategies = {}
         self.data_types = {}
         self.popular_nodes = {}
-        self.participants = None
+        self.cases = None
         self.projects = None
         self.relevant_nodes = None
         self.annotations = None
         self.annotation_entities = None
-        self.entity_participants = None
+        self.entity_cases = None
 
         # The body of these nested documents will be flattened into
         # the parent document using the given key's value
@@ -110,11 +110,11 @@ class PsqlGraph2JSON(object):
         self.differentiated_edges = [
             ('file', 'member_of', 'archive'),
             ('archive', 'member_of', 'file'),
-            ('file', 'describes', 'participant'),
-            ('participant', 'describes', 'file'),
+            ('file', 'describes', 'case'),
+            ('case', 'describes', 'file'),
         ]
 
-        self.part_to_file_paths = [
+        self.case_to_file_paths = [
             ['file'],
             ['sample', 'aliquot', 'file'],
             ['sample', 'portion', 'file'],
@@ -126,9 +126,9 @@ class PsqlGraph2JSON(object):
             'aliquot',
         ]
 
-        self.file_to_part_paths = [
-            list(reversed(l))[1:]+['participant']
-            for l in self.part_to_file_paths
+        self.file_to_case_paths = [
+            list(reversed(l))[1:]+['case']
+            for l in self.case_to_file_paths
         ]
 
     def pbar(self, title, maxval):
@@ -260,28 +260,27 @@ class PsqlGraph2JSON(object):
     def remove_bam_index_files(self, files):
         return {f for f in files if not f['file_name'].endswith('.bai')}
 
-    def patch_tcga_ages(self, participant):
+    def patch_tcga_ages(self, case):
         """Because TCGA reports ages in years, and target in days, we
         normalize TCGA age_at_diagnosis fields to be
         int(ceil(d*365.25)) where d is the age in days
 
         """
-        program_name = participant['project']['program']['name']
+        program_name = case['project']['program']['name']
         if program_name == 'TCGA':
-            clinical = participant.get('clinical', {})
+            clinical = case.get('clinical', {})
             age_in_years = clinical.get('age_at_diagnosis')
             if age_in_years:
                 age_in_days = int(ceil(age_in_years*365.25))
-                participant['clinical']['age_at_diagnosis'] = age_in_days
+                case['clinical']['age_at_diagnosis'] = age_in_days
 
     ###################################################################
-    #                          Participants
+    #                          Cases
     ##################################################################
 
-    def denormalize_participant(self, node):
-        """Given a participant node, return the entire participant document,
-
-        the files belonging to that participant, and the annotations
+    def denormalize_case(self, node):
+        """Given a case node, return the entire case document,
+        the files belonging to that case, and the annotations
         that were aggregated to those files.
 
         """
@@ -291,41 +290,41 @@ class PsqlGraph2JSON(object):
 
         # Use tree to create nested json
         visited_ids = defaultdict(list)
-        participant = self.walk_tree(
+        case = self.walk_tree(
             node, ptree, self.ptree_mapping, [], ids=visited_ids)[0]
 
         # Inject a dictionary of ids for each visited entity (in TOP_LEVEL_IDS)
-        participant.update(visited_ids)
+        case.update(visited_ids)
 
-        # Walk from participant to all file leaves
+        # Walk from case to all file leaves
         files = self.remove_bam_index_files(
-            self.walk_paths(node, self.part_to_file_paths))
+            self.walk_paths(node, self.case_to_file_paths))
 
-        # Create participant summary
-        participant['summary'] = self.get_participant_summary(node, files)
+        # Create case summary
+        case['summary'] = self.get_case_summary(node, files)
 
         # Take any out of place nodes and put then in correct place in tree
-        self.reconstruct_biospecimen_paths(participant)
-        # Get the metadatafiles that generated the participant
-        participant['metadata_files'] = self.get_metadata_files(node)
+        self.reconstruct_biospecimen_paths(case)
+        # Get the metadatafiles that generated the case
+        case['metadata_files'] = self.get_metadata_files(node)
 
-        self.patch_project(participant['project'])
-        project = participant['project']
+        self.patch_project(case['project'])
+        project = case['project']
 
-        # Denormalize the participants files
+        # Denormalize the cases files
         def get_file(f):
             return self.denormalize_file(f, ptree)
-        participant['files'] = map(get_file, files)
+        case['files'] = map(get_file, files)
 
         # TODO move this logic to project level normalization? It was
         # requested to do this transformation in the es build and not
         # in the data itself, so it is here for now.
-        self.patch_tcga_ages(participant)
+        self.patch_tcga_ages(case)
 
         # Add properties to all annotations
-        for a in [a for f in participant['files']
+        for a in [a for f in case['files']
                   for a in f.get('annotations', [])]:
-            a['participant_id'] = node.node_id
+            a['case_id'] = node.node_id
 
         # Create a flattened copy of visited_ids to filter relevant
         # annotations by entity id
@@ -334,27 +333,26 @@ class PsqlGraph2JSON(object):
 
         # Create copy of annotations and add properties
         annotations = {a['annotation_id']: copy(a)
-                       for f in participant['files']
+                       for f in case['files']
                        for a in f.get('annotations', [])
                        if a['entity_id'] in relevant_ids}
-        # Patch annotation documents with project and participant
         for a in annotations.itervalues():
             a['project'] = project
-            a['participant_id'] = node.node_id
+            a['case_id'] = node.node_id
 
-        # Copy the files with all participants
-        files = deepcopy(participant['files'])
+        # Copy the files with all cases
+        files = deepcopy(case['files'])
 
-        # Trim other participants from fiels
-        for f in participant['files']:
-            f['participants'] = [p for p in f['participants']
-                                 if p['participant_id'] == node.node_id]
+        # Trim other cases from fiels
+        for f in case['files']:
+            f['cases'] = [p for p in f['cases']
+                                 if p['case_id'] == node.node_id]
             f.pop('annotations', None)
             f.pop('associated_entities', None)
 
-        self.validate_participant(node, participant)
+        self.validate_case(node, case)
 
-        return participant, files, annotations.values()
+        return case, files, annotations.values()
 
     def get_exp_strats(self, files):
         """Get the set of experimental_strategies where intersection of the
@@ -382,8 +380,8 @@ class PsqlGraph2JSON(object):
                 yield {'data_type': data_type['name'],
                        'file_count': len(intersection)}
 
-    def get_participant_summary(self, node, files):
-        """Generate a dictionary containing a summary of a particiants files
+    def get_case_summary(self, node, files):
+        """Generate a dictionary containing a summary of a cases files
         and file classifications
 
         """
@@ -394,12 +392,12 @@ class PsqlGraph2JSON(object):
             'data_types': list(self.get_data_types(files)),
         }
 
-    def reconstruct_biospecimen_paths(self, participant):
+    def reconstruct_biospecimen_paths(self, case):
         """For each sample.aliquot, reconstruct entire path
 
         """
 
-        samples = participant.get('samples', [])
+        samples = case.get('samples', [])
         correct_aliquots = set()
         for sample in samples:
             for portion in sample.get('portions', []):
@@ -430,16 +428,16 @@ class PsqlGraph2JSON(object):
                         portion['analytes'].append([{
                             'aliquots': [aliquot]}])
 
-    def get_metadata_files(self, participant):
+    def get_metadata_files(self, case):
         """Return the biospecimen.xml and clinical.xml files that contain a
-        participants biospecimen and clinical information.
+        cases biospecimen and clinical information.
 
         """
 
-        neighbors = self.G[participant]
+        neighbors = self.G[case]
         files = []
         for n in neighbors:
-            if self.G[participant][n].get('label', None) == 'describes':
+            if self.G[case][n].get('label', None) == 'describes':
                 files.append(self._get_base_doc(n))
         return files
 
@@ -454,7 +452,7 @@ class PsqlGraph2JSON(object):
     ###################################################################
 
     def denormalize_file(self, node, ptree):
-        """Given a participants tree and a file node, create the file json
+        """Given a cases tree and a file node, create the file json
         document.
 
         """
@@ -463,7 +461,7 @@ class PsqlGraph2JSON(object):
         ptree = self.copy_tree(ptree, {})
 
         # Create base file doc
-        participant_id = ptree.keys()[0].node_id if ptree.keys() else None
+        case_id = ptree.keys()[0].node_id if ptree.keys() else None
         doc = self._get_base_doc(node)
 
         # Add file fields
@@ -473,22 +471,22 @@ class PsqlGraph2JSON(object):
         self.add_data_type(node, doc)
         self.add_related_files(node, doc)
         self.add_archives(node, doc)
-        doc['participants'] = []
-        relevant = self.add_participants(node, ptree, doc)
-        self.add_file_derived_from_entities(node, doc, participant_id)
+        doc['cases'] = []
+        relevant = self.add_cases(node, ptree, doc)
+        self.add_file_derived_from_entities(node, doc, case_id)
         self.add_annotations(node, relevant, doc)
         self.add_acl(node, doc)
 
         return doc
 
-    def prune_participant(self, relevant_nodes, ptree, keys):
-        """Start with whole participant tree and remove any nodes that did not
+    def prune_case(self, relevant_nodes, ptree, keys):
+        """Start with whole case tree and remove any nodes that did not
         contribute the the creation of this file.
 
         """
         for node in ptree.keys():
             if ptree[node]:
-                self.prune_participant(relevant_nodes, ptree[node], keys)
+                self.prune_case(relevant_nodes, ptree[node], keys)
             if node.label in keys and node not in relevant_nodes:
                 ptree.pop(node)
 
@@ -576,27 +574,27 @@ class PsqlGraph2JSON(object):
         if data_types:
             doc['data_type'] = data_types[0]
 
-    def add_participants(self, node, ptree, doc):
-        """Given a file and a participant tree, re-insert the participant as a
+    def add_cases(self, node, ptree, doc):
+        """Given a file and a case tree, re-insert the case as a
         child of file with only the biospecimen entities that are
         direct ancestors of the file.
 
         """
 
         relevant = self.relevant_nodes[node]
-        self.prune_participant(relevant, ptree, [
+        self.prune_case(relevant, ptree, [
             'sample', 'portion', 'analyte', 'aliquot', 'file'])
-        doc['participants'] = map(
+        doc['cases'] = map(
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
-        for p in doc['participants']:
+        for p in doc['cases']:
             self.patch_project(p['project'])
             self.reconstruct_biospecimen_paths(p)
         return relevant
 
     def add_annotations(self, node, relevant, doc):
         """Given a file node, aggregate all of the annotations from a pruned
-        participant tree and insert them at the root level of the file
+        case tree and insert them at the root level of the file
         document.
 
         """
@@ -619,17 +617,17 @@ class PsqlGraph2JSON(object):
             doc['access'] = 'controlled'
         doc['acl'] = node.acl
 
-    def add_file_derived_from_entities(self, node, doc, participant_id):
-        self._cache_entity_participants()
+    def add_file_derived_from_entities(self, node, doc, case_id):
+        self._cache_entity_cases()
         entities = self.neighbors_labeled(
             node, self.possible_associated_entites)
         docs = []
         for e in entities:
-            participant = self.entity_participants[e]
+            case = self.entity_cases[e]
             docs.append({
                 'entity_type': e.label,
                 'entity_id': e.node_id,
-                'participant_id': participant.node_id,
+                'case_id': case.node_id,
             })
         if docs:
             doc['associated_entities'] = docs
@@ -642,12 +640,12 @@ class PsqlGraph2JSON(object):
         if did not in files:
             files[did] = file_doc
         else:
-            for part in file_doc['participants']:
-                part_id = part['participant_id']
+            for case in file_doc['cases']:
+                case_id = case['case_id']
                 existing_ids = {
-                    p['participant_id'] for p in files[did]['participants']}
-                if part_id not in existing_ids:
-                    files[did]['participants'] += file_doc['participants']
+                    p['case_id'] for p in files[did]['cases']}
+                if case_id not in existing_ids:
+                    files[did]['cases'] += file_doc['cases']
 
     ###################################################################
     #                       Project summaries
@@ -668,20 +666,20 @@ class PsqlGraph2JSON(object):
         # project_id <- program.name-project.code
         self.patch_project(doc)
 
-        log.info('Finding participants')
-        parts = list(self.neighbors_labeled(p, 'participant'))
-        log.info('Got {} participants'.format(len(parts)))
+        log.info('Finding cases')
+        cases = list(self.neighbors_labeled(p, 'case'))
+        log.info('Got {} cases'.format(len(cases)))
 
         # Get files
         log.info('Getting files')
         files = set()
-        part_files = {}
-        for part in parts:
-            part_files[part] = self.remove_bam_index_files(
-                self.walk_paths(part, self.part_to_file_paths))
-            files = files.union(part_files[part])
-        log.info('Got {} files from {} participants'.format(
-            len(files), len(part_files)))
+        case_files = {}
+        for case in cases:
+            case_files[case] = self.remove_bam_index_files(
+                self.walk_paths(case, self.case_to_file_paths))
+            files = files.union(case_files[case])
+        log.info('Got {} files from {} cases'.format(
+            len(files), len(case_files)))
 
         # Get data types
         exp_strat_summaries = []
@@ -691,11 +689,11 @@ class PsqlGraph2JSON(object):
             exp_files = (self.experimental_strategies[exp_strat] & files)
             if not len(exp_files):
                 continue
-            participant_count = len(
-                {p for p, p_files in part_files.iteritems()
+            case_count = len(
+                {p for p, p_files in case_files.iteritems()
                  if len(exp_files & p_files)})
             exp_strat_summaries.append({
-                'participant_count': participant_count,
+                'case_count': case_count,
                 'experimental_strategy': exp_strat['name'],
                 'file_count': len(exp_files),
             })
@@ -708,18 +706,18 @@ class PsqlGraph2JSON(object):
             dt_files = (self.data_types[data_type] & files)
             if not len(dt_files):
                 continue
-            participant_count = len(
-                {p for p, p_files in part_files.iteritems()
+            case_count = len(
+                {p for p, p_files in case_files.iteritems()
                  if len(dt_files & p_files)})
             data_type_summaries.append({
-                'participant_count': participant_count,
+                'case_count': case_count,
                 'data_type': data_type['name'],
                 'file_count': len(dt_files),
             })
 
         # Compile summary
         doc['summary'] = {
-            'participant_count': len(parts),
+            'case_count': len(cases),
             'file_count': len(files),
             'file_size': sum([f['file_size'] for f in files]),
         }
@@ -733,24 +731,24 @@ class PsqlGraph2JSON(object):
     #                     Topmost denorm functions
     ###################################################################
 
-    def denormalize_participants(self, participants=None):
-        """If participants is not specified, denormalize all participants in
-        the graph.  If participants is specified, denormalize only those
+    def denormalize_cases(self, cases=None):
+        """If cases is not specified, denormalize all cases in
+        the graph.  If cases is specified, denormalize only those
         given.
 
         :returns:
-            Tuple containing (participant docs, file docs, annotation docs)
+            Tuple containing (case docs, file docs, annotation docs)
 
         """
 
         self._cache_all()
-        part_docs, ann_docs, file_docs = [], {}, {}
-        if not participants:
-            participants = self.participants
-        pbar = self.pbar('Denormalizing participants ', len(participants))
-        for n in participants:
-            pa, fi, an = self.denormalize_participant(n)
-            part_docs.append(pa)
+        case_docs, ann_docs, file_docs = [], {}, {}
+        if not cases:
+            cases = self.cases
+        pbar = self.pbar('Denormalizing cases ', len(cases))
+        for n in cases:
+            pa, fi, an = self.denormalize_case(n)
+            case_docs.append(pa)
             for a in an:
                 if a['annotation_id'] not in ann_docs:
                     ann_docs[a['annotation_id']] = a
@@ -758,7 +756,7 @@ class PsqlGraph2JSON(object):
                 self.upsert_file_into_dict(file_docs, f)
             pbar.update(pbar.currval+1)
         pbar.finish()
-        return part_docs, file_docs.values(), ann_docs.values()
+        return case_docs, file_docs.values(), ann_docs.values()
 
     def denormalize_projects(self, projects=None):
         """If projects is not specified, denormalize all projects in
@@ -782,7 +780,7 @@ class PsqlGraph2JSON(object):
         """Denormalize a specific annotation.
 
         .. note: The project of an annotation will be injected during
-        participant denormalization.
+        case denormalization.
 
         """
         ann_doc = self._get_base_doc(node)
@@ -796,33 +794,33 @@ class PsqlGraph2JSON(object):
         return ann_doc
 
     def denormalize_all(self):
-        """Return an entire index worth of participant, file, annotation, and
+        """Return an entire index worth of case, file, annotation, and
         project documents
 
         """
-        parts, files, annotations = self.denormalize_participants()
+        cases, files, annotations = self.denormalize_cases()
         projects = self.denormalize_projects()
-        return parts, files, annotations, projects
+        return cases, files, annotations, projects
 
-    def denormalize_participants_sample(self, k=10):
-        """Return an entire index worth of participant, file, annotation
+    def denormalize_cases_sample(self, k=10):
+        """Return an entire index worth of case, file, annotation
          documents
 
         """
         self._cache_all()
-        parts = random.sample(self.participants, k)
-        parts, files, annotations = self.denormalize_participants(parts)
-        return parts, files, annotations
+        cases = random.sample(self.cases, k)
+        cases, files, annotations = self.denormalize_cases(cases)
+        return cases, files, annotations
 
     def denormalize_sample(self, k=10):
-        """Return an entire index worth of participant, file, annotation, and
+        """Return an entire index worth of case, file, annotation, and
         project documents
 
         """
-        parts, files, annotations = self.denormalize_sample_parts(k)
+        cases, files, annotations = self.denormalize_sample_cases(k)
         projs = random.sample(self.projects, 1)
         projects = self.denormalize_projects(projs)
-        return parts, files, annotations, projects
+        return cases, files, annotations, projects
 
     ###################################################################
     #                         Graph functions
@@ -871,29 +869,29 @@ class PsqlGraph2JSON(object):
         actual = len([f for f in file_docs
                       if project_doc['project_id']
                       in {p['project']['project_id']
-                          for p in f['participants']}])
+                          for p in f['cases']}])
         expected = project_doc['summary']['file_count']
         assert actual == expected, '{} file count mismatch: {} != {}'.format(
             project_doc['project_id'], actual, expected)
 
-    def validate_docs(self, part_docs, file_docs, ann_docs, project_docs):
+    def validate_docs(self, case_docs, file_docs, ann_docs, project_docs):
         for project_doc in project_docs:
             self.validate_project_file_counts(project_doc, file_docs)
-            part_sample = random.sample(part_docs, min(len(part_docs), 100))
-            for part_doc in part_sample:
-                self.verify_data_type_count(part_doc)
+            case_sample = random.sample(case_docs, min(len(case_docs), 100))
+            for case_doc in case_sample:
+                self.verify_data_type_count(case_doc)
         self.validate_annotations(ann_docs)
 
     def validate_annotations(self, ann_docs):
         for ann_doc in ann_docs:
-            if ann_doc['entity_type'] == 'participant':
-                assert ann_doc['entity_id'] == ann_doc['participant_id']
+            if ann_doc['entity_type'] == 'case':
+                assert ann_doc['entity_id'] == ann_doc['case_id']
 
-    def verify_data_type_count(self, participant):
+    def verify_data_type_count(self, case):
         for data_type in DATA_TYPES.keys():
-            calc = len([f for f in participant['files']
+            calc = len([f for f in case['files']
                         if f.get('data_type') == data_type])
-            act = ([d['file_count'] for d in participant['summary']['data_types']
+            act = ([d['file_count'] for d in case['summary']['data_types']
                     if d['data_type'] == data_type][:1] or [0])[0]
             assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
 
@@ -917,16 +915,16 @@ class PsqlGraph2JSON(object):
             for list_entry in doc:
                 self.validate_against_mapping(list_entry, mapping)
 
-    def validate_participant(self, node, participant):
+    def validate_case(self, node, case):
         # Assert file count = summary.file_count
-        assert len(participant['files'])\
-            == participant['summary']['file_count'],\
-            '{}: {} != {}'.format(node.node_id, len(participant['files']),
-                                  participant['summary']['file_count'])
+        assert len(case['files'])\
+            == case['summary']['file_count'],\
+            '{}: {} != {}'.format(node.node_id, len(case['files']),
+                                  case['summary']['file_count'])
 
         # Check for keys that are in the doc but not in the mapping
         self.validate_against_mapping(
-            participant, get_participant_es_mapping())
+            case, get_case_es_mapping())
 
     ###################################################################
     #                       Caching functions
@@ -984,8 +982,8 @@ class PsqlGraph2JSON(object):
         self._cache_data_types()
         self._cache_annotations()
         self._cache_relevant_nodes()
-        self._cache_entity_participants()
-        self._cache_participants()
+        self._cache_entity_cases()
+        self._cache_cases()
         self._cache_projects()
 
     def _cache_projects(self):
@@ -993,24 +991,24 @@ class PsqlGraph2JSON(object):
             print 'Caching projects...'
             self.projects = list(self.nodes_labeled('project'))
 
-    def _cache_participants(self):
-        if not self.participants:
-            print 'Caching participants...'
-            self.participants = list(self.nodes_labeled('participant'))
+    def _cache_cases(self):
+        if not self.cases:
+            print 'Caching cases...'
+            self.cases = list(self.nodes_labeled('case'))
 
-    def _cache_entity_participants(self):
-        if self.entity_participants:
+    def _cache_entity_cases(self):
+        if self.entity_cases:
             return
         entities = list(self.nodes_labeled(self.possible_associated_entites))
-        pbar = self.pbar('Caching entity participants: ', len(entities))
-        self.entity_participants = {}
+        pbar = self.pbar('Caching entity cases: ', len(entities))
+        self.entity_cases = {}
         for e in entities:
-            paths = [p[1:] for p in self.file_to_part_paths if p[0] == e.label]
-            participants = self.walk_paths(e, paths)
-            assert len(participants) == 1,\
-                '{}: Found {} participants: {}'.format(
-                    e, len(participants), paths)
-            self.entity_participants[e] = participants.pop()
+            paths = [p[1:] for p in self.file_to_case_paths if p[0] == e.label]
+            cases = self.walk_paths(e, paths)
+            assert len(cases) == 1,\
+                '{}: Found {} cases: {}'.format(
+                    e, len(cases), paths)
+            self.entity_cases[e] = cases.pop()
             pbar.update(pbar.currval+1)
         pbar.finish()
 
@@ -1022,7 +1020,7 @@ class PsqlGraph2JSON(object):
         pbar = self.pbar('Caching file paths: ', len(files))
         for f in files:
             self.relevant_nodes[f] = self.walk_paths(
-                f, self.file_to_part_paths, whole=True)
+                f, self.file_to_case_paths, whole=True)
             pbar.update(pbar.currval+1)
         pbar.finish()
 

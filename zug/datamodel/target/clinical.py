@@ -97,16 +97,16 @@ class TARGETClinicalSyncer(object):
             for _, row in df.iterrows():
                 # the .strip is necessary because sometimes there is a
                 # space after the name, e.g. 'TARGET-50-PAEAFB '
-                participant_barcode = row["TARGET Patient USI"].strip()
-                self.log.info("looking up participant %s", participant_barcode)
-                participant = self.graph.nodes(Participant)\
-                                        .props({"submitter_id": participant_barcode}).scalar()
-                if not participant:
-                    self.log.warning("couldn't find participant %s, not inserting clinical data", participant_barcode)
+                case_barcode = row["TARGET Patient USI"].strip()
+                self.log.info("looking up case %s", case_barcode)
+                case = self.graph.nodes(Participant)\
+                                        .props({"submitter_id": case_barcode}).scalar()
+                if not case:
+                    self.log.warning("couldn't find case %s, not inserting clinical data", case_barcode)
                     continue
-                self.log.info("found participant %s as %s, inserting clinical info", participant_barcode, participant)
+                self.log.info("found case %s as %s, inserting clinical info", case_barcode, case)
                 clinical = self.graph.node_merge(
-                    node_id=str(uuid5(CLINICAL_NAMESPACE, participant_barcode.encode('ascii'))),
+                    node_id=str(uuid5(CLINICAL_NAMESPACE, case_barcode.encode('ascii'))),
                     label="clinical",
                     properties=parse_row_into_props(row),
                     system_annotations={
@@ -114,9 +114,9 @@ class TARGETClinicalSyncer(object):
                         "version": self.version
                     }
                 )
-                self.log.info("inserted clinical info as %s, tieing to participant", clinical)
-                self.create_edge("describes", clinical, participant)
-                self.create_edge("describes", clinical_file, participant)
+                self.log.info("inserted clinical info as %s, tieing to case", clinical)
+                self.create_edge("describes", clinical, case)
+                self.create_edge("describes", clinical_file, case)
 
     def sync(self):
         df = self.load_df()

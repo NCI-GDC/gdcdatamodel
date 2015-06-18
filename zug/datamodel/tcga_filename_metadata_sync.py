@@ -12,9 +12,9 @@ PROPS = [
     "_control_aliquot_barcode",
     "_slide_uuid",
     "_slide_barcode",
-    "_participant_uuid",
-    "_participant_barcode",
-    "_participant_barcode",
+    "_case_uuid",
+    "_case_barcode",
+    "_case_barcode",
 ]
 
 
@@ -83,16 +83,16 @@ class TCGAFilenameMetadataSyncer(object):
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)
 
-        # if no biospecimen is tied to this file, find participant that should
+        # if no biospecimen is tied to this file, find case that should
         # be tied to this file
         if not nodes:
             node = None
-            if '_participant_uuid' in attrs:
+            if '_case_uuid' in attrs:
                 node = self.graph.nodes().ids(
-                    [attrs['_participant_uuid']]).scalar()
-            elif '_participant_barcode' in attrs:
+                    [attrs['_case_uuid']]).scalar()
+            elif '_case_barcode' in attrs:
                 node = self.graph.nodes().props(
-                    {'submitter_id': attrs['_participant_barcode']}).scalar()
+                    {'submitter_id': attrs['_case_barcode']}).scalar()
             if node:
                 self.log.info("found %s to tie to %s", node, self.file_node)
                 nodes.append(node)

@@ -1,5 +1,9 @@
-from gdcdatamodel import get_participant_es_mapping
-from gdcdatamodel.models import File, Aliquot, Participant, Annotation, Project
+import logging
+import unittest
+import os
+from zug.datamodel import prelude
+from gdcdatamodel import get_case_es_mapping
+from gdcdatamodel.models import File, Aliquot, Case, Annotation, Project
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from base import ZugTestBase, PreludeMixin
 import es_fixtures
@@ -43,9 +47,9 @@ aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
 annotation_props = {'category', 'status', 'classification',
                     'creator', 'created_datetime', 'notes',
                     'submitter_id', 'annotation_id', 'entity_id',
-                    'entity_type', 'participant_id'}
+                    'entity_type', 'case_id'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
-              'file_name', 'md5sum', 'participants', 'submitter_id',
+              'file_name', 'md5sum', 'cases', 'submitter_id',
               'access', 'platform', 'state', 'data_subtype',
               'file_id', 'file_size', 'experimental_strategy',
               'state_comment', 'annotations', 'data_type',
@@ -57,56 +61,56 @@ file_props = {'data_format', 'related_files', 'center', 'tags',
 
 class TestElasticsearchMappings(unittest.TestCase):
 
-    def test_participant_project(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_project(self):
+        props = get_case_es_mapping()['properties']
         self.assertTrue('project' in props)
         print props['project']['properties']
         self.assertTrue('program' in props['project']['properties'])
         self.assertEqual(project_props, set(props['project']['properties']))
 
-    def test_participant_summary(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_summary(self):
+        props = get_case_es_mapping()['properties']
         self.assertTrue('summary' in props)
         self.assertEqual(summary_props, set(props['summary']['properties']))
 
-    def test_participant_tss(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_tss(self):
+        props = get_case_es_mapping()['properties']
         self.assertTrue('tissue_source_site' in props)
         self.assertEqual(tss_props, set(props['tissue_source_site']['properties']))
 
-    def test_participant_samples(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_samples(self):
+        props = get_case_es_mapping()['properties']
         self.assertTrue('samples' in props)
         self.assertEqual(sample_props, set(props['samples']['properties']))
 
-    def test_participant_portions(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_portions(self):
+        props = get_case_es_mapping()['properties']
         self.assertTrue('portions' in props['samples']['properties'])
         self.assertEqual(portion_props, set(props['samples']['properties']
                                             ['portions']['properties']))
 
-    def test_participant_analytes(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_analytes(self):
+        props = get_case_es_mapping()['properties']
         portions = (props['samples']
                     ['properties']['portions']['properties'])
         self.assertTrue('analytes' in portions)
         self.assertEqual(analyte_props, set(portions['analytes']['properties']))
 
-    def test_participant_aliquots(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_aliquots(self):
+        props = get_case_es_mapping()['properties']
         analytes = (props['samples']['properties']
                     ['portions']['properties']
                     ['analytes']['properties'])
         self.assertTrue('aliquots' in analytes)
         self.assertEqual(aliquot_props, set(analytes['aliquots']['properties']))
 
-    def test_participant_annotations(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_annotations(self):
+        props = get_case_es_mapping()['properties']
         self.assertEqual(annotation_props.union({'entity_submitter_id'}),
                          set(props['annotations']['properties']))
 
-    def test_participant_files(self):
-        props = get_participant_es_mapping()['properties']
+    def test_case_files(self):
+        props = get_case_es_mapping()['properties']
         self.assertTrue('files' in props)
         self.assertEqual(file_props.union({'origin'}),
                          set(props['files']['properties']).union(
@@ -157,57 +161,57 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         with self.g.session_scope():
             doc_conv.cache_database()
         self.part_docs, self.file_docs, self.ann_docs = (
-            doc_conv.denormalize_participants())
+            doc_conv.denormalize_cases())
         self.part_doc = self.part_docs[0]
 
-    def test_participant_clinical(self):
+    def test_case_clinical(self):
         props = self.part_doc
         self.assertTrue('clinical' in props)
         clinical = props['clinical']
         self.assertEqual(clinical['age_at_diagnosis'], 12419)
 
     def test_filter_non_relevant_annotations(self):
-        participant = self.get_fuzzed_node(Participant)
+        case = self.get_fuzzed_node(Case)
         annotation = self.get_fuzzed_node(
             Annotation, category='Item flagged DNU')
         with self.g.session_scope() as s:
             f = self.g.nodes(File).ids('file1').first()
-            participant.projects.append(self.g.nodes(Project).first())
-            participant.files.append(f)
-            participant.annotations.append(annotation)
-            map(s.merge, (participant, annotation))
+            case.projects.append(self.g.nodes(Project).first())
+            case.files.append(f)
+            case.annotations.append(annotation)
+            map(s.merge, (case, annotation))
         self.convert_documents()
         for annotation in self.ann_docs:
-            if annotation['entity_type'] == 'participant':
+            if annotation['entity_type'] == 'case':
                 self.assertEqual(
-                    annotation['participant_id'], annotation['entity_id'])
+                    annotation['case_id'], annotation['entity_id'])
 
-    def test_participant_project(self):
+    def test_case_project(self):
         props = self.part_doc
         self.assertTrue('project' in props)
         actual = set(props['project'].keys())
         self.assertEqual(project_props, actual)
 
-    def test_participant_summary(self):
+    def test_case_summary(self):
         props = self.part_doc
         self.assertTrue('summary' in props)
         actual = set(props['summary'].keys())
         self.assertEqual(summary_props, actual)
 
-    def test_participant_tss(self):
+    def test_case_tss(self):
         props = self.part_doc
         self.assertTrue('tissue_source_site' in props)
         actual = set(props['tissue_source_site'].keys())
         self.assertEqual(tss_props, actual)
 
-    def test_participant_samples(self):
+    def test_case_samples(self):
         props = self.part_doc
         self.assertTrue('samples' in props)
         actual = set(props['samples'][0].keys())
         self.assertEqual(sample_props, actual.union(
             {'annotations', 'aliquots'}))
 
-    def test_participant_portions(self):
+    def test_case_portions(self):
         props = self.part_doc
         self.assertTrue('portions' in props['samples'][0])
         portion = [p for s in props['samples'] for p in s['portions']
@@ -216,7 +220,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.assertEqual(portion_props, actual.union(
             {'annotations', 'slides', 'center'}))
 
-    def test_participant_analytes(self):
+    def test_case_analytes(self):
         props = self.part_doc
         portions = (props['samples'][0]['portions'][0])
         self.assertTrue('analytes' in portions)
@@ -224,7 +228,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.assertEqual(analyte_props, actual.union(
             {'annotations'}))
 
-    def test_participant_aliquots(self):
+    def test_case_aliquots(self):
         props = self.part_doc
         analytes = (props['samples'][0]['portions'][0]['analytes'][0])
         self.assertTrue('aliquots' in analytes)
@@ -232,7 +236,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.assertEqual(aliquot_props, actual.union(
             {'annotations'}))
 
-    def test_participant_files(self):
+    def test_case_files(self):
         props = self.part_doc
         self.assertTrue('files' in props)
         # this makes sure the

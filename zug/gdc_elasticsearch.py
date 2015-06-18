@@ -2,7 +2,7 @@ from gdcdatamodel.mappings import (
     index_settings,
     get_project_es_mapping,
     get_annotation_es_mapping,
-    get_participant_es_mapping,
+    get_case_es_mapping,
     get_file_es_mapping,
 )
 import os
@@ -64,18 +64,19 @@ class GDCElasticsearch(object):
             self.converter.cache_database()
             self.log.info("Querying for old nodes to delete")
             to_delete = self.graph.nodes().sysan({"to_delete": True}).all()
-            self.log.info("Found %s to_delete nodes, saving for later", len(to_delete))
+            self.log.info("Found %s to_delete nodes, saving for later",
+                          len(to_delete))
         self.log.info("Denormalizing database into JSON docs")
-        part_docs, file_docs, ann_docs, project_docs = self.converter.denormalize_all()
-        self.log.info("%s participant docs, %s file docs, %s annotation docs, %s project docs",
-                      len(part_docs),
+        case_docs, file_docs, ann_docs, project_docs = self.converter.denormalize_all()
+        self.log.info("%s case docs, %s file docs, %s annotation docs, %s project docs",
+                      len(case_docs),
                       len(file_docs),
                       len(ann_docs),
                       len(project_docs))
         self.log.info("Validating docs produced")
-        self.converter.validate_docs(part_docs, file_docs, ann_docs, project_docs)
+        self.converter.validate_docs(case_docs, file_docs, ann_docs, project_docs)
         self.log.info("Deploying new ES index with new docs and bumping alias")
-        self.deploy(part_docs, file_docs, ann_docs, project_docs,
+        self.deploy(case_docs, file_docs, ann_docs, project_docs,
                     roll_alias=roll_alias)
         with self.graph.session_scope() as session:
             for node in to_delete:
@@ -144,37 +145,37 @@ class GDCElasticsearch(object):
                 body=get_file_es_mapping()),
             self.es.indices.put_mapping(
                 index=index,
-                doc_type="participant",
-                body=get_participant_es_mapping()),
+                doc_type="case",
+                body=get_case_es_mapping()),
             self.es.indices.put_mapping(
                 index=index,
                 doc_type="annotation",
                 body=get_annotation_es_mapping()),
         ]
 
-    def index_populate(self, index, part_docs=[], file_docs=[],
+    def index_populate(self, index, case_docs=[], file_docs=[],
                        ann_docs=[], project_docs=[],
                        batch_size=BATCH_SIZE):
         self.bulk_upload(index, 'project', project_docs, batch_size)
         self.bulk_upload(index, 'annotation', ann_docs, batch_size)
-        self.bulk_upload(index, 'participant', part_docs, batch_size)
+        self.bulk_upload(index, 'case', case_docs, batch_size)
         self.bulk_upload(index, 'file', file_docs, batch_size)
 
-    def index_create_and_populate(self, index, part_docs=[],
+    def index_create_and_populate(self, index, case_docs=[],
                                   file_docs=[], ann_docs=[], project_docs=[],
                                   batch_size=BATCH_SIZE):
         """Create a new index with name `index` and add given documents to it.
-        `part_docs` or `project_docs` are empty, the will be generated
+        `case_docs` or `project_docs` are empty, the will be generated
         automatically.
 
-        :param list part_docs: The participant docs to upload.
+        :param list case_docs: The case docs to upload.
         :param list file_docs:
-            The file docs to upload. If part_docs is empty,
-            `file_docs` will be overwritten when part_docs are
+            The file docs to upload. If case_docs is empty,
+            `file_docs` will be overwritten when case_docs are
             produced.
         :param list ann_docs:
-            The annotation docs to upload. If part_docs is empty,
-            `ann_docs` will be overwritten when part_docs are
+            The annotation docs to upload. If case_docs is empty,
+            `ann_docs` will be overwritten when case_docs are
             produced.
         :param list project_docs: The project docs to upload.
 
@@ -182,11 +183,11 @@ class GDCElasticsearch(object):
 
         self.es.indices.create(index=index, body=index_settings())
         self.put_mappings(index)
-        if not part_docs:
-            self.log.warning("There were no participant docs passed to populate with!")
+        if not case_docs:
+            self.log.warning("There were no case docs passed to populate with!")
         if not project_docs:
-            self.log.warning("There were no participant docs passed to populate with!")
-        self.index_populate(index, part_docs, file_docs, ann_docs,
+            self.log.warning("There were no case docs passed to populate with!")
+        self.index_populate(index, case_docs, file_docs, ann_docs,
                             project_docs, batch_size)
 
     def swap_index(self, old_index, new_index):
@@ -241,7 +242,7 @@ class GDCElasticsearch(object):
             self.log.info("Deleting %s", index)
             self.es.indices.delete(index=index)
 
-    def deploy(self, part_docs, file_docs, ann_docs,
+    def deploy(self, case_docs, file_docs, ann_docs,
                project_docs, roll_alias=True,
                batch_size=BATCH_SIZE):
         """Create a new index with an incremented name based on
@@ -259,7 +260,7 @@ class GDCElasticsearch(object):
             n = max(current_numbers)+1
         new_index = INDEX_PATTERN.format(base=self.index_base, n=n)
         self.log.info("Deploying to index %s", new_index)
-        self.index_create_and_populate(new_index, part_docs,
+        self.index_create_and_populate(new_index, case_docs,
                                        file_docs, ann_docs,
                                        project_docs, batch_size)
         if roll_alias:
@@ -267,7 +268,7 @@ class GDCElasticsearch(object):
             self.es.indices.refresh(index=new_index)
             # sanity checks that there are the correct number of docs in the new index
             assert self.es.count(index=new_index, doc_type="file")["count"] == len(file_docs)
-            assert self.es.count(index=new_index, doc_type="participant")["count"] == len(part_docs)
+            assert self.es.count(index=new_index, doc_type="case")["count"] == len(case_docs)
             assert self.es.count(index=new_index, doc_type="annotation")["count"] == len(ann_docs)
             assert self.es.count(index=new_index, doc_type="project")["count"] == len(project_docs)
             self.log.info("Rolling alias and deleting old indices")

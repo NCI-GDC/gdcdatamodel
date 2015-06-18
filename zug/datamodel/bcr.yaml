@@ -191,7 +191,7 @@ sample:
     id: .//bio:bcr_sample_uuid
     edges:
       derived_from:
-        participant: ancestor::bio:patient/shared:bcr_patient_uuid
+        case: ancestor::bio:patient/shared:bcr_patient_uuid
     properties:
       submitter_id:
         path: ./bio:bcr_sample_barcode
@@ -244,7 +244,7 @@ sample:
         path: ./bio:days_to_procurement
         type: int
 
-participant:
+case:
   -
     root: //*[local-name()='patient']
     id: .//shared:bcr_patient_uuid

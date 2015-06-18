@@ -187,17 +187,17 @@ class DownloadStatsIndexBuilder(object):
         unioning the various paths by which that can happen.
         """
         tcga_path = self.graph.nodes(File.node_id)\
-                              .path("aliquots.analytes.portions.samples.participants.projects").props(code=code)
+                              .path("aliquots.analytes.portions.samples.cases.projects").props(code=code)
         shipped_portion_path = self.graph.nodes(File.node_id)\
-                                         .path("portions.samples.participants.projects").props(code=code)
+                                         .path("portions.samples.cases.projects").props(code=code)
         target_path = self.graph.nodes(File.node_id)\
-                                .path("aliquots.samples.participants.projects").props(code=code)
-        direct_participant_path = self.graph.nodes(File.node_id)\
-                                            .path("participants.projects").props(code=code)
+                                .path("aliquots.samples.cases.projects").props(code=code)
+        direct_case_path = self.graph.nodes(File.node_id)\
+                                            .path("cases.projects").props(code=code)
         # TODO others?
         return tcga_path.union(shipped_portion_path,
                                target_path,
-                               direct_participant_path)
+                               direct_case_path)
 
     def overall_breakdown(self, code):
         size, count = self.graph.nodes((func.sum(FileReport.streamed_bytes), func.count("*")))\
