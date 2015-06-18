@@ -11,6 +11,7 @@ from mock import patch
 from base import ZugsTestBase, FakeS3Mixin
 
 from zug.harmonize.tcga_exome_aligner import TCGAExomeAligner
+from zug.binutils import NoMoreWorkException
 # TODO really need to find a better place for this
 from zug.downloaders import md5sum_with_size
 from cdisutils.net import BotoManager
@@ -281,3 +282,18 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
             self.fake_s3.stop()
+
+    def test_raises_if_no_work(self):
+        """It there are no bam files without derived_files, test that we raise
+        NoMoreWorkException
+
+        """
+        with self.graph.session_scope():
+            aliquot = self.create_aliquot()
+            file = self.create_file("test1.bam", "fake_test_content")
+            file.aliquots = [aliquot]
+            second_file = self.get_fuzzed_node(File, state="live")
+            file.derived_files = [second_file]
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.align()

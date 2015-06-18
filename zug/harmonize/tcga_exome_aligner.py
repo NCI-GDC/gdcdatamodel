@@ -7,7 +7,6 @@ from urlparse import urlparse
 from cStringIO import StringIO
 
 from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 
@@ -148,14 +147,13 @@ class TCGAExomeAligner(object):
                                        .filter(File.file_name.astext.endswith(".bam"))\
                                        .filter(~File.derived_files.any())\
                                        .subquery()
-        try:
-            aliquot = self.graph.nodes(Aliquot)\
-                                .join(FileDataFromAliquot)\
-                                .join(File)\
-                                .filter(File.node_id.in_(tcga_exome_bam_ids))\
-                                .order_by(func.random())\
-                                .first()
-        except NoResultFound:
+        aliquot = self.graph.nodes(Aliquot)\
+                            .join(FileDataFromAliquot)\
+                            .join(File)\
+                            .filter(File.node_id.in_(tcga_exome_bam_ids))\
+                            .order_by(func.random())\
+                            .first()
+        if not aliquot:
             raise NoMoreWorkException("No aliquots with unaligned files found")
         self.log.info("Selected aliquot %s to work on", aliquot)
         sorted_files = sorted([f for f in aliquot.files],
