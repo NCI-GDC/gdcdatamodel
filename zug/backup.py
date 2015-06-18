@@ -54,12 +54,12 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
             parsed_url.path.split("/", 2)[1:]
         host = parsed_url.netloc
         download_file(ds3_key, offset, length,
-                                 bucket_name, object_name, path,
-                                 host,
-                                 consul.consul_get(['s3', host, 'port']),
-                                 consul.consul_get(['s3', host, 'access_key']),
-                                 consul.consul_get(['s3', host, 'secret_key']),
-                                 consul, logger)
+                      bucket_name, object_name, path,
+                      host,
+                      consul.consul_get(['s3', host, 'port']),
+                      consul.consul_get(['s3', host, 'access_key']),
+                      consul.consul_get(['s3', host, 'secret_key']),
+                      consul, logger)
         logger.info('Upload file %s from %s to %s bucket',
                     ds3_key.name,
                     parsed_url.netloc, ds3_bucket)
@@ -71,9 +71,10 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
                     ds3_key.name, job.id)
         os.remove(tmp_file)
 
-    except Exception as e:
-        logger.info("Exception %s" % str(e))
-        raise e
+    except:
+        logger.exception("Upload failed for file %s offset %s" %
+                         (ds3_key.name, offset))
+        raise
 
 
 def download_file(ds3_key, offset, length, bucket_name,
@@ -102,7 +103,9 @@ def download_file(ds3_key, offset, length, bucket_name,
     return tmp_file
 
 
-def get_statistics(bucket='gdc_backup', driver='primary_backup', summary=False, output=''):
+def get_statistics(bucket='gdc_backup',
+                   driver='primary_backup',
+                   summary=False, output=''):
     consul = ConsulManager(prefix='databackup')
     graph = PsqlGraphDriver(
         consul.consul_get(['pg', 'host']),
@@ -119,13 +122,13 @@ def get_statistics(bucket='gdc_backup', driver='primary_backup', summary=False, 
             ['ds3', driver, 'secret_key']),
         verify=False,
     )
-    keys = [[parser.parse(k.creation_date), k.name] 
-            for k in ds3.keys(bucket_id=bucket) if k.creation_date is None]
+    keys = [[parser.parse(k.creation_date), k.name]
+            for k in ds3.keys(bucket_id=bucket) if k.creation_date is not None]
 
     with graph.session_scope():
         for item in keys:
             item.append(graph.nodes().ids(item[1]).first().file_size)
-    
+
     keys.sort()
     keys.reverse()
     total = sum(item[2] for item in keys)
@@ -133,7 +136,7 @@ def get_statistics(bucket='gdc_backup', driver='primary_backup', summary=False, 
     end = datetime.datetime.now()
     start = end-datetime.timedelta(days=1)
     start_date = str(start.date())
-    today = start_date 
+    today = start_date
     result = {start_date: 0}
     for item in keys:
         while not (item[0] >= start and item[0] <= end):
@@ -141,7 +144,7 @@ def get_statistics(bucket='gdc_backup', driver='primary_backup', summary=False, 
             start = end-datetime.timedelta(days=1)
             start_date = str(start.date())
             result[start_date] = 0
-        result[start_date] += item[2] 
+        result[start_date] += item[2]
     for key, value in result.iteritems():
         result[key] = convert_size(value)
 
@@ -155,15 +158,17 @@ def get_statistics(bucket='gdc_backup', driver='primary_backup', summary=False, 
         print 'Backed up last day: %s' % result[today]
     return result
 
+
 def convert_size(size):
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(size,1024)))
-    p = math.pow(1024,i)
-    s = round(size/p,2)
+    i = int(math.floor(math.log(size, 1024)))
+    p = math.pow(1024, i)
+    s = round(size/p, 2)
     if (s > 0):
-        return '%s %s' % (s,size_name[i])
+        return '%s %s' % (s, size_name[i])
     else:
         return '0B'
+
 
 class DataBackup(object):
     BACKUP_ACCEPT_STATE = ['backing_up', 'backuped', 'verified']
@@ -241,23 +246,6 @@ class DataBackup(object):
                 pool.close()
                 pool.join()
 
-
-    @property
-    def key(self):
-        return self.file.node_id
-
-    def get_s3(self, host):
-        self.s3 = boto.connect_s3(
-            host=host,
-            aws_access_key_id=self.consul.consul_get(
-                ['s3', host, 'access_key']),
-            aws_secret_access_key=self.consul.consul_get(
-                ['s3', host, 'secret_key']),
-            is_secure=False,
-            calling_format=boto.s3.connection.OrdinaryCallingFormat()
-        )
-        return self.s3
-
     def backup(self):
         if self.consul.consul_get('kill'):
             self.logger.info("Safe kill from consul")
@@ -271,10 +259,10 @@ class DataBackup(object):
                 self._record_file_state('backuped')
                 self.logger.info('Job %s succeed for files %s',
                                  self.job, self.files)
-            except Exception as e:
+            except:
                 self._record_file_state('failed')
-                self.logger.error('Job %s failed for files %s, exception %s',
-                                  self.job, self.files, str(e))
+                self.logger.exception('Job %s failed for files %s',
+                                      self.job, self.files)
                 self.job.delete()
             finally:
                 self.cleanup()
@@ -335,7 +323,8 @@ class DataBackup(object):
                         # delete the file if it's already in blackpearl
                         self.logger.info('check file')
                         if len(list(self.ds3.keys(
-                                name=node.node_id, bucket_id=self.BUCKET))) != 0:
+                                name=node.node_id,
+                                bucket_id=self.BUCKET))) != 0:
                             self.ds3.keys.delete(self.BUCKET, node.node_id)
                         self.files.append(node)
                         total_size += node.file_size
