@@ -7,6 +7,7 @@ from urlparse import urlparse
 from cStringIO import StringIO
 
 from sqlalchemy import func
+from sqlalchemy.orm.exc import NoResultFound
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 
@@ -21,6 +22,7 @@ from cdisutils.log import get_logger
 from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from zug.consul_manager import ConsulManager
+from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
     FileDataFromAliquot, FileDataFromFile
@@ -146,12 +148,15 @@ class TCGAExomeAligner(object):
                                        .filter(File.file_name.astext.endswith(".bam"))\
                                        .filter(~File.derived_files.any())\
                                        .subquery()
-        aliquot = self.graph.nodes(Aliquot)\
-                            .join(FileDataFromAliquot)\
-                            .join(File)\
-                            .filter(File.node_id.in_(tcga_exome_bam_ids))\
-                            .order_by(func.random())\
-                            .first()
+        try:
+            aliquot = self.graph.nodes(Aliquot)\
+                                .join(FileDataFromAliquot)\
+                                .join(File)\
+                                .filter(File.node_id.in_(tcga_exome_bam_ids))\
+                                .order_by(func.random())\
+                                .first()
+        except NoResultFound:
+            raise NoMoreWorkException("No aliquots with unaligned files found")
         self.log.info("Selected aliquot %s to work on", aliquot)
         sorted_files = sorted([f for f in aliquot.files],
                               key=lambda f: f.sysan["cghub_last_modified"])
