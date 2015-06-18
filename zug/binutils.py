@@ -1,4 +1,7 @@
+from cdisutils.log import get_logger
 from contextlib import contextmanager
+
+log = get_logger(__name__)
 
 
 class NoMoreWorkException(Exception):
@@ -32,8 +35,10 @@ def zug_wrap():
     try:
         yield
     except NoMoreWorkException:
+        log.exception("No more work")
         exit(3)
     except DoNotRestartException:
         # Ideally we will someday alert a human here, since this kind of
         # problem is usually very drastic!
+        log.exception("Fatal exception")
         exit(4)
