@@ -128,8 +128,11 @@ class TCGAExomeAligner(object):
         """The strategy is as follows:
 
         1) Make a subquery for all TCGA exomes
-        2) Select at random a single aliquot which is the source of a file in that subquery
-        3) Select the most recently updated file of the aliquot
+        2) Select at random a single aliquot which is the
+        source of a file in that subquery
+        3) Select the most recently updated file of the
+        aliquot that doesn't already have a FileDataFromFile
+        edge
 
         We then set self.input_bam to that file.
         """
@@ -141,6 +144,7 @@ class TCGAExomeAligner(object):
                                        .sysan(source="tcga_cghub")\
                                        .filter(File.experimental_strategies.any(ExperimentalStrategy.name.astext == "WXS"))\
                                        .filter(File.file_name.astext.endswith(".bam"))\
+                                       .filter(~File.derived_files.any())\
                                        .subquery()
         aliquot = self.graph.nodes(Aliquot)\
                             .join(FileDataFromAliquot)\
