@@ -17,7 +17,8 @@ from zug.downloaders import md5sum_with_size
 from cdisutils.net import BotoManager
 from gdcdatamodel.models import (
     File, Aliquot, ExperimentalStrategy,
-    DataFormat, Platform
+    DataFormat, Platform,
+    FileDataFromFile
 )
 
 from boto.s3.connection import OrdinaryCallingFormat
@@ -268,6 +269,7 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
                                 .filter(File.file_name.astext.endswith(".bam.bai"))\
                                 .sysan(source="tcga_exome_alignment")\
                                 .one()
+            self.assertEqual(len(new_bam.source_files), 1)
             self.assertEqual(new_bam.related_files, [new_bai])
             new_bam_doc = self.signpost_client.get(new_bam.node_id)
             self.assertEqual(
@@ -279,6 +281,12 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
             self.assertEqual(new_bam.data_formats[0].name, "BAM")
             self.assertEqual(new_bam.platforms[0].name, "Illumina GA")
             self.assertEqual(new_bam.experimental_strategies[0].name, "WXS")
+            edge = self.graph.edges(FileDataFromFile).dst(new_bam.node_id).one()
+            self.assertEqual(
+                edge.sysan["alignment_docker_image_id"],
+                "6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6",
+            )
+            self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")

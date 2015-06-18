@@ -469,6 +469,7 @@ class TCGAExomeAligner(object):
                 "alignment_docker_image_id": self.docker_image["Id"],
                 "alignment_docker_image_tag": docker_tag,
                 "alignment_docker_cmd": self.docker_cmd,
+                "alignment_reference_name": os.path.basename(self.reference),
             }
         )
         # this line implicitly merges the new bam and new bai
