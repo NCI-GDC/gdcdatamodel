@@ -1,4 +1,4 @@
-from base import ZugTestBase
+from base import ZugTestBase, PreludeMixin
 from elasticsearch import Elasticsearch
 from gdcdatamodel.models import File, Aliquot
 from zug.gdc_elasticsearch import GDCElasticsearch
@@ -6,7 +6,7 @@ import es_fixtures
 import os
 
 
-class GDCElasticsearchTest(ZugTestBase):
+class GDCElasticsearchTest(PreludeMixin, ZugTestBase):
 
     def setUp(self):
         super(GDCElasticsearchTest, self).setUp()
