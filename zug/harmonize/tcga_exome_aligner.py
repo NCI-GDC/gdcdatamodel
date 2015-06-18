@@ -159,7 +159,8 @@ class TCGAExomeAligner(object):
             raise NoMoreWorkException("No aliquots with unaligned files found")
         self.log.info("Selected aliquot %s to work on", aliquot)
         sorted_files = sorted([f for f in aliquot.files],
-                              key=lambda f: f.sysan["cghub_last_modified"])
+                              key=lambda f: f.sysan["cghub_upload_date"],
+                              reverse=True)
         self.log.info("Aliquot has %s files", len(sorted_files))
         input_bam = sorted_files[0]
         locked = self.consul.get_consul_lock(input_bam.node_id)

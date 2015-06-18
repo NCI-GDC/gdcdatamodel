@@ -190,7 +190,8 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         )
         bam_file.system_annotations = {
             "source": "tcga_cghub",
-            "cghub_last_modified": 12345567
+            "cghub_last_modified": 12345567,
+            "cghub_upload_date": 12345567,
         }
         with self.graph.session_scope():
             strat = self.graph.nodes(ExperimentalStrategy)\
