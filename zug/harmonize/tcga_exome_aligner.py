@@ -20,6 +20,7 @@ from cdisutils import md5sum
 from cdisutils.log import get_logger
 from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
+from zug.consul_manager import ConsulManager
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
     FileDataFromAliquot, FileDataFromFile
@@ -111,6 +112,8 @@ class TCGAExomeAligner(object):
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         self.init_docker()
+        self.consul = ConsulManager(prefix="tcga_exome_alignment")
+        self.consul.start_consul_session()
         self.start_time = int(time.time())
         self.log = get_logger("tcga_exome_aligner")
 
@@ -149,8 +152,14 @@ class TCGAExomeAligner(object):
         sorted_files = sorted([f for f in aliquot.files],
                               key=lambda f: f.sysan["cghub_last_modified"])
         self.log.info("Aliquot has %s files", len(sorted_files))
-        # TODO LOCK IT (probably in consul) so no one else gets it
-        self.input_bam = sorted_files[0]
+        input_bam = sorted_files[0]
+        locked = self.consul.get_consul_lock(input_bam.node_id)
+        if locked:
+            self.log.info("locked consul key: %s", self.consul.consul_key)
+            self.input_bam = input_bam
+        else:
+            raise RuntimeError("Couldn't lock consul key {}"
+                               .format(self.consul.consul_key))
         self.log.info("Choosing file %s to align", self.input_bam)
         self.log.info("Finding associated bai file")
         potential_bais = [f for f in self.input_bam.related_files if f.file_name.endswith(".bai")]
@@ -187,7 +196,7 @@ class TCGAExomeAligner(object):
 
     def download_inputs(self):
         """
-        This hist the object stores directly, although we should consider
+        This hits the object stores directly, although we should consider
         hitting the API instead in the future.
         """
         self.input_bam_path = self.download_file(self.input_bam)
@@ -451,6 +460,7 @@ class TCGAExomeAligner(object):
                 "alignment_docker_cmd": self.docker_cmd,
             }
         )
+        # this line implicitly merges the new bam and new bai
         self.graph.current_session().merge(edge)
         # classify new bam file, same as the old bam file
         new_bam_node.experimental_strategies = self.input_bam.experimental_strategies
