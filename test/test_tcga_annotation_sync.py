@@ -76,7 +76,6 @@ class TCGAAnnotationTest(ZugsTestBase):
                 self.assertIsNotNone(self.graph.nodes(Aliquot)
                                      .props(submitter_id="TCGA-06-0237-01A-02D-0234-02")
                                      .one().annotations)
-                print [a.props for a in self.graph.nodes(Annotation).all()]
 
     def test_sync_with_name_munging(self):
         part = self.create_participant("TCGA-BG-A0MS")
