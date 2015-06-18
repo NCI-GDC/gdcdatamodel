@@ -273,6 +273,7 @@ class DataBackup(object):
             for filename in glob.glob(prefix):
                 try:
                     os.remove(filename)
+                    self.logger.info('Removed file %s', filename)
                 except:
                     pass
 
