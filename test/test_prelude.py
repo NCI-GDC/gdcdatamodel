@@ -1,6 +1,5 @@
 from zug.datamodel.prelude import create_prelude_nodes
-import unittest
-from psqlgraph import PsqlGraphDriver, Node, Edge
+import base
 from gdcdatamodel.models import (
     DataSubtype,
     ProjectMemberOfProgram,
@@ -8,27 +7,7 @@ from gdcdatamodel.models import (
 )
 
 
-class TestPrelude(unittest.TestCase):
-
-    def setUp(self):
-        self.driver = PsqlGraphDriver(
-            'localhost', 'test', 'test', 'automated_test')
-        self.clear_tables()
-
-    def tearDown(self):
-        self.clear_tables()
-
-    def clear_tables(self):
-        with self.driver.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.driver.engine.dispose()
+class TestPrelude(base.ZugsSimpleTestBase):
 
     def test_prelude(self):
         create_prelude_nodes(self.driver)

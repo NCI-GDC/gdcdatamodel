@@ -25,13 +25,6 @@ PROTEIN_DF = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
 
 class TestTCGAMAGETASync(ZugsTestBase):
 
-    def setUp(self):
-        super(TestTCGAMAGETASync, self).setUp()
-        os.environ["PG_HOST"] = "localhost"
-        os.environ["PG_USER"] = "test"
-        os.environ["PG_PASS"] = "test"
-        os.environ["PG_NAME"] = "automated_test"
-
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point
         node = Archive(

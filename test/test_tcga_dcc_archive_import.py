@@ -30,10 +30,6 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
         super(TCGADCCArchiveSyncTest, self).setUp()
         self.storage_client.create_container("test_tcga_dcc_public")
         self.storage_client.create_container("test_tcga_dcc_protected")
-        os.environ["PG_HOST"] = "localhost"
-        os.environ["PG_USER"] = "test"
-        os.environ["PG_PASS"] = "test"
-        os.environ["PG_NAME"] = "automated_test"
         os.environ["SIGNPOST_URL"] = self.signpost_url
         os.environ["SCRATCH_DIR"] = self.scratch_dir
         os.environ["TCGA_PROTECTED_BUCKET"] = "test_tcga_dcc_protected"
@@ -44,7 +40,7 @@ class TCGADCCArchiveSyncTest(ZugsTestBase):
     def get_syncer(self):
         return TCGADCCArchiveSyncer(
             s3=self.storage_client,
-            consul_prefix=str(random.randint(1,1000)) + "_test_tcgadccsync",
+            consul_prefix=str(random.randint(1, 1000)) + "_test_tcgadccsync",
         )
 
     def test_syncing_an_archive_with_distinct_center(self):

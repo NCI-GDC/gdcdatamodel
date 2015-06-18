@@ -1,40 +1,20 @@
-import unittest
 import os
-from psqlgraph import PsqlGraphDriver, Node, Edge
-from gdcdatamodel.models import (
-    Participant,
-    Sample,
-    Aliquot,
-    AliquotDerivedFromSample,
-)
+from gdcdatamodel.models import Participant, Aliquot
 from zug.datamodel.target.sample_matrices import TARGETSampleMatrixSyncer
 from zug.datamodel.prelude import create_prelude_nodes
+import base
+
+FIXTURES_DIR = os.path.join(base.TEST_DIR, "fixtures", "sample_matrices")
 
 
-TEST_DIR = os.path.dirname(os.path.realpath(__file__))
-FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "sample_matrices")
-
-
-class TestTARGETSampleMatrixSync(unittest.TestCase):
+class TestTARGETSampleMatrixSync(base.ZugsSimpleTestBase):
 
     def setUp(self):
-        self.driver = PsqlGraphDriver('localhost', 'test', 'test', 'automated_test')
+        super(TestTARGETSampleMatrixSync, self).setUp()
         create_prelude_nodes(self.driver)
 
     def syncer_for(self, project):
         return TARGETSampleMatrixSyncer(project, graph=self.driver, dcc_auth=None)
-
-    def tearDown(self):
-        with self.driver.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.driver.engine.dispose()
 
     def trace_participant(self, aliquot_id):
         return self.driver.nodes(Participant)\

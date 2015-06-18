@@ -1,35 +1,20 @@
 import logging
 import os
-import unittest
 import yaml
-from gdcdatamodel import models
-from psqlgraph import Edge, Node
 
+from gdcdatamodel import models
+import base
 from zug import datamodel
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-test_dir = os.path.dirname(os.path.realpath(__file__))
-
-settings = dict(
-    host='localhost',
-    user='test',
-    password='test',
-    database='automated_test',
-)
-
-logging.basicConfig(level=logging.INFO)
-
-
-class TestXML2PsqlGraph(unittest.TestCase):
+class TestXML2PsqlGraph(base.ZugsSimpleTestBase):
 
     def setUp(self):
         # load sample data
-        with open(os.path.join(test_dir, 'sample1.yaml')) as f:
+        with open(os.path.join(base.TEST_DIR, 'sample1.yaml')) as f:
             xml_mapping = yaml.load(f.read())
         self.converter = datamodel.xml2psqlgraph.xml2psqlgraph(
-            xml_mapping=xml_mapping, **settings)
-        with open(os.path.join(test_dir, 'sample1.xml')) as f:
+            xml_mapping=xml_mapping, **self.graph_info)
+        with open(os.path.join(base.TEST_DIR, 'sample1.xml')) as f:
             self.xml = f.read()
 
     def test_convert_sample1(self):

@@ -1,63 +1,9 @@
-import unittest
-import tempfile
-import time
-import random
-from multiprocessing import Process
-
-from psqlgraph import PsqlGraphDriver, PolyNode, Node, Edge
-
-from signpost import Signpost
-from signpostclient import SignpostClient
-
-from libcloud.storage.types import Provider
-from libcloud.storage.providers import get_driver
-
-
+from psqlgraph import PolyNode
+import base
 from zug.datalocator import DataLocator
 
 
-def run_signpost(port):
-    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(host="localhost",
-                                                                  port=port)
-
-
-class DataLocatorTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.port = random.randint(5000, 6000)
-        cls.signpost = Process(target=run_signpost, args=[cls.port])
-        cls.signpost.start()
-        time.sleep(1)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.signpost.terminate()
-
-    def setUp(self):
-        self.graph = PsqlGraphDriver('localhost', 'test',
-                                     'test', 'automated_test')
-        self.scratch_dir = tempfile.mkdtemp()
-        Local = get_driver(Provider.LOCAL)
-        self.storage_client = Local(tempfile.mkdtemp())
-        self.storage_client.create_container("test")
-        self.storage_client.connection.host = "local"
-        self.signpost_client = SignpostClient("http://localhost:{}".format(
-            self.port), version="v0")
-
-    def tearDown(self):
-        with self.graph.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.graph.engine.dispose()
-        for container in self.storage_client.list_containers():
-            for obj in container.list_objects():
-                obj.delete()
+class DataLocatorTest(base.ZugsTestBase):
 
     def test_data_locate(self):
         doc = self.signpost_client.create()

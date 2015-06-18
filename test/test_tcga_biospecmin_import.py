@@ -1,38 +1,14 @@
 import logging
-import unittest
 import os
 from zug.datamodel import xml2psqlgraph, extract_tar, bcr_xml_mapping
 from zug.datamodel.prelude import create_prelude_nodes
-from psqlgraph import Node, Edge
+import base
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-data_dir = os.path.dirname(os.path.realpath(__file__))
 
-datatype = 'biospecimen'
-host = 'localhost'
-user = 'test'
-password = 'test'
-database = 'automated_test'
-
-
-def initialize():
-
-    extractor = extract_tar.ExtractTar(
-        regex=".*(bio).*(Level_1).*\\.xml"
-    )
-    converter = xml2psqlgraph.xml2psqlgraph(
-        xml_mapping=bcr_xml_mapping,
-        host=host,
-        user=user,
-        password=password,
-        database=database,
-    )
-    return extractor, converter
-
-
-class TestTCGABiospeceminImport(unittest.TestCase):
+class TestTCGABiospeceminImport(base.ZugsSimpleTestBase):
 
     IGNORED_LABELS = [
         'center', 'tissue_source_site', 'tag', 'experimental_strategy',
@@ -41,41 +17,31 @@ class TestTCGABiospeceminImport(unittest.TestCase):
     ]
 
     def setUp(self):
+        super(TestTCGABiospeceminImport, self).setUp()
         logging.basicConfig(level=logging.DEBUG)
-        self.extrator, self.converter = initialize()
+        self.extractor = extract_tar.ExtractTar(
+            regex=".*(bio).*(Level_1).*\\.xml")
+        self.converter = xml2psqlgraph.xml2psqlgraph(
+            xml_mapping=bcr_xml_mapping,
+            **self.graph_info)
         create_prelude_nodes(self.converter.graph)
 
-    def tearDown(self):
-        self.clear_tables()
-
-    def clear_tables(self):
-        with self.converter.graph.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.converter.graph.engine.dispose()
-
     def test_convert_sample(self):
-        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes(group_id='group1', version=1)
 
     def test_convert_validate_nodes_sample(self):
         self.converter.export_nodes(group_id='group1', version=1)
-        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes(group_id='group1', version=1)
 
     def test_convert_validate_edges_sample(self):
         self.converter.export_nodes(group_id='group1', version=1)
-        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes(group_id='group1', version=1)
@@ -84,7 +50,7 @@ class TestTCGABiospeceminImport(unittest.TestCase):
     def test_versioned_idempotency(self):
         g = self.converter.graph
         self.converter.export_nodes(group_id='group1', version=1)
-        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
 
         self.converter.xml2psqlgraph(xml)

@@ -1,31 +1,17 @@
-import logging
-import unittest
-import os
-from zug.datamodel import prelude
-from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from gdcdatamodel import get_participant_es_mapping
 from gdcdatamodel.models import File, Aliquot
-from psqlgraph import PsqlGraphDriver, Edge, Node
-
+from zug.datamodel import prelude
+from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
+import base
 import es_fixtures
+import logging
+import os
+import unittest
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
-
-host = 'localhost'
-user = 'test'
-password = 'test'
-database = 'automated_test'
-
-
-g = PsqlGraphDriver(
-    host=host,
-    user=user,
-    password=password,
-    database=database,
-)
 
 sample_props = {'sample_type_id',
                 'time_between_clamping_and_freezing',
@@ -128,10 +114,10 @@ class TestElasticsearchMappings(unittest.TestCase):
                              {'annotations', 'associated_entities'}))
 
 
-class TestPsqlgraph2JSON(unittest.TestCase):
+class TestPsqlgraph2JSON(base.ZugsSimpleTestBase):
 
     def add_req_nodes(self):
-        prelude.create_prelude_nodes(g)
+        prelude.create_prelude_nodes(self.g)
 
     def add_file_nodes(self):
         file = File(
@@ -153,34 +139,21 @@ class TestPsqlgraph2JSON(unittest.TestCase):
             submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906'
         )
         to_delete_file.system_annotations["to_delete"] = True
-        with g.session_scope():
-            aliquot = g.nodes(Aliquot).ids('84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
+        with self.g.session_scope():
+            aliquot = self.g.nodes(Aliquot).ids('84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
             aliquot.files.append(file)
             aliquot.files.append(to_delete_file)
 
     def setUp(self):
-        self.tearDown()
-        self.add_req_nodes()
-        es_fixtures.insert(g)
+        super(TestPsqlgraph2JSON, self).setUp()
+        es_fixtures.insert(self.g)
         self.add_file_nodes()
-        doc_conv = PsqlGraph2JSON(g)
-        with g.session_scope():
+        doc_conv = PsqlGraph2JSON(self.g)
+        with self.g.session_scope():
             doc_conv.cache_database()
         self.part_docs, self.file_docs, self.ann_docs = (
             doc_conv.denormalize_participants())
         self.part_doc = self.part_docs[0]
-
-    def tearDown(self):
-        with g.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        g.engine.dispose()
 
     def test_participant_project(self):
         props = self.part_doc
