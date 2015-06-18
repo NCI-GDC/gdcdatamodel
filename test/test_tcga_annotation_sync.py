@@ -1,7 +1,7 @@
 import os
 from uuid import uuid4
 
-from base import ZugsSimpleTestBase
+from base import ZugTestBase
 from gdcdatamodel.models import Annotation, Aliquot, Participant, Portion
 
 from zug.datamodel.tcga_annotations import TCGAAnnotationSyncer
@@ -23,7 +23,7 @@ def mock_annotations(doc):
     return inner
 
 
-class TCGAAnnotationTest(ZugsSimpleTestBase):
+class TCGAAnnotationTest(ZugTestBase):
 
     def create_aliquot(self, barcode):
         aliquot = Aliquot(

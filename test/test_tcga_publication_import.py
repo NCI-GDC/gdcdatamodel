@@ -1,10 +1,10 @@
-from base import ZugsTestBase
+from base import ZugTestBase
 from zug.datamodel.tcga_publication_import import TCGAPublicationImporter
 import uuid
 from gdcdatamodel.models import PublicationRefersToFile, Publication, File
 
 
-class TestTCGAPublicationImport(ZugsTestBase):
+class TestTCGAPublicationImport(ZugTestBase):
 
     def setUp(self):
         super(TestTCGAPublicationImport, self).setUp()

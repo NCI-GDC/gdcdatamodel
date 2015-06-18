@@ -1,8 +1,7 @@
 from gdcdatamodel import get_participant_es_mapping
 from gdcdatamodel.models import File, Aliquot
-from zug.datamodel import prelude
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
-import base
+from base import ZugTestBase, PreludeMixin
 import es_fixtures
 import logging
 import os
@@ -114,10 +113,7 @@ class TestElasticsearchMappings(unittest.TestCase):
                              {'annotations', 'associated_entities'}))
 
 
-class TestPsqlgraph2JSON(base.ZugsSimpleTestBase):
-
-    def add_req_nodes(self):
-        prelude.create_prelude_nodes(self.g)
+class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
 
     def add_file_nodes(self):
         file = File(

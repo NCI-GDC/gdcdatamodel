@@ -6,7 +6,7 @@ from zug.datamodel.tcga_filename_metadata_sync\
     import TCGAFilenameMetadataSyncer
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
 
-import base
+from base import ZugTestBase
 import os
 import uuid
 
@@ -19,7 +19,7 @@ def run_signpost(port):
         host="localhost", port=port)
 
 
-class TCGAFilenameMetadataSyncerTest(base.ZugsTestBase):
+class TCGAFilenameMetadataSyncerTest(ZugTestBase):
 
     def setUp(self):
         super(TCGAFilenameMetadataSyncer, self).setUp()

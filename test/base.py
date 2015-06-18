@@ -9,6 +9,7 @@ import uuid
 from libcloud.storage.types import Provider
 from libcloud.storage.providers import get_driver
 from multiprocessing import Process
+from cdisutils.log import get_logger
 
 from psqlgraph import PsqlGraphDriver, Node, Edge
 from zug.datamodel.prelude import create_prelude_nodes
@@ -31,26 +32,36 @@ def run_signpost(port):
         host="localhost", port=port)
 
 
-class ZugsSimpleTestBase(TestCase):
+class ZugTestBase(TestCase):
 
     def setUp(self):
         self.basic_test_setup()
-        self.delete_all_nodes()
+        self.delete_non_prelude_nodes()
 
     def tearDown(self):
-        self.delete_all_nodes()
+        self.delete_non_prelude_nodes()
         self.g.engine.dispose()
 
     def delete_all_nodes(self):
+        self._delete_all_nodes(self.g)
+
+    @staticmethod
+    def _delete_all_nodes(g):
         tables = [t for l in map(lambda x: x().get_subclass_table_names(),
                                  (Edge, Node)) for t in l
                   if t != Edge.__tablename__ and t != Node.__tablename__]
         tables += ['_voided_nodes', '_voided_edges']
-        with self.g.engine.begin() as conn:
+        with g.engine.begin() as conn:
             conn.execute('TRUNCATE {}'.format(', '.join(tables)))
 
-    def create_prelude_nodes(self):
-        create_prelude_nodes(self.g)
+    def delete_non_prelude_nodes(self):
+        self.log.info('Deleting all non-prelude nodes')
+        with self.g.session_scope():
+            for scls in Node.get_subclasses():
+                self.g.nodes(scls).not_sysan(is_prelude=True).delete(
+                    synchronize_session='fetch')
+        with self.g.engine.begin() as conn:
+            conn.execute('TRUNCATE _voided_nodes, _voided_edges')
 
     def basic_test_setup(self):
         self.graph_info = {
@@ -62,6 +73,19 @@ class ZugsSimpleTestBase(TestCase):
         self.create_new_graph_driver()
         self.create_new_scratch_space()
         self.set_database_environ_variables()
+
+    @classmethod
+    def setUpClass(cls):
+        cls.log = get_logger(cls.__name__)
+        g = PsqlGraphDriver(PG_HOST, PG_USER, PG_PASSWORD, PG_DATABASE)
+        cls.log.info('Deleting all nodes')
+        cls._delete_all_nodes(g)
+
+    @classmethod
+    def tearDownClass(cls):
+        g = PsqlGraphDriver(PG_HOST, PG_USER, PG_PASSWORD, PG_DATABASE)
+        cls.log.info('Deleting all nodes')
+        cls._delete_all_nodes(g)
 
     def set_database_environ_variables(self):
         os.environ["PG_HOST"] = self.graph_info['host']
@@ -99,24 +123,48 @@ class ZugsSimpleTestBase(TestCase):
         return node_class(node_id, **kwargs)
 
 
-class ZugsTestBase(ZugsSimpleTestBase):
-    """Zugs test base with signpost and prelude nodes
-
-    """
+class SignpostMixin(object):
 
     @classmethod
     def setUpClass(cls):
+        super(SignpostMixin, cls).setUpClass()
         cls.port = random.randint(5000, 6000)
+        cls.log.info('Starting signpost')
         cls.signpost = Process(target=run_signpost, args=[cls.port])
         cls.signpost.start()
         time.sleep(1)
+        cls.signpost_url = "http://localhost:{}".format(cls.port)
+        cls.signpost_client = SignpostClient(cls.signpost_url, version="v0")
 
     @classmethod
-    def tearDownClass(cls):
-        cls.signpost.terminate()
+    def tearDownClass(self):
+        super(SignpostMixin, self).tearDownClass()
+        self.log.info('Stopping signpost')
+        self.signpost.terminate()
+
+
+class PreludeMixin(object):
+
+    @classmethod
+    def setUpClass(cls):
+        super(PreludeMixin, cls).setUpClass()
+        g = PsqlGraphDriver(PG_HOST, PG_USER, PG_PASSWORD, PG_DATABASE)
+        cls.log.info('Creating prelude nodes')
+        create_prelude_nodes(g)
+        with g.session_scope():
+            for node in g.nodes().all():
+                node.sysan['is_prelude'] = True
+
+    @classmethod
+    def tearDownClass(self):
+        super(PreludeMixin, self).tearDownClass()
+
+
+class StorageMixin(object):
 
     def setUp(self):
-        super(ZugsTestBase, self).setUp()
+        super(StorageMixin, self).setUp()
+        self.log.info('Creating storage client')
         Local = get_driver(Provider.LOCAL)
         self.storage_client = Local(self.scratch_dir)
         self.storage_info = {
@@ -124,8 +172,11 @@ class ZugsTestBase(ZugsSimpleTestBase):
             "access_key": self.scratch_dir,
             "kwargs": {}
         }
-        self.signpost_url = "http://localhost:{}".format(self.port)
         self.signpost_client = SignpostClient(self.signpost_url, version="v0")
+
+    def tearDown(self):
+        super(StorageMixin, self).tearDown()
+
 
 class FakeS3Mixin(object):
 

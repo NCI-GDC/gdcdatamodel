@@ -1,4 +1,4 @@
-from base import ZugsTestBase
+from base import ZugTestBase, PreludeMixin
 from mock import patch
 
 import os
@@ -23,7 +23,7 @@ DUPLICATE_DF = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
 PROTEIN_DF = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
 
 
-class TestTCGAMAGETASync(ZugsTestBase):
+class TestTCGAMAGETASync(PreludeMixin, ZugTestBase):
 
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point

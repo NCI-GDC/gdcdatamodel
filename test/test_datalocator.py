@@ -1,9 +1,9 @@
 from psqlgraph import PolyNode
-import base
+from base import ZugTestBase
 from zug.datalocator import DataLocator
 
 
-class DataLocatorTest(base.ZugsTestBase):
+class DataLocatorTest(ZugTestBase):
 
     def test_data_locate(self):
         doc = self.signpost_client.create()

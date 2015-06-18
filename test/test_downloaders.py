@@ -2,7 +2,11 @@ import os
 import uuid
 import hashlib
 from itertools import islice
+<<<<<<< HEAD
 from base import ZugsTestBase, FakeS3Mixin
+=======
+from base import ZugTestBase, SignpostMixin
+>>>>>>> migrate specific requirements to mixins
 from mock import patch, Mock
 from consulate import Consul
 
@@ -57,7 +61,8 @@ class FailingMD5SumWithSize(object):
         return md5.hexdigest(), length
 
 
-class DownloadersTest(ZugsTestBase, FakeS3Mixin):
+class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
+
 
     def setUp(self):
         super(DownloadersTest, self).setUp()

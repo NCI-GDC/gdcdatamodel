@@ -2,20 +2,20 @@ import os
 import yaml
 
 from gdcdatamodel import models
-import base
+from base import ZugTestBase, TEST_DIR
 from zug import datamodel
 
 
-class TestXML2PsqlGraph(base.ZugsSimpleTestBase):
+class TestXML2PsqlGraph(ZugTestBase):
 
     def setUp(self):
         super(TestXML2PsqlGraph, self).setUp()
         # load sample data
-        with open(os.path.join(base.TEST_DIR, 'sample1.yaml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample1.yaml')) as f:
             xml_mapping = yaml.load(f.read())
         self.converter = datamodel.xml2psqlgraph.xml2psqlgraph(
             xml_mapping=xml_mapping, **self.graph_info)
-        with open(os.path.join(base.TEST_DIR, 'sample1.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample1.xml')) as f:
             self.xml = f.read()
 
     def test_convert_sample1(self):

@@ -1,15 +1,12 @@
+from base import ZugTestBase
+from elasticsearch import Elasticsearch
+from gdcdatamodel.models import File, Aliquot
+from zug.gdc_elasticsearch import GDCElasticsearch
+import es_fixtures
 import os
 
-from base import ZugsSimpleTestBase
-import es_fixtures
 
-from elasticsearch import Elasticsearch
-from zug.gdc_elasticsearch import GDCElasticsearch
-
-from gdcdatamodel.models import File, Aliquot
-
-
-class GDCElasticsearchTest(ZugsSimpleTestBase):
+class GDCElasticsearchTest(ZugTestBase):
 
     def setUp(self):
         super(GDCElasticsearchTest, self).setUp()

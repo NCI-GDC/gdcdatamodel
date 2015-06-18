@@ -1,14 +1,9 @@
-import logging
 import os
 from zug.datamodel import xml2psqlgraph, extract_tar, bcr_xml_mapping
-from zug.datamodel.prelude import create_prelude_nodes
-import base
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+from base import ZugTestBase, TEST_DIR, PreludeMixin
 
 
-class TestTCGABiospeceminImport(base.ZugsSimpleTestBase):
+class TestTCGABiospeceminImport(PreludeMixin, ZugTestBase):
 
     IGNORED_LABELS = [
         'center', 'tissue_source_site', 'tag', 'experimental_strategy',
@@ -18,30 +13,28 @@ class TestTCGABiospeceminImport(base.ZugsSimpleTestBase):
 
     def setUp(self):
         super(TestTCGABiospeceminImport, self).setUp()
-        logging.basicConfig(level=logging.DEBUG)
         self.extractor = extract_tar.ExtractTar(
             regex=".*(bio).*(Level_1).*\\.xml")
         self.converter = xml2psqlgraph.xml2psqlgraph(
             xml_mapping=bcr_xml_mapping,
             **self.graph_info)
-        create_prelude_nodes(self.converter.graph)
 
     def test_convert_sample(self):
-        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes(group_id='group1', version=1)
 
     def test_convert_validate_nodes_sample(self):
         self.converter.export_nodes(group_id='group1', version=1)
-        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes(group_id='group1', version=1)
 
     def test_convert_validate_edges_sample(self):
         self.converter.export_nodes(group_id='group1', version=1)
-        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export_nodes(group_id='group1', version=1)
@@ -50,7 +43,7 @@ class TestTCGABiospeceminImport(base.ZugsSimpleTestBase):
     def test_versioned_idempotency(self):
         g = self.converter.graph
         self.converter.export_nodes(group_id='group1', version=1)
-        with open(os.path.join(base.TEST_DIR, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
 
         self.converter.xml2psqlgraph(xml)
@@ -82,7 +75,7 @@ class TestTCGABiospeceminImport(base.ZugsSimpleTestBase):
 
         g = self.converter.graph
 
-        with open(os.path.join(data_dir, 'sample_biospecimen.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample_biospecimen.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=1)
@@ -90,7 +83,7 @@ class TestTCGABiospeceminImport(base.ZugsSimpleTestBase):
             v1 = {n.node_id: n for n in g.get_nodes().all()
                   if n.label not in self.IGNORED_LABELS}
 
-        with open(os.path.join(data_dir, 'sample_biospecimen_v2.xml')) as f:
+        with open(os.path.join(TEST_DIR, 'sample_biospecimen_v2.xml')) as f:
             xml = f.read()
         self.converter.xml2psqlgraph(xml)
         self.converter.export(group_id='group1', version=2.5)

@@ -1,4 +1,4 @@
-from base import ZugsTestBase, TEST_DIR
+from base import ZugTestBase, TEST_DIR
 from mock import patch
 from httmock import HTTMock, urlmatch
 
@@ -24,7 +24,7 @@ def fake_tree_walk(url, **kwargs):
         yield url
 
 
-class TARGETMAGETABSyncTest(ZugsTestBase):
+class TARGETMAGETABSyncTest(ZugTestBase):
 
     def create_aliquot(self, barcode):
         return self.graph.node_merge(

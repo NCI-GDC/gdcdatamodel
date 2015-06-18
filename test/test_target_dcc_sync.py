@@ -1,4 +1,4 @@
-from base import ZugsTestBase
+from base import ZugTestBase, StorageMixin, SignpostMixin
 
 from gdcdatamodel.models import File
 from zug.datamodel.target.dcc_sync import TARGETDCCProjectSyncer
@@ -19,7 +19,7 @@ def fake_tree_walk(url, **kwargs):
         yield url
 
 
-class TARGETDCCSyncTest(ZugsTestBase):
+class TARGETDCCSyncTest(StorageMixin, SignpostMixin, ZugTestBase):
 
     def setUp(self):
         super(TARGETDCCSyncTest, self).setUp()

@@ -1,6 +1,6 @@
 import os
 import random
-from base import ZugsTestBase
+from base import ZugTestBase, StorageMixin, SignpostMixin
 from mock import patch
 from httmock import urlmatch, HTTMock
 
@@ -24,7 +24,7 @@ def dcc_archives_fixture(url, request):
             "status_code": 200}
 
 
-class TCGADCCArchiveSyncTest(ZugsTestBase):
+class TCGADCCArchiveSyncTest(StorageMixin, SignpostMixin, ZugTestBase):
 
     def setUp(self):
         super(TCGADCCArchiveSyncTest, self).setUp()
