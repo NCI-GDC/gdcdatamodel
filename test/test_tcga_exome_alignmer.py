@@ -1,6 +1,10 @@
 import os
 import sys
 import tempfile
+import random
+import string
+import subprocess
+from contextlib import nested
 from uuid import uuid4
 
 from mock import patch
@@ -16,6 +20,52 @@ from gdcdatamodel.models import (
 )
 
 from boto.s3.connection import OrdinaryCallingFormat
+
+
+class FakeDockerClient(object):
+    """
+    Docker doesn't work on travis CI because the kernel version is to
+    old, so we write this fake docker client which just execs all the
+    commands you tell it to do on the host machine.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.containers = {}
+
+    def images(self):
+        return [{
+            u'Created': 1434123150,
+            u'Id': u'6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6',
+            u'Labels': {},
+            u'ParentId': u'9fd3c8c9af32dddb1793ccb5f6535e12d735eacae16f8f8c4214f42f33fe3d29',
+            u'RepoDigests': [],
+            u'RepoTags': [u'ubuntu:14.04'],
+            u'Size': 0,
+            u'VirtualSize': 188310849
+        }]
+
+    def create_container(self, **kwargs):
+        id = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                     for _ in range(10))
+        cont = kwargs
+        cont["Id"] = id
+        self.containers[id] = cont
+        return cont
+
+    def start(self, cont, **kwargs):
+        retcode = subprocess.call(self.containers[cont["Id"]]["command"],
+                                  shell=True)
+        self.containers[cont["Id"]]["retcode"] = retcode
+
+    def logs(self, cont, **kwargs):
+        # TODO maybe store actual logs
+        return ["FAKE", "DOCKER", "LOGS"]
+
+    def wait(self, cont, **kwargs):
+        return self.containers[cont["Id"]]["retcode"]
+
+    def remove_container(self, cont, **kwargs):
+        del self.containers[cont["Id"]]
 
 
 def fake_build_docker_cmd(self):
@@ -42,20 +92,28 @@ def fake_build_docker_cmd(self):
     # yes i know this is kind of gross but it works just work with me
     # here ok
     template = "bash -c '" + "; ".join(todo) + "'"
-    output_bam_path = self.container_abspath(os.path.join(
+    if os.environ.get("TRAVIS"):
+        # we have to use the host path on travis because we don't have
+        # real docker there, so we use FakeDockerClient, which just
+        # executes the command on the host, so we need host relative
+        # paths as opposed to container relative paths
+        get_path = self.host_abspath
+    else:
+        get_path = self.container_abspath
+    output_bam_path = get_path(os.path.join(
         self.scratch_dir, "realn", "bwa_mem_pe", "md",
         self.input_bam.file_name)
     )
-    output_log_path = self.container_abspath(os.path.join(
+    output_log_path = get_path(os.path.join(
         self.scratch_dir, "aln_"+self.input_bam.node_id+".log")
     )
-    output_db_path = self.container_abspath(os.path.join(
+    output_db_path = get_path(os.path.join(
         self.scratch_dir, self.input_bam.node_id+"_harmonize.db")
     )
     return template.format(
-        reference_path=self.container_abspath(self.reference),
-        bam_path=self.container_abspath(self.input_bam_path),
-        bai_path=self.container_abspath(self.input_bai_path),
+        reference_path=get_path(self.reference),
+        bam_path=get_path(self.input_bam_path),
+        bai_path=get_path(self.input_bai_path),
         output_bam_path=output_bam_path,
         output_log_path=output_log_path,
         output_db_path=output_db_path,
@@ -171,20 +229,31 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         return aliquot
 
     def monkey_patches(self):
-        return patch.multiple(
+        aligner_patches = patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
             download_inputs=self.with_fake_s3(TCGAExomeAligner.download_inputs),
             upload_file=self.with_fake_s3(TCGAExomeAligner.upload_file),
             build_docker_cmd=fake_build_docker_cmd
         )
+        if not os.environ.get("TRAVIS"):
+            return aligner_patches
+        else:
+            # In travis we can't use real docker because the kernel is
+            # too old, so we use the FakeDocker client instead, which
+            # just execs things on the host
+            docker_patch = patch(
+                "zug.harmonize.tcga_exome_aligner.docker.Client",
+                new=FakeDockerClient
+            )
+            return nested(aligner_patches, docker_patch)
 
     def test_basic_align(self):
         with self.graph.session_scope():
             aliquot = self.create_aliquot()
             file = self.create_file("test1.bam", "fake_test_content")
             file.aliquots = [aliquot]
-        aligner = self.get_aligner()
         with self.monkey_patches():
+            aligner = self.get_aligner()
             aligner.align()
         # query for new node and verify pull down from s3
         with self.graph.session_scope():
