@@ -1,12 +1,12 @@
 import os
 from gdcdatamodel.models import Participant, Aliquot
 from zug.datamodel.target.sample_matrices import TARGETSampleMatrixSyncer
-from base import ZugTestBase, TEST_DIR
+from base import ZugTestBase, TEST_DIR, PreludeMixin
 
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "sample_matrices")
 
 
-class TestTARGETSampleMatrixSync(ZugTestBase):
+class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
 
     def syncer_for(self, project):
         return TARGETSampleMatrixSyncer(
