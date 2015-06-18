@@ -73,7 +73,8 @@ def boto_config():
 class TCGAExomeAligner(object):
 
     def __init__(self, graph=None, s3=None,
-                 signpost=None):
+                 signpost=None,
+                 consul_prefix="tcga_exome_aligner"):
         if graph:
             self.graph = graph
         else:
@@ -113,7 +114,7 @@ class TCGAExomeAligner(object):
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         self.init_docker()
-        self.consul = ConsulManager(prefix="tcga_exome_alignment")
+        self.consul = ConsulManager(prefix=consul_prefix)
         self.consul.start_consul_session()
         self.start_time = int(time.time())
         self.log = get_logger("tcga_exome_aligner")

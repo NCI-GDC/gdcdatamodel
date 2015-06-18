@@ -163,7 +163,8 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         return TCGAExomeAligner(
             graph=self.graph,
             signpost=self.signpost_client,
-            s3=self.boto_manager
+            s3=self.boto_manager,
+            consul_prefix=self.random_string()+"tcga_exome_align"
         )
 
     def create_file(self, name, content):
@@ -297,3 +298,21 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
             aligner = self.get_aligner()
             aligner.align()
+
+    def test_raises_if_consul_key_is_locked(self):
+        """It there are no bam files without derived_files, test that we raise
+        NoMoreWorkException
+
+        """
+        with self.graph.session_scope():
+            aliquot = self.create_aliquot()
+            file = self.create_file("test1.bam", "fake_test_content")
+            file.aliquots = [aliquot]
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with self.graph.session_scope():
+                aligner.choose_bam_to_align()
+                # second one should fail because the first locked the only
+                # file to align
+                with self.assertRaises(RuntimeError):
+                    aligner.choose_bam_to_align()
