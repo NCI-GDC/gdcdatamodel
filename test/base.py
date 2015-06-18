@@ -39,15 +39,18 @@ class ZugsSimpleTestBase(TestCase):
 
     def tearDown(self):
         self.delete_all_nodes()
+        self.g.engine.dispose()
 
     def delete_all_nodes(self):
+        tables = [t for l in map(lambda x: x().get_subclass_table_names(),
+                                 (Edge, Node)) for t in l
+                  if t != Edge.__tablename__ and t != Node.__tablename__]
+        tables += ['_voided_nodes', '_voided_edges']
         with self.g.engine.begin() as conn:
-            tables = [t for l in map(lambda x: x().get_subclass_table_names(),
-                                     (Edge, Node)) for t in l
-                      if t != Edge.__tablename__ and t != Node.__tablename__]
-            tables += ['_voided_nodes', '_voided_edges']
             conn.execute('TRUNCATE {}'.format(', '.join(tables)))
-        self.g.engine.dispose()
+
+    def create_prelude_nodes(self):
+        create_prelude_nodes(self.g)
 
     def basic_test_setup(self):
         self.graph_info = {
@@ -123,36 +126,6 @@ class ZugsTestBase(ZugsSimpleTestBase):
         }
         self.signpost_url = "http://localhost:{}".format(self.port)
         self.signpost_client = SignpostClient(self.signpost_url, version="v0")
-        create_prelude_nodes(self.graph)
-
-    def tearDown(self):
-        with self.graph.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.graph.engine.dispose()
-
-    def get_fuzzed_node(self, cls, node_id=None, **kwargs):
-        if node_id is None:
-            node_id = str(uuid.uuid4())
-        for key, types in cls.get_pg_properties().iteritems():
-            if key in kwargs:
-                continue
-            elif not types or str in types:
-                kwargs[key] = self.random_string()
-            elif int in types or long in types:
-                kwargs[key] = random.randint(1e6, 1e7)
-            elif float in types:
-                kwargs[key] = random.random()
-            elif bool in types:
-                kwargs[key] = random.choice((True, False))
-        return cls(node_id, **kwargs)
-
 
 class FakeS3Mixin(object):
 

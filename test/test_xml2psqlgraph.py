@@ -1,4 +1,3 @@
-import logging
 import os
 import yaml
 
@@ -6,9 +5,11 @@ from gdcdatamodel import models
 import base
 from zug import datamodel
 
+
 class TestXML2PsqlGraph(base.ZugsSimpleTestBase):
 
     def setUp(self):
+        super(TestXML2PsqlGraph, self).setUp()
         # load sample data
         with open(os.path.join(base.TEST_DIR, 'sample1.yaml')) as f:
             xml_mapping = yaml.load(f.read())

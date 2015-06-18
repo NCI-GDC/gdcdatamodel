@@ -13,7 +13,7 @@ from gdcdatamodel.models import (
 )
 from psqlgraph import Node, Edge
 import base
-from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping, prelude
+from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping
 from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
@@ -76,7 +76,7 @@ class TestCGHubFileImporter(base.ZugsSimpleTestBase):
             )
 
     def _add_required_nodes(self):
-        prelude.create_prelude_nodes(self.converter.graph)
+        self.create_prelude_nodes()
         with self.converter.graph.session_scope():
             self.converter.graph.node_merge(
                 'c18465ae-447d-46c8-8b54-0156ab502265', label='aliquot',
