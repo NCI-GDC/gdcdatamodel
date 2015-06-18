@@ -1,6 +1,12 @@
 language: python
 python:
     - "2.7"
+env:
+  global:
+    - NOSE_NODES=2
+  matrix:
+    - NOSE_NODE_NUMBER=1
+    - NOSE_NODE_NUMBER=2
 cache:
   - directories:
     - /home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages
@@ -20,6 +26,7 @@ before_install:
 install:
   - python setup.py install
   - pip install -r dev-requirements.txt
+  - pip install distributed-nose
 before_script:
   - python bin/setup_psqlgraph.py
   - python bin/setup_neo4j.py
