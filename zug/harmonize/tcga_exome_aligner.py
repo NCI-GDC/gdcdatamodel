@@ -179,6 +179,7 @@ class TCGAExomeAligner(object):
         if len(potential_bais) > 1:
             raise RuntimeError("Multiple potential bais found for bam {}".format(potential_bais))
         self.input_bai = potential_bais[0]
+        self.log.info("Found bai %s", self.input_bai)
 
     def download_file(self, file):
         """
