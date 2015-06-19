@@ -166,12 +166,12 @@ class StorageMixin(object):
         self.log.info('Creating storage client')
         Local = get_driver(Provider.LOCAL)
         self.storage_client = Local(self.scratch_dir)
+        self.storage_client.connection.host = 'local'
         self.storage_info = {
             "driver": Local,
             "access_key": self.scratch_dir,
             "kwargs": {}
         }
-        self.signpost_client = SignpostClient(self.signpost_url, version="v0")
 
     def tearDown(self):
         super(StorageMixin, self).tearDown()

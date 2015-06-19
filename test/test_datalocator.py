@@ -21,7 +21,6 @@ class DataLocatorTest(SignpostMixin, StorageMixin, ZugTestBase):
         cont = self.storage_client.create_container("test")
         self.storage_client.upload_object_via_stream(
             "data", cont, "abc123/baz.txt")
-        self.storage_client.connection.host = 'local'
         self.locator = DataLocator(storage_client=self.storage_client,
                                    graph=self.graph,
                                    signpost_client=self.signpost_client)
