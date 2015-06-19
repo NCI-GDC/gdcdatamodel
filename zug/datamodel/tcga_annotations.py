@@ -132,7 +132,14 @@ class TCGAAnnotationSyncer(object):
         return doc['status']
 
     def get_notes(self, doc):
-        return {str(n['noteId']): n['noteText'] for n in doc.get('notes', [])}
+        notes = {str(n['noteId']): n['noteText'] for n in doc.get('notes', [])}
+        if not notes:
+            # If there are no notes, we want to add one in with a null
+            # note string, this way an annotation will still be
+            # created for annotations that do not have associated
+            # notes
+            notes = {'': None}
+        return notes
 
     def parse_datetime(self, text):
         return unix_time(datetime.fromtimestamp(mktime(strptime(
