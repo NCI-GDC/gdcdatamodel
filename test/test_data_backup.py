@@ -4,7 +4,7 @@ import time
 from moto import mock_s3bucket_path
 from gdcdatamodel.models import File
 from boto.s3.connection import OrdinaryCallingFormat
-from base import ZugsTestBase
+from base import ZugTestBase
 from contextlib import contextmanager
 from zug import backup
 import uuid
@@ -22,7 +22,7 @@ def run_ds3(port):
     return mock.app.run(host='localhost', port=port)
 
 
-class DataBackupTest(ZugsTestBase):
+class DataBackupTest(ZugTestBase):
     @classmethod
     def setUpClass(cls):
         super(DataBackupTest, cls).setUpClass()
@@ -63,7 +63,7 @@ class DataBackupTest(ZugsTestBase):
     def tearDown(self):
         super(DataBackupTest, self).tearDown()
         self.consul.kv.delete("databackup/", recurse=True)
-        
+
         for job in self.ds3.jobs:
             job.delete()
         for key in self.ds3.keys:
@@ -74,7 +74,7 @@ class DataBackupTest(ZugsTestBase):
     def s3_patch(self):
         return patch.multiple('backup',
                               download_file=self.wrap_fake_s3(backup.download_file))
-           
+
 
     def create_file(self, name, content, aid, session):
         doc = self.signpost_client.create()
