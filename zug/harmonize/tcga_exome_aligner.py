@@ -117,7 +117,6 @@ class TCGAExomeAligner(object):
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         self.init_docker()
         self.consul = ConsulManager(prefix=consul_prefix)
-        self.consul.start_consul_session()
         self.start_time = int(time.time())
         self.log = get_logger("tcga_exome_aligner")
 
@@ -486,11 +485,13 @@ class TCGAExomeAligner(object):
         scratch_abspath = self.host_abspath(self.scratch_dir)
         self.log.info("Removing scatch dir %s", scratch_abspath)
         shutil.rmtree(scratch_abspath)
+        self.consul.cleanup()
 
     def align(self):
         try:
             # TODO more fine grained transactions?
             with self.graph.session_scope():
+                self.consul.start_consul_session()
                 self.choose_bam_to_align()
                 self.download_inputs()
                 self.run_docker_alignment()
