@@ -276,7 +276,7 @@ class TCGAExomeAligner(object):
     def output_bam_path(self):
         return self.host_abspath(
             self.scratch_dir,
-            "realn", "bwa_mem_pe", "md",
+            "realn", "md",
             self.input_bam.file_name
         )
 

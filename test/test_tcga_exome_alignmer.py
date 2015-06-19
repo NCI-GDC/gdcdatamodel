@@ -103,7 +103,7 @@ def fake_build_docker_cmd(self):
     else:
         get_path = self.container_abspath
     output_bam_path = get_path(os.path.join(
-        self.scratch_dir, "realn", "bwa_mem_pe", "md",
+        self.scratch_dir, "realn", "md",
         self.input_bam.file_name)
     )
     output_log_path = get_path(os.path.join(
