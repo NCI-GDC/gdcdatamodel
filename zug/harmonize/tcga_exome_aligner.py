@@ -9,6 +9,7 @@ from cStringIO import StringIO
 from sqlalchemy import func
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
+from requests.exceptions import ReadTimeout
 
 # buffer 10 MB in memory at once
 from boto.s3.key import Key
@@ -122,9 +123,6 @@ class TCGAExomeAligner(object):
 
     def init_docker(self):
         kwargs = docker.utils.kwargs_from_env(assert_hostname=False)
-        # let's be very conservative here since I'm not sure how long
-        # the pipeline might block without any output
-        kwargs["timeout"] = 3*60*60
         self.docker = docker.Client(**kwargs)
 
     def choose_bam_to_align(self):
@@ -264,9 +262,15 @@ class TCGAExomeAligner(object):
         )
         self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(container)
-        for log in self.docker.logs(container, stream=True, stdout=True, stderr=True):
-            self.log.info(log)  # TODO maybe something better
-        retcode = self.docker.wait(container)
+        retcode = None
+        while retcode is None:
+            try:
+                for log in self.docker.logs(container, stream=True,
+                                            stdout=True, stderr=True):
+                    self.log.info(log.strip())  # TODO maybe something better
+                retcode = self.docker.wait(container, timeout=0.1)
+            except ReadTimeout:
+                pass
         if retcode != 0:
             raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
@@ -284,7 +288,7 @@ class TCGAExomeAligner(object):
     def output_bai_path(self):
         return self.host_abspath(
             self.scratch_dir,
-            "realn", "bwa_mem_pe", "md",
+            "realn", "md",
             self.input_bam.file_name+".bai"
         )
 

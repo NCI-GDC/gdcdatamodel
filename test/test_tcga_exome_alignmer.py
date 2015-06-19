@@ -85,7 +85,7 @@ def fake_build_docker_cmd(self):
         "mkfile {output_bam_path}",
         "echo -n fake_output_bam > {output_bam_path}",
         "mkfile {output_bam_path}.bai",
-        "echo -n fake_output_bai > {output_bam_path},bai",
+        "echo -n fake_output_bai > {output_bam_path}.bai",
         "mkfile {output_log_path}",
         "echo -n fake_logs > {output_log_path}",
         "mkfile {output_db_path}",
