@@ -42,10 +42,10 @@
     "type": "enum"
   },
   {
-    "name": "participant_enum",
+    "name": "case_enum",
     "namespace": "gov.nih.nci.gdc",
     "symbols": [
-      "participant"
+      "case"
     ],
     "type": "enum"
   },

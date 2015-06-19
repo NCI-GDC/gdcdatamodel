@@ -184,7 +184,7 @@ def get_file_es_mapping(include_case=True):
     # Other file properties
     files.properties.origin = STRING
 
-    # Participant
+    # Case
     files.properties.pop('case', None)
     if include_case:
         files.properties.cases = get_case_es_mapping(False)

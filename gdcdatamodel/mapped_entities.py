@@ -32,7 +32,7 @@ file_traversal.case = [
     ('file', 'aliquot', 'analyte', 'portion', 'sample', 'case'),
 ]
 
-# Participant hierarchy
+# Case hierarchy
 case_tree = Dict()
 case_tree.corr = (ONE_TO_MANY, 'cases')
 case_tree.annotation.corr = (ONE_TO_MANY, 'annotations')

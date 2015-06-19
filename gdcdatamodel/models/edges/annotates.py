@@ -5,9 +5,10 @@ class Annotates(object):
     __label__ = 'annotates'
 
 
-class AnnotationAnnotatesParticipant(Edge, Annotates):
+class AnnotationAnnotatesCase(Edge, Annotates):
     __src_class__ = 'Annotation'
-    __dst_class__ = 'Participant'
+    __dst_class__ = 'Case'
+    __dst_table__ = '_case'
     __src_dst_assoc__ = 'cases'
     __dst_src_assoc__ = 'annotations'
 

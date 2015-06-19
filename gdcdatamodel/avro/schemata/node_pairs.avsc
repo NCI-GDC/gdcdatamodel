@@ -31,12 +31,12 @@
   },
   {
     "type": "record",
-    "name": "participant:tissue_source_site",
+    "name": "case:tissue_source_site",
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
-        "type": "participant_enum"
+        "type": "case_enum"
       },
       {
         "name": "dst_node_label",
@@ -91,7 +91,7 @@
   },
   {
     "type": "record",
-    "name": "sample:participant",
+    "name": "sample:case",
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
@@ -100,18 +100,18 @@
       },
       {
         "name": "dst_node_label",
-        "type": "participant_enum"
+        "type": "case_enum"
       }
     ]
   },
   {
     "type": "record",
-    "name": "participant:project",
+    "name": "case:project",
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
         "name": "src_node_label",
-        "type": "participant_enum"
+        "type": "case_enum"
       },
       {
         "name": "dst_node_label",
@@ -256,7 +256,7 @@
   },
   {
     "type": "record",
-    "name": "annotation:participant",
+    "name": "annotation:case",
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
@@ -265,7 +265,7 @@
       },
       {
         "name": "dst_node_label",
-        "type": "participant_enum"
+        "type": "case_enum"
       }
     ]
   },
@@ -451,7 +451,7 @@
   },
   {
     "type": "record",
-    "name": "file:participant",
+    "name": "file:case",
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
@@ -460,7 +460,7 @@
       },
       {
         "name": "dst_node_label",
-        "type": "participant_enum"
+        "type": "case_enum"
       }
     ]
   },
@@ -481,7 +481,7 @@
   },
   {
     "type": "record",
-    "name": "clinical:participant",
+    "name": "clinical:case",
     "namespace": "gov.nih.nci.gdc",
     "fields": [
       {
@@ -490,7 +490,7 @@
       },
       {
         "name": "dst_node_label",
-        "type": "participant_enum"
+        "type": "case_enum"
       }
     ]
   },

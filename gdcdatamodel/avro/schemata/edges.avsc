@@ -31,7 +31,7 @@
           "aliquot:sample",
           "analyte:portion",
           "portion:sample",
-          "sample:participant",
+          "sample:case",
           "slide:portion"
         ],
         "doc": "The source/destination node types allowed."
@@ -71,7 +71,7 @@
       {
         "name": "node_labels",
         "type": [
-          "participant:project",
+          "case:project",
           "project:program",
           "archive:project",
           "file:archive",
@@ -118,7 +118,7 @@
       {
         "name": "node_labels",
         "type": [
-          "participant:tissue_source_site"
+          "case:tissue_source_site"
         ],
         "doc": "The source/dstination node types allowed."
       },
@@ -193,7 +193,7 @@
           "file:analyte",
           "file:portion",
           "file:sample",
-          "file:participant",
+          "file:case",
           "file:slide"
         ],
         "doc": "The source/destination node types allowed."
@@ -273,8 +273,8 @@
       {
         "name": "node_labels",
         "type": [
-          "file:participant",
-          "clinical:participant"
+          "file:case",
+          "clinical:case"
         ],
         "doc": "The source/destination node types allowed."
       },
@@ -313,7 +313,7 @@
       {
         "name": "node_labels",
         "type": [
-          "annotation:participant",
+          "annotation:case",
           "annotation:sample",
           "annotation:slide",
           "annotation:portion",
