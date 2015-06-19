@@ -261,6 +261,7 @@ class TCGAExomeAligner(object):
             image=self.docker_image["Id"],
             command=self.docker_cmd,
             host_config=host_config,
+            user="root",
         )
         self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(container)
