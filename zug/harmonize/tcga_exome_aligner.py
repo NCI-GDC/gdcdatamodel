@@ -184,7 +184,7 @@ class TCGAExomeAligner(object):
         """
         Download a file node from s3, returning it's workdir relative path.
         """
-        self.log.info("Downloading file %s", file)
+        self.log.info("Downloading file %s, size %s", file, file.file_size)
         self.log.info("Querying signpost for file urls")
         doc = self.signpost.get(file.node_id)
         url = first_s3_url(doc)
