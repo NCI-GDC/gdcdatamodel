@@ -6,7 +6,7 @@ import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
 
-from sqlalchemy import func
+from sqlalchemy import func, BigInteger
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 from requests.exceptions import ReadTimeout
@@ -75,7 +75,8 @@ class TCGAExomeAligner(object):
 
     def __init__(self, graph=None, s3=None,
                  signpost=None,
-                 consul_prefix="tcga_exome_aligner"):
+                 consul_prefix="tcga_exome_aligner",
+                 force_input_id=None):
         if graph:
             self.graph = graph
         else:
@@ -116,6 +117,14 @@ class TCGAExomeAligner(object):
         # make it relative to workdir
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
+        if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
+            self.size_limit = int(os.environ["SIZE_LIMIT"])
+        else:
+            self.size_limit = None
+        if force_input_id:
+            self.force_input_id = force_input_id
+        else:
+            self.force_input_id = None
         self.init_docker()
         self.consul = ConsulManager(prefix=consul_prefix)
         self.start_time = int(time.time())
@@ -125,7 +134,16 @@ class TCGAExomeAligner(object):
         kwargs = docker.utils.kwargs_from_env(assert_hostname=False)
         self.docker = docker.Client(**kwargs)
 
-    def choose_bam_to_align(self):
+    def choose_bam_by_forced_id(self):
+        input_bam = self.graph.nodes(File).ids(self.force_input_id).one()
+        assert input_bam.sysan["source"] == "tcga_cghub"
+        assert input_bam.file_name.endswith(".bam")
+        assert input_bam.data_formats[0].name == "BAM"
+        assert input_bam.experimental_strategies[0].name == "WXS"
+        self.input_bam = input_bam
+        return input_bam
+
+    def choose_bam_at_random(self):
         """The strategy is as follows:
 
         1) Make a subquery for all TCGA exomes
@@ -145,8 +163,12 @@ class TCGAExomeAligner(object):
                                        .sysan(source="tcga_cghub")\
                                        .filter(File.experimental_strategies.any(ExperimentalStrategy.name.astext == "WXS"))\
                                        .filter(File.file_name.astext.endswith(".bam"))\
-                                       .filter(~File.derived_files.any())\
-                                       .subquery()
+                                       .filter(~File.derived_files.any())
+        if self.size_limit:
+            tcga_exome_bam_ids = tcga_exome_bam_ids.filter(
+                File.file_size.cast(BigInteger) < self.size_limit
+            )
+        tcga_exome_bam_ids = tcga_exome_bam_ids.subquery()
         aliquot = self.graph.nodes(Aliquot)\
                             .join(FileDataFromAliquot)\
                             .join(File)\
@@ -161,6 +183,13 @@ class TCGAExomeAligner(object):
                               reverse=True)
         self.log.info("Aliquot has %s files", len(sorted_files))
         input_bam = sorted_files[0]
+        return input_bam
+
+    def choose_bam_to_align(self):
+        if self.force_input_id:
+            input_bam = self.choose_bam_by_forced_id()
+        else:
+            input_bam = self.choose_bam_at_random()
         locked = self.consul.get_consul_lock(input_bam.node_id)
         if locked:
             self.log.info("locked consul key: %s", self.consul.consul_key)

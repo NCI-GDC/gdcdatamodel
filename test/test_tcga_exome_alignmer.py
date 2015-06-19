@@ -160,13 +160,14 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         self.boto_manager["s3.amazonaws.com"].create_bucket("tcga_exome_alignment_logs")
         self.fake_s3.stop()
 
-    def get_aligner(self):
-        return TCGAExomeAligner(
+    def get_aligner(self, **kwargs):
+        kwargs.update(dict(
             graph=self.graph,
             signpost=self.signpost_client,
             s3=self.boto_manager,
             consul_prefix=self.random_string()+"tcga_exome_align"
-        )
+        ))
+        return TCGAExomeAligner(**kwargs)
 
     def create_file(self, name, content):
         bam_doc = self.signpost_client.create()
@@ -325,3 +326,34 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
                     # file to align
                     with self.assertRaises(RuntimeError):
                         aligner.choose_bam_to_align()
+
+    def test_size_limit(self):
+        with self.graph.session_scope():
+            aliquot = self.create_aliquot()
+            file = self.create_file("test1.bam", "fake_test_content")
+            file.aliquots = [aliquot]
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                aligner.size_limit = 2
+                with self.assertRaises(NoMoreWorkException):
+                    with self.graph.session_scope():
+                        aligner.choose_bam_to_align()
+            aligner = self.get_aligner()
+            aligner.size_limit = 50
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
+                    aligner.choose_bam_to_align()
+            assert aligner.input_bam
+            assert aligner.input_bai
+
+    def test_force_input_id(self):
+        with self.graph.session_scope():
+            aliquot = self.create_aliquot()
+            file = self.create_file("test1.bam", "fake_test_content")
+            file.aliquots = [aliquot]
+        with self.monkey_patches():
+            aligner = self.get_aligner(force_input_id=file.node_id)
+            with self.graph.session_scope(), aligner.consul.consul_session_scope():
+                aligner.choose_bam_to_align()
+                self.assertEqual(aligner.input_bam.node_id, file.node_id)
