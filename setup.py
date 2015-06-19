@@ -25,6 +25,7 @@ setup(
         'gdcdatamodel',
         'cdisutils',
         'signpostclient',
+        'ds3client',
         'lockfile',
         'lxml==3.4.1',
         'requests==2.5.1',
@@ -42,5 +43,6 @@ setup(
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@6c3138bb946da6b68f860ed495f2889517a3b565#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@f5771f9556880957a2fb0b69887ef35a6806598c#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@381e41d09dd7a0f9cd5f1ea5abea5bb1f34e9e70#egg=signpostclient',
+        'git+ssh://git@github.com/NCI-GDC/python-ds3-sdk.git@6a3382b3766d7e0898e9b70221d7e43f767acb8f#egg=ds3client'
     ]
 )
