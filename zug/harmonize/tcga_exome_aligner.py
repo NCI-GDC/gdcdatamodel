@@ -317,16 +317,19 @@ class TCGAExomeAligner(object):
             if not os.path.exists(path):
                 raise RuntimeError("Output path does not exist: {}".format(path))
 
-    def upload_file(self, abs_path, bucket, name, verify=True):
+    def upload_file(self, abs_path, bucket_name, name, verify=True):
         """Upload the file at abs_path to bucket with key named name. Then
         download again, verify md5sum and return it.
         """
         self.log.info("Uploading %s to bucket %s from path %s",
-                      name, bucket, abs_path)
-        self.log.info("Getting bucket")
-        bucket = self.s3[self.upload_host].get_bucket(bucket)
+                      name, bucket_name, abs_path)
+        disk_size = os.path.getsize(abs_path)
+        self.log.info("File size on disk is %s", disk_size)
+        self.log.info("Getting bucket %s", bucket_name)
+        bucket = self.s3[self.upload_host].get_bucket(bucket_name)
         self.log.info("Initiating multipart upload")
         mp = bucket.initiate_multipart_upload(name)
+        time.sleep(5)  # give cleversafe a bit of time for it to show up
         md5 = hashlib.md5()
         with open(abs_path) as f:
             num_parts = 0
@@ -362,7 +365,6 @@ class TCGAExomeAligner(object):
         uploaded_md5 = md5.hexdigest()
         self.log.info("Uploaded md5 is %s", uploaded_md5)
         if verify:
-            disk_size = os.path.getsize(abs_path)
             s3_size = int(key.size)
             if disk_size != s3_size:
                 raise RuntimeError("Size on disk {} does not "
