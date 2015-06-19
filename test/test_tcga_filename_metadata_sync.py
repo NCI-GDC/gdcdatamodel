@@ -110,12 +110,12 @@ class TCGAFilenameMetadataSyncerTest(StorageMixin, SignpostMixin, ZugTestBase):
             barcode = file_node.system_annotations['_case_barcode']
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
-            case = self.pg_driver.nodes(md.Participant)\
+            case = self.pg_driver.nodes(md.Case)\
                                         .with_edge_from_node(
-                                            md.FileDataFromParticipant,
+                                            md.FileDataFromCase,
                                             file_node).one()
             self.assertEqual(case['submitter_id'], barcode)
-            edge = self.pg_driver.edges(md.FileDataFromParticipant)\
+            edge = self.pg_driver.edges(md.FileDataFromCase)\
                                  .src(file_node.node_id)\
                                  .dst(case.node_id).one()
             self.assertEqual(edge.system_annotations['source'], 'filename')

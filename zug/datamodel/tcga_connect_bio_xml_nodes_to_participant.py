@@ -1,10 +1,10 @@
 from cdisutils.log import get_logger
-from gdcdatamodel.models import File, Participant, FileDescribesParticipant
+from gdcdatamodel.models import File, Case, FileDescribesCase
 import random
 import re
 
 
-class TCGABioXMLParticipantConnector(object):
+class TCGABioXMLCaseConnector(object):
 
     biospecimen_names = [
         'nationwidechildrens.org_biospecimen.{barcode}.xml',
@@ -46,7 +46,7 @@ class TCGABioXMLParticipantConnector(object):
         """
 
         self.log.info('Loading cases')
-        cases = self.g.nodes(Participant).all()
+        cases = self.g.nodes(Case).all()
         self.log.info('Found {} cases'.format(len(cases)))
 
         self.log.info('Loading xml files')
@@ -102,7 +102,7 @@ class TCGABioXMLParticipantConnector(object):
 
             # Get cases
             cases = {
-                p for p in self.g.nodes(Participant)
+                p for p in self.g.nodes(Case)
                 .prop_in('submitter_id', list(barcodes)).all()
             }
             self.log.info('Found matching {} cases: {}'.format(
@@ -119,7 +119,7 @@ class TCGABioXMLParticipantConnector(object):
 
         :param g: PsqlGraphDriver
         :param dict xmls: All xml nodes in the database keyed by file_name
-        :param Participant case: case to connect to xml nodes
+        :param Case case: case to connect to xml nodes
 
         """
 
@@ -135,7 +135,7 @@ class TCGABioXMLParticipantConnector(object):
             if clinical.node_id not in p_neighbor_ids:
                 self.log.info('Adding edge to clinical xml {} for {}'.format(
                     clinical, case))
-                self.g.current_session().merge(FileDescribesParticipant(
+                self.g.current_session().merge(FileDescribesCase(
                     src_id=clinical.node_id,
                     dst_id=case.node_id,
                 ))
@@ -148,7 +148,7 @@ class TCGABioXMLParticipantConnector(object):
             if biospecimen.node_id not in p_neighbor_ids:
                 self.log.info('Adding edge to biospecimen xml {} for {}'.format(
                     biospecimen, case))
-                self.g.current_session().merge(FileDescribesParticipant(
+                self.g.current_session().merge(FileDescribesCase(
                     src_id=biospecimen.node_id,
                     dst_id=case.node_id
                 ))

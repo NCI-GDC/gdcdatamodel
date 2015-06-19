@@ -10,8 +10,8 @@ from zug.datamodel.target.clinical import TARGETClinicalSyncer
 from gdcdatamodel.models import (
     File,
     Clinical,
-    ClinicalDescribesParticipant,
-    FileDescribesParticipant
+    ClinicalDescribesCase,
+    FileDescribesCase
 )
 
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures")
@@ -71,4 +71,4 @@ class TARGETClinicalSyncerTest(ZugTestBase):
             # make sure the file now describes the case
             self.graph.nodes(File)\
                       .sysan({"url": "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx"})\
-                      .with_edge_to_node(FileDescribesParticipant, case).one()
+                      .with_edge_to_node(FileDescribesCase, case).one()

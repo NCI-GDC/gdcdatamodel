@@ -2,7 +2,7 @@ import os
 from uuid import uuid4
 
 from base import ZugTestBase
-from gdcdatamodel.models import Annotation, Aliquot, Participant, Portion
+from gdcdatamodel.models import Annotation, Aliquot, Case, Portion
 
 from zug.datamodel.tcga_annotations import TCGAAnnotationSyncer
 
@@ -38,7 +38,7 @@ class TCGAAnnotationTest(ZugTestBase):
         return aliquot
 
     def create_case(self, barcode):
-        part = Participant(
+        part = Case(
             node_id=str(uuid4()),
             submitter_id=barcode
         )

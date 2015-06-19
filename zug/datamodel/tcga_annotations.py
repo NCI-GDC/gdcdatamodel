@@ -11,7 +11,7 @@ from psqlgraph import Node
 
 from gdcdatamodel.models import (
     File, Aliquot, Analyte, Slide,
-    Sample, Portion, Participant,
+    Sample, Portion, Case,
     Annotation
 )
 
@@ -92,7 +92,7 @@ class TCGAAnnotationSyncer(object):
                 annotation.files = [dst]
             elif isinstance(dst, Sample):
                 annotation.samples = [dst]
-            elif isinstance(dst, Participant):
+            elif isinstance(dst, Case):
                 annotation.cases = [dst]
             elif isinstance(dst, Portion):
                 annotation.portions = [dst]
