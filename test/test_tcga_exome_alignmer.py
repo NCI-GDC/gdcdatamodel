@@ -318,9 +318,10 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
             file.aliquots = [aliquot]
         with self.monkey_patches():
             aligner = self.get_aligner()
-            with self.graph.session_scope():
-                aligner.choose_bam_to_align()
-                # second one should fail because the first locked the only
-                # file to align
-                with self.assertRaises(RuntimeError):
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
                     aligner.choose_bam_to_align()
+                    # second one should fail because the first locked the only
+                    # file to align
+                    with self.assertRaises(RuntimeError):
+                        aligner.choose_bam_to_align()
