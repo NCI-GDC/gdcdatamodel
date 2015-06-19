@@ -12,12 +12,12 @@ from uuid import UUID, uuid5
 from datetime import datetime
 
 from sqlalchemy import Integer
-from gdcdatamodel.models import Aliquot, Participant, Sample, Project
+from gdcdatamodel.models import Aliquot, Case, Sample, Project
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
 
-NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
+NAMESPACE_CASES = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
 NAMESPACE_SAMPLES = UUID('90383d9f-5124-4087-8d13-5548da118d68')
 
 TUMOR_CODE_TO_DESCRIPTION = {
@@ -251,7 +251,7 @@ class TARGETSampleMatrixSyncer(object):
             self.remove_old_versions()
 
     def remove_old_versions(self):
-        models_to_remove = [Aliquot, Participant, Sample]
+        models_to_remove = [Aliquot, Case, Sample]
         for model in models_to_remove:
             q = self.graph.nodes(model)\
                           .sysan({"group_id": self.project})\
@@ -271,7 +271,7 @@ class TARGETSampleMatrixSyncer(object):
         }
         for case, samples in mapping.iteritems():
             part_node = self.graph.node_merge(
-                node_id=str(uuid5(NAMESPACE_PARTICIPANTS, str(case))),
+                node_id=str(uuid5(NAMESPACE_CASES, str(case))),
                 label="case",
                 system_annotations=sysans,
                 properties={

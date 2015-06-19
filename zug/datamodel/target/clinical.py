@@ -7,7 +7,7 @@ from datetime import datetime
 from uuid import UUID, uuid5
 
 from cdisutils.log import get_logger
-from gdcdatamodel.models import File, Participant
+from gdcdatamodel.models import File, Case
 
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
@@ -99,7 +99,7 @@ class TARGETClinicalSyncer(object):
                 # space after the name, e.g. 'TARGET-50-PAEAFB '
                 case_barcode = row["TARGET Patient USI"].strip()
                 self.log.info("looking up case %s", case_barcode)
-                case = self.graph.nodes(Participant)\
+                case = self.graph.nodes(Case)\
                                         .props({"submitter_id": case_barcode}).scalar()
                 if not case:
                     self.log.warning("couldn't find case %s, not inserting clinical data", case_barcode)

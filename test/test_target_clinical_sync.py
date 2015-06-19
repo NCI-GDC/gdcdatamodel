@@ -5,7 +5,7 @@ from base import ZugTestBase, TEST_DIR
 
 from httmock import HTTMock, urlmatch
 
-from zug.datamodel.target.sample_matrices import NAMESPACE_PARTICIPANTS
+from zug.datamodel.target.sample_matrices import NAMESPACE_CASES
 from zug.datamodel.target.clinical import TARGETClinicalSyncer
 from gdcdatamodel.models import (
     File,
@@ -44,7 +44,7 @@ class TARGETClinicalSyncerTest(ZugTestBase):
 
     def create_case(self, barcode):
         return self.graph.node_merge(
-            node_id=str(uuid.uuid5(NAMESPACE_PARTICIPANTS, barcode)),
+            node_id=str(uuid.uuid5(NAMESPACE_CASES, barcode)),
             label="case",
             properties={
                 "submitter_id": barcode,
