@@ -25,6 +25,7 @@ setup(
         'gdcdatamodel',
         'cdisutils',
         'signpostclient',
+        'ds3client',
         'lockfile',
         'lxml==3.4.1',
         'requests==2.5.2',
