@@ -118,7 +118,7 @@ class TCGAExomeAligner(object):
         self.scratch_dir = os.path.relpath(scratch_dir, start=self.workdir)
         self.cores = int(os.environ.get("ALIGNMENT_CORES", "8"))
         if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
-            self.size_limit = int(os.environ["SIZE_LIMIT"])
+            self.size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
         else:
             self.size_limit = None
         if force_input_id:
