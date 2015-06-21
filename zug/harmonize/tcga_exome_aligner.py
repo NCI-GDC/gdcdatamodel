@@ -178,10 +178,12 @@ class TCGAExomeAligner(object):
         if not aliquot:
             raise NoMoreWorkException("No aliquots with unaligned files found")
         self.log.info("Selected aliquot %s to work on", aliquot)
-        sorted_files = sorted([f for f in aliquot.files],
+        wxs_files = [f for f in aliquot.files if f.experimental_strategies
+                     and f.experimental_strategies[0].name == "WXS"]
+        self.log.info("Aliquot has %s wxs files", len(wxs_files))
+        sorted_files = sorted([f for f in wxs_files],
                               key=lambda f: f.sysan["cghub_upload_date"],
                               reverse=True)
-        self.log.info("Aliquot has %s files", len(sorted_files))
         input_bam = sorted_files[0]
         return input_bam
 
