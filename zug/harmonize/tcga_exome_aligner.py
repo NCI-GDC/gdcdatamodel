@@ -303,6 +303,7 @@ class TCGAExomeAligner(object):
             except ReadTimeout:
                 pass
         if retcode != 0:
+            self.docker.remove_container(container, v=True)
             raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(container, v=True)
