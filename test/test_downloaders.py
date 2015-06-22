@@ -2,11 +2,7 @@ import os
 import uuid
 import hashlib
 from itertools import islice
-<<<<<<< HEAD
-from base import ZugsTestBase, FakeS3Mixin
-=======
-from base import ZugTestBase, SignpostMixin
->>>>>>> migrate specific requirements to mixins
+from base import ZugTestBase, SignpostMixin, FakeS3Mixin
 from mock import patch, Mock
 from consulate import Consul
 
