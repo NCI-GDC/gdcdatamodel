@@ -466,6 +466,7 @@ class TCGAExomeAligner(object):
         doc.patch()
         file_node = File(
             node_id=doc.did,
+            acl=self.input_bam.acl,
             file_name=file_name,
             md5sum=md5,
             file_size=int(s3_key.size),

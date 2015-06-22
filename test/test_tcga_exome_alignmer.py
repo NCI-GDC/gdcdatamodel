@@ -174,6 +174,7 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
         assert name.endswith(".bam")
         bam_file = File(
             node_id=bam_doc.did,
+            acl=["phs000178"],
             file_name=name,
             md5sum=md5sum_with_size(content)[0],
             file_size=len(content),
