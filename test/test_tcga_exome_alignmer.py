@@ -8,7 +8,7 @@ from contextlib import nested
 from uuid import uuid4
 
 from mock import patch
-from base import ZugTestBase, FakeS3Mixin
+from base import ZugTestBase, FakeS3Mixin, SignpostMixin
 
 from zug.harmonize.tcga_exome_aligner import TCGAExomeAligner
 from zug.binutils import NoMoreWorkException
@@ -122,7 +122,7 @@ def fake_build_docker_cmd(self):
     )
 
 
-class TCGAExomeAlignerTest(FakeS3Mixin, ZugTestBase):
+class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, ZugTestBase):
 
     def setUp(self):
         super(TCGAExomeAlignerTest, self).setUp()

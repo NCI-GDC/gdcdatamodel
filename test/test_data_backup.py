@@ -4,7 +4,7 @@ import time
 from moto import mock_s3bucket_path
 from gdcdatamodel.models import File
 from boto.s3.connection import OrdinaryCallingFormat
-from base import ZugTestBase
+from base import ZugTestBase, SignpostMixin
 from contextlib import contextmanager
 from zug import backup
 import uuid
@@ -22,7 +22,7 @@ def run_ds3(port):
     return mock.app.run(host='localhost', port=port)
 
 
-class DataBackupTest(ZugTestBase):
+class DataBackupTest(SignpostMixin, ZugTestBase):
 
     port = 8000
 
@@ -62,7 +62,6 @@ class DataBackupTest(ZugTestBase):
         self.ds3 = client.Client(host='localhost', port=self.port+1, protocol='http',
                                  access_key='', secret_key='')
 
-
     def tearDown(self):
         super(DataBackupTest, self).tearDown()
         self.consul.kv.delete("databackup/", recurse=True)
@@ -77,7 +76,6 @@ class DataBackupTest(ZugTestBase):
     def s3_patch(self):
         return patch.multiple('backup',
                               download_file=self.wrap_fake_s3(backup.download_file))
-
 
     def create_file(self, name, content, aid, session):
         doc = self.signpost_client.create()
@@ -124,7 +122,6 @@ class DataBackupTest(ZugTestBase):
         self.fake_s3.start()
         yield
         self.fake_s3.stop()
-
 
     def wrap_fake_s3(self, f):
         def wrapper(*args, **kwargs):
@@ -195,7 +192,6 @@ class DataBackupTest(ZugTestBase):
         with self.graph.session_scope():
             node = self.graph.nodes(File).ids(self.file2.node_id).one()
             self.assertEqual(node.system_annotations['test_backup'],'backuped')
-
 
     def test_backup_with_md5_failed(self):
         with self.graph.session_scope() as s:
