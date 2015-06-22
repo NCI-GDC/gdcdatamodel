@@ -1,14 +1,10 @@
 import os
 import uuid
-import boto
 import hashlib
 from itertools import islice
-from base import ZugsTestBase
+from base import ZugsTestBase, FakeS3Mixin
 from mock import patch, Mock
-from moto import mock_s3bucket_path
 from consulate import Consul
-
-from boto.s3.connection import OrdinaryCallingFormat
 
 from zug.downloaders import Downloader, md5sum_with_size
 
@@ -61,7 +57,7 @@ class FailingMD5SumWithSize(object):
         return md5.hexdigest(), length
 
 
-class DownloadersTest(ZugsTestBase):
+class DownloadersTest(ZugsTestBase, FakeS3Mixin):
 
     def setUp(self):
         super(DownloadersTest, self).setUp()
@@ -114,25 +110,6 @@ class DownloadersTest(ZugsTestBase):
         self.gtdownload_dict[file] = content
         return file
 
-    def with_fake_s3(self, f):
-        def wrapper(*args, **kwargs):
-            self.fake_s3.start()
-            try:
-                f(*args, **kwargs)
-            finally:
-                self.fake_s3.stop()
-        return wrapper
-
-    def setup_fake_s3(self):
-        self.fake_s3 = mock_s3bucket_path()
-        for backend in self.fake_s3.backends.values():
-            # lololol TODO write explaination for this nonsense
-            backend.reset = lambda: None
-        self.fake_s3.start()
-        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
-        conn.create_bucket("fake_cghub_protected")
-        self.fake_s3.stop()
-
     def setup_fake_files(self):
         self.aid = str(uuid.uuid4())
         self.files = []
@@ -150,7 +127,7 @@ class DownloadersTest(ZugsTestBase):
 
     @patch("zug.downloaders.Pool", FakePool)
     def test_basic_download(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub")
@@ -167,7 +144,7 @@ class DownloadersTest(ZugsTestBase):
 
     @patch("zug.downloaders.Pool", FakePool)
     def test_specifying_analysis_id(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub", analysis_id=self.aid)
@@ -182,7 +159,7 @@ class DownloadersTest(ZugsTestBase):
 
     @patch("zug.downloaders.Pool", FakePool)
     def test_file_is_invalidated_if_checksum_fails(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.graph.session_scope():
             bam_file = self.graph.nodes(File).props({"file_name": "foobar.bam"}).one()
@@ -196,7 +173,7 @@ class DownloadersTest(ZugsTestBase):
 
     @patch("zug.downloaders.Pool", FakePool)
     def test_startup_fails_if_analysis_id_is_locked(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         sess = self.consul.session.create(ttl="60s")  # we just won't heartbeat this so it'll go away in minute
         assert self.consul.kv.acquire_lock("downloaders/current/{}".format(self.aid), sess)
@@ -208,7 +185,7 @@ class DownloadersTest(ZugsTestBase):
     @patch("zug.downloaders.Pool", FakePool)
     @patch("zug.downloaders.md5sum_with_size", FailingMD5SumWithSize())
     def test_startup_temporary_stream_of_incorrect_length_is_handled(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
             downloader = Downloader(source="fake_cghub")
@@ -216,7 +193,7 @@ class DownloadersTest(ZugsTestBase):
 
     @patch("zug.downloaders.Pool", FakePool)
     def test_mixed_states_are_handled(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         self.graph.node_update(
             self.files[1],
@@ -230,7 +207,7 @@ class DownloadersTest(ZugsTestBase):
                 self.assertEqual(file["state"], "live")
 
     def test_dont_download_to_delete_files(self):
-        self.setup_fake_s3()
+        self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         self.graph.node_update(
             self.files[1],
