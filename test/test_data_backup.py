@@ -8,6 +8,7 @@ from base import ZugsTestBase
 from contextlib import contextmanager
 from zug import backup
 import uuid
+import contextlib
 from boto.s3.key import Key
 import boto
 import os
@@ -15,7 +16,7 @@ from ds3client import client, mock
 from zug.downloaders import md5sum_with_size
 from test_downloaders import FakePool
 from mock import patch
-
+from cdisutils.net import BotoManager
 
 def run_ds3(port):
     return mock.app.run(host='localhost', port=port)
@@ -39,6 +40,7 @@ class DataBackupTest(ZugsTestBase):
         self.consul = Consul()
         assert self.consul.catalog.datacenters() == 'dc1'
         self.consul.kv.set("databackup/signpost_url", self.signpost_url)
+        self.consul.kv.set("databackup/s3-endpoints", ["s3.amazonaws.com"])
         self.consul.kv.set("databackup/s3/s3.amazonaws.com/port", 80)
         self.consul.kv.set("databackup/s3/s3.amazonaws.com/access_key",
                            "fake_access_key")
@@ -125,7 +127,7 @@ class DataBackupTest(ZugsTestBase):
         def wrapper(*args, **kwargs):
             self.fake_s3.start()
             try:
-                f(*args, **kwargs)
+                return f(*args, **kwargs)
             finally:
                 self.fake_s3.stop()
         return wrapper
@@ -136,11 +138,20 @@ class DataBackupTest(ZugsTestBase):
             bucket = conn.get_bucket('fake_cghub_protected')
             return bucket.get_key(name)
 
+    def backup_patch(self):
+        '''
+        the contextlib.nested will not handle all managers' exit  properly 
+        if any context manager throws an exception during __exit__(), 
+        this is only used for moto patch for convenience.
+        '''
+        return contextlib.nested(patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)),\
+            patch('zug.backup.DataBackup.get_key_size', new=self.wrap_fake_s3(backup.DataBackup.get_key_size)))
+
     @patch("zug.backup.Pool", FakePool)
     def test_file_backup(self):
         backup_process = backup.DataBackup(driver='test_backup', debug=True,
                             protocol='http')
-        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+        with self.backup_patch():
             backup_process.backup()
         with self.graph.session_scope():
             for node in self.graph.nodes(File).all():
@@ -159,7 +170,7 @@ class DataBackupTest(ZugsTestBase):
             s.add(self.file2)
             s.commit()
         backup_process = backup.DataBackup(debug=True, driver='test_backup', protocol='http')
-        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+        with self.backup_patch():
             backup_process.backup()
 
     def test_backup_file_whose_verification_failed(self):
@@ -170,7 +181,7 @@ class DataBackupTest(ZugsTestBase):
             self.file2 = s.merge(self.file2)
             s.commit()
         backup_process = backup.DataBackup(debug=True,driver='test_backup', protocol='http')
-        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+        with self.backup_patch():
             backup_process.backup()
         ds3_file = self.ds3.keys(self.file2.node_id).one()
         with self.with_fake_s3():
@@ -191,7 +202,7 @@ class DataBackupTest(ZugsTestBase):
             self.file2 = s.merge(self.file2)
             s.commit()
         backup_process = backup.DataBackup(debug=True,driver='test_backup', protocol='http')
-        with patch('zug.backup.download_file', new=self.wrap_fake_s3(backup.download_file)):
+        with self.backup_patch():
             backup_process.backup()
 
         with self.graph.session_scope():

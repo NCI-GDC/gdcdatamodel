@@ -8,6 +8,7 @@ from sqlalchemy import desc
 from dateutil import parser
 from sqlalchemy.types import BIGINT
 from cdisutils.log import get_logger
+from cdisutils.net import BotoManager
 import os
 import glob
 import time
@@ -187,6 +188,14 @@ class DataBackup(object):
             self.consul.consul_get(['pg', 'pass']),
             self.consul.consul_get(['pg', 'name'])
         )
+        s3_creds = {}
+        for host in self.consul.consul_get('s3-endpoints'):
+            s3_creds[host] = {'aws_access_key_id': self.consul.consul_get(['s3', host, 'access_key']),
+                              'aws_secret_access_key': self.consul.consul_get(['s3', host, 'secret_key']),
+                              'is_secure': False,
+                              'port': self.consul.consul_get(['s3', host, 'port']),
+                              'calling_format': boto.s3.connection.OrdinaryCallingFormat()}
+        self.s3 = BotoManager(s3_creds)
         if driver:
             self.driver = driver
         else:
@@ -292,6 +301,11 @@ class DataBackup(object):
         else:
             return results[0]
 
+    def get_key_size(self, url):
+        file_size = self.s3.get_url(url).size
+        print file_size
+        return file_size
+
     def get_files(self):
         '''
         get a list of files that's not backuped and totals up to
@@ -321,6 +335,12 @@ class DataBackup(object):
                     nodes = query.yield_per(1000)
                     total_size = 0
                     for node in nodes:
+                        s3_key_size = self.get_key_size(self.signpost.get(node.node_id).urls[0])
+                        if s3_key_size != node.file_size:
+                            self._record_file_state('error', node)
+                            self.logger.info("file %s is corrupted, graph reported %d, s3 reported %d" 
+                                             % (node.file_name, s3_key_size, node.file_size))
+                            continue
                         # delete the file if it's already in blackpearl
                         self.logger.info('check file')
                         if len(list(self.ds3.keys(
@@ -338,14 +358,13 @@ class DataBackup(object):
             if self.files:
                 self._record_file_state('backing_up')
 
-    def _record_file_state(self, state):
+    def _record_file_state(self, state, node=None):
         self.logger.info("Mark files %s as state %s", self.files, state)
         with self.graph.session_scope() as session:
-            for node in self.files:
-                if not state:
-                    if self.driver in node.system_annotations:
-                        del node.system_annotations[self.driver]
-                else:
+            if node is None:
+                for node in self.files:
                     node.system_annotations[self.driver] = state
+                    session.merge(node)
+            else:
+                node.system_annotations[self.driver] = state
                 session.merge(node)
-                session.commit()
