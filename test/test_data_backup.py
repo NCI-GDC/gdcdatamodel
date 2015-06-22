@@ -23,6 +23,9 @@ def run_ds3(port):
 
 
 class DataBackupTest(ZugTestBase):
+
+    port = 8000
+
     @classmethod
     def setUpClass(cls):
         super(DataBackupTest, cls).setUpClass()
