@@ -140,7 +140,6 @@ class TCGAExomeAligner(object):
         assert input_bam.file_name.endswith(".bam")
         assert input_bam.data_formats[0].name == "BAM"
         assert input_bam.experimental_strategies[0].name == "WXS"
-        self.input_bam = input_bam
         return input_bam
 
     def choose_bam_at_random(self):
@@ -208,6 +207,10 @@ class TCGAExomeAligner(object):
             raise RuntimeError("Multiple potential bais found for bam {}".format(potential_bais))
         self.input_bai = potential_bais[0]
         self.log.info("Found bai %s", self.input_bai)
+        # we expunge it from this session so we can merge into another
+        # session later and load up it's classifiction nodes to
+        # classify the newly produced bam
+        self.graph.current_session().expunge(self.input_bam)
 
     def download_file(self, file):
         """
@@ -511,13 +514,16 @@ class TCGAExomeAligner(object):
                 "alignment_reference_name": os.path.basename(self.reference),
             }
         )
-        # this line implicitly merges the new bam and new bai
-        self.graph.current_session().merge(edge)
-        # classify new bam file, same as the old bam file
-        new_bam_node.experimental_strategies = self.input_bam.experimental_strategies
-        new_bam_node.data_formats = self.input_bam.data_formats
-        new_bam_node.data_subtypes = self.input_bam.data_subtypes
-        new_bam_node.platforms = self.input_bam.platforms
+        with self.graph.session_scope() as session:
+            # merge old bam file so we can get its classification
+            session.add(self.input_bam)
+            # classify new bam file, same as the old bam file
+            new_bam_node.experimental_strategies = self.input_bam.experimental_strategies
+            new_bam_node.data_formats = self.input_bam.data_formats
+            new_bam_node.data_subtypes = self.input_bam.data_subtypes
+            new_bam_node.platforms = self.input_bam.platforms
+            # this line implicitly merges the new bam and new bai
+            session.merge(edge)
 
     def cleanup(self):
         scratch_abspath = self.host_abspath(self.scratch_dir)
@@ -527,12 +533,11 @@ class TCGAExomeAligner(object):
 
     def align(self):
         try:
-            # TODO more fine grained transactions?
+            self.consul.start_consul_session()
             with self.graph.session_scope():
-                self.consul.start_consul_session()
                 self.choose_bam_to_align()
-                self.download_inputs()
-                self.run_docker_alignment()
-                self.upload_output()
+            self.download_inputs()
+            self.run_docker_alignment()
+            self.upload_output()
         finally:
             self.cleanup()
