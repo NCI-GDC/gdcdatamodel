@@ -204,7 +204,8 @@ class DataBackup(object):
             s3_creds[host] = {'aws_access_key_id': self.consul.consul_get(['s3', host, 'access_key']),
                               'aws_secret_access_key': self.consul.consul_get(['s3', host, 'secret_key']),
                               'is_secure': False,
-                              'port': self.consul.consul_get(['s3', host, 'port'])}
+                              'port': self.consul.consul_get(['s3', host, 'port']),
+                              'calling_format': boto.s3.connection.OrdinaryCallingFormat()}
         self.s3 = BotoManager(s3_creds)
         if driver:
             self.driver = driver
