@@ -82,26 +82,37 @@ def download_file(ds3_key, offset, length, bucket_name,
                   object_name, path, host, port, access_key, secret_key,
                   consul, logger):
     logger.info("start download file %s", host)
-    s3 = boto.connect_s3(
-        host=host,
-        port=port,
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        is_secure=False,
-        calling_format=boto.s3.connection.OrdinaryCallingFormat()
-    )
+    retries = 1
+    while retries < 5:
+        try:
+            s3 = boto.connect_s3(
+                host=host,
+                port=port,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                is_secure=False,
+                calling_format=boto.s3.connection.OrdinaryCallingFormat()
+            )
 
-    logger.info("Get bucket from %s, %s, %s",
-                s3.host, host, bucket_name)
-    s3_bucket = s3.get_bucket(bucket_name)
-    s3_key = s3_bucket.get_key(object_name)
-    tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
-    logger.info("Download file %s offset %s length %s",
-                ds3_key.name, offset, length)
-    s3_key.get_contents_to_filename(
-        tmp_file,
-        headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
-    return tmp_file
+            logger.info("Get bucket from %s, %s, %s",
+                        s3.host, host, bucket_name)
+            s3_bucket = s3.get_bucket(bucket_name)
+            s3_key = s3_bucket.get_key(object_name)
+            tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
+            logger.info("Download file %s offset %s length %s",
+                        ds3_key.name, offset, length)
+            s3_key.get_contents_to_filename(
+                tmp_file,
+                headers={'Range': 'bytes={}-{}'.format(offset, offset+length-1)})
+            return tmp_file
+        except:
+            logger.exception("ranged download failed for the %d times" % retries)
+            retries += 1
+            try: 
+                os.remove(tmp_file)
+            except:
+                pass
+
 
 
 def get_statistics(bucket='gdc_backup',
@@ -193,8 +204,7 @@ class DataBackup(object):
             s3_creds[host] = {'aws_access_key_id': self.consul.consul_get(['s3', host, 'access_key']),
                               'aws_secret_access_key': self.consul.consul_get(['s3', host, 'secret_key']),
                               'is_secure': False,
-                              'port': self.consul.consul_get(['s3', host, 'port']),
-                              'calling_format': boto.s3.connection.OrdinaryCallingFormat()}
+                              'port': self.consul.consul_get(['s3', host, 'port'])}
         self.s3 = BotoManager(s3_creds)
         if driver:
             self.driver = driver
@@ -303,7 +313,6 @@ class DataBackup(object):
 
     def get_key_size(self, url):
         file_size = self.s3.get_url(url).size
-        print file_size
         return file_size
 
     def get_files(self):
