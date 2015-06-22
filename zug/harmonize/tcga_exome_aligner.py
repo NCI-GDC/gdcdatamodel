@@ -6,7 +6,7 @@ import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
 
-from sqlalchemy import func, BigInteger
+from sqlalchemy import func, BigInteger, not_
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 from requests.exceptions import ReadTimeout
@@ -25,7 +25,8 @@ from zug.consul_manager import ConsulManager
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
-    FileDataFromAliquot, FileDataFromFile
+    FileDataFromAliquot, FileDataFromFile,
+    Center
 )
 
 
@@ -121,6 +122,7 @@ class TCGAExomeAligner(object):
             self.size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
         else:
             self.size_limit = None
+        self.no_baylor = bool(os.environ.get("ALIGNMENT_NO_BAYLOR", False))
         if force_input_id:
             self.force_input_id = force_input_id
         else:
@@ -162,10 +164,16 @@ class TCGAExomeAligner(object):
                                        .sysan(source="tcga_cghub")\
                                        .filter(File.experimental_strategies.any(ExperimentalStrategy.name.astext == "WXS"))\
                                        .filter(File.file_name.astext.endswith(".bam"))\
-                                       .filter(~File.derived_files.any())
+                                       .filter(not_(File.derived_files.any()))
         if self.size_limit:
+            self.log.info("Limiting query to files below %s", self.size_limit)
             tcga_exome_bam_ids = tcga_exome_bam_ids.filter(
                 File.file_size.cast(BigInteger) < self.size_limit
+            )
+        if self.no_baylor:
+            self.log.info("Limiting query to files not from center code=10")
+            tcga_exome_bam_ids = tcga_exome_bam_ids.filter(
+                ~File.centers.any(Center.code.astext == '10')
             )
         tcga_exome_bam_ids = tcga_exome_bam_ids.subquery()
         aliquot = self.graph.nodes(Aliquot)\

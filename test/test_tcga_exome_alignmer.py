@@ -18,7 +18,7 @@ from cdisutils.net import BotoManager
 from gdcdatamodel.models import (
     File, Aliquot, ExperimentalStrategy,
     DataFormat, Platform,
-    FileDataFromFile
+    FileDataFromFile, Center
 )
 
 from boto.s3.connection import OrdinaryCallingFormat
@@ -307,6 +307,20 @@ class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
             file.derived_files = [second_file]
         with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
             aligner = self.get_aligner()
+            aligner.align()
+
+    def test_filter_baylor(self):
+        """
+        Test that filtering nodes from Baylor works.
+        """
+        with self.graph.session_scope():
+            aliquot = self.create_aliquot()
+            file = self.create_file("test1.bam", "fake_test_content")
+            file.aliquots = [aliquot]
+            file.centers = [self.graph.nodes(Center).props(code='10').one()]
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.no_baylor = True
             aligner.align()
 
     def test_raises_if_consul_key_is_locked(self):
