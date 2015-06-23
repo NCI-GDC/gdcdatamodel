@@ -5,7 +5,7 @@ from elasticsearch import Elasticsearch
 # don't know what to do about it
 import es_fixtures
 
-from base import ZugTestBase, SignpostMixin, PreludeMixin
+from base import ZugTestBase, PreludeMixin
 from gdcdatamodel.models import (
     File, FileReport, Aliquot, Tag,
     ExperimentalStrategy, Platform, Project
@@ -13,7 +13,7 @@ from gdcdatamodel.models import (
 from zug.download_report import DownloadStatsIndexBuilder
 
 
-class DownloadStatsIndexBuilderTest(SignpostMixin, PreludeMixin, ZugTestBase):
+class DownloadStatsIndexBuilderTest(PreludeMixin, ZugTestBase):
 
     def setUp(self):
         super(DownloadStatsIndexBuilderTest, self).setUp()
@@ -71,40 +71,44 @@ class DownloadStatsIndexBuilderTest(SignpostMixin, PreludeMixin, ZugTestBase):
             file.tags = [tag]
             file.experimental_strategies = [strat]
             file.platforms = [platform]
+        with self.graph.session_scope():
             brca = self.graph.nodes(Project).props(code="BRCA").one()
             self.builder.go(projects=[brca])
-            self.es.indices.refresh(index=self.index_name)
-            result = self.es.get(
-                index=self.index_name,
-                doc_type=self.builder.doc_type,
-                id="TCGA-BRCA"
-            )["_source"]
-            self.assertEqual(result["count"], 1)
-            self.assertEqual(result["tags"][0]["tag"], "snv")
-            self.assertEqual(result["tags"][0]["size"], 1000)
-            self.assertEqual(result["user_access_types"][0]["user_access_type"],
-                             "authenticated_protected")  # acls is [], so it's protected
-            self.assertEqual(result["user_access_types"][0]["size"], 1000)
-            self.assertEqual(result["platforms"][0]["platform"], "Illumina HiSeq")
-            self.assertEqual(result["platforms"][0]["size"], 1000)
-            self.assertEqual(result["countries"][0]["country"], "US")
-            self.assertEqual(result["countries"][0]["size"], 1000)
-            self.assertEqual(result["continents"][0]["continent"], "North America")
-            self.assertEqual(result["continents"][0]["size"], 1000)
-            # confirm that we can update once index exists
+        self.es.indices.refresh(index=self.index_name)
+        result = self.es.get(
+            index=self.index_name,
+            doc_type=self.builder.doc_type,
+            id="TCGA-BRCA"
+        )["_source"]
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(result["tags"][0]["tag"], "snv")
+        self.assertEqual(result["tags"][0]["size"], 1000)
+        self.assertEqual(result["user_access_types"][0]["user_access_type"],
+                         "authenticated_protected")  # acls is [], so it's protected
+        self.assertEqual(result["user_access_types"][0]["size"], 1000)
+        self.assertEqual(result["platforms"][0]["platform"], "Illumina HiSeq")
+        self.assertEqual(result["platforms"][0]["size"], 1000)
+        self.assertEqual(result["countries"][0]["country"], "US")
+        self.assertEqual(result["countries"][0]["size"], 1000)
+        self.assertEqual(result["continents"][0]["continent"], "North America")
+        self.assertEqual(result["continents"][0]["size"], 1000)
+        # confirm that we can update once index exists
+        with self.graph.session_scope():
             self.create_download(file, country='CA', size=500)
+        with self.graph.session_scope():
+            brca = self.graph.nodes(Project).props(code="BRCA").one()
             self.builder.go(projects=[brca])
-            result = self.es.get(
-                index=self.index_name,
-                doc_type=self.builder.doc_type,
-                id="TCGA-BRCA"
-            )["_source"]
-            self.assertEqual(result["count"], 2)
-            self.assertEqual(result["tags"][0]["tag"], "snv")
-            self.assertEqual(result["tags"][0]["size"], 1500)
-            self.assertEqual([c for c in result["countries"]
-                              if c["country"] == "CA"][0]["size"],
-                             500)
-            self.assertEqual([c for c in result["user_access_types"]
-                              if c["user_access_type"] == "anonymous"][0]["size"],
-                             500)
+        result = self.es.get(
+            index=self.index_name,
+            doc_type=self.builder.doc_type,
+            id="TCGA-BRCA"
+        )["_source"]
+        self.assertEqual(result["count"], 2)
+        self.assertEqual(result["tags"][0]["tag"], "snv")
+        self.assertEqual(result["tags"][0]["size"], 1500)
+        self.assertEqual([c for c in result["countries"]
+                          if c["country"] == "CA"][0]["size"],
+                         500)
+        self.assertEqual([c for c in result["user_access_types"]
+                          if c["user_access_type"] == "anonymous"][0]["size"],
+                         500)
