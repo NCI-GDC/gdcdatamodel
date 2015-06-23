@@ -14,6 +14,7 @@ import itertools
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from copy import copy, deepcopy
 from collections import defaultdict
+from math import ceil
 
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
@@ -258,12 +259,26 @@ class PsqlGraph2JSON(object):
     def remove_bam_index_files(self, files):
         return {f for f in files if not f['file_name'].endswith('.bai')}
 
+    def patch_tcga_ages(self, participant):
+        """Because TCGA reports ages in years, and target in days, we
+        normalize TCGA age_at_diagnosis fields to be
+        int(ceil(d*365.25)) where d is the age in days
+
+        """
+        program_name = participant['project']['program']['name']
+        if program_name == 'TCGA':
+            age_in_years = participant['clinical'].get('age_at_diagnosis')
+            if age_in_years:
+                age_in_days = int(ceil(age_in_years*365.25))
+                participant['clinical']['age_at_diagnosis'] = age_in_days
+
     ###################################################################
     #                          Participants
     ##################################################################
 
     def denormalize_participant(self, node):
         """Given a participant node, return the entire participant document,
+
         the files belonging to that participant, and the annotations
         that were aggregated to those files.
 
@@ -299,6 +314,11 @@ class PsqlGraph2JSON(object):
         def get_file(f):
             return self.denormalize_file(f, ptree)
         participant['files'] = map(get_file, files)
+
+        # TODO move this logic to project level normalization? It was
+        # requested to do this transformation in the es build and not
+        # in the data itself, so it is here for now.
+        self.patch_tcga_ages(participant)
 
         # Add properties to all annotations
         for a in [a for f in participant['files']
