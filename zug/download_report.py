@@ -116,14 +116,16 @@ class DownloadStatsIndexBuilder(object):
         )
 
     def go(self, projects=None):
-        with self.graph.session_scope():
             self.log.info("Loading all projects from database")
-            if not projects:
-                projects = self.graph.nodes(Project).all()
+            with self.graph.session_scope():
+                if not projects:
+                    projects = self.graph.nodes(Project).all()
             self.log.info("Loaded %s projects", len(projects))
             for project in projects:
                 self.log.info("Producing json for %s (%s)", project, project.code)
-                body = self.produce_json(project)
+                with self.graph.session_scope() as session:
+                    session.add(project)  # this is so we can load up the program
+                    body = self.produce_json(project)
                 self.log.info("ES indexing %s (%s)", project, project.code)
                 self.es.index(
                     index=self.index_name,
