@@ -116,19 +116,22 @@ class DownloadStatsIndexBuilder(object):
         )
 
     def go(self, projects=None):
-        self.log.info("Loading all projects from database")
-        if not projects:
-            projects = self.graph.nodes(Project).all()
-        self.log.info("Loaded %s projects", len(projects))
-        for project in projects:
-            self.log.info("Producing json for %s (%s)", project, project.code)
-            body = self.produce_json(project)
-            self.log.info("ES indexing %s (%s)", project, project.code)
-            self.es.index(
-                index=self.index_name,
-                doc_type=self.doc_type,
-                body=body
-            )
+            self.log.info("Loading all projects from database")
+            with self.graph.session_scope():
+                if not projects:
+                    projects = self.graph.nodes(Project).all()
+            self.log.info("Loaded %s projects", len(projects))
+            for project in projects:
+                self.log.info("Producing json for %s (%s)", project, project.code)
+                with self.graph.session_scope() as session:
+                    session.add(project)  # this is so we can load up the program
+                    body = self.produce_json(project)
+                self.log.info("ES indexing %s (%s)", project, project.code)
+                self.es.index(
+                    index=self.index_name,
+                    doc_type=self.doc_type,
+                    body=body
+                )
 
     def produce_json(self, project):
         code = project.code
@@ -137,37 +140,27 @@ class DownloadStatsIndexBuilder(object):
         self.log.info("Computing overall breakdown")
         total_size, total_count = self.overall_breakdown(code)
         self.log.info("Computing data subtype breakdown")
-
         subtype_breakdown = self.data_subtype_breakdown(code)
         self.log.info("Computing data type breakdown")
         type_breakdown = self.data_type_breakdown(subtype_breakdown)
-
         self.log.info("Computing experimental strategy breakdown")
         strategy_breakdown = self.experimental_strategy_breakdown(code)
-
         self.log.info("Computing format breakdown")
         format_breakdown = self.data_format_breakdown(code)
-
         self.log.info("Computing access breakdown")
         access_breakdown = self.data_access_breakdown(code)
-
         self.log.info("Computing tag breakdown")
         tag_breakdown = self.tag_breakdown(code)
-
         self.log.info("Computing platform breakdown")
         platform_breakdown = self.platform_breakdown(code)
-
         self.log.info("Computing center breakdown")
         center_breakdown = self.center_breakdown(code)
-
         self.log.info("Computing user access breakdown")
         user_access_breakdown = self.user_access_type_breakdown(code)
-
         self.log.info("Computing country access breakdown")
         country_breakdown = self.country_breakdown(code)
         self.log.info("Computing continent breakdown")
         continent_breakdown = self.continent_breakdown(country_breakdown)
-
         return {
             "timestamp": calendar.timegm(time.gmtime()),
             "project_id": "{}-{}".format(program.name, project.code),
