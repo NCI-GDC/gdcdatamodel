@@ -36,7 +36,6 @@ class FileDataFromSample(Edge, DataFrom):
 class FileDataFromCase(Edge, DataFrom):
     __src_class__ = 'File'
     __dst_class__ = 'Case'
-    __dst_table__ = '_case'
     __src_dst_assoc__ = 'cases'
     __dst_src_assoc__ = 'files'
 

@@ -36,7 +36,6 @@ class PortionDerivedFromSample(Edge, DerivedFrom):
 class SampleDerivedFromCase(Edge, DerivedFrom):
     __src_class__ = 'Sample'
     __dst_class__ = 'Case'
-    __dst_table__ = '_case'
     __src_dst_assoc__ = 'cases'
     __dst_src_assoc__ = 'samples'
 

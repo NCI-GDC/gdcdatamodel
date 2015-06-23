@@ -7,7 +7,6 @@ class MemberOf(object):
 
 class CaseMemberOfProject(Edge, MemberOf):
     __src_class__ = 'Case'
-    __src_table__ = '_case'
     __dst_class__ = 'Project'
     __src_dst_assoc__ = 'projects'
     __dst_src_assoc__ = 'cases'

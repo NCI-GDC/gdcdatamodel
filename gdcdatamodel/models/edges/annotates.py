@@ -8,7 +8,6 @@ class Annotates(object):
 class AnnotationAnnotatesCase(Edge, Annotates):
     __src_class__ = 'Annotation'
     __dst_class__ = 'Case'
-    __dst_table__ = '_case'
     __src_dst_assoc__ = 'cases'
     __dst_src_assoc__ = 'annotations'
 
