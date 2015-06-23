@@ -896,6 +896,13 @@ class PsqlGraph2JSON(object):
     #                       Caching functions
     ###################################################################
 
+    def is_file_indexed(self, node):
+        if node.system_annotations.get("to_delete"):
+            return False
+        if node.label == 'file' and not node.state == 'live':
+            return False
+        return True
+
     def cache_database(self):
         """Load the database into memory and remember only edge labels that we
         will need to distinguish later.
@@ -907,8 +914,8 @@ class PsqlGraph2JSON(object):
                 pbar.update(pbar.currval+1)
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)
-                if (e.src.system_annotations.get("to_delete")
-                   or e.dst.system_annotations.get("to_delete")):
+                if not (self.is_file_indexed(e.src) and
+                        self.is_file_indexed(e.dst)):
                     continue
                 if needs_differentiation and e.properties:
                     self.G.add_edge(
