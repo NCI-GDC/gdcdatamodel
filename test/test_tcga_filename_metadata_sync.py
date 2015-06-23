@@ -1,72 +1,25 @@
 from gdcdatamodel import models as md
-from libcloud.storage.providers import get_driver
-from libcloud.storage.types import Provider
-from multiprocessing import Process
-from unittest import TestCase
-import os
-import random
-import tempfile
-import time
-import uuid
-
-from psqlgraph import PsqlGraphDriver, Node, Edge, PolyNode
-from signpost import Signpost
-from signpostclient import SignpostClient
-from zug.datamodel.tcga_filename_metadata_sync import TCGAFilenameMetadataSyncer
-
-from zug.datamodel.prelude import create_prelude_nodes
+from psqlgraph import PolyNode
 from zug.datamodel.tcga_dcc_sync import TCGADCCArchiveSyncer
+from zug.datamodel.tcga_filename_metadata_sync\
+    import TCGAFilenameMetadataSyncer
 from zug.datamodel.tcga_magetab_sync import get_submitter_id_and_rev
 
+from base import ZugTestBase, StorageMixin, SignpostMixin
+import os
+import uuid
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "magetabs")
 
 
-def run_signpost(port):
-    Signpost({"driver": "inmemory", "layers": ["validator"]}).run(
-        host="localhost", port=port)
-
-
-class TCGAFilenameMetadataSyncerTest(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.port = random.randint(5000, 6000)
-        cls.signpost = Process(target=run_signpost, args=[cls.port])
-        cls.signpost.start()
-        time.sleep(1)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.signpost.terminate()
+class TCGAFilenameMetadataSyncerTest(StorageMixin, SignpostMixin, ZugTestBase):
 
     def setUp(self):
-        self.pg_driver = PsqlGraphDriver('localhost', 'test',
-                                         'test', 'automated_test')
-        self.scratch_dir = tempfile.mkdtemp()
-        Local = get_driver(Provider.LOCAL)
-        self.storage_client = Local(tempfile.mkdtemp())
+        super(TCGAFilenameMetadataSyncerTest, self).setUp()
+        self.pg_driver = self.graph
         self.storage_client.create_container("tcga_dcc_public")
         self.storage_client.create_container("tcga_dcc_protected")
-        self.signpost_client = SignpostClient("http://localhost:{}".format(self.port),
-                                              version="v0")
-        create_prelude_nodes(self.pg_driver)
-
-    def tearDown(self):
-        with self.pg_driver.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.pg_driver.engine.dispose()
-        for container in self.storage_client.list_containers():
-            for obj in container.list_objects():
-                obj.delete()
 
     def syncer_for(self, archive, **kwargs):
         return TCGADCCArchiveSyncer(

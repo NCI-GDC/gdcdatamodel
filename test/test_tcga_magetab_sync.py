@@ -1,10 +1,10 @@
-from base import ZugsTestBase
+from base import ZugTestBase, PreludeMixin
 from mock import patch
 
 import os
 import uuid
-from zug.datamodel.tcga_magetab_sync import TCGAMAGETABSyncer, get_submitter_id_and_rev
-from psqlgraph import PsqlGraphDriver, Node, Edge
+from zug.datamodel.tcga_magetab_sync import\
+    TCGAMAGETABSyncer, get_submitter_id_and_rev
 import pandas as pd
 from gdcdatamodel.models import (
     Archive,
@@ -23,14 +23,7 @@ DUPLICATE_DF = pd.read_table(os.path.join(FIXTURES_DIR, "duplicate.sdrf.txt"))
 PROTEIN_DF = pd.read_table(os.path.join(FIXTURES_DIR, "protein_exp.sdrf.txt"))
 
 
-class TestTCGAMAGETASync(ZugsTestBase):
-
-    def setUp(self):
-        super(TestTCGAMAGETASync, self).setUp()
-        os.environ["PG_HOST"] = "localhost"
-        os.environ["PG_USER"] = "test"
-        os.environ["PG_PASS"] = "test"
-        os.environ["PG_NAME"] = "automated_test"
+class TestTCGAMAGETASync(PreludeMixin, ZugTestBase):
 
     def fake_archive_for(self, fixture, rev=1):
         # TODO this is a total hack, come back and make it better at some point

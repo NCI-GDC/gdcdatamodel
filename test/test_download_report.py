@@ -1,21 +1,19 @@
 import uuid
 from datetime import datetime
-from zug.download_report import DownloadStatsIndexBuilder
-
 from elasticsearch import Elasticsearch
-
-from gdcdatamodel.models import (
-    File, FileReport, Aliquot, Tag,
-    ExperimentalStrategy, Platform, Project
-)
-
-from base import ZugsTestBase
 # TODO I am very sad about the way es_fixtures is proliferating but
 # don't know what to do about it
 import es_fixtures
 
+from base import ZugTestBase, SignpostMixin, PreludeMixin
+from gdcdatamodel.models import (
+    File, FileReport, Aliquot, Tag,
+    ExperimentalStrategy, Platform, Project
+)
+from zug.download_report import DownloadStatsIndexBuilder
 
-class DownloadStatsIndexBuilderTest(ZugsTestBase):
+
+class DownloadStatsIndexBuilderTest(SignpostMixin, PreludeMixin, ZugTestBase):
 
     def setUp(self):
         super(DownloadStatsIndexBuilderTest, self).setUp()
@@ -44,7 +42,6 @@ class DownloadStatsIndexBuilderTest(ZugsTestBase):
             md5sum="fake_md5sum",
             state="live",
         )
-        # self.graph.current_session().merge(file)
         return file
 
     def create_download(self, file, size=None, username='', country='US'):

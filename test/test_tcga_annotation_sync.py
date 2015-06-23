@@ -1,7 +1,7 @@
 import os
 from uuid import uuid4
 
-from base import ZugsTestBase
+from base import ZugTestBase
 from gdcdatamodel.models import Annotation, Aliquot, Participant, Portion
 
 from zug.datamodel.tcga_annotations import TCGAAnnotationSyncer
@@ -23,7 +23,7 @@ def mock_annotations(doc):
     return inner
 
 
-class TCGAAnnotationTest(ZugsTestBase):
+class TCGAAnnotationTest(ZugTestBase):
 
     def create_aliquot(self, barcode):
         aliquot = Aliquot(
@@ -56,13 +56,6 @@ class TCGAAnnotationTest(ZugsTestBase):
         with self.graph.session_scope() as session:
             session.merge(portion)
         return portion
-
-    def setUp(self):
-        super(TCGAAnnotationTest, self).setUp()
-        os.environ["PG_HOST"] = "localhost"
-        os.environ["PG_USER"] = "test"
-        os.environ["PG_PASS"] = "test"
-        os.environ["PG_NAME"] = "automated_test"
 
     def test_basic_sync_works(self):
         self.create_aliquot("TCGA-06-0237-01A-02D-0234-02")

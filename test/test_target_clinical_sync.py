@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from base import ZugsTestBase, TEST_DIR
+from base import ZugTestBase, TEST_DIR
 
 from httmock import HTTMock, urlmatch
 
@@ -24,7 +24,7 @@ def target_clinical_mock(url, request):
             'headers': {'Content-Length': str(len(content))}}
 
 
-class TARGETClinicalSyncerTest(ZugsTestBase):
+class TARGETClinicalSyncerTest(ZugTestBase):
 
     def create_file(self, url):
         return self.graph.node_merge(

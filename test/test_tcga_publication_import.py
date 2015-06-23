@@ -1,31 +1,29 @@
-from base import ZugsTestBase
+from base import ZugTestBase
 from zug.datamodel.tcga_publication_import import TCGAPublicationImporter
 import uuid
 import os
 from gdcdatamodel.models import PublicationRefersToFile, Publication, File
 
 
-class TestTCGAPublicationImport(ZugsTestBase):
+class TestTCGAPublicationImport(ZugTestBase):
 
     def setUp(self):
         super(TestTCGAPublicationImport, self).setUp()
-        os.environ["ZUGS_PG_HOST"] = 'localhost'
-        os.environ["ZUGS_PG_USER"] = 'test'
-        os.environ["ZUGS_PG_PASS"] = 'test'
-        os.environ["ZUGS_PG_NAME"] = 'automated_test'
+        os.environ["ZUGS_PG_HOST"] = self.graph_info['host']
+        os.environ["ZUGS_PG_USER"] = self.graph_info['user']
+        os.environ["ZUGS_PG_PASS"] = self.graph_info['password']
+        os.environ["ZUGS_PG_NAME"] = self.graph_info['database']
 
     def create_file(self, session, filename, sys_ann={}):
         node = File(str(uuid.uuid4()),
-            properties={
-                "file_name": filename,
-                "md5sum": "bogus",
-                "file_size": long(0),
-                "state": "live",
-                'submitter_id': 'test',
-                'state_comment': 'test'
-            },
-            system_annotations=sys_ann
-        )
+                    properties={
+                        "file_name": filename,
+                        "md5sum": "bogus",
+                        "file_size": long(0),
+                        "state": "live",
+                        'submitter_id': 'test',
+                        'state_comment': 'test'},
+                    system_annotations=sys_ann)
         session.merge(node)
         return node
 

@@ -8,7 +8,7 @@ from contextlib import nested
 from uuid import uuid4
 
 from mock import patch
-from base import ZugsTestBase, FakeS3Mixin
+from base import ZugTestBase, FakeS3Mixin, SignpostMixin, PreludeMixin
 
 from zug.harmonize.tcga_exome_aligner import TCGAExomeAligner
 from zug.binutils import NoMoreWorkException
@@ -27,7 +27,7 @@ from boto.s3.connection import OrdinaryCallingFormat
 class FakeDockerClient(object):
     """
     Docker doesn't work on travis CI because the kernel version is to
-    old, so we write this fake docker client which just execs all the
+    old, so we write this fake docker client which just execs all nthe
     commands you tell it to do on the host machine.
     """
 
@@ -122,7 +122,8 @@ def fake_build_docker_cmd(self):
     )
 
 
-class TCGAExomeAlignerTest(ZugsTestBase, FakeS3Mixin):
+class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
+                           ZugTestBase):
 
     def setUp(self):
         super(TCGAExomeAlignerTest, self).setUp()

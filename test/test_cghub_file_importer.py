@@ -12,7 +12,8 @@ from gdcdatamodel.models import (
     DataSubtype,
 )
 from psqlgraph import Node, Edge
-from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping, prelude
+from base import ZugTestBase, PreludeMixin
+from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping
 from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
@@ -41,10 +42,11 @@ database = 'automated_test'
 center_id = str(uuid.uuid4())
 
 
-class TestCGHubFileImporter(unittest.TestCase):
+class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
+        super(TestCGHubFileImporter, self).setUp()
         self.converter = cghub2psqlgraph.cghub2psqlgraph(
             xml_mapping=cghub_xml_mapping,
             host=host,
@@ -53,7 +55,6 @@ class TestCGHubFileImporter(unittest.TestCase):
             database=database,
             signpost=TestSignpostClient(),
         )
-        self._clear_tables()
         self._add_required_nodes()
 
     def create_file(self, analysis_id, file_name):
@@ -75,28 +76,12 @@ class TestCGHubFileImporter(unittest.TestCase):
             )
 
     def _add_required_nodes(self):
-        prelude.create_prelude_nodes(self.converter.graph)
         with self.converter.graph.session_scope():
             self.converter.graph.node_merge(
                 'c18465ae-447d-46c8-8b54-0156ab502265', label='aliquot',
                 properties={
                     u'amount': 0.0, u'concentration': 0.0,
                     u'source_center': u'test', u'submitter_id': u'test'})
-
-    def tearDown(self):
-        self._clear_tables()
-
-    def _clear_tables(self):
-        with self.converter.graph.engine.begin() as conn:
-            for table in Node().get_subclass_table_names():
-                if table != Node.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            for table in Edge().get_subclass_table_names():
-                if table != Edge.__tablename__:
-                    conn.execute('delete from {}'.format(table))
-            conn.execute('delete from _voided_nodes')
-            conn.execute('delete from _voided_edges')
-        self.converter.graph.engine.dispose()
 
     def test_simple_parse(self):
         graph = self.converter.graph

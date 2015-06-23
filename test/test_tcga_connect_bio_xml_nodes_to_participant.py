@@ -1,10 +1,10 @@
-from base import ZugsTestBase
+from base import ZugTestBase
 from zug.datamodel.tcga_connect_bio_xml_nodes_to_participant\
     import TCGABioXMLParticipantConnector as Connector
 from gdcdatamodel.models import Participant, File, FileDescribesParticipant
 
 
-class TestTCGABioXMLParticipantConnector(ZugsTestBase):
+class TestTCGABioXMLParticipantConnector(ZugTestBase):
 
     def insert_required_nodes(self):
         self.barcode = 'test-barcode'

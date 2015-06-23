@@ -1,25 +1,18 @@
+from base import ZugTestBase, PreludeMixin
+from elasticsearch import Elasticsearch
+from gdcdatamodel.models import File, Aliquot
+from zug.gdc_elasticsearch import GDCElasticsearch
+import es_fixtures
 import os
 
-from base import ZugsTestBase
-import es_fixtures
 
-from elasticsearch import Elasticsearch
-from zug.gdc_elasticsearch import GDCElasticsearch
-
-from gdcdatamodel.models import File, Aliquot
-
-
-class GDCElasticsearchTest(ZugsTestBase):
+class GDCElasticsearchTest(PreludeMixin, ZugTestBase):
 
     def setUp(self):
         super(GDCElasticsearchTest, self).setUp()
         es_fixtures.insert(self.graph)
         self.add_file_nodes()
         os.environ["ELASTICSEARCH_HOST"] = "localhost"
-        os.environ["PG_HOST"] = "localhost"
-        os.environ["PG_USER"] = "test"
-        os.environ["PG_PASS"] = "test"
-        os.environ["PG_NAME"] = "automated_test"
         self.es = Elasticsearch("localhost")
 
     def add_file_nodes(self):
