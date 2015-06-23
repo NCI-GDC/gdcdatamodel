@@ -15,7 +15,7 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
             project, graph=self.graph, dcc_auth=None)
 
     def trace_case(self, aliquot_id):
-        return self.driver.nodes(Case)\
+        return self.graph.nodes(Case)\
                           .path('samples.aliquots')\
                           .props({"submitter_id": aliquot_id})\
                           .one()
@@ -29,7 +29,7 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
         mapping = syncer.compute_mapping_from_df(df)
         with self.graph.session_scope():
             syncer.put_mapping_in_pg(mapping)
-        with self.driver.session_scope():
+        with self.graph.session_scope():
             self.trace_case("TARGET-20-PABHET-03A-02R")
             self.trace_case("TARGET-20-PABGKN-09A-01R")
         syncer.version = 2
