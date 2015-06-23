@@ -147,7 +147,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         super(TestPsqlgraph2JSON, self).setUp()
         es_fixtures.insert(self.g)
         self.add_file_nodes()
-        self.convert_documents()
+        self.add_req_nodes()
 
     def convert_documents(self):
         doc_conv = PsqlGraph2JSON(self.g)
