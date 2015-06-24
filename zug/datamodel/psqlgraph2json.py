@@ -268,7 +268,8 @@ class PsqlGraph2JSON(object):
         """
         program_name = participant['project']['program']['name']
         if program_name == 'TCGA':
-            age_in_years = participant['clinical'].get('age_at_diagnosis')
+            clinical = participant.get('clinical', {})
+            age_in_years = clinical.get('age_at_diagnosis')
             if age_in_years:
                 age_in_days = int(ceil(age_in_years*365.25))
                 participant['clinical']['age_at_diagnosis'] = age_in_days
