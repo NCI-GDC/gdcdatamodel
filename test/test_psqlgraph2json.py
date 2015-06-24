@@ -153,6 +153,12 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             doc_conv.denormalize_participants())
         self.part_doc = self.part_docs[0]
 
+    def test_participant_clinical(self):
+        props = self.part_doc
+        self.assertTrue('clinical' in props)
+        clinical = props['clinical']
+        self.assertEqual(clinical['age_at_diagnosis'], 12419)
+
     def test_participant_project(self):
         props = self.part_doc
         self.assertTrue('project' in props)
