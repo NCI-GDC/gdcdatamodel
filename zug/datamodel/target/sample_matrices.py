@@ -117,7 +117,6 @@ class TARGETSampleMatrixSyncer(object):
                 os.environ["PG_USER"],
                 os.environ["PG_PASS"],
                 os.environ["PG_NAME"],
-                echo=True
             )
         if dcc_auth:
             self.dcc_auth = dcc_auth
