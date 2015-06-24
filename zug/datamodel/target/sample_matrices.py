@@ -75,6 +75,10 @@ SAMPLE_TYPE_TO_DESCRIPTION = {
 }
 
 
+IGNORE_BARCODES = [
+    "TARGET-50-PAJLUJ-01A-01D",  # this appears to be an old name for TARGET-50-PAJLUJ-06A-01D
+]
+
 def split_seq(iterable, size):
     it = iter(iterable)
     item = list(itertools.islice(it, size))
@@ -192,6 +196,7 @@ class TARGETSampleMatrixSyncer(object):
         for aliquot in aliquots:
             assert aliquot.startswith(participant_id)
             assert len(aliquot.split("-")) == 5
+        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
         sample_groups = self.group_by_sample(aliquots)
         for sample in sample_groups:
             assert sample.startswith(participant_id)
