@@ -62,22 +62,24 @@ class GDCElasticsearch(object):
         # consistent
         with self.graph.session_scope() as session:
             self.converter.cache_database()
-            self.log.info("Denormalizing database into JSON docs")
-            part_docs, file_docs, ann_docs, project_docs = self.converter.denormalize_all()
-            self.log.info("%s participant docs, %s file docs, %s annotation docs, %s project docs",
-                          len(part_docs),
-                          len(file_docs),
-                          len(ann_docs),
-                          len(project_docs))
-            self.log.info("Validating docs produced")
-            self.converter.validate_docs(part_docs, file_docs, ann_docs, project_docs)
-            self.log.info("Deploying new ES index with new docs and bumping alias")
-            self.deploy(part_docs, file_docs, ann_docs, project_docs,
-                        roll_alias=roll_alias)
             self.log.info("Querying for old nodes to delete")
             to_delete = self.graph.nodes().sysan({"to_delete": True}).all()
-            self.log.info("Found %s to_delete nodes, deleteing them", len(to_delete))
+            self.log.info("Found %s to_delete nodes, saving for later", len(to_delete))
+        self.log.info("Denormalizing database into JSON docs")
+        part_docs, file_docs, ann_docs, project_docs = self.converter.denormalize_all()
+        self.log.info("%s participant docs, %s file docs, %s annotation docs, %s project docs",
+                      len(part_docs),
+                      len(file_docs),
+                      len(ann_docs),
+                      len(project_docs))
+        self.log.info("Validating docs produced")
+        self.converter.validate_docs(part_docs, file_docs, ann_docs, project_docs)
+        self.log.info("Deploying new ES index with new docs and bumping alias")
+        self.deploy(part_docs, file_docs, ann_docs, project_docs,
+                    roll_alias=roll_alias)
+        with self.graph.session_scope() as session:
             for node in to_delete:
+                node = session.merge(node)
                 self.log.info("Deleting %s", node)
                 session.delete(node)
 
