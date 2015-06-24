@@ -134,11 +134,13 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             state_comment=None,
             submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906'
         )
+        non_live_file = self.get_fuzzed_node(File, state='uploaded')
         to_delete_file.system_annotations["to_delete"] = True
         with self.g.session_scope():
             aliquot = self.g.nodes(Aliquot).ids('84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
             aliquot.files.append(file)
             aliquot.files.append(to_delete_file)
+            aliquot.files.append(non_live_file)
 
     def setUp(self):
         super(TestPsqlgraph2JSON, self).setUp()
@@ -204,7 +206,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
     def test_participant_files(self):
         props = self.part_doc
         self.assertTrue('files' in props)
-        # this makes sure the to_delete file doesn't show up
+        # this makes sure the to_delete/non_live file doesn't show up
         self.assertEqual(len(props["files"]), 1)
         actual = set(props['files'][0].keys())
         self.assertEqual(file_props.union({'origin'}), actual.union(
