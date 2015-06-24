@@ -182,7 +182,9 @@ class TARGETSampleMatrixSyncer(object):
         samples, add metadata, and assert various sanity checks"""
 
         aliquot_lists = [row[col].split(",") for col in row.index
-                         if col.endswith("Sample ID") and row.get(col)]
+                         if col.endswith("Sample ID") and row.get(col)
+                         # this last is to avoid trying to process whitespace
+                         and row.get(col).strip()]
         # this amounts to flattening the nested list
         aliquots = list(itertools.chain(*aliquot_lists))
         aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
