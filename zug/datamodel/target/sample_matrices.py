@@ -12,12 +12,13 @@ from uuid import UUID, uuid5
 from datetime import datetime
 
 from sqlalchemy import Integer
-from gdcdatamodel.models import Aliquot, Case, Sample, Project
+from psqlgraph import PsqlGraphDriver
+from gdcdatamodel.models import Aliquot, Participant, Sample, Project
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
 
-NAMESPACE_CASES = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
+NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
 NAMESPACE_SAMPLES = UUID('90383d9f-5124-4087-8d13-5548da118d68')
 
 TUMOR_CODE_TO_DESCRIPTION = {
@@ -108,9 +109,21 @@ class TARGETSampleMatrixSyncer(object):
 
     def __init__(self, project, graph=None, dcc_auth=None):
         self.project = project
-        self.graph = graph
-        self.dcc_auth = dcc_auth
-        self.log = get_logger("target_sample_matrix_import_{}_{}".format(os.getpid(), self.project))
+        if graph:
+            self.graph = graph
+        else:
+            self.graph = PsqlGraphDriver(
+                os.environ["PG_HOST"],
+                os.environ["PG_USER"],
+                os.environ["PG_PASS"],
+                os.environ["PG_NAME"],
+                echo=True
+            )
+        if dcc_auth:
+            self.dcc_auth = dcc_auth
+        else:
+            self.dcc_auth = (os.environ["DCC_USER"], os.environ["DCC_PASS"])
+        self.log = get_logger("target_sample_matrix_import_{}".format(self.project))
 
     def locate_sample_matrix(self):
         """Given a project, return the url to it's latest sample matrix."""
@@ -165,7 +178,7 @@ class TARGETSampleMatrixSyncer(object):
             info["tissue_desc"] = SAMPLE_TYPE_TO_DESCRIPTION[info["tissue_code"]]
         return dict(res)
 
-    def case_mapping(self, case_id, row):
+    def participant_mapping(self, participant_id, row):
         """Given a row, extract all the aliquots from it, group them into
         samples, add metadata, and assert various sanity checks"""
 
@@ -176,11 +189,11 @@ class TARGETSampleMatrixSyncer(object):
         aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
         aliquots = filter_pending(aliquots)
         for aliquot in aliquots:
-            assert aliquot.startswith(case_id)
+            assert aliquot.startswith(participant_id)
             assert len(aliquot.split("-")) == 5
         sample_groups = self.group_by_sample(aliquots)
         for sample in sample_groups:
-            assert sample.startswith(case_id)
+            assert sample.startswith(participant_id)
         return sample_groups
 
     def compute_mapping_from_df(self, df):
@@ -189,34 +202,34 @@ class TARGETSampleMatrixSyncer(object):
         CASE_USI = "Case USI"
         mapping = {}
         for _, row in df.iterrows():
-            case_id = row[CASE_USI]
+            participant_id = row[CASE_USI]
             # TODO filter the row if the "TARGET Case" column is "N".
             # we're not sure this is actually the right column, which
             # is why I haven't done it yet
-            if case_id:
-                case_id = case_id.strip()
-                if not case_id.startswith("TARGET"):
-                    self.log.info("Skipping Case USI: %s because it doesn't start with 'TARGET-'", case_id)
+            if participant_id:
+                participant_id = participant_id.strip()
+                if not participant_id.startswith("TARGET"):
+                    self.log.info("Skipping Case USI: %s because it doesn't start with 'TARGET-'", participant_id)
                     continue
-                assert len(case_id.split("-")) == 3
+                assert len(participant_id.split("-")) == 3
             else:
                 continue
-            if mapping.get(case_id):
-                self.log.warning("%s is duplicated in this sample matrix", case_id)
+            if mapping.get(participant_id):
+                self.log.warning("%s is duplicated in this sample matrix", participant_id)
                 continue
             else:
-                mapping[case_id] = self.case_mapping(case_id, row)
-                if not mapping[case_id]:
-                    self.log.warning("mapping for case %s is empty", case_id)
+                mapping[participant_id] = self.participant_mapping(participant_id, row)
+                if not mapping[participant_id]:
+                    self.log.warning("mapping for participant %s is empty", participant_id)
         return mapping
 
     def sanity_check(self, mapping):
-        """Sanity check the data: all samples derived from a case should
-        start with that case's barcode, all aliquots derived
+        """Sanity check the data: all samples derived from a participant should
+        start with that participant's barcode, all aliquots derived
         from a sample should start with that sample's barcode."""
-        for case, samples in mapping.iteritems():
+        for participant, samples in mapping.iteritems():
             for sample, contents in samples.iteritems():
-                assert sample.startswith(case)
+                assert sample.startswith(participant)
                 for aliquot in contents["aliquots"]:
                     assert aliquot.startswith(sample)
 
@@ -228,19 +241,6 @@ class TARGETSampleMatrixSyncer(object):
         self.sanity_check(mapping)
         return mapping
 
-    def create_edge(self, label, src, dst):
-        self.graph.current_session().merge(self.graph.get_PsqlEdge(
-            label=label,
-            src_id=src.node_id,
-            dst_id=dst.node_id,
-            src_label=src.label,
-            dst_label=dst.label,
-        ))
-
-    def tie_to_project(self, case_node):
-        project_node = self.graph.nodes(Project).props({"code": self.project}).one()
-        self.create_edge("member_of", case_node, project_node)
-
     def sync(self):
         self.log.info("Fetching and extracting info from sample matrix.")
         mapping = self.compute_mapping()
@@ -251,7 +251,7 @@ class TARGETSampleMatrixSyncer(object):
             self.remove_old_versions()
 
     def remove_old_versions(self):
-        models_to_remove = [Aliquot, Case, Sample]
+        models_to_remove = [Aliquot, Participant, Sample]
         for model in models_to_remove:
             q = self.graph.nodes(model)\
                           .sysan({"group_id": self.project})\
@@ -269,63 +269,62 @@ class TARGETSampleMatrixSyncer(object):
             "group_id": self.project,
             "version": self.version,
         }
-        for case, samples in mapping.iteritems():
-            case_node = self.graph.node_merge(
-                node_id=str(uuid5(NAMESPACE_CASES, str(case))),
-                label="case",
-                system_annotations=sysans,
-                properties={
-                    "submitter_id": case,
-                    "days_to_index": None,
-                }
+        project_node = self.graph.nodes(Project)\
+                                 .props(code=self.project)\
+                                 .one()
+        for participant, samples in mapping.iteritems():
+            part_node = Participant(
+                node_id=str(uuid5(NAMESPACE_PARTICIPANTS, str(participant))),
+                submitter_id=participant,
+                days_to_index=None,
             )
-            self.log.info("inserted case %s as %s", case, case_node)
-            self.log.info("tieing %s to project", case_node)
-            self.tie_to_project(case_node)
+            part_node.system_annotations = sysans
+            self.log.info("creating participant %s as %s",
+                          participant, part_node)
             for sample, contents in samples.iteritems():
-                sample_node = self.graph.node_merge(
+                sample_node = Sample(
                     node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
-                    label="sample",
-                    system_annotations=sysans,
-                    properties={
-                        "submitter_id": sample,
-                        "sample_type_id": contents["tissue_code"],
-                        "sample_type": contents["tissue_desc"],
-                        "tumor_code_id": contents["tumor_code"],
-                        "tumor_code": contents["tumor_desc"],
-                        "longest_dimension": None,
-                        "intermediate_dimension": None,
-                        "shortest_dimension": None,
-                        "initial_weight": None,
-                        "current_weight": None,
-                        "freezing_method": None,
-                        "oct_embedded": None,
-                        "time_between_clamping_and_freezing": None,
-                        "time_between_excision_and_freezing": None,
-                        "days_to_collection": None,
-                        "days_to_sample_procurement": None,
-                        "is_ffpe": None,
-                        "pathology_report_uuid": None,
-                    }
+                    submitter_id=sample,
+                    sample_type_id=contents["tissue_code"],
+                    sample_type=contents["tissue_desc"],
+                    tumor_code_id=contents["tumor_code"],
+                    tumor_code=contents["tumor_desc"],
+                    longest_dimension=None,
+                    intermediate_dimension=None,
+                    shortest_dimension=None,
+                    initial_weight=None,
+                    current_weight=None,
+                    freezing_method=None,
+                    oct_embedded=None,
+                    time_between_clamping_and_freezing=None,
+                    time_between_excision_and_freezing=None,
+                    days_to_collection=None,
+                    days_to_sample_procurement=None,
+                    is_ffpe=None,
+                    pathology_report_uuid=None,
                 )
-                self.log.info("inserted sample %s as %s", sample, sample_node)
-                self.log.info("tieing %s to case %s", sample_node, case_node)
-                self.create_edge("derived_from", sample_node, case_node)
+                sample_node.system_annotations = sysans
+                self.log.info("creating sample %s as %s", sample, sample_node)
+                self.log.info("tieing sample to participant %s", part_node)
+                part_node.samples.append(sample_node)
                 for aliquot in contents["aliquots"]:
                     if not aliquot_id_map.get(aliquot):
                         self.log.info("Not inserting aliquot %s because it doesn't have an id in cghub", aliquot)
                     else:
-                        aliquot_node = self.graph.node_merge(
+                        aliquot_node = Aliquot(
                             node_id=aliquot_id_map[aliquot],
-                            label="aliquot",
-                            system_annotations=sysans,
-                            properties={
-                                "submitter_id": aliquot,
-                                "source_center": None,
-                                "amount": None,
-                                "concentration": None,
-                            }
+                            submitter_id=aliquot,
+                            source_center=None,
+                            amount=None,
+                            concentration=None,
                         )
-                        self.log.info("inserting aliquot %s as %s", aliquot, aliquot_node)
-                        self.log.info("tieing aliquot %s to sample %s", aliquot_node, sample_node)
-                        self.create_edge("derived_from", aliquot_node, sample_node)
+                        aliquot_node.system_annotations = sysans
+                        self.log.info("creating aliquot %s as %s",
+                                      aliquot, aliquot_node)
+                        self.log.info("tieing aliquot %s to sample %s",
+                                      aliquot_node, sample_node)
+                        sample_node.aliquots.append(aliquot_node)
+            self.log.info("inserting participant %s", part_node)
+            part_node = self.graph.current_session().merge(part_node)
+            self.log.info("tieing %s to project", part_node)
+            part_node.projects = [project_node]
