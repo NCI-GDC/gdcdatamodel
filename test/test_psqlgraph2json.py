@@ -238,8 +238,6 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         # this makes sure the
         # to_delete/non_live/file-derived_from-file file doesn't show
         # up
-        from pprint import pprint
-        pprint(props['files'])
         self.assertEqual(len(props["files"]), 1)
         actual = set(props['files'][0].keys())
         self.assertEqual(file_props.union({'origin'}), actual.union(
