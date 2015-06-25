@@ -111,7 +111,7 @@ class PsqlGraph2JSON(object):
             ('file', 'member_of', 'archive'),
             ('archive', 'member_of', 'file'),
             ('file', 'describes', 'participant'),
-            ('participant', 'describes', 'file')
+            ('participant', 'describes', 'file'),
         ]
 
         self.part_to_file_paths = [
@@ -939,6 +939,16 @@ class PsqlGraph2JSON(object):
             return False
         return True
 
+    def is_edge_indexed(self, edge):
+        if not (self.is_file_indexed(edge.src) and
+                self.is_file_indexed(edge.dst)):
+            return False
+        if (edge.src.label == 'file' and
+           edge.label == 'data_from' and
+           edge.dst.label == 'file'):
+            return False
+        return True
+
     def cache_database(self):
         """Load the database into memory and remember only edge labels that we
         will need to distinguish later.
@@ -950,8 +960,7 @@ class PsqlGraph2JSON(object):
                 pbar.update(pbar.currval+1)
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)
-                if not (self.is_file_indexed(e.src) and
-                        self.is_file_indexed(e.dst)):
+                if not self.is_edge_indexed(e):
                     continue
                 if needs_differentiation and e.properties:
                     self.G.add_edge(
