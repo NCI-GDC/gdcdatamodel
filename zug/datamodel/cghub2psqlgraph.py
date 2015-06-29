@@ -289,7 +289,8 @@ class cghub2psqlgraph(object):
         elif state == 'live':
             self.categorize_file(root, file_key)
             node = self.save_file_node(file_key, node_type, props, acl)
-            self.add_project_system_annotation(root, file_key)
+            self.copy_result_key_to_sysan(root, file_key, "disease_abbr")
+            self.copy_result_key_to_sysan(root, file_key, "legacy_sample_id")
             self.add_datetime_system_annotations(root, file_key)
             self.add_edges(root, node_type, params, file_key, node)
         else:
@@ -300,14 +301,14 @@ class cghub2psqlgraph(object):
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
 
-    def add_project_system_annotation(self, root, file_key):
-            project_code = self.xml.xpath(
-                'ancestor::Result/disease_abbr',
-                root=root,
-                single=True
-            )
-            self.files_to_add[file_key].merge(
-                system_annotations={"cghub_project_code": project_code})
+    def copy_result_key_to_sysan(self, root, file_key, xml_key):
+        datum = self.xml.xpath(
+            'ancestor::Result/{}'.format(xml_key),
+            root=root,
+            single=True
+        )
+        self.files_to_add[file_key].merge(
+            system_annotations={"cghub_"+xml_key: datum})
 
     def add_datetime_system_annotations(self, root, file_key):
         for key in ["last_modified", "upload_date", "published_date"]:
