@@ -431,6 +431,7 @@ class cghub2psqlgraph(object):
         else:
             self.files_to_add[file_key] = PolyNode(
                 node_id=None, acl=acl, label=label, properties=properties)
+        return self.files_to_add[file_key]
 
     def save_edge(self, file_key, dst_id, dst_label, edge_label, src_id=None,
                   properties={}, src_label=None):
