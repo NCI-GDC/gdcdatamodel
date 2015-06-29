@@ -252,9 +252,7 @@ class TARGETSampleMatrixSyncer(object):
             else:
                 continue
             if mapping.get(participant_id):
-                import ipdb; ipdb.set_trace()
-                self.log.warning("%s is duplicated in this sample matrix", participant_id)
-                continue
+                raise RuntimeError("{} is duplicated in this sample matrix".format(participant_id))
             else:
                 mapping[participant_id] = self.participant_mapping(participant_id, row)
                 if not mapping[participant_id]:
