@@ -395,7 +395,7 @@ class cghub2psqlgraph(object):
                 file_key, node.node_id, node.label, 'submitted_by',
                 src_label='file')
 
-    def add_edges(self, root, node_type, params, file_key, node):
+    def add_edges(self, root, node_type, params, file_key):
         """
         i.   check if file is *.bam.bai
         ii.  if *.bam.bai, cache related to edge
