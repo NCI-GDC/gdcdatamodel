@@ -223,11 +223,8 @@ class TARGETSampleMatrixSyncer(object):
         aliquots = filter_pending(aliquots)
         for aliquot in aliquots:
             assert len(aliquot.split("-")) == 5
-        # filter things that are in the list of barcodes we should
-        # ignore as well as things that are inconsistent with their
-        # participant
-        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES
-                    and a.startswith(participant_id)]
+            assert aliquot.startswith(participant_id)
+        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
         sample_groups = self.group_by_sample(aliquots)
         for sample in sample_groups:
             assert sample.startswith(participant_id)
