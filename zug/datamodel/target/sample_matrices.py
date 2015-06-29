@@ -3,6 +3,7 @@ import re
 import os
 import itertools
 import requests
+from copy import deepcopy
 import xlrd
 import pandas as pd
 from lxml import html
@@ -79,6 +80,7 @@ IGNORE_BARCODES = [
     "TARGET-50-PAJLUJ-01A-01D",  # this appears to be an old name for TARGET-50-PAJLUJ-06A-01D
 ]
 
+
 def split_seq(iterable, size):
     it = iter(iterable)
     item = list(itertools.islice(it, size))
@@ -128,27 +130,53 @@ class TARGETSampleMatrixSyncer(object):
             self.dcc_auth = (os.environ["DCC_USER"], os.environ["DCC_PASS"])
         self.log = get_logger("target_sample_matrix_import_{}".format(self.project))
 
-    def locate_sample_matrix(self):
-        """Given a project, return the url to it's latest sample matrix."""
-        if self.project == "ALL-P1":
-            search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/Discovery/SAMPLE_MATRIX/"
-        elif self.project == "ALL-P2":
-            search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/Discovery/SAMPLE_MATRIX/"
-        elif self.project in PROJECTS:
-            search_url = "https://target-data.nci.nih.gov/{}/Discovery/SAMPLE_MATRIX/".format(self.project)
-        else:
-            raise RuntimeError("project {} is not known".format(self.project))
-        resp = requests.get(search_url, auth=self.dcc_auth)
-        resp.raise_for_status()
-        search_html = html.fromstring(resp.content)
-        links = search_html.cssselect('a')
-        for link in links:
-            maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
-            if maybe_match:
-                self.url = urljoin(search_url, link.attrib["href"])
-                self.version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
-                return
-        raise RuntimeError("Could not find sample matrix at url {}".format(search_url))
+    def locate_sample_matrices(self):
+        """Given a project, set self.urls to a list of urls for it's sample
+        matrices. Some projects have two sample matrices, one in
+        Discovery and one in Validation.
+        """
+        self.urls = []
+        self.version = 0
+        for dir in ["Discovery", "Validation"]:
+            if self.project == "ALL-P1":
+                search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/{dir}/SAMPLE_MATRIX/".format(
+                    dir=dir,
+                )
+            elif self.project == "ALL-P2":
+                search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/{dir}/SAMPLE_MATRIX/".format(
+                    dir=dir,
+                )
+            elif self.project in PROJECTS:
+                search_url = "https://target-data.nci.nih.gov/{proj}/{dir}/SAMPLE_MATRIX/".format(
+                    proj=self.project,
+                    dir=dir,
+                )
+            else:
+                raise RuntimeError("project {} is not known".format(self.project))
+            resp = requests.get(search_url, auth=self.dcc_auth)
+            if resp.status_code == 404:
+                self.log.info("No sample matrix found at %s", search_url)
+                continue
+            resp.raise_for_status()
+            search_html = html.fromstring(resp.content)
+            links = search_html.cssselect('a')
+            for link in links:
+                maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
+                if maybe_match:
+                    url = urljoin(search_url, link.attrib["href"])
+                    version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
+                    self.urls.append(url)
+                    if version > self.version:
+                        # the logic here is that since what we have in
+                        # the database can be updated by a new version
+                        # of either sample matrix, the version of the
+                        # biospecemin data for this project is the
+                        # later of the two sample matrix versions
+                        self.version = version
+        if not self.urls:
+            raise RuntimeError("Could not find any sample matrices")
+        if not self.version:
+            raise RuntimeError("Problem parsing versions")
 
     def load_sample_matrix(self, data):
         """Given a url, load a sample matrix from it into a pandas DataFrame"""
@@ -194,9 +222,12 @@ class TARGETSampleMatrixSyncer(object):
         aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
         aliquots = filter_pending(aliquots)
         for aliquot in aliquots:
-            assert aliquot.startswith(participant_id)
             assert len(aliquot.split("-")) == 5
-        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
+        # filter things that are in the list of barcodes we should
+        # ignore as well as things that are inconsistent with their
+        # participant
+        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES
+                    and a.startswith(participant_id)]
         sample_groups = self.group_by_sample(aliquots)
         for sample in sample_groups:
             assert sample.startswith(participant_id)
@@ -221,6 +252,7 @@ class TARGETSampleMatrixSyncer(object):
             else:
                 continue
             if mapping.get(participant_id):
+                import ipdb; ipdb.set_trace()
                 self.log.warning("%s is duplicated in this sample matrix", participant_id)
                 continue
             else:
@@ -239,13 +271,43 @@ class TARGETSampleMatrixSyncer(object):
                 for aliquot in contents["aliquots"]:
                     assert aliquot.startswith(sample)
 
+    def merge_samples(self, sample1, sample2):
+        if sample1 is None:
+            return deepcopy(sample2)
+        if sample2 is None:
+            return deepcopy(sample1)
+        merged = {}
+        merged["aliquots"] = sample1["aliquots"].union(sample2["aliquots"])
+        for key in ["tissue_code", "tumor_code", "tissue_desc", "tumor_desc"]:
+            assert sample1[key] == sample2[key]
+            merged[key] = sample1[key]
+        return merged
+
+    def merge_mappings(self, mappings):
+        final = {}
+        for mapping in mappings:
+            for participant, samples in mapping.iteritems():
+                if participant not in final:
+                    final[participant] = deepcopy(samples)
+                else:
+                    # this participant is duplicated
+                    for sample_name, info in samples.iteritems():
+                        final[participant][sample_name] = self.merge_samples(
+                            final[participant].get(sample_name), info
+                        )
+        return final
+
     def compute_mapping(self):
-        self.locate_sample_matrix()
-        resp = requests.get(self.url, auth=self.dcc_auth)
-        df = self.load_sample_matrix(resp.content)
-        mapping = self.compute_mapping_from_df(df)
-        self.sanity_check(mapping)
-        return mapping
+        self.locate_sample_matrices()
+        mappings = []
+        for url in self.urls:
+            resp = requests.get(url, auth=self.dcc_auth)
+            df = self.load_sample_matrix(resp.content)
+            mapping = self.compute_mapping_from_df(df)
+            mappings.append(mapping)
+        final_mapping = self.merge_mappings(mappings)
+        self.sanity_check(final_mapping)
+        return final_mapping
 
     def sync(self):
         self.log.info("Fetching and extracting info from sample matrix.")
@@ -263,7 +325,8 @@ class TARGETSampleMatrixSyncer(object):
                           .sysan({"group_id": self.project})\
                           .filter(model._sysan["version"].cast(Integer) < self.version)
             self.log.info("Found %s old %s to remove.", q.count(), model.__name__)
-            for node in q.all():
+            to_delete = q.all()
+            for node in to_delete:
                 self.log.info("Deleting node %s", node)
                 self.graph.node_delete(node=node)
 
