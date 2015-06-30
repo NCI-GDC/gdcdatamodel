@@ -220,7 +220,7 @@ class Downloader(object):
                                        .sysan({"source": self.source})\
                                        .not_sysan({"to_delete": True})\
                                        .filter(func.right(
-                                           Node._props['file_name'].astext,
+                                           md.File._props['file_name'].astext,
                                            4) != ".bai")\
                                        .order_by(func.random())\
                                        .first()
