@@ -143,6 +143,13 @@ def upload_multipart(s3_info, key_name, mpid, path, offset, bytes, index):
     raise RuntimeError("Retries exhausted, upload failed")
 
 
+def get_bucket_from_env(source):
+    if source == "tcga_cghub":
+        return os.environ["TCGA_BUCKET"]
+    elif source == "target_cghub":
+        return os.environ["TARGET_BUCKET"]
+
+
 class Downloader(object):
     def __init__(self, source=None, analysis_id=None):
         self.consul = ConsulManager(prefix='downloaders')
@@ -153,25 +160,24 @@ class Downloader(object):
         assert self.source.endswith("_cghub")
         self.analysis_id = analysis_id
 
-
-        self.signpost_url = self.consul.consul_get(["signpost_url"])
+        self.signpost_url = os.environ["SIGNPOST_URL"]
         self.signpost = SignpostClient(self.signpost_url, version="v0")
 
         self.pg_info = {}
-        self.pg_info["host"] = self.consul.consul_get(["pg", "host"])
-        self.pg_info["user"] = self.consul.consul_get(["pg", "user"])
-        self.pg_info["name"] = self.consul.consul_get(["pg", "name"])
-        self.pg_info["pass"] = self.consul.consul_get(["pg", "pass"])
+        self.pg_info["host"] = os.environ["PG_HOST"]
+        self.pg_info["user"] = os.environ["PG_USER"]
+        self.pg_info["name"] = os.environ["PG_NAME"]
+        self.pg_info["pass"] = os.environ["PG_PASS"]
         self.graph = PsqlGraphDriver(self.pg_info["host"], self.pg_info["user"],
                                      self.pg_info["pass"], self.pg_info["name"])
         self.s3_info = {}
-        self.s3_info["host"] = self.consul.consul_get(["s3", "host"])
-        self.s3_info["port"] = int(self.consul.consul_get(["s3", "port"]))
-        self.s3_info["access_key"] = self.consul.consul_get(["s3", "access_key"])
-        self.s3_info["secret_key"] = self.consul.consul_get(["s3", "secret_key"])
-        self.s3_info["bucket"] = self.consul.consul_get(["s3", "buckets", self.source])
+        self.s3_info["host"] = os.environ["S3_HOST"]
+        self.s3_info["port"] = int(os.environ.get("S3_PORT", "80"))
+        self.s3_info["access_key"] = os.environ["S3_ACCESS_KEY"]
+        self.s3_info["secret_key"] = os.environ["S3_SECRET_KEY"]
+        self.s3_info["bucket"] = get_bucket_from_env(self.source)
         self.setup_s3()
-        self.download_path = self.consul.consul_get(["path"])
+        self.download_path = os.environ["DOWNLOAD_PATH"]
 
     def setup_s3(self):
         self.logger.info("Connecting to s3 at %s.", self.s3_info["host"])
@@ -214,7 +220,7 @@ class Downloader(object):
                                        .sysan({"source": self.source})\
                                        .not_sysan({"to_delete": True})\
                                        .filter(func.right(
-                                           Node._props['file_name'].astext,
+                                           md.File._props['file_name'].astext,
                                            4) != ".bai")\
                                        .order_by(func.random())\
                                        .first()
@@ -236,7 +242,7 @@ class Downloader(object):
                         "started": self.start_time
                     }
                 )
- 
+
                 self.consul.set_consul_state("downloading")
                 if not files:
                     raise RuntimeError(
