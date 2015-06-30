@@ -66,21 +66,17 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
         self.consul = Consul()
         # this is to prevent accidentally blowing away the values on a real server
         assert self.consul.catalog.datacenters() == "dc1"
-        self.consul.kv.set("downloaders/signpost_url", self.signpost_url)
-        self.consul.kv.set("downloaders/path", self.scratch_dir)
-        self.consul.kv.set("downloaders/s3/host", "s3.amazonaws.com")  # this is necessary for moto to work
-        self.consul.kv.set("downloaders/s3/port", "80")
-        self.consul.kv.set("downloaders/s3/access_key", "fake_access_key")
-        self.consul.kv.set("downloaders/s3/secret_key", "fake_secret_key")
-        self.consul.kv.set("downloaders/s3/buckets/fake_cghub", "fake_cghub_protected")
-        self.consul.kv.set("downloaders/pg/host", "localhost")
-        self.consul.kv.set("downloaders/pg/user", "test")
-        self.consul.kv.set("downloaders/pg/pass", "test")
-        self.consul.kv.set("downloaders/pg/name", "automated_test")
+        os.environ["SIGNPOST_URL"] = self.signpost_url
+        os.environ["DOWNLOAD_PATH"] = self.scratch_dir
+        os.environ["S3_HOST"] = "s3.amazonaws.com"  # this is necessary for moto to work
+        os.environ["S3_PORT"] = "80"
+        os.environ["S3_ACCESS_KEY"] = "fake_access_key"
+        os.environ["S3_SECRET_KEY"] = "fake_secret_key"
+        os.environ["TCGA_BUCKET"] = "fake_cghub_protected"
+        # PG_* variables are set by ZugsTestBase
 
     def tearDown(self):
         super(DownloadersTest, self).tearDown()
-        self.consul.kv.delete("downloaders/", recurse=True)
 
     def call_gtdownload(self):
         if self.gtdownload_dict:
@@ -104,7 +100,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
                 "submitter_id": aid
             },
             system_annotations={
-                "source": "fake_cghub",
+                "source": "tcga_cghub",
                 "analysis_id": aid,
             }
         )
@@ -131,7 +127,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
         self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub")
+            downloader = Downloader(source="tcga_cghub")
             downloader.go()
         with self.graph.session_scope():
             for file in self.graph.nodes(File).sysan({"analysis_id": self.aid}).all():
@@ -148,7 +144,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
         self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub", analysis_id=self.aid)
+            downloader = Downloader(source="tcga_cghub", analysis_id=self.aid)
             downloader.go()
         with self.graph.session_scope():
             for file in self.graph.nodes(File).sysan({"analysis_id": self.aid}).all():
@@ -166,7 +162,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
             bam_file = self.graph.nodes(File).props({"file_name": "foobar.bam"}).one()
             self.graph.node_update(bam_file, properties={"md5sum": "bogus"})
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub")
+            downloader = Downloader(source="tcga_cghub")
             downloader.go()
         with self.graph.session_scope():
             bam_file = self.graph.nodes(File).props({"file_name": "foobar.bam"}).one()
@@ -179,7 +175,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
         sess = self.consul.session.create(ttl="60s")  # we just won't heartbeat this so it'll go away in minute
         assert self.consul.kv.acquire_lock("downloaders/current/{}".format(self.aid), sess)
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub")
+            downloader = Downloader(source="tcga_cghub")
             with self.assertRaises(RuntimeError):
                 downloader.go()
 
@@ -189,7 +185,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
         self.setup_fake_s3("fake_cghub_protected")
         self.setup_fake_files()
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub")
+            downloader = Downloader(source="tcga_cghub")
             downloader.go()
 
     @patch("zug.downloaders.Pool", FakePool)
@@ -201,7 +197,7 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
             properties={"state": "live"}
         )
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub")
+            downloader = Downloader(source="tcga_cghub")
             downloader.go()
         with self.graph.session_scope():
             for file in self.graph.nodes(File).sysan({"analysis_id": self.aid}).all():
@@ -215,6 +211,6 @@ class DownloadersTest(SignpostMixin, FakeS3Mixin, ZugTestBase):
             system_annotations={"to_delete": True}
         )
         with self.downloader_monkey_patches():
-            downloader = Downloader(source="fake_cghub")
+            downloader = Downloader(source="tcga_cghub")
             with self.assertRaises(RuntimeError):
                 downloader.get_files_to_download()
