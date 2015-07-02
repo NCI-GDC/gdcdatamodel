@@ -54,7 +54,7 @@ class DataBackupTest(SignpostMixin, ZugTestBase):
         os.environ["PG_USER"] = "test"
         os.environ["PG_PASS"] = "test"
         os.environ["PG_NAME"] = "automated_test"
-        os.environ["DOWNLOAD_PATH"] = os.path.dirname(os.path.realpath(__file__))
+        os.environ["DOWNLOAD_PATH"] = self.scratch_dir 
         os.environ["PROCESSES"] = "1"
         self.setup_fake_s3()
         self.setup_fake_files()
