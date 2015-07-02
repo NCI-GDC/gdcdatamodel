@@ -321,16 +321,14 @@ class cghub2psqlgraph(object):
 
     def categorize_file(self, root, file_key):
         file_name = self.xml.xpath('./filename', root, single=True)
-        if file_name.endswith('.bai'):
+        if file_name.endswith('.bai') or file_name.endswith(".tar.bz2"):
+            self.log.info("Not classifying %s", file_key)
             return
 
         self.save_center_edge(root, file_key)
         names = cghub_categorization_mapping['names']
         file_mapping = cghub_categorization_mapping['files']
         for dst_label, params in file_mapping.items():
-            if dst_label == "data_format" and file_name.endswith(".tar.bz2"):
-                self.log.info("Not classifying data_format for %s", file_key)
-                continue
             # Cases for type of parameter to get dst_name
             if 'const' in params:
                 dst_name = params['const']
