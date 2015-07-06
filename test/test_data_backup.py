@@ -16,7 +16,7 @@ from ds3client import client, mock
 from zug.downloaders import md5sum_with_size
 from test_downloaders import FakePool
 from mock import patch
-from cdisutils.net import BotoManager
+
 
 def run_ds3(port):
     return mock.app.run(host='localhost', port=port)
@@ -41,22 +41,21 @@ class DataBackupTest(SignpostMixin, ZugTestBase):
     def setUp(self):
         super(DataBackupTest, self).setUp()
         self.consul = Consul()
+        backup.ACCESSORS = {"s3.amazonaws.com": "TEST"}
         assert self.consul.catalog.datacenters() == 'dc1'
-        self.consul.kv.set("databackup/signpost_url", self.signpost_url)
-        self.consul.kv.set("databackup/s3-endpoints", ["s3.amazonaws.com"])
-        self.consul.kv.set("databackup/s3/s3.amazonaws.com/port", 80)
-        self.consul.kv.set("databackup/s3/s3.amazonaws.com/access_key",
-                           "fake_access_key")
-        self.consul.kv.set("databackup/s3/s3.amazonaws.com/secret_key",
-                           "fake_secret_key")
-        self.consul.kv.set("databackup/ds3/test_backup/host", "localhost")
-        self.consul.kv.set("databackup/ds3/test_backup/port", self.port+1)
-        self.consul.kv.set("databackup/pg/host", "localhost")
-        self.consul.kv.set("databackup/path", os.path.dirname(os.path.realpath(__file__)))
-        self.consul.kv.set("databackup/processes", 1)
-        self.consul.kv.set("databackup/pg/user", "test")
-        self.consul.kv.set("databackup/pg/pass", "test")
-        self.consul.kv.set("databackup/pg/name", "automated_test")
+        os.environ["SIGNPOST_URL"] = self.signpost_url
+        os.environ["TEST_HOST"] = "s3.amazonaws.com"
+        os.environ["TEST_PORT"] = '80'
+        os.environ["TEST_ACCESS_KEY"] = "fake_access_key"
+        os.environ["TEST_SECRET_KEY"] = "fake_secret_key"
+        os.environ["DS3_HOST"] = "localhost"
+        os.environ["DS3_PORT"] = str(self.port + 1)
+        os.environ["PG_HOST"] = "localhost"
+        os.environ["PG_USER"] = "test"
+        os.environ["PG_PASS"] = "test"
+        os.environ["PG_NAME"] = "automated_test"
+        os.environ["DOWNLOAD_PATH"] = self.scratch_dir 
+        os.environ["PROCESSES"] = "1"
         self.setup_fake_s3()
         self.setup_fake_files()
         self.ds3 = client.Client(host='localhost', port=self.port+1, protocol='http',
