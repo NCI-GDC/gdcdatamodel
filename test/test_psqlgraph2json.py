@@ -205,7 +205,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.assertEqual(tss_props, actual)
 
     def test_case_samples(self):
-        props = self.csae_doc
+        props = self.case_doc
         self.assertTrue('samples' in props)
         actual = set(props['samples'][0].keys())
         self.assertEqual(sample_props, actual.union(
