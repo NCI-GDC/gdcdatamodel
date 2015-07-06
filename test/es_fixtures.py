@@ -225,7 +225,7 @@ NODES = [
 
 
 EDGES = [
-    ClinicalDescribesParticipant(
+    ClinicalDescribesCase(
         src_id='3239e85f-6be7-417b-b8e9-073c4d9c311c',
         dst_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
     ),

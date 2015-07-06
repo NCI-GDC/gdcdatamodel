@@ -160,12 +160,12 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         doc_conv = PsqlGraph2JSON(self.g)
         with self.g.session_scope():
             doc_conv.cache_database()
-        self.part_docs, self.file_docs, self.ann_docs = (
+        self.case_docs, self.file_docs, self.ann_docs = (
             doc_conv.denormalize_cases())
-        self.part_doc = self.part_docs[0]
+        self.case_doc = self.case_docs[0]
 
     def test_case_clinical(self):
-        props = self.part_doc
+        props = self.case_doc
         self.assertTrue('clinical' in props)
         clinical = props['clinical']
         self.assertEqual(clinical['age_at_diagnosis'], 12419)
@@ -187,32 +187,32 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
                     annotation['case_id'], annotation['entity_id'])
 
     def test_case_project(self):
-        props = self.part_doc
+        props = self.case_doc
         self.assertTrue('project' in props)
         actual = set(props['project'].keys())
         self.assertEqual(project_props, actual)
 
     def test_case_summary(self):
-        props = self.part_doc
+        props = self.case_doc
         self.assertTrue('summary' in props)
         actual = set(props['summary'].keys())
         self.assertEqual(summary_props, actual)
 
     def test_case_tss(self):
-        props = self.part_doc
+        props = self.case_doc
         self.assertTrue('tissue_source_site' in props)
         actual = set(props['tissue_source_site'].keys())
         self.assertEqual(tss_props, actual)
 
     def test_case_samples(self):
-        props = self.part_doc
+        props = self.csae_doc
         self.assertTrue('samples' in props)
         actual = set(props['samples'][0].keys())
         self.assertEqual(sample_props, actual.union(
             {'annotations', 'aliquots'}))
 
     def test_case_portions(self):
-        props = self.part_doc
+        props = self.case_doc
         self.assertTrue('portions' in props['samples'][0])
         portion = [p for s in props['samples'] for p in s['portions']
                    if 'slides' not in p][0]
@@ -221,7 +221,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             {'annotations', 'slides', 'center'}))
 
     def test_case_analytes(self):
-        props = self.part_doc
+        props = self.case_doc
         portions = (props['samples'][0]['portions'][0])
         self.assertTrue('analytes' in portions)
         actual = set(portions['analytes'][0].keys())
@@ -229,7 +229,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             {'annotations'}))
 
     def test_case_aliquots(self):
-        props = self.part_doc
+        props = self.case_doc
         analytes = (props['samples'][0]['portions'][0]['analytes'][0])
         self.assertTrue('aliquots' in analytes)
         actual = set(analytes['aliquots'][0].keys())
@@ -237,7 +237,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             {'annotations'}))
 
     def test_case_files(self):
-        props = self.part_doc
+        props = self.case_doc
         self.assertTrue('files' in props)
         # this makes sure the
         # to_delete/non_live/file-derived_from-file file doesn't show

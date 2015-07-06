@@ -38,13 +38,13 @@ class TCGAAnnotationTest(ZugTestBase):
         return aliquot
 
     def create_case(self, barcode):
-        part = Case(
+        case = Case(
             node_id=str(uuid4()),
             submitter_id=barcode
         )
         with self.graph.session_scope() as session:
-            session.merge(part)
-        return part
+            session.merge(case)
+        return case
 
     def create_portion(self, barcode):
         portion = Portion(
@@ -71,14 +71,14 @@ class TCGAAnnotationTest(ZugTestBase):
                                      .one().annotations)
 
     def test_sync_with_name_munging(self):
-        part = self.create_case("TCGA-BG-A0MS")
+        case = self.create_case("TCGA-BG-A0MS")
         portion = self.create_portion("TCGA-XV-AB01-06A-21-A444-20")
         with HTTMock(mock_annotations(FAKE_ANNOTATIONS_WITH_MUNGE)):
             syncer = TCGAAnnotationSyncer()
             syncer.go()
         with self.graph.session_scope():
             self.graph.nodes(Annotation)\
-                      .filter(Annotation.cases.contains(part))\
+                      .filter(Annotation.cases.contains(case))\
                       .one()
             self.graph.nodes(Annotation)\
                       .filter(Annotation.portions.contains(portion))\

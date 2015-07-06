@@ -237,9 +237,9 @@ class TARGETSampleMatrixSyncer(object):
             dst_label=dst.label,
         ))
 
-    def tie_to_project(self, part_node):
+    def tie_to_project(self, case_node):
         project_node = self.graph.nodes(Project).props({"code": self.project}).one()
-        self.create_edge("member_of", part_node, project_node)
+        self.create_edge("member_of", case_node, project_node)
 
     def sync(self):
         self.log.info("Fetching and extracting info from sample matrix.")
@@ -270,7 +270,7 @@ class TARGETSampleMatrixSyncer(object):
             "version": self.version,
         }
         for case, samples in mapping.iteritems():
-            part_node = self.graph.node_merge(
+            case_node = self.graph.node_merge(
                 node_id=str(uuid5(NAMESPACE_CASES, str(case))),
                 label="case",
                 system_annotations=sysans,
@@ -279,9 +279,9 @@ class TARGETSampleMatrixSyncer(object):
                     "days_to_index": None,
                 }
             )
-            self.log.info("inserted case %s as %s", case, part_node)
-            self.log.info("tieing %s to project", part_node)
-            self.tie_to_project(part_node)
+            self.log.info("inserted case %s as %s", case, case_node)
+            self.log.info("tieing %s to project", case_node)
+            self.tie_to_project(case_node)
             for sample, contents in samples.iteritems():
                 sample_node = self.graph.node_merge(
                     node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
@@ -309,8 +309,8 @@ class TARGETSampleMatrixSyncer(object):
                     }
                 )
                 self.log.info("inserted sample %s as %s", sample, sample_node)
-                self.log.info("tieing %s to case %s", sample_node, part_node)
-                self.create_edge("derived_from", sample_node, part_node)
+                self.log.info("tieing %s to case %s", sample_node, case_node)
+                self.create_edge("derived_from", sample_node, case_node)
                 for aliquot in contents["aliquots"]:
                     if not aliquot_id_map.get(aliquot):
                         self.log.info("Not inserting aliquot %s because it doesn't have an id in cghub", aliquot)

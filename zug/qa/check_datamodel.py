@@ -15,5 +15,5 @@ class CheckDatamodel(object):
         self.graph = psqlgraph.PsqlGraphDriver(
             host=host, user=user, password=password, database=database)
 
-    def get_participant_count(self):
-        return self.graph.node_lookup(label='participant').count()
+    def get_case_count(self):
+        return self.graph.node_lookup(label='case').count()
