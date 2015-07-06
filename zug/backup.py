@@ -77,10 +77,7 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
             ds3_key.put(f, job=job, offset=offset)
         logger.info('Part of file %s uploaded for job %s',
                     ds3_key.name, job.id)
-        try:
-            os.remove(tmp_file)
-        except:
-            pass
+        os.remove(tmp_file)
 
     except:
         logger.exception("Upload failed for file %s offset %s" %
