@@ -29,24 +29,21 @@ ALTER TABLE tag RENAME TO node_tag;
 ALTER TABLE experimentalstrategy RENAME TO node_experimentalstrategy;
 ALTER TABLE dataformat RENAME TO node_dataformat;
 ALTER TABLE publication RENAME TO node_publication;
--- This is the only line that's not a simple rename, participant
--- becomes case, the whole point of this migration
+-- This is the only node change that's not a simple rename,
+-- participant becomes case, the whole point of this migration
 ALTER TABLE participant RENAME TO node_case;
 
 
 -- edges
 
--- these are all renames, with the exception of anything to do
--- with participant / case, which gets renamed (e.g. filedescribesparticipant -> edge_filedescribescase)
+-- this block is all just prefixing with edge_
 ALTER TABLE aliquotderivedfromanalyte RENAME TO edge_aliquotderivedfromanalyte;
 ALTER TABLE aliquotderivedfromsample RENAME TO edge_aliquotderivedfromsample;
 ALTER TABLE analytederivedfromportion RENAME TO edge_analytederivedfromportion;
 ALTER TABLE portionderivedfromsample RENAME TO edge_portionderivedfromsample;
-ALTER TABLE samplederivedfromparticipant RENAME TO edge_samplederivedfromcase;
 ALTER TABLE slidederivedfromportion RENAME TO edge_slidederivedfromportion;
 ALTER TABLE filerelatedtofile RENAME TO edge_filerelatedtofile;
 ALTER TABLE archiverelatedtofile RENAME TO edge_archiverelatedtofile;
-ALTER TABLE participantmemberofproject RENAME TO edge_casememberofproject;
 ALTER TABLE projectmemberofprogram RENAME TO edge_projectmemberofprogram;
 ALTER TABLE archivememberofproject RENAME TO edge_archivememberofproject;
 ALTER TABLE filememberofarchive RENAME TO edge_filememberofarchive;
@@ -55,18 +52,13 @@ ALTER TABLE filememberofdatasubtype RENAME TO edge_filememberofdatasubtype;
 ALTER TABLE filememberofdataformat RENAME TO edge_filememberofdataformat;
 ALTER TABLE filememeberoftag RENAME TO edge_filememeberoftag;
 ALTER TABLE datasubtypememberofdatatype RENAME TO edge_datasubtypememberofdatatype;
-ALTER TABLE participantprocessedattissuesourcesite RENAME TO edge_caseprocessedattissuesourcesite;
 ALTER TABLE filegeneratedfromplatform RENAME TO edge_filegeneratedfromplatform;
 ALTER TABLE filedatafromaliquot RENAME TO edge_filedatafromaliquot;
 ALTER TABLE filedatafromanalyte RENAME TO edge_filedatafromanalyte;
 ALTER TABLE filedatafromportion RENAME TO edge_filedatafromportion;
 ALTER TABLE filedatafromsample RENAME TO edge_filedatafromsample;
-ALTER TABLE filedatafromparticipant RENAME TO edge_filedatafromcase;
 ALTER TABLE filedatafromslide RENAME TO edge_filedatafromslide;
 ALTER TABLE filedatafromfile RENAME TO edge_filedatafromfile;
-ALTER TABLE filedescribescase RENAME TO edge_filedescribescase;
-ALTER TABLE clinicaldescribesparticipant RENAME TO edge_clinicaldescribescase;
-ALTER TABLE annotationannotatesparticipant RENAME TO edge_annotationannotatescase;
 ALTER TABLE annotationannotatessample RENAME TO edge_annotationannotatessample;
 ALTER TABLE annotationannotatesslide RENAME TO edge_annotationannotatesslide;
 ALTER TABLE annotationannotatesportion RENAME TO edge_annotationannotatesportion;
@@ -77,3 +69,12 @@ ALTER TABLE aliquotshippedtocenter RENAME TO edge_aliquotshippedtocenter;
 ALTER TABLE portionshippedtocenter RENAME TO edge_portionshippedtocenter;
 ALTER TABLE filesubmittedbycenter RENAME TO edge_filesubmittedbycenter;
 ALTER TABLE publicationreferstofile RENAME TO edge_publicationreferstofile;
+-- these involve changing an edge that used to have participant in
+-- it's name to case
+ALTER TABLE samplederivedfromparticipant RENAME TO edge_samplederivedfromcase;
+ALTER TABLE participantmemberofproject RENAME TO edge_casememberofproject;
+ALTER TABLE participantprocessedattissuesourcesite RENAME TO edge_caseprocessedattissuesourcesite;
+ALTER TABLE filedatafromparticipant RENAME TO edge_filedatafromcase;
+ALTER TABLE filedescribesparticipant RENAME TO edge_filedescribescase;
+ALTER TABLE clinicaldescribesparticipant RENAME TO edge_clinicaldescribescase;
+ALTER TABLE annotationannotatesparticipant RENAME TO edge_annotationannotatescase;
