@@ -537,6 +537,10 @@ class PsqlGraph2JSON(object):
                 rf_doc['type'] = 'magetab'
             else:
                 rf_doc['type'] = None
+            if related_file.acl == ["open"]:
+                rf_doc['access'] = 'open'
+            else:
+                rf_doc['access'] = 'controlled'
             rf_docs.append(rf_doc)
 
         for archive in set(self.neighbors_labeled(node, 'archive')):
