@@ -321,7 +321,8 @@ class cghub2psqlgraph(object):
 
     def categorize_file(self, root, file_key):
         file_name = self.xml.xpath('./filename', root, single=True)
-        if file_name.endswith('.bai'):
+        if file_name.endswith('.bai') or file_name.endswith(".tar.bz2"):
+            self.log.info("Not classifying %s", file_key)
             return
 
         self.save_center_edge(root, file_key)
