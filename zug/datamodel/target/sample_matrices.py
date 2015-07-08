@@ -111,6 +111,36 @@ def filter_pending(aliquots):
             if not re.search("\[P-[A-Z]{2}\]", aliquot)]
 
 
+def is_potential_aliquot_col(col):
+    """Aliquot names can be in columns that either end in "Sample ID" or
+    start with "L". The ones that start with L show up as unnamed
+    after parsing becuse there's a fake row above them
+
+    """
+    return col.endswith("Sample ID") or col.startswith("Unnamed")
+
+
+def split_into_aliquots(cell):
+    """Almost always this just amounts to splitting on commas, but some
+    are missing commas, e.g.: TARGET-20-PAEEYP-14A-01DTARGET-20-PAEEYP-03A-01D.
+    """
+    if cell.count("TARGET") > 1 and "," not in cell:
+        # split into barcodes
+        return ["TARGET" + s for s in cell.split("TARGET")[1:]]
+    else:
+        return cell.split(",")
+
+
+def fix_suprious_dash(aliquot):
+    """Some aliquots have a spurious dash on the end
+    ('TARGET-20-PANVGE-09A-02R -'), remove it
+    """
+    if aliquot and aliquot.endswith(" -"):
+        return aliquot.replace(" -", "")
+    else:
+        return aliquot
+
+
 class TARGETSampleMatrixSyncer(object):
 
     def __init__(self, project, graph=None, dcc_auth=None):
@@ -213,14 +243,19 @@ class TARGETSampleMatrixSyncer(object):
         """Given a row, extract all the aliquots from it, group them into
         samples, add metadata, and assert various sanity checks"""
 
-        aliquot_lists = [row[col].split(",") for col in row.index
-                         if col.endswith("Sample ID") and row.get(col)
-                         # this last is to avoid trying to process whitespace
-                         and row.get(col).strip()]
+        aliquot_lists = [
+            split_into_aliquots(row[col]) for col in row.index
+            if is_potential_aliquot_col(col) and row.get(col)
+            # this is to avoid trying to process whitespace
+            and row.get(col).strip()
+            and row.get(col).strip().lower() != "failed"
+            and "[BCCA]" not in row.get(col)  # TODO don't know what this means, skiping it for now
+        ]
         # this amounts to flattening the nested list
         aliquots = list(itertools.chain(*aliquot_lists))
         aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
         aliquots = filter_pending(aliquots)
+        aliquots = [fix_suprious_dash(a) for a in aliquots]
         for aliquot in aliquots:
             assert len(aliquot.split("-")) == 5
             assert aliquot.startswith(participant_id)
