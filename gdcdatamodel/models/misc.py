@@ -14,3 +14,4 @@ class FileReport(Base):
     timestamp = Column('timestamp', DateTime, server_default="now()")
     streamed_bytes = Column('streamed_bytes', BigInteger)
     username = Column('username', String, index=True)
+    requested_bytes = Column('requested_bytes', BigInteger)
