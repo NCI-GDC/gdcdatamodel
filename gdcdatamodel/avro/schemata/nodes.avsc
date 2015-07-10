@@ -100,7 +100,7 @@
   },
   {
     "type": "record",
-    "name": "participant",
+    "name": "case",
     "namespace": "gov.nih.nci.gdc",
     "doc": "TODO: document",
     "fields": [
@@ -111,13 +111,13 @@
       {
         "name": "label",
         "type": [
-          "participant_enum"
+          "case_enum"
         ]
       },
       {
         "name": "properties",
         "type": [
-          "participant_properties"
+          "case_properties"
         ]
       }
     ]

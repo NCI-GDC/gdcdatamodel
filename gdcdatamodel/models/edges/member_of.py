@@ -5,11 +5,11 @@ class MemberOf(object):
     __label__ = 'member_of'
 
 
-class ParticipantMemberOfProject(Edge, MemberOf):
-    __src_class__ = 'Participant'
+class CaseMemberOfProject(Edge, MemberOf):
+    __src_class__ = 'Case'
     __dst_class__ = 'Project'
     __src_dst_assoc__ = 'projects'
-    __dst_src_assoc__ = 'participants'
+    __dst_src_assoc__ = 'cases'
 
 
 class ProjectMemberOfProgram(Edge, MemberOf):

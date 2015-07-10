@@ -33,10 +33,10 @@ class PortionDerivedFromSample(Edge, DerivedFrom):
     __dst_src_assoc__ = 'portions'
 
 
-class SampleDerivedFromParticipant(Edge, DerivedFrom):
+class SampleDerivedFromCase(Edge, DerivedFrom):
     __src_class__ = 'Sample'
-    __dst_class__ = 'Participant'
-    __src_dst_assoc__ = 'participants'
+    __dst_class__ = 'Case'
+    __src_dst_assoc__ = 'cases'
     __dst_src_assoc__ = 'samples'
 
 
