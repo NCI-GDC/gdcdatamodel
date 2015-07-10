@@ -12,7 +12,7 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
 
     def syncer_for(self, project):
         return TARGETSampleMatrixSyncer(
-            project, graph=self.graph, dcc_auth=None)
+            project, graph=self.graph, dcc_auth=('fake', 'auth'))
 
     def trace_case(self, aliquot_id):
         return self.graph.nodes(Case)\

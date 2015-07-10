@@ -38,6 +38,12 @@ setup(
         'boto==2.36.0',
         'filechunkio==1.6',
         'docker-py==1.2.2',
+        # these next three are not used directly, but are required for
+        # requests to have TLS SNI support, which we need for the
+        # target dcc servers, plz don't remove them
+        'pyOpenSSL==0.15.1',
+        'ndg-httpsclient==0.4.0',
+        'pyasn1==0.1.8',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@3394989c90e1cf4bfb017c2f51d1537a03cdcc2d#egg=psqlgraph',

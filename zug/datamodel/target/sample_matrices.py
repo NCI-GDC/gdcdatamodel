@@ -3,6 +3,7 @@ import re
 import os
 import itertools
 import requests
+from copy import deepcopy
 import xlrd
 import pandas as pd
 from lxml import html
@@ -12,6 +13,7 @@ from uuid import UUID, uuid5
 from datetime import datetime
 
 from sqlalchemy import Integer
+from psqlgraph import PsqlGraphDriver
 from gdcdatamodel.models import Aliquot, Case, Sample, Project
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
@@ -74,6 +76,11 @@ SAMPLE_TYPE_TO_DESCRIPTION = {
 }
 
 
+IGNORE_BARCODES = [
+    "TARGET-50-PAJLUJ-01A-01D",  # this appears to be an old name for TARGET-50-PAJLUJ-06A-01D
+]
+
+
 def split_seq(iterable, size):
     it = iter(iterable)
     item = list(itertools.islice(it, size))
@@ -104,35 +111,102 @@ def filter_pending(aliquots):
             if not re.search("\[P-[A-Z]{2}\]", aliquot)]
 
 
+def is_potential_aliquot_col(col):
+    """Aliquot names can be in columns that either end in "Sample ID" or
+    start with "L". The ones that start with L show up as unnamed
+    after parsing becuse there's a fake row above them
+
+    """
+    return col.endswith("Sample ID") or col.startswith("Unnamed")
+
+
+def split_into_aliquots(cell):
+    """Almost always this just amounts to splitting on commas, but some
+    are missing commas, e.g.: TARGET-20-PAEEYP-14A-01DTARGET-20-PAEEYP-03A-01D.
+    """
+    if cell.count("TARGET") > 1 and "," not in cell:
+        # split into barcodes
+        return ["TARGET" + s for s in cell.split("TARGET")[1:]]
+    else:
+        return cell.split(",")
+
+
+def fix_suprious_dash(aliquot):
+    """Some aliquots have a spurious dash on the end
+    ('TARGET-20-PANVGE-09A-02R -'), remove it
+    """
+    if aliquot and aliquot.endswith(" -"):
+        return aliquot.replace(" -", "")
+    else:
+        return aliquot
+
+
 class TARGETSampleMatrixSyncer(object):
 
     def __init__(self, project, graph=None, dcc_auth=None):
         self.project = project
-        self.graph = graph
-        self.dcc_auth = dcc_auth
-        self.log = get_logger("target_sample_matrix_import_{}_{}".format(os.getpid(), self.project))
-
-    def locate_sample_matrix(self):
-        """Given a project, return the url to it's latest sample matrix."""
-        if self.project == "ALL-P1":
-            search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/Discovery/SAMPLE_MATRIX/"
-        elif self.project == "ALL-P2":
-            search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/Discovery/SAMPLE_MATRIX/"
-        elif self.project in PROJECTS:
-            search_url = "https://target-data.nci.nih.gov/{}/Discovery/SAMPLE_MATRIX/".format(self.project)
+        if graph:
+            self.graph = graph
         else:
-            raise RuntimeError("project {} is not known".format(self.project))
-        resp = requests.get(search_url, auth=self.dcc_auth)
-        resp.raise_for_status()
-        search_html = html.fromstring(resp.content)
-        links = search_html.cssselect('a')
-        for link in links:
-            maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
-            if maybe_match:
-                self.url = urljoin(search_url, link.attrib["href"])
-                self.version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
-                return
-        raise RuntimeError("Could not find sample matrix at url {}".format(search_url))
+            self.graph = PsqlGraphDriver(
+                os.environ["PG_HOST"],
+                os.environ["PG_USER"],
+                os.environ["PG_PASS"],
+                os.environ["PG_NAME"],
+            )
+        if dcc_auth:
+            self.dcc_auth = dcc_auth
+        else:
+            self.dcc_auth = (os.environ["DCC_USER"], os.environ["DCC_PASS"])
+        self.log = get_logger("target_sample_matrix_import_{}".format(self.project))
+
+    def locate_sample_matrices(self):
+        """Given a project, set self.urls to a list of urls for it's sample
+        matrices. Some projects have two sample matrices, one in
+        Discovery and one in Validation.
+        """
+        self.urls = []
+        self.version = 0
+        for dir in ["Discovery", "Validation"]:
+            if self.project == "ALL-P1":
+                search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/{dir}/SAMPLE_MATRIX/".format(
+                    dir=dir,
+                )
+            elif self.project == "ALL-P2":
+                search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/{dir}/SAMPLE_MATRIX/".format(
+                    dir=dir,
+                )
+            elif self.project in PROJECTS:
+                search_url = "https://target-data.nci.nih.gov/{proj}/{dir}/SAMPLE_MATRIX/".format(
+                    proj=self.project,
+                    dir=dir,
+                )
+            else:
+                raise RuntimeError("project {} is not known".format(self.project))
+            resp = requests.get(search_url, auth=self.dcc_auth)
+            if resp.status_code == 404:
+                self.log.info("No sample matrix found at %s", search_url)
+                continue
+            resp.raise_for_status()
+            search_html = html.fromstring(resp.content)
+            links = search_html.cssselect('a')
+            for link in links:
+                maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
+                if maybe_match:
+                    url = urljoin(search_url, link.attrib["href"])
+                    version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
+                    self.urls.append(url)
+                    if version > self.version:
+                        # the logic here is that since what we have in
+                        # the database can be updated by a new version
+                        # of either sample matrix, the version of the
+                        # biospecemin data for this project is the
+                        # later of the two sample matrix versions
+                        self.version = version
+        if not self.urls:
+            raise RuntimeError("Could not find any sample matrices")
+        if not self.version:
+            raise RuntimeError("Problem parsing versions")
 
     def load_sample_matrix(self, data):
         """Given a url, load a sample matrix from it into a pandas DataFrame"""
@@ -169,15 +243,23 @@ class TARGETSampleMatrixSyncer(object):
         """Given a row, extract all the aliquots from it, group them into
         samples, add metadata, and assert various sanity checks"""
 
-        aliquot_lists = [row[col].split(",") for col in row.index
-                         if col.endswith("Sample ID") and row.get(col)]
+        aliquot_lists = [
+            split_into_aliquots(row[col]) for col in row.index
+            if is_potential_aliquot_col(col) and row.get(col)
+            # this is to avoid trying to process whitespace
+            and row.get(col).strip()
+            and row.get(col).strip().lower() != "failed"
+            and "[BCCA]" not in row.get(col)  # TODO don't know what this means, skiping it for now
+        ]
         # this amounts to flattening the nested list
         aliquots = list(itertools.chain(*aliquot_lists))
         aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
         aliquots = filter_pending(aliquots)
+        aliquots = [fix_suprious_dash(a) for a in aliquots]
         for aliquot in aliquots:
-            assert aliquot.startswith(case_id)
             assert len(aliquot.split("-")) == 5
+            assert aliquot.startswith(case_id)
+        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
         sample_groups = self.group_by_sample(aliquots)
         for sample in sample_groups:
             assert sample.startswith(case_id)
@@ -202,8 +284,7 @@ class TARGETSampleMatrixSyncer(object):
             else:
                 continue
             if mapping.get(case_id):
-                self.log.warning("%s is duplicated in this sample matrix", case_id)
-                continue
+                raise RuntimeError("{} is duplicated in this sample matrix".format(case_id))
             else:
                 mapping[case_id] = self.case_mapping(case_id, row)
                 if not mapping[case_id]:
@@ -220,26 +301,43 @@ class TARGETSampleMatrixSyncer(object):
                 for aliquot in contents["aliquots"]:
                     assert aliquot.startswith(sample)
 
+    def merge_samples(self, sample1, sample2):
+        if sample1 is None:
+            return deepcopy(sample2)
+        if sample2 is None:
+            return deepcopy(sample1)
+        merged = {}
+        merged["aliquots"] = sample1["aliquots"].union(sample2["aliquots"])
+        for key in ["tissue_code", "tumor_code", "tissue_desc", "tumor_desc"]:
+            assert sample1[key] == sample2[key]
+            merged[key] = sample1[key]
+        return merged
+
+    def merge_mappings(self, mappings):
+        final = {}
+        for mapping in mappings:
+            for case, samples in mapping.iteritems():
+                if case not in final:
+                    final[case] = deepcopy(samples)
+                else:
+                    # this case is duplicated
+                    for sample_name, info in samples.iteritems():
+                        final[case][sample_name] = self.merge_samples(
+                            final[case].get(sample_name), info
+                        )
+        return final
+
     def compute_mapping(self):
-        self.locate_sample_matrix()
-        resp = requests.get(self.url, auth=self.dcc_auth)
-        df = self.load_sample_matrix(resp.content)
-        mapping = self.compute_mapping_from_df(df)
-        self.sanity_check(mapping)
-        return mapping
-
-    def create_edge(self, label, src, dst):
-        self.graph.current_session().merge(self.graph.get_PsqlEdge(
-            label=label,
-            src_id=src.node_id,
-            dst_id=dst.node_id,
-            src_label=src.label,
-            dst_label=dst.label,
-        ))
-
-    def tie_to_project(self, case_node):
-        project_node = self.graph.nodes(Project).props({"code": self.project}).one()
-        self.create_edge("member_of", case_node, project_node)
+        self.locate_sample_matrices()
+        mappings = []
+        for url in self.urls:
+            resp = requests.get(url, auth=self.dcc_auth)
+            df = self.load_sample_matrix(resp.content)
+            mapping = self.compute_mapping_from_df(df)
+            mappings.append(mapping)
+        final_mapping = self.merge_mappings(mappings)
+        self.sanity_check(final_mapping)
+        return final_mapping
 
     def sync(self):
         self.log.info("Fetching and extracting info from sample matrix.")
@@ -257,7 +355,8 @@ class TARGETSampleMatrixSyncer(object):
                           .sysan({"group_id": self.project})\
                           .filter(model._sysan["version"].cast(Integer) < self.version)
             self.log.info("Found %s old %s to remove.", q.count(), model.__name__)
-            for node in q.all():
+            to_delete = q.all()
+            for node in to_delete:
                 self.log.info("Deleting node %s", node)
                 self.graph.node_delete(node=node)
 
@@ -269,63 +368,62 @@ class TARGETSampleMatrixSyncer(object):
             "group_id": self.project,
             "version": self.version,
         }
+        project_node = self.graph.nodes(Project)\
+                                 .props(code=self.project)\
+                                 .one()
         for case, samples in mapping.iteritems():
-            case_node = self.graph.node_merge(
+            case_node = Case(
                 node_id=str(uuid5(NAMESPACE_CASES, str(case))),
-                label="case",
-                system_annotations=sysans,
-                properties={
-                    "submitter_id": case,
-                    "days_to_index": None,
-                }
+                submitter_id=case,
+                days_to_index=None,
             )
-            self.log.info("inserted case %s as %s", case, case_node)
-            self.log.info("tieing %s to project", case_node)
-            self.tie_to_project(case_node)
+            case_node.system_annotations = sysans
+            self.log.info("creating case %s as %s",
+                          case, case_node)
             for sample, contents in samples.iteritems():
-                sample_node = self.graph.node_merge(
+                sample_node = Sample(
                     node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
-                    label="sample",
-                    system_annotations=sysans,
-                    properties={
-                        "submitter_id": sample,
-                        "sample_type_id": contents["tissue_code"],
-                        "sample_type": contents["tissue_desc"],
-                        "tumor_code_id": contents["tumor_code"],
-                        "tumor_code": contents["tumor_desc"],
-                        "longest_dimension": None,
-                        "intermediate_dimension": None,
-                        "shortest_dimension": None,
-                        "initial_weight": None,
-                        "current_weight": None,
-                        "freezing_method": None,
-                        "oct_embedded": None,
-                        "time_between_clamping_and_freezing": None,
-                        "time_between_excision_and_freezing": None,
-                        "days_to_collection": None,
-                        "days_to_sample_procurement": None,
-                        "is_ffpe": None,
-                        "pathology_report_uuid": None,
-                    }
+                    submitter_id=sample,
+                    sample_type_id=contents["tissue_code"],
+                    sample_type=contents["tissue_desc"],
+                    tumor_code_id=contents["tumor_code"],
+                    tumor_code=contents["tumor_desc"],
+                    longest_dimension=None,
+                    intermediate_dimension=None,
+                    shortest_dimension=None,
+                    initial_weight=None,
+                    current_weight=None,
+                    freezing_method=None,
+                    oct_embedded=None,
+                    time_between_clamping_and_freezing=None,
+                    time_between_excision_and_freezing=None,
+                    days_to_collection=None,
+                    days_to_sample_procurement=None,
+                    is_ffpe=None,
+                    pathology_report_uuid=None,
                 )
-                self.log.info("inserted sample %s as %s", sample, sample_node)
-                self.log.info("tieing %s to case %s", sample_node, case_node)
-                self.create_edge("derived_from", sample_node, case_node)
+                sample_node.system_annotations = sysans
+                self.log.info("creating sample %s as %s", sample, sample_node)
+                self.log.info("tieing sample to case %s", case_node)
+                case_node.samples.append(sample_node)
                 for aliquot in contents["aliquots"]:
                     if not aliquot_id_map.get(aliquot):
                         self.log.info("Not inserting aliquot %s because it doesn't have an id in cghub", aliquot)
                     else:
-                        aliquot_node = self.graph.node_merge(
+                        aliquot_node = Aliquot(
                             node_id=aliquot_id_map[aliquot],
-                            label="aliquot",
-                            system_annotations=sysans,
-                            properties={
-                                "submitter_id": aliquot,
-                                "source_center": None,
-                                "amount": None,
-                                "concentration": None,
-                            }
+                            submitter_id=aliquot,
+                            source_center=None,
+                            amount=None,
+                            concentration=None,
                         )
-                        self.log.info("inserting aliquot %s as %s", aliquot, aliquot_node)
-                        self.log.info("tieing aliquot %s to sample %s", aliquot_node, sample_node)
-                        self.create_edge("derived_from", aliquot_node, sample_node)
+                        aliquot_node.system_annotations = sysans
+                        self.log.info("creating aliquot %s as %s",
+                                      aliquot, aliquot_node)
+                        self.log.info("tieing aliquot %s to sample %s",
+                                      aliquot_node, sample_node)
+                        sample_node.aliquots.append(aliquot_node)
+            self.log.info("inserting case %s", case_node)
+            case_node = self.graph.current_session().merge(case_node)
+            self.log.info("tieing %s to project", case_node)
+            case_node.projects = [project_node]
