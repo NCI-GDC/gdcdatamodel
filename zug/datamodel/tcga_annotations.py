@@ -11,7 +11,7 @@ from psqlgraph import Node
 
 from gdcdatamodel.models import (
     File, Aliquot, Analyte, Slide,
-    Sample, Portion, Participant,
+    Sample, Portion, Case,
     Annotation
 )
 
@@ -92,8 +92,8 @@ class TCGAAnnotationSyncer(object):
                 annotation.files = [dst]
             elif isinstance(dst, Sample):
                 annotation.samples = [dst]
-            elif isinstance(dst, Participant):
-                annotation.participants = [dst]
+            elif isinstance(dst, Case):
+                annotation.cases = [dst]
             elif isinstance(dst, Portion):
                 annotation.portions = [dst]
             elif isinstance(dst, Analyte):
@@ -155,7 +155,7 @@ class TCGAAnnotationSyncer(object):
         if item_type == "shipped portion":
             item_type = "portion"  # we just call shipped portions portions
         if item_type == "patient":
-            item_type = "participant"  # they say patient, we say participant. this will have to be case eventually
+            item_type = "case"  # they say patient, we say case. this will have to be case eventually
         cls = Node.get_subclass(item_type)
         node = self.graph.nodes(cls)\
                          .props({'submitter_id': item['item']})\

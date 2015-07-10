@@ -56,16 +56,16 @@ class TCGADCCToBiospecimen(object):
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)
 
-        # if no biospecimen is tied to this file, find participant that should
+        # if no biospecimen is tied to this file, find case that should
         # be tied to this file
         if len(nodes) == 0:
             node = None
-            if '_participant_uuid' in attrs:
+            if '_case_uuid' in attrs:
                 node = self.pg_driver.nodes().ids(
-                    [attrs['_participant_uuid']]).first()
-            elif '_participant_barcode' in attrs:
+                    [attrs['_case_uuid']]).first()
+            elif '_case_barcode' in attrs:
                 node = self.pg_driver.nodes().props(
-                    {'submitter_id': attrs['_participant_barcode']}).first()
+                    {'submitter_id': attrs['_case_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)

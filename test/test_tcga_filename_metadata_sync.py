@@ -91,14 +91,14 @@ class TCGAFilenameMetadataSyncerTest(StorageMixin, SignpostMixin, ZugTestBase):
             "revision": rev
         }, node
 
-    def test_tie_to_participant_without_magetab(self):
+    def test_tie_to_case_without_magetab(self):
         barcode = '2c03e8b9-8856-43a7-853d-5ec51a6e5330'
         self.create_file("nationwidechildrens.org_clinical.TCGA-DH-5140.xml",
-                         sys_ann={"_participant_barcode": barcode})
+                         sys_ann={"_case_barcode": barcode})
         self.fake_biospecimen(barcode,
                               {'submitter_id': barcode,
                                'days_to_index': 0},
-                              'participant')
+                              'case')
         with self.pg_driver.session_scope():
             file_node = self.pg_driver.node_lookup(
                 label='file',
@@ -107,17 +107,17 @@ class TCGAFilenameMetadataSyncerTest(StorageMixin, SignpostMixin, ZugTestBase):
                     'nationwidechildrens.org_clinical.TCGA-DH-5140.xml'
                 }).one()
 
-            barcode = file_node.system_annotations['_participant_barcode']
+            barcode = file_node.system_annotations['_case_barcode']
             builder = self.specimen_edge_builder_for(file_node)
             builder.build()
-            participant = self.pg_driver.nodes(md.Participant)\
+            case = self.pg_driver.nodes(md.Case)\
                                         .with_edge_from_node(
-                                            md.FileDataFromParticipant,
+                                            md.FileDataFromCase,
                                             file_node).one()
-            self.assertEqual(participant['submitter_id'], barcode)
-            edge = self.pg_driver.edges(md.FileDataFromParticipant)\
+            self.assertEqual(case['submitter_id'], barcode)
+            edge = self.pg_driver.edges(md.FileDataFromCase)\
                                  .src(file_node.node_id)\
-                                 .dst(participant.node_id).one()
+                                 .dst(case.node_id).one()
             self.assertEqual(edge.system_annotations['source'], 'filename')
 
     def test_file_without_sysan(self):

@@ -2,7 +2,7 @@ import os
 from uuid import uuid4
 
 from base import ZugTestBase
-from gdcdatamodel.models import Annotation, Aliquot, Participant, Portion
+from gdcdatamodel.models import Annotation, Aliquot, Case, Portion
 
 from zug.datamodel.tcga_annotations import TCGAAnnotationSyncer
 
@@ -37,14 +37,14 @@ class TCGAAnnotationTest(ZugTestBase):
             session.merge(aliquot)
         return aliquot
 
-    def create_participant(self, barcode):
-        part = Participant(
+    def create_case(self, barcode):
+        case = Case(
             node_id=str(uuid4()),
             submitter_id=barcode
         )
         with self.graph.session_scope() as session:
-            session.merge(part)
-        return part
+            session.merge(case)
+        return case
 
     def create_portion(self, barcode):
         portion = Portion(
@@ -71,14 +71,14 @@ class TCGAAnnotationTest(ZugTestBase):
                                      .one().annotations)
 
     def test_sync_with_name_munging(self):
-        part = self.create_participant("TCGA-BG-A0MS")
+        case = self.create_case("TCGA-BG-A0MS")
         portion = self.create_portion("TCGA-XV-AB01-06A-21-A444-20")
         with HTTMock(mock_annotations(FAKE_ANNOTATIONS_WITH_MUNGE)):
             syncer = TCGAAnnotationSyncer()
             syncer.go()
         with self.graph.session_scope():
             self.graph.nodes(Annotation)\
-                      .filter(Annotation.participants.contains(part))\
+                      .filter(Annotation.cases.contains(case))\
                       .one()
             self.graph.nodes(Annotation)\
                       .filter(Annotation.portions.contains(portion))\

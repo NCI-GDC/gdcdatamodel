@@ -12,12 +12,12 @@ from uuid import UUID, uuid5
 from datetime import datetime
 
 from sqlalchemy import Integer
-from gdcdatamodel.models import Aliquot, Participant, Sample, Project
+from gdcdatamodel.models import Aliquot, Case, Sample, Project
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
 
-NAMESPACE_PARTICIPANTS = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
+NAMESPACE_CASES = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
 NAMESPACE_SAMPLES = UUID('90383d9f-5124-4087-8d13-5548da118d68')
 
 TUMOR_CODE_TO_DESCRIPTION = {
@@ -165,7 +165,7 @@ class TARGETSampleMatrixSyncer(object):
             info["tissue_desc"] = SAMPLE_TYPE_TO_DESCRIPTION[info["tissue_code"]]
         return dict(res)
 
-    def participant_mapping(self, participant_id, row):
+    def case_mapping(self, case_id, row):
         """Given a row, extract all the aliquots from it, group them into
         samples, add metadata, and assert various sanity checks"""
 
@@ -176,11 +176,11 @@ class TARGETSampleMatrixSyncer(object):
         aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
         aliquots = filter_pending(aliquots)
         for aliquot in aliquots:
-            assert aliquot.startswith(participant_id)
+            assert aliquot.startswith(case_id)
             assert len(aliquot.split("-")) == 5
         sample_groups = self.group_by_sample(aliquots)
         for sample in sample_groups:
-            assert sample.startswith(participant_id)
+            assert sample.startswith(case_id)
         return sample_groups
 
     def compute_mapping_from_df(self, df):
@@ -189,34 +189,34 @@ class TARGETSampleMatrixSyncer(object):
         CASE_USI = "Case USI"
         mapping = {}
         for _, row in df.iterrows():
-            participant_id = row[CASE_USI]
+            case_id = row[CASE_USI]
             # TODO filter the row if the "TARGET Case" column is "N".
             # we're not sure this is actually the right column, which
             # is why I haven't done it yet
-            if participant_id:
-                participant_id = participant_id.strip()
-                if not participant_id.startswith("TARGET"):
-                    self.log.info("Skipping Case USI: %s because it doesn't start with 'TARGET-'", participant_id)
+            if case_id:
+                case_id = case_id.strip()
+                if not case_id.startswith("TARGET"):
+                    self.log.info("Skipping Case USI: %s because it doesn't start with 'TARGET-'", case_id)
                     continue
-                assert len(participant_id.split("-")) == 3
+                assert len(case_id.split("-")) == 3
             else:
                 continue
-            if mapping.get(participant_id):
-                self.log.warning("%s is duplicated in this sample matrix", participant_id)
+            if mapping.get(case_id):
+                self.log.warning("%s is duplicated in this sample matrix", case_id)
                 continue
             else:
-                mapping[participant_id] = self.participant_mapping(participant_id, row)
-                if not mapping[participant_id]:
-                    self.log.warning("mapping for participant %s is empty", participant_id)
+                mapping[case_id] = self.case_mapping(case_id, row)
+                if not mapping[case_id]:
+                    self.log.warning("mapping for case %s is empty", case_id)
         return mapping
 
     def sanity_check(self, mapping):
-        """Sanity check the data: all samples derived from a participant should
-        start with that participant's barcode, all aliquots derived
+        """Sanity check the data: all samples derived from a case should
+        start with that case's barcode, all aliquots derived
         from a sample should start with that sample's barcode."""
-        for participant, samples in mapping.iteritems():
+        for case, samples in mapping.iteritems():
             for sample, contents in samples.iteritems():
-                assert sample.startswith(participant)
+                assert sample.startswith(case)
                 for aliquot in contents["aliquots"]:
                     assert aliquot.startswith(sample)
 
@@ -237,9 +237,9 @@ class TARGETSampleMatrixSyncer(object):
             dst_label=dst.label,
         ))
 
-    def tie_to_project(self, part_node):
+    def tie_to_project(self, case_node):
         project_node = self.graph.nodes(Project).props({"code": self.project}).one()
-        self.create_edge("member_of", part_node, project_node)
+        self.create_edge("member_of", case_node, project_node)
 
     def sync(self):
         self.log.info("Fetching and extracting info from sample matrix.")
@@ -251,7 +251,7 @@ class TARGETSampleMatrixSyncer(object):
             self.remove_old_versions()
 
     def remove_old_versions(self):
-        models_to_remove = [Aliquot, Participant, Sample]
+        models_to_remove = [Aliquot, Case, Sample]
         for model in models_to_remove:
             q = self.graph.nodes(model)\
                           .sysan({"group_id": self.project})\
@@ -269,19 +269,19 @@ class TARGETSampleMatrixSyncer(object):
             "group_id": self.project,
             "version": self.version,
         }
-        for participant, samples in mapping.iteritems():
-            part_node = self.graph.node_merge(
-                node_id=str(uuid5(NAMESPACE_PARTICIPANTS, str(participant))),
-                label="participant",
+        for case, samples in mapping.iteritems():
+            case_node = self.graph.node_merge(
+                node_id=str(uuid5(NAMESPACE_CASES, str(case))),
+                label="case",
                 system_annotations=sysans,
                 properties={
-                    "submitter_id": participant,
+                    "submitter_id": case,
                     "days_to_index": None,
                 }
             )
-            self.log.info("inserted participant %s as %s", participant, part_node)
-            self.log.info("tieing %s to project", part_node)
-            self.tie_to_project(part_node)
+            self.log.info("inserted case %s as %s", case, case_node)
+            self.log.info("tieing %s to project", case_node)
+            self.tie_to_project(case_node)
             for sample, contents in samples.iteritems():
                 sample_node = self.graph.node_merge(
                     node_id=str(uuid5(NAMESPACE_SAMPLES, str(sample))),
@@ -309,8 +309,8 @@ class TARGETSampleMatrixSyncer(object):
                     }
                 )
                 self.log.info("inserted sample %s as %s", sample, sample_node)
-                self.log.info("tieing %s to participant %s", sample_node, part_node)
-                self.create_edge("derived_from", sample_node, part_node)
+                self.log.info("tieing %s to case %s", sample_node, case_node)
+                self.create_edge("derived_from", sample_node, case_node)
                 for aliquot in contents["aliquots"]:
                     if not aliquot_id_map.get(aliquot):
                         self.log.info("Not inserting aliquot %s because it doesn't have an id in cghub", aliquot)

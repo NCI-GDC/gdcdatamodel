@@ -6,7 +6,7 @@ clinical:
       name: ./shared:bcr_patient_uuid
     edges:
       describes:
-        participant: ./shared:bcr_patient_uuid
+        case: ./shared:bcr_patient_uuid
     properties:
       gender:
           path: ./shared:gender

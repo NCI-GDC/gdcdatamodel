@@ -5,13 +5,13 @@ from base import ZugTestBase, TEST_DIR
 
 from httmock import HTTMock, urlmatch
 
-from zug.datamodel.target.sample_matrices import NAMESPACE_PARTICIPANTS
+from zug.datamodel.target.sample_matrices import NAMESPACE_CASES
 from zug.datamodel.target.clinical import TARGETClinicalSyncer
 from gdcdatamodel.models import (
     File,
     Clinical,
-    ClinicalDescribesParticipant,
-    FileDescribesParticipant
+    ClinicalDescribesCase,
+    FileDescribesCase
 )
 
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures")
@@ -42,10 +42,10 @@ class TARGETClinicalSyncerTest(ZugTestBase):
             }
         )
 
-    def create_participant(self, barcode):
+    def create_case(self, barcode):
         return self.graph.node_merge(
-            node_id=str(uuid.uuid5(NAMESPACE_PARTICIPANTS, barcode)),
-            label="participant",
+            node_id=str(uuid.uuid5(NAMESPACE_CASES, barcode)),
+            label="case",
             properties={
                 "submitter_id": barcode,
             },
@@ -56,19 +56,19 @@ class TARGETClinicalSyncerTest(ZugTestBase):
 
     def test_basic_sync(self):
         self.create_file("https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx")
-        participant = self.create_participant("TARGET-50-ABCDEF")
+        case = self.create_case("TARGET-50-ABCDEF")
         syncer = TARGETClinicalSyncer("WT", "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx",
                                       graph=self.graph)
         with HTTMock(target_clinical_mock):
             syncer.sync()
         with self.graph.session_scope():
-            clin = self.graph.nodes(Clinical).filter(Clinical.participants.contains(participant)).one()
+            clin = self.graph.nodes(Clinical).filter(Clinical.cases.contains(case)).one()
             self.assertEqual(clin["vital_status"], "dead")
             self.assertEqual(clin["gender"], "male")
             self.assertEqual(clin["race"], "white")
             self.assertEqual(clin["ethnicity"], "not hispanic or latino")
             self.assertEqual(clin["age_at_diagnosis"], 123)
-            # make sure the file now describes the participant
+            # make sure the file now describes the case
             self.graph.nodes(File)\
                       .sysan({"url": "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx"})\
-                      .with_edge_to_node(FileDescribesParticipant, participant).one()
+                      .with_edge_to_node(FileDescribesCase, case).one()

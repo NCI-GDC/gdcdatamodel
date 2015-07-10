@@ -1,4 +1,4 @@
-participant:
+case:
   -
     root: .//test:level1
     id: ./test:id
@@ -13,7 +13,7 @@ sample:
     id: ./test:id
     edges:
       derived_from:
-        participant: ancestor::test:level1/test:id
+        case: ancestor::test:level1/test:id
     properties:
       sample_type_id:
         path: ./test:text2.2

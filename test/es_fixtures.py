@@ -70,7 +70,7 @@ NODES = [
         submitter_id='TCGA-AR-A1AR-10A-01W',
         well_number=None
     ),
-    Participant(
+    Case(
         node_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         days_to_index=0,
         submitter_id='TCGA-AR-A1AR'
@@ -225,7 +225,7 @@ NODES = [
 
 
 EDGES = [
-    ClinicalDescribesParticipant(
+    ClinicalDescribesCase(
         src_id='3239e85f-6be7-417b-b8e9-073c4d9c311c',
         dst_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
     ),
@@ -273,7 +273,7 @@ EDGES = [
         src_id='3febc6c8-85ae-4d38-ba55-c959959846db',
         dst_id='40407260-e805-4c2e-b2a7-13862bc5e494',
         properties={}),
-    SampleDerivedFromParticipant(
+    SampleDerivedFromCase(
         src_id='c1e5beaa-6103-409d-bdd4-a86c0f210014',
         dst_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         properties={}),
@@ -290,7 +290,7 @@ EDGES = [
         src_id='3013e9be-aa3e-4986-990c-559982f00e36',
         dst_id='40407260-e805-4c2e-b2a7-13862bc5e494',
         properties={}),
-    ParticipantMemberOfProject(
+    CaseMemberOfProject(
         src_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         dst_id='1334612b-3d2e-5941-a476-d455d71b458f',
         properties={}),
@@ -348,7 +348,7 @@ EDGES = [
         src_id='2708315c-d58a-42d7-a914-d6299aa74936',
         dst_id='07c974b3-3286-4c4f-8b67-6f8e425936f4',
         properties={}),
-    ParticipantProcessedAtTissueSourceSite(
+    CaseProcessedAtTissueSourceSite(
         src_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         dst_id='5e793cf6-1554-55db-b2ee-9c772717cea0',
         properties={}),
@@ -414,7 +414,7 @@ EDGES = [
                     'shipment_center_id': '07',
                     'shipment_datetime': 1299542400,
                     'shipment_reason': None}),
-    SampleDerivedFromParticipant(
+    SampleDerivedFromCase(
         src_id='5fa9998b-deff-493e-8a8e-dc2422192a48',
         dst_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         properties={}),

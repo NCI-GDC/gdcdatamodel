@@ -1,5 +1,7 @@
 import os
-from gdcdatamodel.models import Participant, Aliquot
+from gdcdatamodel.models import Case, Aliquot
+
+
 from zug.datamodel.target.sample_matrices import TARGETSampleMatrixSyncer
 from base import ZugTestBase, TEST_DIR, PreludeMixin
 
@@ -12,11 +14,11 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
         return TARGETSampleMatrixSyncer(
             project, graph=self.graph, dcc_auth=None)
 
-    def trace_participant(self, aliquot_id):
-        return self.graph.nodes(Participant)\
-                         .path('samples.aliquots')\
-                         .props({"submitter_id": aliquot_id})\
-                         .one()
+    def trace_case(self, aliquot_id):
+        return self.graph.nodes(Case)\
+                          .path('samples.aliquots')\
+                          .props({"submitter_id": aliquot_id})\
+                          .one()
 
     def test_sync(self):
         syncer = self.syncer_for("AML")
@@ -28,8 +30,8 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
         with self.graph.session_scope():
             syncer.put_mapping_in_pg(mapping)
         with self.graph.session_scope():
-            self.trace_participant("TARGET-20-PABHET-03A-02R")
-            self.trace_participant("TARGET-20-PABGKN-09A-01R")
+            self.trace_case("TARGET-20-PABHET-03A-02R")
+            self.trace_case("TARGET-20-PABGKN-09A-01R")
         syncer.version = 2
         data = open(os.path.join(
             FIXTURES_DIR, "TARGET_AML_SampleMatrix_19910123.xlsx")).read()
@@ -41,5 +43,5 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
         with self.graph.session_scope():
             self.assertEqual(self.graph.nodes(Aliquot).props(
                 {"submitter_id": "TARGET-20-PABHET-03A-02R"}).all(), [])
-            self.trace_participant("TARGET-20-PABGKN-09A-01R")
-            self.trace_participant("TARGET-20-PABHKY-03A-02R")
+            self.trace_case("TARGET-20-PABGKN-09A-01R")
+            self.trace_case("TARGET-20-PABHKY-03A-02R")

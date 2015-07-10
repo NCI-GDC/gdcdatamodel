@@ -66,17 +66,17 @@ class TARGETMAGETABSyncer(object):
 
     def aliquot_for(self, row):
         """Target magetabs appear fairly well organized, each seems to have a
-        'Source Name' column, which has the participant barcode, a
+        'Source Name' column, which has the case barcode, a
         'Sample Name' column, which has the sample barcode, and an
         'Extract Name' column, which has the aliquot barcode. This
         method parses that information out.
         """
-        participant = row["Source Name"]
+        case = row["Source Name"]
         sample = row["Sample Name"]
         aliquot = row["Extract Name"]
         assert aliquot.startswith("TARGET-")
         assert aliquot.startswith(sample)
-        assert aliquot.startswith(participant)
+        assert aliquot.startswith(case)
         return aliquot
 
     def compute_mappings(self):

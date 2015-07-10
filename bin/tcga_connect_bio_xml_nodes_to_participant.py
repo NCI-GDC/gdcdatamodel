@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import argparse
 from psqlgraph import PsqlGraphDriver
-from zug.datamodel.tcga_connect_bio_xml_nodes_to_participant\
-    import TCGABioXMLParticipantConnector
+from zug.datamodel.tcga_connect_bio_xml_nodes_to_case\
+    import TCGABioXMLCaseConnector
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -20,5 +20,5 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
     dry_run = args.pop('dry_run')
     graph = PsqlGraphDriver(**args)
-    connector = TCGABioXMLParticipantConnector(graph)
+    connector = TCGABioXMLCaseConnector(graph)
     connector.run(dry_run)

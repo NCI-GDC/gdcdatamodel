@@ -26,7 +26,7 @@ from cdisutils.net import no_proxy
 from zug.consul_manager import ConsulManager
 from zug.datamodel import tcga_classification
 from zug.datamodel.latest_urls import LatestURLParser
-from zug.datamodel.tcga_connect_bio_xml_nodes_to_participant import TCGABioXMLParticipantConnector
+from zug.datamodel.tcga_connect_bio_xml_nodes_to_case import TCGABioXMLCaseConnector
 
 from psqlgraph import PsqlGraphDriver
 from signpostclient import SignpostClient
@@ -794,8 +794,8 @@ class TCGADCCArchiveSyncer(object):
 
     def tie_biospecemin_xmls(self, file_nodes):
         self.log.info("Trying to connect %s file nodes to relevant xml files (describes edge)")
-        xml_connector = TCGABioXMLParticipantConnector(self.graph)
-        xml_connector.connect_files_to_participant(file_nodes)
+        xml_connector = TCGABioXMLCaseConnector(self.graph)
+        xml_connector.connect_files_to_case(file_nodes)
 
     def sync(self):
         self.consul.start_consul_session()
