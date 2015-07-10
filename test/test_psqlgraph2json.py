@@ -1,18 +1,10 @@
-import logging
 import unittest
 import os
-from zug.datamodel import prelude
 from gdcdatamodel import get_case_es_mapping
 from gdcdatamodel.models import File, Aliquot, Case, Annotation, Project
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from base import ZugTestBase, PreludeMixin
 import es_fixtures
-import logging
-import os
-import unittest
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
