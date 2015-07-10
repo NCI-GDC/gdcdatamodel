@@ -34,7 +34,7 @@ def run_signpost(port):
 class ZugTestBase(TestCase):
 
     def setUp(self):
-        self.basic_test_setup()
+        self.basic_setup()
         self.delete_non_prelude_nodes()
 
     def tearDown(self):
@@ -62,7 +62,7 @@ class ZugTestBase(TestCase):
         with self.g.engine.begin() as conn:
             conn.execute('TRUNCATE _voided_nodes, _voided_edges')
 
-    def basic_test_setup(self):
+    def basic_setup(self):
         self.graph_info = {
             "host": PG_HOST,
             "user": PG_USER,
