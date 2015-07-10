@@ -141,7 +141,11 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.to_delete_file.system_annotations["to_delete"] = True
         self.non_live_file = self.get_fuzzed_node(File, state='uploaded')
         self.data_from_file = self.get_fuzzed_node(File, state='live')
-
+        self.live_file.related_files.append(self.get_fuzzed_node(
+            File,
+            state="live",
+            file_name="a_related_file.bai"
+        ))
         with self.g.session_scope():
             aliquot = self.g.nodes(Aliquot).ids(
                 '84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
