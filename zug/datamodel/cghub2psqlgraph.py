@@ -289,8 +289,10 @@ class cghub2psqlgraph(object):
         elif state == 'live':
             self.categorize_file(root, file_key)
             node = self.save_file_node(file_key, node_type, props, acl)
-            self.add_datetime_system_annotations(root, file_key)
-            self.add_edges(root, node_type, params, file_key, node)
+            self.copy_result_key_to_sysan(root, node, "disease_abbr")
+            self.copy_result_key_to_sysan(root, node, "legacy_sample_id")
+            self.add_datetime_system_annotations(root, node)
+            self.add_edges(root, node_type, params, file_key)
         else:
             node = self.get_file_by_key(file_key)
             if node:
@@ -299,7 +301,15 @@ class cghub2psqlgraph(object):
             if file_key not in self.files_to_delete:
                 self.files_to_delete.append(file_key)
 
-    def add_datetime_system_annotations(self, root, file_key):
+    def copy_result_key_to_sysan(self, root, file_node, xml_key):
+        datum = self.xml.xpath(
+            'ancestor::Result/{}'.format(xml_key),
+            root=root,
+            single=True
+        )
+        file_node.merge(system_annotations={"cghub_"+xml_key: datum})
+
+    def add_datetime_system_annotations(self, root, file_node):
         for key in ["last_modified", "upload_date", "published_date"]:
             val_as_iso8601 = self.xml.xpath(
                 'ancestor::Result/{}'.format(key),
@@ -308,8 +318,9 @@ class cghub2psqlgraph(object):
             )
             val_as_seconds_since_epoch = calendar.timegm(
                 date_parse(val_as_iso8601).timetuple())
-            self.files_to_add[file_key].merge(
-                system_annotations={"cghub_"+key: val_as_seconds_since_epoch})
+            file_node.merge(
+                system_annotations={"cghub_"+key: val_as_seconds_since_epoch}
+            )
 
     def categorize_by_switch(self, root, cases):
         for dst_name, case in cases.iteritems():
@@ -384,7 +395,7 @@ class cghub2psqlgraph(object):
                 file_key, node.node_id, node.label, 'submitted_by',
                 src_label='file')
 
-    def add_edges(self, root, node_type, params, file_key, node):
+    def add_edges(self, root, node_type, params, file_key):
         """
         i.   check if file is *.bam.bai
         ii.  if *.bam.bai, cache related to edge
@@ -420,6 +431,7 @@ class cghub2psqlgraph(object):
         else:
             self.files_to_add[file_key] = PolyNode(
                 node_id=None, acl=acl, label=label, properties=properties)
+        return self.files_to_add[file_key]
 
     def save_edge(self, file_key, dst_id, dst_label, edge_label, src_id=None,
                   properties={}, src_label=None):
