@@ -1009,6 +1009,11 @@ class PsqlGraph2JSON(object):
         pbar = self.pbar('Caching entity cases: ', len(entities))
         self.entity_cases = {}
         for e in entities:
+            if e.label == "case":
+                # if the associated entity is a case, it's case is
+                # just itself. this is kindy of sketchy but w/e
+                self.entity_cases[e] = e
+                continue
             paths = [p[1:] for p in self.file_to_case_paths if p[0] == e.label]
             cases = self.walk_paths(e, paths)
             assert len(cases) == 1,\
