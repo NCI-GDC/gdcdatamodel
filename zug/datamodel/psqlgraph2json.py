@@ -550,7 +550,8 @@ class PsqlGraph2JSON(object):
                 rf_docs.append({
                     'file_id': archive.node_id,
                     'file_name': name,
-                    'type': 'magetab'
+                    'type': 'magetab',
+                    'access': 'open',
                 })
 
         if rf_docs:
