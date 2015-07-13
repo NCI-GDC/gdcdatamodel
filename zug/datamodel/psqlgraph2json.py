@@ -124,6 +124,7 @@ class PsqlGraph2JSON(object):
         self.possible_associated_entites = [
             'portion',
             'aliquot',
+            'case',
         ]
 
         self.file_to_case_paths = [
