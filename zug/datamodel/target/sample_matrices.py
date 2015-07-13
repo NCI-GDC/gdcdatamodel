@@ -253,7 +253,8 @@ class TARGETSampleMatrixSyncer(object):
         ]
         # this amounts to flattening the nested list
         aliquots = list(itertools.chain(*aliquot_lists))
-        aliquots = [aliquot.strip() for aliquot in aliquots]  # some of them have suprious whitespace on the front
+        # some of them have suprious whitespace
+        aliquots = [aliquot.strip() for aliquot in aliquots if aliquot.strip()]
         aliquots = filter_pending(aliquots)
         aliquots = [fix_suprious_dash(a) for a in aliquots]
         for aliquot in aliquots:
