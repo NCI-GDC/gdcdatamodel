@@ -171,6 +171,7 @@ def get_file_es_mapping(include_case=True):
     related_files.properties.type = STRING
     related_files.properties.data_type = STRING
     related_files.properties.data_subtype = STRING
+    related_files.properties.access = STRING
     patch_file_timestamps(related_files)
     files.properties.related_files = related_files
 
