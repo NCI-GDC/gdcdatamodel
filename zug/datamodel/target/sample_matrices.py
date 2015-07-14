@@ -113,11 +113,18 @@ def filter_pending(aliquots):
 
 def is_potential_aliquot_col(col):
     """Aliquot names can be in columns that either end in "Sample ID" or
-    start with "L". The ones that start with L show up as unnamed
-    after parsing becuse there's a fake row above them
-
+    start with "L". The ones that start with L sometimes show up as
+    unnamed after parsing becuse there's a fake row above them, but
+    sometimes they show up as having the name of that fake
+    row. Consider all options here to deicde if a column could have an
+    aliquot in it.
     """
-    return col.endswith("Sample ID") or col.startswith("Unnamed")
+    return (col.endswith("Sample ID")
+            or col.startswith("Unnamed")
+            or col in ["Gene Expression", "mRNA-seq",
+                       "miRNA-Seq", "Copy Number Analysis",
+                       "Methylation", "Whole Exome Sequencing",
+                       "Targeted Capture Sequencing (BCCA)"])
 
 
 def split_into_aliquots(cell):
