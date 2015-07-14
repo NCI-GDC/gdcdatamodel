@@ -1,18 +1,10 @@
-import logging
 import unittest
 import os
-from zug.datamodel import prelude
 from gdcdatamodel import get_case_es_mapping
 from gdcdatamodel.models import File, Aliquot, Case, Annotation, Project
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from base import ZugTestBase, PreludeMixin
 import es_fixtures
-import logging
-import os
-import unittest
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -141,7 +133,11 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.to_delete_file.system_annotations["to_delete"] = True
         self.non_live_file = self.get_fuzzed_node(File, state='uploaded')
         self.data_from_file = self.get_fuzzed_node(File, state='live')
-
+        self.live_file.related_files.append(self.get_fuzzed_node(
+            File,
+            state="live",
+            file_name="a_related_file.bai"
+        ))
         with self.g.session_scope():
             aliquot = self.g.nodes(Aliquot).ids(
                 '84df0f82-69c4-4cd3-a4bd-f40d2d6ef916').one()
