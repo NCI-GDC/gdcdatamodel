@@ -25,6 +25,14 @@ The gdcdatamodel library requires the following pip dependencies
 
 Project dependencies are managed using [PIP](https://pip.readthedocs.org/en/latest/)
 
+## Setup Script for Developers
+
+Running the setup script will setup git hooks for the project
+```
+$ ./setup.sh
+```
+The git hooks can be found in https://github.com/NCI-GDC/git-hooks.
+
 # Example validation usage
 ```
 from gdcdatamodel import node_avsc_object
