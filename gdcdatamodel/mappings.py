@@ -14,7 +14,7 @@ STRING = {'index': 'not_analyzed', 'type': 'string'}
 LONG = {'type': 'long'}
 INTEGER = {'type': 'integer'}
 FLATTEN = ['tag', 'platform', 'data_format', 'experimental_strategy']
-TOP_LEVEL_IDS = ['sample', 'portion', 'analyte', 'aliquot']
+TOP_LEVEL_IDS = ['sample', 'portion', 'analyte', 'aliquot', 'slide']
 
 MULTIFIELDS = {
     'project': ['code', 'disease_type', 'name', 'primary_site'],
