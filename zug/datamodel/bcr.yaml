@@ -215,10 +215,10 @@ sample:
         type: str
       initial_weight:
         path: ./bio:initial_weight
-        type: str
+        type: float
       current_weight:
         path: ./bio:current_weight
-        type: str
+        type: float
       freezing_method:
         path: ./bio:freezing_method
         type: str
