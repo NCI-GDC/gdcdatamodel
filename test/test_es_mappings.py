@@ -48,7 +48,8 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'submitter_portion_ids',
                       'submitter_aliquot_ids',
                       'submitter_analyte_ids', 'analyte_ids',
-                      'aliquot_ids', 'submitter_sample_ids'}
+                      'aliquot_ids', 'submitter_sample_ids',
+                      'slide_ids', 'submitter_slide_ids'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_project_mapping_top_level(self):
