@@ -84,11 +84,11 @@ class Sample(Node):
     def shortest_dimension(self, value):
         return self._set_property('shortest_dimension', value)
 
-    @pg_property(str)
+    @pg_property(float)
     def initial_weight(self, value):
         return self._set_property('initial_weight', value)
 
-    @pg_property(str)
+    @pg_property(float)
     def current_weight(self, value):
         return self._set_property('current_weight', value)
 
