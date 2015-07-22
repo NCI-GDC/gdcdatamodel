@@ -17,8 +17,12 @@ from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
 from libcloud.storage.drivers.local import LocalStorageDriver
 from libcloud.common.types import LibcloudError
 
-from gdcdatamodel import models
-from gdcdatamodel.models import Archive, Center
+from gdcdatamodel.models import (
+    Archive, Center, Project,
+    File, DataSubtype, DataFormat,
+    Platform, ExperimentalStrategy, Tag,
+    FileMemberOfArchive, FileSubmittedByCenter
+)
 
 from cdisutils.log import get_logger
 from cdisutils.net import no_proxy
@@ -115,8 +119,16 @@ def url_for(obj):
                                                         name=name)
     return url
 
-CLASSIFICATION_ATTRS = ["data_subtype", "data_format", "platform",
-                        "experimental_strategy", "tag"]
+
+# map from model class -> assocation proxy attr for attaching it to
+# file
+CLASSIFICATION_MODELS = {
+    DataSubtype: "data_subtypes",
+    DataFormat: "data_formats",
+    Platform: "platforms",
+    ExperimentalStrategy: "experimental_strategies",
+    Tag: "tags",
+}
 
 
 def classify(archive, filename):
@@ -165,12 +177,12 @@ class TCGADCCEdgeBuilder(object):
 
     def _get_archive(self):
         with self.graph.session_scope():
-            return self.graph.nodes(Archive)\
-                             .with_edge_from_node(
-                                 models.FileMemberOfArchive,
-                                 self.file_node)\
-                             .first()\
-                             .system_annotations
+            return self.graph\
+                       .nodes(Archive)\
+                       .join(FileMemberOfArchive)\
+                       .join(File)\
+                       .filter(File.node_id == self.file_node.node_id)\
+                       .one().system_annotations
 
     def build(self):
         with self.graph.session_scope():
@@ -187,12 +199,14 @@ class TCGADCCEdgeBuilder(object):
         elif namespace == 'bcgsc.ca' and center_type.upper() == 'CGCC':
             query = self.graph.nodes(Center).props({'code':'13'})
         else:
-            query = self.graph.nodes(Center).props({'center_type':self.archive['center_type'].upper(),'namespace':self.archive['center_name']})
-
+            query = self.graph.nodes(Center).props({
+                'center_type': self.archive['center_type'].upper(),
+                'namespace': self.archive['center_name']
+            })
         count = query.count()
         if count == 1:
             attr_node = query.first()
-            edge_to_center = models.FileSubmittedByCenter(
+            edge_to_center = FileSubmittedByCenter(
                 src_id=file_node.node_id,
                 dst_id=attr_node.node_id,
             )
@@ -205,34 +219,6 @@ class TCGADCCEdgeBuilder(object):
             self.log.warning("more than one center with type %s and namespace %s",
                              self.archive['center_type'],
                              self.archive['center_name'])
-
-    def tie_file_to_atribute(self, file_node, attr, value):
-        LABEL_MAP = {
-            "platform": "generated_from",
-            "data_subtype": "member_of",
-            "data_format": "member_of",
-            "tag": "member_of",
-            "experimental_strategy": "member_of"
-        }
-        if not isinstance(value, list):
-            # this is to handle the thing where tag is
-            # sometimes a list and sometimes a string
-            value = [value]
-        for val in value:
-            attr_node = self.graph.node_lookup_one(
-                label=attr,
-                property_matches={"name": val},
-            )
-            if not attr_node:
-                self.log.error("attr_node with label %s and name %s not found (trying to tie for file %s) ", attr, val, file_node["file_name"])
-            edge_to_attr_node = self.graph.get_PsqlEdge(
-                label=LABEL_MAP[attr],
-                src_id=file_node.node_id,
-                dst_id=attr_node.node_id,
-                src_label='file',
-                dst_label=attr,
-            )
-            self.graph.current_session().merge(edge_to_attr_node)
 
     def classify(self, file_node):
         classification = classify(self.archive, file_node["file_name"])
@@ -253,15 +239,21 @@ class TCGADCCEdgeBuilder(object):
                 file_node.system_annotations[k] = v
         # we need to create edges to: data_subtype, data_format,
         # platform, experimental_strategy, tag.
-        #
-        # TODO drop any existing classification?
-        for attribute in CLASSIFICATION_ATTRS:
-            if classification.get(attribute):
-                self.tie_file_to_atribute(file_node, attribute,
-                                          classification[attribute])
-            else:
-                self.log.warning("not tieing %s (node %s) to a %s",
-                                 file_node["file_name"], file_node, attribute)
+        for cls in CLASSIFICATION_MODELS.keys():
+            if classification.get(cls.label):  # TODO I hate to be using label
+                values = classification[cls.label]
+                if not isinstance(values, list):
+                    values = [values]
+                attr_nodes = self.graph.nodes(cls)\
+                                       .filter(cls.name.astext.in_(values))\
+                                       .all()
+                if not attr_nodes:
+                    # should never happen
+                    raise AssertionError("No nodes found for {}: {}"
+                                         .format(cls.label, values))
+                # TODO setattr is kind of gross but i can't think of a
+                # better way
+                setattr(file_node, CLASSIFICATION_MODELS[cls], attr_nodes)
         return file_node
 
 
@@ -269,8 +261,7 @@ class TCGADCCArchiveSyncer(object):
 
     def __init__(self, archive_id=None, max_memory=2*10**9,
                  s3=None, consul_prefix="tcgadccsync"):
-        self.consul=ConsulManager(prefix=consul_prefix)
-
+        self.consul = ConsulManager(prefix=consul_prefix)
         self.graph = PsqlGraphDriver(
             os.environ["PG_HOST"],
             os.environ["PG_USER"],
@@ -316,7 +307,8 @@ class TCGADCCArchiveSyncer(object):
         download it).
         """
         self.log.info("Marking %s as to_delete in system annotations", node)
-        self.graph.node_update(node, system_annotations={"to_delete": True})
+        node.system_annotations["to_delete"] = True
+        self.graph.current_session().merge(node)
 
     def remove_old_versions(self, submitter_id):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
@@ -335,10 +327,8 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("old revision (%s) of archive %s found, voiding it and associated files",
                           old_archive["revision"],
                           submitter_id)
-            for file in self.graph.node_lookup(label="file")\
-                                  .with_edge_to_node(
-                                      models.FileMemberOfArchive,
-                                      old_archive).all():
+
+            for file in old_archive.files:
                 self.delete_later(file)
             self.delete_later(old_archive)
 
@@ -349,11 +339,10 @@ class TCGADCCArchiveSyncer(object):
         submitter_id = re.sub("\.(\d+?)\.(\d+)$", "", self.name)
         self.remove_old_versions(submitter_id)
         self.log.info("looking for archive %s in postgres", self.name)
-        maybe_this_archive = self.graph.node_lookup_one(
-            label="archive",
-            property_matches={"submitter_id": submitter_id,
-                              "revision": self.archive["revision"]},
-        )
+        maybe_this_archive = self.graph.nodes(Archive).props(
+            submitter_id=submitter_id,
+            revision=self.archive["revision"]
+        ).scalar()
         if maybe_this_archive:
             node_id = maybe_this_archive.node_id
             self.log.info("found archive %s in postgres as node %s, not inserting", self.name, maybe_this_archive)
@@ -362,52 +351,27 @@ class TCGADCCArchiveSyncer(object):
             self.log.info("inserting new archive node in postgres with id: %s", node_id)
         sysan = self.archive
         sysan["source"] = "tcga_dcc"
-        archive_node = self.graph.node_merge(
+        archive_node = Archive(
             node_id=node_id,
-            label='archive',
             acl=self.acl,
             properties={
                 "submitter_id": submitter_id,
                 "revision": self.archive["revision"]
             },
-            system_annotations=sysan,
+            system_annotations=sysan
         )
-        project_node = self.graph.node_lookup_one(
-            label="project",
-            property_matches={"code": self.archive["disease_code"]},
-        )
-        edge_to_project = models.ArchiveMemberOfProject(
-            src_id=archive_node.node_id,
-            dst_id=project_node.node_id,
-        )
-        self.graph.current_session().merge(edge_to_project)
+        archive_node = self.graph.current_session().merge(archive_node)
+        project_node = self.graph.nodes(Project).props(
+            code=self.archive["disease_code"]
+        ).one()
+        archive_node.projects = [project_node]
         return archive_node
 
-    def lookup_file_in_pg(self, archive_node, filename):
-        q = self.graph.node_lookup(
-            label="file",
-            property_matches={
-                "file_name": filename
-            }).with_edge_to_node(models.FileMemberOfArchive, archive_node)
-        file_nodes = q.all()
-        if not file_nodes:
-            return None
-        if len(file_nodes) > 1:
-            raise ValueError("multiple files with the same name found in archive {}".format(archive_node))
-        else:
-            return file_nodes[0]
-
-    def get_file_size_from_http(self, filename):
-        base_url = self.archive["dcc_archive_url"].replace(".tar.gz", "/")
-        file_url = urljoin(base_url, filename)
-        # it's necessary to specify the accept-encoding here so that
-        # there server doesn't send us gzipped content and we get the
-        # wrong length
-        resp = self.get_with_auth(file_url, stream=True, headers={"accept-encoding": "text/plain"})
-        return int(resp.headers["content-length"])
 
     def set_file_state(self, file_node, state):
-        self.graph.node_update(file_node, properties={"state": state})
+        with self.graph.session_scope():
+            file_node.state = state
+            return self.graph.current_session().merge(file_node)
 
     def extract_file_data(self, filename):
         return self.tarball.extractfile("/".join([self.name, filename]))
@@ -431,30 +395,31 @@ class TCGADCCArchiveSyncer(object):
 
     def sync_file(self, filename, dcc_md5):
         """Sync this file in the database."""
-        file_node = self.lookup_file_in_pg(self.archive_node, filename)
+        file_node = self.graph.nodes(File)\
+                              .props(file_name=filename)\
+                              .join(FileMemberOfArchive)\
+                              .join(Archive)\
+                              .filter(Archive.node_id == self.archive_node.node_id)\
+                              .scalar()
         md5, md5_source = self.determine_md5(filename, dcc_md5)
         if file_node:
             node_id = file_node.node_id
             self.log.info("file %s in already in postgres with id %s, not inserting", filename, node_id)
-            self.graph.node_update(
-                file_node,
-                acl=self.acl,
-                properties={
-                    "file_name": filename,
-                    "md5sum": md5,
-                    "file_size": self.determine_file_size(filename),
-                    "submitter_id": None,
-                },
-                system_annotations={
-                    "source": "tcga_dcc",
-                    "md5_source": md5_source,
-                },
-            )
+            file_node.acl = self.acl
+            file_node.properties.update({
+                "file_name": filename,
+                "md5sum": md5,
+                "file_size": self.determine_file_size(filename),
+                "submitter_id": None,
+            })
+            file_node.system_annotations.update({
+                "source": "tcga_dcc",
+                "md5_source": md5_source,
+            })
         else:
             node_id = self.signpost.create().did
-            file_node = self.graph.node_merge(
+            file_node = File(
                 node_id=node_id,
-                label="file",
                 acl=self.acl,
                 properties={
                     "file_name": filename,
@@ -470,14 +435,10 @@ class TCGADCCArchiveSyncer(object):
                 },
             )
             self.log.info("inserting file %s into postgres with id %s", filename, node_id)
-        edge_to_archive = models.FileMemberOfArchive(
-            src_id=file_node.node_id,
-            dst_id=self.archive_node.node_id,
-        )
-        self.graph.current_session().merge(edge_to_archive)
+        file_node.archives = [self.archive_node]
         edge_builder = TCGADCCEdgeBuilder(file_node, self.graph, self.log)
         edge_builder.build()
-        return file_node
+        return self.graph.current_session().merge(file_node)
 
     def get_manifest(self):
         manifest_tarinfo = self.tarball.getmember("{}/MANIFEST.txt".format(self.name))
@@ -604,8 +565,8 @@ class TCGADCCArchiveSyncer(object):
         expected_sum = node["md5sum"]
         actual_sum = md5sum(obj.as_stream())
         if actual_sum != expected_sum:
-            self.graph.node_update(
-                node, properties={"state_comment": "bad md5sum"})
+            file.state_comment = "bad_md5sum"
+            self.graph.current_session().merge(file)
             self.log.warning("file %s has invalid checksum", node["file_name"])
             raise InvalidChecksumException()
 
@@ -749,12 +710,9 @@ class TCGADCCArchiveSyncer(object):
             doc.urls = [archive_url]
             doc.patch()
             self.log.info("noting that archive node %s is uploaded", self.archive_node)
-            self.graph.node_update(
-                self.archive_node,
-                system_annotations={
-                    "uploaded": True
-                }
-            )
+            self.archive_node.sysan["uploaded"] = True
+            with self.graph.session_scope() as session:
+                self.archive_node = session.merge(self.archive_node)
 
     def cleanup(self):
         self.log.info("Cleaning up")

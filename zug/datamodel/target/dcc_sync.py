@@ -15,11 +15,15 @@ from psqlgraph import PsqlGraphDriver
 from zug.datamodel.target.classification import CLASSIFICATION
 from zug.datamodel.target import PROJECTS
 
-from zug.datamodel.tcga_dcc_sync import url_for, CLASSIFICATION_ATTRS  # TODO put this somewhere else
+from zug.datamodel.tcga_dcc_sync import url_for
 
 import libcloud.storage.drivers.s3
 # upload in 500MB chunks
 libcloud.storage.drivers.s3.CHUNK_SIZE = 500 * 1024 * 1024
+
+
+CLASSIFICATION_ATTRS = ["data_subtype", "data_format", "platform",
+                        "experimental_strategy", "tag"]
 
 
 # TODO sigh, yet another copy paste job (from the api this time), this
