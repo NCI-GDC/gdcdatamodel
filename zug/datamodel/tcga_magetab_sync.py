@@ -469,6 +469,7 @@ class TCGAMAGETABSyncer(object):
                     try_archive = self.graph.nodes(Archive)\
                                             .sysan({"data_level": "mage-tab"})\
                                             .not_sysan({"magetab_synced": True})\
+                                            .not_sysan({"to_delete": True})\
                                             .order_by(func.random())\
                                             .first()
                     if not try_archive:
