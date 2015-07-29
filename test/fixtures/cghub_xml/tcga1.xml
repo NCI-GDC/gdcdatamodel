@@ -1,0 +1,167 @@
+<Result id="1">
+		<analysis_id>00007994-abeb-4b16-a6ad-7230300a29e9</analysis_id>
+		<state>live</state>
+		<reason></reason>
+		<last_modified>2013-05-16T20:43:36Z</last_modified>
+		<upload_date>2013-05-12T23:30:09Z</upload_date>
+		<published_date>2013-05-12T23:40:33Z</published_date>
+		<center_name>UNC-LCCC</center_name>
+		<study>phs000178</study>
+		<aliquot_id>c18465ae-447d-46c8-8b54-0156ab502265</aliquot_id>
+		<files>
+			<file>
+				<filename>UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam</filename>
+				<filesize>1972948726</filesize>
+				<checksum type="md5">401ce370ba2b641d3bfa41ae2b5ca932</checksum>
+			</file>
+			<file>
+				<filename>UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam.bai</filename>
+				<filesize>4874968</filesize>
+				<checksum type="md5">a592e6299b11eb2ad39fb2dcc56f94f5</checksum>
+			</file>
+		</files>
+		<sample_accession>SRS156860</sample_accession>
+		<legacy_sample_id>TCGA-AA-3495-01A-01R-1410-07</legacy_sample_id>
+		<disease_abbr>COAD</disease_abbr>
+		<tss_id>AA</tss_id>
+		<participant_id>15b987ba-77ab-477b-a54a-65ec5c7c399e</participant_id>
+		<sample_id>57733d46-9726-4cc0-825f-77185bc7bea9</sample_id>
+		<analyte_code>R</analyte_code>
+		<sample_type>01</sample_type>
+		<library_strategy>RNA-Seq</library_strategy>
+		<platform>ILLUMINA</platform>
+		<refassem_short_name>HG19</refassem_short_name>
+		<analysis_xml>
+<ANALYSIS_SET xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/sra/doc/SRA_1-5/SRA.analysis.xsd?view=co">
+	<ANALYSIS center_name="UNC-LCCC" alias="2001231" analysis_date="2012-10-10T02:58:54.471" analysis_center="UNC-LCCC">
+		<TITLE>Mapsplice Alignment to Genome: 1476030</TITLE>
+		<STUDY_REF accession="SRP000677" refcenter="NHGRI" refname="phs000178"/>
+		<DESCRIPTION>UNC RNA-Seq Workflow V2 - Mapsplice Alignment to Genome - c18465ae-447d-46c8-8b54-0156ab502265</DESCRIPTION>
+		<ANALYSIS_TYPE>
+			<REFERENCE_ALIGNMENT>
+				<ASSEMBLY>
+					<STANDARD short_name="HG19"/>
+				</ASSEMBLY>
+				<RUN_LABELS>
+					<RUN refcenter="UNC-LCCC" refname="UNCID:125510" read_group_label="110215_UNC3-RDR300156_00072_FC_62J8HAAXX_7_" data_block_name="sorted_genome_alignments"/>
+				</RUN_LABELS>
+				<SEQ_LABELS>
+					<SEQUENCE seq_label="chr1" data_block_name="sorted_genome_alignments" accession="NC_000001.10"/>
+					<SEQUENCE seq_label="chr2" data_block_name="sorted_genome_alignments" accession="NC_000002.11"/>
+					<SEQUENCE seq_label="chr3" data_block_name="sorted_genome_alignments" accession="NC_000003.11"/>
+					<SEQUENCE seq_label="chr4" data_block_name="sorted_genome_alignments" accession="NC_000004.11"/>
+					<SEQUENCE seq_label="chr5" data_block_name="sorted_genome_alignments" accession="NC_000005.9"/>
+					<SEQUENCE seq_label="chr6" data_block_name="sorted_genome_alignments" accession="NC_000006.11"/>
+					<SEQUENCE seq_label="chr7" data_block_name="sorted_genome_alignments" accession="NC_000007.13"/>
+					<SEQUENCE seq_label="chr8" data_block_name="sorted_genome_alignments" accession="NC_000008.10"/>
+					<SEQUENCE seq_label="chr9" data_block_name="sorted_genome_alignments" accession="NC_000009.11"/>
+					<SEQUENCE seq_label="chr10" data_block_name="sorted_genome_alignments" accession="NC_000010.10"/>
+					<SEQUENCE seq_label="chr11" data_block_name="sorted_genome_alignments" accession="NC_000011.9"/>
+					<SEQUENCE seq_label="chr12" data_block_name="sorted_genome_alignments" accession="NC_000012.11"/>
+					<SEQUENCE seq_label="chr13" data_block_name="sorted_genome_alignments" accession="NC_000013.10"/>
+					<SEQUENCE seq_label="chr14" data_block_name="sorted_genome_alignments" accession="NC_000014.8"/>
+					<SEQUENCE seq_label="chr15" data_block_name="sorted_genome_alignments" accession="NC_000015.9"/>
+					<SEQUENCE seq_label="chr16" data_block_name="sorted_genome_alignments" accession="NC_000016.9"/>
+					<SEQUENCE seq_label="chr17" data_block_name="sorted_genome_alignments" accession="NC_000017.10"/>
+					<SEQUENCE seq_label="chr18" data_block_name="sorted_genome_alignments" accession="NC_000018.9"/>
+					<SEQUENCE seq_label="chr19" data_block_name="sorted_genome_alignments" accession="NC_000019.9"/>
+					<SEQUENCE seq_label="chr20" data_block_name="sorted_genome_alignments" accession="NC_000020.10"/>
+					<SEQUENCE seq_label="chr21" data_block_name="sorted_genome_alignments" accession="NC_000021.8"/>
+					<SEQUENCE seq_label="chr22" data_block_name="sorted_genome_alignments" accession="NC_000022.10"/>
+					<SEQUENCE seq_label="chrX" data_block_name="sorted_genome_alignments" accession="NC_000023.10"/>
+					<SEQUENCE seq_label="chrY" data_block_name="sorted_genome_alignments" accession="NC_000024.9"/>
+					<SEQUENCE seq_label="chrM_rCRS" data_block_name="sorted_genome_alignments" accession="NC_012920.1"/>
+				</SEQ_LABELS>
+				<PROCESSING>
+					<PIPELINE>
+						<PIPE_SECTION section_name="MapspliceRSEM">
+							<STEP_INDEX>1476030</STEP_INDEX>
+							<PREV_STEP_INDEX>N/A</PREV_STEP_INDEX>
+							<PROGRAM>MapspliceRSEM</PROGRAM>
+							<VERSION>0.7.5</VERSION>
+							<NOTES>samtools-sort-genome; UNCID:1620885</NOTES>
+						</PIPE_SECTION>
+					</PIPELINE>
+					<DIRECTIVES>
+						<alignment_includes_unaligned_reads>true</alignment_includes_unaligned_reads>
+						<alignment_marks_duplicate_reads>false</alignment_marks_duplicate_reads>
+						<alignment_includes_failed_reads>false</alignment_includes_failed_reads>
+					</DIRECTIVES>
+				</PROCESSING>
+			</REFERENCE_ALIGNMENT>
+		</ANALYSIS_TYPE>
+		<TARGETS>
+			<TARGET sra_object_type="SAMPLE" refcenter="TCGA" refname="c18465ae-447d-46c8-8b54-0156ab502265"/>
+		</TARGETS>
+		<DATA_BLOCK name="sorted_genome_alignments">
+			<FILES>
+				<FILE checksum="401ce370ba2b641d3bfa41ae2b5ca932" checksum_method="MD5" filetype="bam" filename="UNCID_1620885.c18465ae-447d-46c8-8b54-0156ab502265.sorted_genome_alignments.bam"/>
+			</FILES>
+		</DATA_BLOCK>
+	</ANALYSIS>
+</ANALYSIS_SET>
+</analysis_xml>
+		<experiment_xml>
+<EXPERIMENT_SET xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/sra/doc/SRA_1-5/SRA.experiment.xsd?view=co">
+	<EXPERIMENT center_name="UNC-LCCC" alias="UNCID:7-125509">
+		<STUDY_REF accession="SRP000677" refcenter="NHGRI" refname="phs000178"/>
+		<DESIGN>
+			<DESIGN_DESCRIPTION>TCGA RNA-Seq Single-End Experiment</DESIGN_DESCRIPTION>
+			<SAMPLE_DESCRIPTOR refcenter="TCGA" refname="c18465ae-447d-46c8-8b54-0156ab502265"/>
+			<LIBRARY_DESCRIPTOR>
+				<LIBRARY_NAME>Illumina TruSeq for c18465ae-447d-46c8-8b54-0156ab502265</LIBRARY_NAME>
+				<LIBRARY_STRATEGY>RNA-Seq</LIBRARY_STRATEGY>
+				<LIBRARY_SOURCE>GENOMIC</LIBRARY_SOURCE>
+				<LIBRARY_SELECTION>RANDOM</LIBRARY_SELECTION>
+				<LIBRARY_LAYOUT>
+					<SINGLE/>
+				</LIBRARY_LAYOUT>
+			</LIBRARY_DESCRIPTOR>
+			<SPOT_DESCRIPTOR>
+				<SPOT_DECODE_SPEC>
+					<READ_SPEC>
+						<READ_INDEX>0</READ_INDEX>
+						<READ_CLASS>Application Read</READ_CLASS>
+						<READ_TYPE>Forward</READ_TYPE>
+						<BASE_COORD>1</BASE_COORD>
+					</READ_SPEC>
+				</SPOT_DECODE_SPEC>
+			</SPOT_DESCRIPTOR>
+		</DESIGN>
+		<PLATFORM>
+			<ILLUMINA>
+				<INSTRUMENT_MODEL>Illumina Genome Analyzer II</INSTRUMENT_MODEL>
+			</ILLUMINA>
+		</PLATFORM>
+		<PROCESSING>
+			<PIPELINE>
+				<PIPE_SECTION section_name="BASE_CALLS">
+					<STEP_INDEX>N/A</STEP_INDEX>
+					<PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+					<PROGRAM>Illumina RTA</PROGRAM>
+					<VERSION/>
+					<NOTES>SEQUENCE_SPACE=Base Space</NOTES>
+				</PIPE_SECTION>
+				<PIPE_SECTION section_name="QUALITY_SCORES">
+					<STEP_INDEX>N/A</STEP_INDEX>
+					<PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+					<PROGRAM>Illumina RTA</PROGRAM>
+					<VERSION/>
+					<NOTES>qtype=phred</NOTES>
+				</PIPE_SECTION>
+			</PIPELINE>
+		</PROCESSING>
+	</EXPERIMENT>
+</EXPERIMENT_SET>
+</experiment_xml>
+		<run_xml>
+<RUN_SET xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/sra/doc/SRA_1-5/SRA.run.xsd?view=co">
+	<RUN center_name="UNC-LCCC" alias="UNCID:125510">
+		<EXPERIMENT_REF refcenter="UNC-LCCC" refname="UNCID:7-125509"/>
+	</RUN>
+</RUN_SET>
+</run_xml>
+		<analysis_detail_uri>https://cghub.ucsc.edu/cghub/metadata/analysisDetail/00007994-abeb-4b16-a6ad-7230300a29e9</analysis_detail_uri>
+		<analysis_submission_uri>https://cghub.ucsc.edu/cghub/metadata/analysisSubmission/00007994-abeb-4b16-a6ad-7230300a29e9</analysis_submission_uri>
+		<analysis_data_uri>https://cghub.ucsc.edu/cghub/data/analysis/download/00007994-abeb-4b16-a6ad-7230300a29e9</analysis_data_uri>
+	</Result>

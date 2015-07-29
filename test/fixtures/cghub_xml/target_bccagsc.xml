@@ -1,0 +1,2175 @@
+	<Result id="1">
+		<analysis_id>bd73a951-b6b9-46bf-bbc4-d9efe5be7f43</analysis_id>
+		<state>live</state>
+		<reason></reason>
+		<last_modified>2015-02-05T02:22:52Z</last_modified>
+		<upload_date>2015-02-04T02:10:36Z</upload_date>
+		<published_date>2015-02-05T02:22:52Z</published_date>
+		<center_name>BCCAGSC</center_name>
+		<study>phs000467</study>
+		<aliquot_id>1ddf98a8-c347-5171-99f5-94345959d199</aliquot_id>
+		<files>
+			<file>
+				<filename>HS1600_29_lanes_dupsFlagged.bam</filename>
+				<filesize>106463427155</filesize>
+				<checksum type="MD5">9514a6f941c32600da40ed4566bb9823</checksum>
+			</file>
+			<file>
+				<filename>HS1600_29_lanes_dupsFlagged.bam.bai</filename>
+				<filesize>8742920</filesize>
+				<checksum type="MD5">40fed534431652b45e4ac69f7693b159</checksum>
+			</file>
+		</files>
+		<sample_accession></sample_accession>
+		<legacy_sample_id>TARGET-30-PASFRV-10A-01D</legacy_sample_id>
+		<disease_abbr>NBL</disease_abbr>
+		<tss_id></tss_id>
+		<participant_id>PASFRV</participant_id>
+		<sample_id>TARGET-30-PASFRV-10A</sample_id>
+		<analyte_code>D</analyte_code>
+		<sample_type>TARGET_10</sample_type>
+		<library_strategy>WGS</library_strategy>
+		<platform>ILLUMINA</platform>
+		<refassem_short_name>GRCh37-lite</refassem_short_name>
+		<analysis_xml>
+<ANALYSIS_SET>
+  <ANALYSIS alias="HS1600" analysis_center="BCCAGSC" center_name="BCCAGSC">
+    <IDENTIFIERS>
+      <UUID>fe479063-d625-5cc1-8c1d-c1f6ccef2104</UUID>
+    </IDENTIFIERS>
+    <TITLE>Reference alignment of WGS data from normal sample TARGET-30-PASFRV-10A-01D</TITLE>
+    <STUDY_REF accession="SRP012002" refname="phs000467" refcenter="NCI"/>
+    <DESCRIPTION>Illumina paired-end whole genome sequencing reads were aligned to the hg19 reference using BWA version 0.5.7.  This reference contains chromosomes 1-22, X, Y, MT, 20 unlocalized scaffolds and 39 unplaced scaffolds. Multiple lanes of sequences were merged with SAMTOOLS, and duplicated reads were marked with Picard's MarkDuplicates.</DESCRIPTION>
+    <ANALYSIS_TYPE>
+      <REFERENCE_ALIGNMENT>
+        <ASSEMBLY>
+          <STANDARD short_name="GRCh37-lite"/>
+        </ASSEMBLY>
+        <RUN_LABELS>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..14" read_group_label="109577"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..18" read_group_label="109581"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61L32AAXX" refname="HS1600-1..26" read_group_label="110665"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61U0NAAXX" refname="HS1600-1..29" read_group_label="111468"/>
+          <RUN refcenter="BCCAGSC" data_block_name="42TJ9AAXX" refname="HS1600-1..2" read_group_label="106776"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700B0AAXX" refname="HS1600-1..6" read_group_label="108479"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700GBAAXX" refname="HS1600-1..10" read_group_label="108487"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..12" read_group_label="109575"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..15" read_group_label="109578"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61F8RAAXX" refname="HS1600-1..22" read_group_label="109675"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61L32AAXX" refname="HS1600-1..27" read_group_label="110666"/>
+          <RUN refcenter="BCCAGSC" data_block_name="42TJ9AAXX" refname="HS1600-1..3" read_group_label="106777"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700B0AAXX" refname="HS1600-1..7" read_group_label="108480"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700GBAAXX" refname="HS1600-1..11" read_group_label="108488"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..16" read_group_label="109579"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61F8RAAXX" refname="HS1600-1..23" read_group_label="109676"/>
+          <RUN refcenter="BCCAGSC" data_block_name="62095AAXX" refname="HS1600-1..30" read_group_label="113166"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700B0AAXX" refname="HS1600-1..4" read_group_label="108477"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700GBAAXX" refname="HS1600-1..8" read_group_label="108485"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61F8RAAXX" refname="HS1600-1..20" read_group_label="109673"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..13" read_group_label="109576"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61FE1AAXX" refname="HS1600-1..17" read_group_label="109580"/>
+          <RUN refcenter="BCCAGSC" data_block_name="6164TAAXX" refname="HS1600-1..25" read_group_label="109892"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61U0NAAXX" refname="HS1600-1..28" read_group_label="111467"/>
+          <RUN refcenter="BCCAGSC" data_block_name="42TJ9AAXX" refname="HS1600-1..1" read_group_label="106775"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700B0AAXX" refname="HS1600-1..5" read_group_label="108478"/>
+          <RUN refcenter="BCCAGSC" data_block_name="700GBAAXX" refname="HS1600-1..9" read_group_label="108486"/>
+          <RUN refcenter="BCCAGSC" data_block_name="61F8RAAXX" refname="HS1600-1..21" read_group_label="109674"/>
+          <RUN refcenter="BCCAGSC" data_block_name="42UHTAAXX" refname="HS1600-1." read_group_label="105939"/>
+        </RUN_LABELS>
+        <SEQ_LABELS>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000663.1" seq_label="1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000664.1" seq_label="2"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000665.1" seq_label="3"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000666.1" seq_label="4"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000667.1" seq_label="5"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000668.1" seq_label="6"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000669.1" seq_label="7"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000670.1" seq_label="8"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000671.1" seq_label="9"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000672.1" seq_label="10"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000673.1" seq_label="11"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000674.1" seq_label="12"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000675.1" seq_label="13"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000676.1" seq_label="14"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000677.1" seq_label="15"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000678.1" seq_label="16"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000679.1" seq_label="17"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000680.1" seq_label="18"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000681.1" seq_label="19"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000682.1" seq_label="20"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000683.1" seq_label="21"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000684.1" seq_label="22"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000685.1" seq_label="X"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="CM000686.1" seq_label="Y"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="J01415.2" seq_label="MT"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000191.1" seq_label="GL000191.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000192.1" seq_label="GL000192.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000193.1" seq_label="GL000193.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000194.1" seq_label="GL000194.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000195.1" seq_label="GL000195.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000196.1" seq_label="GL000196.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000197.1" seq_label="GL000197.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000198.1" seq_label="GL000198.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000199.1" seq_label="GL000199.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000200.1" seq_label="GL000200.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000201.1" seq_label="GL000201.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000202.1" seq_label="GL000202.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000203.1" seq_label="GL000203.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000204.1" seq_label="GL000204.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000205.1" seq_label="GL000205.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000206.1" seq_label="GL000206.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000207.1" seq_label="GL000207.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000208.1" seq_label="GL000208.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000209.1" seq_label="GL000209.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000210.1" seq_label="GL000210.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000211.1" seq_label="GL000211.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000212.1" seq_label="GL000212.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000213.1" seq_label="GL000213.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000214.1" seq_label="GL000214.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000215.1" seq_label="GL000215.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000216.1" seq_label="GL000216.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000217.1" seq_label="GL000217.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000218.1" seq_label="GL000218.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000219.1" seq_label="GL000219.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000220.1" seq_label="GL000220.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000221.1" seq_label="GL000221.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000222.1" seq_label="GL000222.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000223.1" seq_label="GL000223.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000224.1" seq_label="GL000224.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000225.1" seq_label="GL000225.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000226.1" seq_label="GL000226.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000227.1" seq_label="GL000227.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000228.1" seq_label="GL000228.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000229.1" seq_label="GL000229.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000230.1" seq_label="GL000230.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000231.1" seq_label="GL000231.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000232.1" seq_label="GL000232.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000233.1" seq_label="GL000233.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000234.1" seq_label="GL000234.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000235.1" seq_label="GL000235.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000236.1" seq_label="GL000236.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000237.1" seq_label="GL000237.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000238.1" seq_label="GL000238.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000239.1" seq_label="GL000239.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000240.1" seq_label="GL000240.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000241.1" seq_label="GL000241.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000242.1" seq_label="GL000242.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000243.1" seq_label="GL000243.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000244.1" seq_label="GL000244.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000245.1" seq_label="GL000245.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000246.1" seq_label="GL000246.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000247.1" seq_label="GL000247.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000248.1" seq_label="GL000248.1"/>
+          <SEQUENCE data_block_name="TARGET-30-PASFRV-10A-01D_wgs" accession="GL000249.1" seq_label="GL000249.1"/>
+        </SEQ_LABELS>
+        <PROCESSING>
+          <PIPELINE>
+            <PIPE_SECTION section_name="Alignment">
+              <STEP_INDEX>1</STEP_INDEX>
+              <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+              <PROGRAM>BWA</PROGRAM>
+              <VERSION>0.5.7</VERSION>
+              <NOTES/>
+            </PIPE_SECTION>
+          </PIPELINE>
+          <DIRECTIVES>
+            <alignment_includes_unaligned_reads>true</alignment_includes_unaligned_reads>
+            <alignment_marks_duplicate_reads>true</alignment_marks_duplicate_reads>
+            <alignment_includes_failed_reads>true</alignment_includes_failed_reads>
+          </DIRECTIVES>
+        </PROCESSING>
+      </REFERENCE_ALIGNMENT>
+    </ANALYSIS_TYPE>
+    <TARGETS>
+      <TARGET refname="1ddf98a8-c347-5171-99f5-94345959d199" refcenter="NCI_TARGET" sra_object_type="SAMPLE"/>
+      <IDENTIFIERS>
+        <EXTERNAL_ID label="NCI_TARGET" namespace="phs000467">TARGET-30-PASFRV-10A-01D</EXTERNAL_ID>
+      </IDENTIFIERS>
+    </TARGETS>
+    <DATA_BLOCK name="TARGET-30-PASFRV-10A-01D_wgs">
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filetype="bam" filename="HS1600_29_lanes_dupsFlagged.bam"/>
+      </FILES>
+    </DATA_BLOCK>
+  </ANALYSIS>
+</ANALYSIS_SET>
+</analysis_xml>
+		<experiment_xml>
+<EXPERIMENT_SET>
+  <EXPERIMENT accession="SRX092911" alias="HS1600-1" center_name="BCCAGSC">
+    <TITLE>WGS analysis of normal sample TARGET-30-PASFRV-10A-01D</TITLE>
+    <STUDY_REF refcenter="NCI" refname="phs000467"/>
+    <DESIGN>
+      <DESIGN_DESCRIPTION>WGS analysis of normal sample TARGET-30-PASFRV-10A-01D using Illumina Genome Analyzer IIx</DESIGN_DESCRIPTION>
+      <SAMPLE_DESCRIPTOR refcenter="NCI_TARGET" refname="TARGET-30-PASFRV-10A-01D"/>
+      <LIBRARY_DESCRIPTOR>
+        <LIBRARY_NAME>HS1600</LIBRARY_NAME>
+        <LIBRARY_STRATEGY>WGS</LIBRARY_STRATEGY>
+        <LIBRARY_SOURCE>GENOMIC</LIBRARY_SOURCE>
+        <LIBRARY_SELECTION>RANDOM</LIBRARY_SELECTION>
+        <LIBRARY_LAYOUT>
+          <PAIRED NOMINAL_LENGTH="402"/>
+        </LIBRARY_LAYOUT>
+        <POOLING_STRATEGY>none</POOLING_STRATEGY>
+        <LIBRARY_CONSTRUCTION_PROTOCOL>Genomic DNA for construction of whole genome shotgun sequencing (WGSS) libraries was prepared from the same biopsy material using the Qiagen AllPrep DNA/RNA Mini Kit (Qiagen, Valencia, CA, USA). DNA quality was assessed by spectrophotometry (260/280 and 260/230) and gel electrophoresis before library construction. Depending on the availability of DNA, between 2 and 10ug was used in WGSS library construction. Briefly, DNA was sheared for 10 min using a Sonic Dismembrator 550 with a power setting of "7" in pulses of 30 seconds interspersed with 30 seconds of cooling (Cup Horn, Fisher Scientific, Ottawa, Ontario, Canada), and analyzed on 8% PAGE gels. The 200-300bp DNA fraction was excised and eluted from the gel slice overnight at 4 degrees Celsius in 300 ul of elution buffer (5:1, LoTE buffer (3 mM Tris-HCl, pH 7.5, 0.2 mM EDTA)-7.5 M ammonium acetate), and was purified using a Spin-X Filter Tube (Fisher Scientific), and by ethanol precipitation. WGSS libraries were prepared using a modified paired-end protocol supplied by Illumina Inc. (Illumina, Hayward, USA). This involved DNA end-repair and formation of 3' A overhangs using Klenow fragment (3' to 5' exo minus) and ligation to Illumina PE adapters (with 5' overhangs). Adapter-ligated products were purified on Qiaquick spin columns (Qiagen, Valencia, CA, USA) and PCR-amplified using Phusion DNA polymerase (NEB, Ipswich, MA, USA) and 10 cycles with the PE primer 1.0 and 2.0 (Illumina). PCR products of the desired size range were purified from adapter ligation artifacts using 8% PAGE gels. DNA quality was assessed and quantified using an Agilent DNA 1000 series II assay (Agilent, Santa Clara CA, USA) and Nanodrop 7500 spectrophotometer (Nanodrop, Wilmington, DE, USA) and DNA was subsequently diluted to 10nM. The final concentration was confirmed using a Quant-iT dsDNA HS assay kit and Qubit fluorometer (Invitrogen, Carlsbad, CA, USA)</LIBRARY_CONSTRUCTION_PROTOCOL>
+      </LIBRARY_DESCRIPTOR>
+    </DESIGN>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+  </EXPERIMENT>
+</EXPERIMENT_SET>
+</experiment_xml>
+		<run_xml>
+<RUN_SET>
+  <RUN accession="SRR619468" alias="HS1600-1..14" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:02Z">
+    <EXPERIMENT_REF accession="SRX092911" refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>3</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..18" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:06Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>7</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..26" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-03-27T23:03:33Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.32.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.32.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61L32AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>1</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-6</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..29" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-04-26T21:42:34Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.47.1</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.47.1</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61U0NAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>5</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-6</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..2" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-11-05T23:01:25Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>42TJ9AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>5</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-3</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..6" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-12-31T19:06:08Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>161</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>78</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>85</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700B0AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>7</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-7</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..10" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-01-04T23:22:29Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700GBAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>7</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-2</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..12" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:01Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>1</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..15" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:03Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>4</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..22" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-18T19:02:09Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61F8RAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>3</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-5</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..27" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-03-27T23:03:34Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.32.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.32.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61L32AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>2</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-6</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..3" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-11-05T23:01:26Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>42TJ9AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>6</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-3</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..7" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-12-31T19:06:09Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>161</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>78</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>85</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700B0AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>8</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-7</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..11" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-01-04T23:22:30Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700GBAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>8</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-2</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..16" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:04Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>5</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..23" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-18T19:02:10Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61F8RAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>4</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-5</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..30" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-07-05T20:13:10Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.47.1</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.47.1</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>62095AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>1</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-16</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..4" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-12-31T19:06:06Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>161</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>78</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>85</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700B0AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>5</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-7</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..8" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-01-04T23:22:27Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700GBAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>5</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-2</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..20" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-18T19:02:07Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61F8RAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>1</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-5</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..13" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:02Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>2</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..17" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-12T23:26:05Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61FE1AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>6</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-9</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..25" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-27T22:06:30Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.32.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.32.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>6164TAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>1</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-7</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..28" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-04-26T21:42:33Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.47.1</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.6.47.1</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61U0NAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>4</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-6</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..1" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-11-05T23:01:24Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.5.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>42TJ9AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>4</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-3</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..5" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-12-31T19:06:07Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>161</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>78</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>85</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700B0AAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>6</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-7</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..9" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-01-04T23:22:28Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>700GBAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>6</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-2</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1..21" center_name="BCCAGSC" run_center="BCCAGSC" run_date="2010-02-18T19:02:08Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Illumina RTA</PROGRAM>
+          <VERSION>1.5.35.0</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>61F8RAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>2</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-5</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+  <RUN alias="HS1600-1." center_name="BCCAGSC" run_center="BCCAGSC" run_date="2009-10-07T21:37:25Z">
+    <EXPERIMENT_REF refcenter="BCCAGSC" refname="HS1600-1"/>
+    <SPOT_DESCRIPTOR>
+      <SPOT_DECODE_SPEC>
+        <SPOT_LENGTH>159</SPOT_LENGTH>
+        <READ_SPEC>
+          <READ_INDEX>0</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Forward</READ_TYPE>
+          <BASE_COORD>1</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>1</READ_INDEX>
+          <READ_CLASS>Technical Read</READ_CLASS>
+          <READ_TYPE>BarCode</READ_TYPE>
+          <BASE_COORD>77</BASE_COORD>
+        </READ_SPEC>
+        <READ_SPEC>
+          <READ_INDEX>2</READ_INDEX>
+          <READ_CLASS>Application Read</READ_CLASS>
+          <READ_TYPE>Reverse</READ_TYPE>
+          <BASE_COORD>84</BASE_COORD>
+        </READ_SPEC>
+      </SPOT_DECODE_SPEC>
+    </SPOT_DESCRIPTOR>
+    <PLATFORM>
+      <ILLUMINA>
+        <INSTRUMENT_MODEL>Illumina Genome Analyzer IIx</INSTRUMENT_MODEL>
+      </ILLUMINA>
+    </PLATFORM>
+    <PROCESSING>
+      <PIPELINE>
+        <PIPE_SECTION section_name="BASE_CALLS">
+          <STEP_INDEX>1</STEP_INDEX>
+          <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.3.2</VERSION>
+        </PIPE_SECTION>
+        <PIPE_SECTION section_name="QUALITY_SCORES">
+          <STEP_INDEX>2</STEP_INDEX>
+          <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
+          <PROGRAM>Bustard</PROGRAM>
+          <VERSION>1.3.2</VERSION>
+        </PIPE_SECTION>
+      </PIPELINE>
+      <DIRECTIVES/>
+    </PROCESSING>
+    <DATA_BLOCK>
+      <FILES>
+        <FILE checksum="9514a6f941c32600da40ed4566bb9823" checksum_method="MD5" filename="HS1600_29_lanes_dupsFlagged.bam" filetype="bam"/>
+      </FILES>
+    </DATA_BLOCK>
+    <RUN_ATTRIBUTES>
+      <RUN_ATTRIBUTE>
+        <TAG>FLOWCELL</TAG>
+        <VALUE>42UHTAAXX</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>LANE</TAG>
+        <VALUE>6</VALUE>
+      </RUN_ATTRIBUTE>
+      <RUN_ATTRIBUTE>
+        <TAG>INSTRUMENT_NAME</TAG>
+        <VALUE>GA-5</VALUE>
+      </RUN_ATTRIBUTE>
+    </RUN_ATTRIBUTES>
+  </RUN>
+</RUN_SET>
+</run_xml>
+		<analysis_detail_uri>https://cghub.ucsc.edu/cghub/metadata/analysisDetail/bd73a951-b6b9-46bf-bbc4-d9efe5be7f43</analysis_detail_uri>
+		<analysis_submission_uri>https://cghub.ucsc.edu/cghub/metadata/analysisSubmission/bd73a951-b6b9-46bf-bbc4-d9efe5be7f43</analysis_submission_uri>
+		<analysis_data_uri>https://cghub.ucsc.edu/cghub/data/analysis/download/bd73a951-b6b9-46bf-bbc4-d9efe5be7f43</analysis_data_uri>
+	</Result>

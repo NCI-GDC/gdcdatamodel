@@ -377,23 +377,62 @@ class cghub2psqlgraph(object):
                     file_key, dst_id, dst_label, edge_label, src_label='file')
 
     def save_center_edge(self, root, file_key):
-        legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
-                                          root, single=True, nullable=True)
-        if not legacy_sample_id:
-            self.log.error('No legacy_sample_id for {}'.format(file_key))
-            return
-        code = self.center_regex.match(legacy_sample_id)
-        if not code:
-            self.log.warn('Unable to parse center code from barcode: {}'.format(
-                legacy_sample_id))
-        else:
-            node = self.graph.nodes(Center).props({'code': code.group(2)})\
-                                           .scalar()
-            assert node, 'Missing center code:{}, {}'.format(
-                code.group(2), file_key)
+        study = self.xml.xpath("ancestor::Result/study", root, single=True)
+        # we need to branch on study because so far we've been relying
+        # on parsing aliquot barcodes (legacy_sample_id) to tie TCGA
+        # files to centers. this won't work for TARGET, so I'm simply
+        # leaving the TCGA logic untouched in one half of this
+        # conditional and implementing center_name based logic for
+        # TARGET files in the other. Ideally we would do something
+        # more unified but I'm doing this in the interest of not
+        # breaking things
+        if study == "phs000178":  # TCGA
+            legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
+                                              root, single=True, nullable=True)
+            if not legacy_sample_id:
+                self.log.error('No legacy_sample_id for %s', file_key)
+                return
+            code = self.center_regex.match(legacy_sample_id)
+            if not code:
+                self.log.warn('Unable to parse center code from barcode: %s',
+                              legacy_sample_id)
+            else:
+                center = self.graph.nodes(Center).props(code=code.group(2))\
+                                                 .scalar()
+                assert center, 'Missing center code:{}, {}'.format(
+                    code.group(2), file_key)
+                self.save_edge(
+                    file_key, center.node_id, center.label, 'submitted_by',
+                    src_label='file')
+        else:  # TARGET
+            center_name = self.xml.xpath("ancestor::Result/center_name",
+                                         root, single=True, nullable=True)
+            if not center_name:
+                self.log.error('No center_name for %s', file_key)
+                return
+            if center_name == "CompleteGenomics":
+                # note that this will stop working if we ever add more
+                # CGI centers and this code will need to be updated to
+                # disambiguate
+                center = self.graph.nodes(Center).props(short_name="CGI").one()
+            elif center_name == "BCCAGSC":
+                center = self.graph.nodes(Center).props(
+                    short_name="BCGSC",
+                    center_type="GSC",
+                ).one()
+            elif center_name in ["BI", "BCM"]:
+                center = self.graph.nodes(Center).props(
+                    short_name=center_name,
+                    center_type="GSC",
+                ).one()
+            else:
+                self.log.warning("File %s has unknown center_name: %s",
+                                 file_key, center_name)
+                return
             self.save_edge(
-                file_key, node.node_id, node.label, 'submitted_by',
-                src_label='file')
+                file_key, center.node_id, center.label, 'submitted_by',
+                src_label='file'
+            )
 
     def add_edges(self, root, node_type, params, file_key):
         """
