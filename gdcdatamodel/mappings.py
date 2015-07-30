@@ -254,6 +254,7 @@ def annotation_body(nested=True):
     annotation = Dict()
     annotation.properties = _munge_properties('annotation', nested)
     annotation.properties.case_id = STRING
+    annotation.properties.case_submitter_id = STRING
     annotation.properties.entity_type = STRING
     annotation.properties.entity_id = STRING
     annotation.properties.entity_submitter_id = STRING
