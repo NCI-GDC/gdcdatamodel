@@ -416,14 +416,18 @@ class cghub2psqlgraph(object):
                 # disambiguate
                 center = self.graph.nodes(Center).props(short_name="CGI").one()
             elif center_name == "BCCAGSC":
+                # we have to specify code explicitly here because
+                # there are two BCGSC CGCC centers, one of which (code
+                # 31) is an accidentaly duplicate of the correct one
+                # (code 13). we have to use the code here to make sure
+                # we get the right one
                 center = self.graph.nodes(Center).props(
-                    short_name="BCGSC",
-                    center_type="GSC",
+                    code="13",
                 ).one()
             elif center_name in ["BI", "BCM"]:
                 center = self.graph.nodes(Center).props(
                     short_name=center_name,
-                    center_type="GSC",
+                    center_type="CGCC",
                 ).one()
             else:
                 self.log.warning("File %s has unknown center_name: %s",
