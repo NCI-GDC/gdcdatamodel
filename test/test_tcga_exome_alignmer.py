@@ -84,7 +84,7 @@ def fake_build_docker_cmd(self):
         "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
         "mkfile {output_bam_path}",
         "echo -n fake_output_bam > {output_bam_path}",
-        "mkfile {output_bam_path}.bai",
+        "mkfile {output_bai_path}",
         "echo -n fake_output_bai > {output_bai_path}",
         "mkfile {output_log_path}",
         "echo -n fake_logs > {output_log_path}",
