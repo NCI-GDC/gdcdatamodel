@@ -161,7 +161,7 @@ class TCGAExomeAligner(object):
         """
         wxs = ExperimentalStrategy.name.astext == "WXS"
         broad = Center.short_name.astext == "BI"
-        abi_solid = Platform.name.astext == "ABI SOLiD"
+        illumina = Platform.name.astext.contains("Illumina")
         # NOTE you would think that file_name filter would be
         # unnecessary but we have some TCGA exomes that end with
         # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
@@ -174,7 +174,7 @@ class TCGAExomeAligner(object):
                                     .distinct(Aliquot.node_id.label("aliquot_id"))\
                                     .filter(File.experimental_strategies.any(wxs))\
                                     .filter(File.centers.any(broad))\
-                                    .filter(~File.platforms.any(abi_solid))\
+                                    .filter(File.platforms.any(illumina))\
                                     .filter(File.file_name.astext.endswith(".bam"))\
                                     .filter(~File.derived_files.any())\
                                     .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))
