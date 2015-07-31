@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 import tempfile
 import time
@@ -332,7 +333,7 @@ class TCGAExomeAligner(object):
         return self.host_abspath(
             self.scratch_dir,
             "realn", "md",
-            self.input_bam.file_name.replace(".bam", ".bai")
+            re.sub("\.bam$", ".bai", self.input_bam.file_name)
         )
 
     @property
