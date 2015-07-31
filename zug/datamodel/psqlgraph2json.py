@@ -635,9 +635,6 @@ class PsqlGraph2JSON(object):
             node, self.possible_associated_entites)
         docs = []
         for e in entities:
-            if e not in self.entity_cases:
-                # Skip, the cases is likely missing because it is omitted
-                continue
             case = self.entity_cases[e]
             docs.append({
                 'entity_type': e.label,
