@@ -17,7 +17,7 @@ from zug.downloaders import md5sum_with_size
 from cdisutils.net import BotoManager
 from gdcdatamodel.models import (
     File, Aliquot, ExperimentalStrategy,
-    DataFormat, Platform,
+    DataFormat, Platform, Center,
     FileDataFromFile
 )
 
@@ -85,7 +85,7 @@ def fake_build_docker_cmd(self):
         "mkfile {output_bam_path}",
         "echo -n fake_output_bam > {output_bam_path}",
         "mkfile {output_bam_path}.bai",
-        "echo -n fake_output_bai > {output_bam_path}.bai",
+        "echo -n fake_output_bai > {output_bai_path}",
         "mkfile {output_log_path}",
         "echo -n fake_logs > {output_log_path}",
         "mkfile {output_db_path}",
@@ -106,6 +106,7 @@ def fake_build_docker_cmd(self):
         self.scratch_dir, "realn", "md",
         self.input_bam.file_name)
     )
+    output_bai_path = output_bam_path.replace(".bam", ".bai")
     output_log_path = get_path(os.path.join(
         self.scratch_dir, "aln_"+self.input_bam.node_id+".log")
     )
@@ -117,6 +118,7 @@ def fake_build_docker_cmd(self):
         bam_path=get_path(self.input_bam_path),
         bai_path=get_path(self.input_bai_path),
         output_bam_path=output_bam_path,
+        output_bai_path=output_bai_path,
         output_log_path=output_log_path,
         output_db_path=output_db_path,
     )
@@ -206,10 +208,13 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                                .props(name="BAM").one()
             platform = self.graph.nodes(Platform)\
                                  .props(name="Illumina GA").one()
+            center = self.graph.nodes(Center)\
+                               .props(short_name="BI").first()
             bam_file.experimental_strategies = [strat]
             bam_file.platforms = [platform]
             bam_file.data_formats = [format]
             bam_file.related_files = [bai_file]
+            bam_file.centers = [center]
         # have to put it in s3
         self.fake_s3.start()
         bucket = self.boto_manager["s3.amazonaws.com"].get_bucket("test")
