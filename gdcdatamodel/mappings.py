@@ -25,28 +25,34 @@ MULTIFIELDS = {
 
 
 def index_settings():
-    return {"settings":
-            {"analysis":
-             {"analyzer":
-              {"id_search":
-               {"tokenizer": "whitespace",
-                "filter": ["lowercase"],
-                "type": "custom"},
-               "id_index": {
-                   "tokenizer": "whitespace",
-                   "filter": [
-                       "lowercase",
-                       "edge_ngram"
-                   ],
-                   "type": "custom"
-               }},
-              "filter": {
-                  "edge_ngram": {
-                      "side": "front",
-                      "max_gram": 20,
-                      "min_gram": 2,
-                      "type": "edge_ngram"
-                  }}}}}
+    return {"settings": {"analysis": {"analyzer": {
+        "id_search": {
+            "tokenizer": "whitespace",
+            "filter": ["lowercase"],
+            "type": "custom"},
+        "project_id_search": {
+            "tokenizer": "whitespace",
+            "filter": ["lowercase", "project_delimiter"],
+            "type": "custom"},
+        "id_index": {
+            "tokenizer": "whitespace",
+            "filter": ["lowercase", "edge_ngram"],
+            "type": "custom"}
+    }, "filter": {
+        "edge_ngram": {
+            "side": "front",
+            "max_gram": 20,
+            "min_gram": 2,
+            "type": "edge_ngram"},
+        "project_delimiter": {
+            "type": "word_delimiter",
+            "catenate_numbers": False,
+            "generate_number_parts": False,
+            "split_on_case_change": False,
+            "stem_english_possessive": False,
+            "split_on_numerics": False,
+            "preserve_original": True}
+    }}}}
 
 
 def _get_header(source):
