@@ -152,13 +152,16 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.add_file_nodes()
         self.convert_documents()
 
-    def convert_documents(self):
-        doc_conv = PsqlGraph2JSON(self.g)
+    def convert_documents(self, doc_conv=None):
+        doc_conv = doc_conv or PsqlGraph2JSON(self.g)
         with self.g.session_scope():
             doc_conv.cache_database()
         self.case_docs, self.file_docs, self.ann_docs = (
             doc_conv.denormalize_cases())
-        self.case_doc = self.case_docs[0]
+        if self.case_docs:
+            self.case_doc = self.case_docs[0]
+        else:
+            self.case_doc = None
 
     def test_case_clinical(self):
         props = self.case_doc
@@ -244,3 +247,9 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             {'annotations', 'related_files', 'center', 'data_type',
              'tags', 'data_format', 'platform', 'data_subtype',
              'associated_entities', 'archive', 'experimental_strategy'}))
+
+    def test_omitted_projects(self):
+        doc_conv = PsqlGraph2JSON(self.g)
+        doc_conv.omitted_projects.add(('TCGA', 'BRCA'))
+        self.convert_documents(doc_conv)
+        self.assertIsNone(self.case_doc)
