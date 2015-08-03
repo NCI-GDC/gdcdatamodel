@@ -346,6 +346,7 @@ class PsqlGraph2JSON(object):
         for a in annotations.itervalues():
             a['project'] = project
             a['case_id'] = node.node_id
+            a['case_submitter_id'] = node.submitter_id
 
         # Copy the files with all cases
         files = deepcopy(case['files'])

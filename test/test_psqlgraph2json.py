@@ -39,7 +39,7 @@ aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
 annotation_props = {'category', 'status', 'classification',
                     'creator', 'created_datetime', 'notes',
                     'submitter_id', 'annotation_id', 'entity_id',
-                    'entity_type', 'case_id'}
+                    'entity_type', 'case_id', 'case_submitter_id'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
               'file_name', 'md5sum', 'cases', 'submitter_id',
               'access', 'platform', 'state', 'data_subtype',
@@ -184,6 +184,22 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             if annotation['entity_type'] == 'case':
                 self.assertEqual(
                     annotation['case_id'], annotation['entity_id'])
+                self.assertEqual(
+                    annotation['case_submitter_id'], case.submitter_id)
+
+    def test_annotation_case_submitter_id(self):
+        case = self.get_fuzzed_node(Case)
+        annotation = self.get_fuzzed_node(
+            Annotation, category='Item flagged DNU')
+        with self.g.session_scope() as s:
+            case.projects.append(self.g.nodes(Project).first())
+            case.files.append(self.g.nodes(File).ids('file1').first())
+            case.annotations.append(annotation)
+            map(s.merge, (case, annotation))
+        self.convert_documents()
+        for annotation in self.ann_docs:
+            self.assertEqual(
+                annotation['case_submitter_id'], case.submitter_id)
 
     def test_case_project(self):
         props = self.case_doc
