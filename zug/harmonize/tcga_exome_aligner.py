@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 import tempfile
 import time
@@ -6,7 +7,7 @@ import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
 
-from sqlalchemy import func, BigInteger
+from sqlalchemy import func, desc, BigInteger
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 from requests.exceptions import ReadTimeout
@@ -25,6 +26,7 @@ from zug.consul_manager import ConsulManager
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
+    Platform, Center,
     FileDataFromAliquot, FileDataFromFile
 )
 
@@ -111,7 +113,17 @@ class TCGAExomeAligner(object):
         # the docker container relative to the path we mount the
         # workdir into the container at
         self.reference = os.path.normpath(
-            os.environ.get("REFERENCE", "reference/GRCh38.d1.vd1.fa")
+            os.environ.get("ALGINMENT_REFERENCE", "reference/GRCh38.d1.vd1.fa")
+        )
+        self.is_exome = True  # for now always true
+        self.intervals_dir = os.path.normpath(
+            os.environ.get("ALIGNMENT_INTERVAL_DIR", "intervals/")
+        )
+        self.libraryname_json = os.path.normpath(
+            os.environ.get("ALIGNMENT_LIBRARYNAME_JSON", "intervals/bam_libraryname_capturekey.json")
+        )
+        self.intervalname_json = os.path.normpath(
+            os.environ.get("ALIGNMENT_INTERVALNAME_JSON", "intervals/bait_target_key_interval.json")
         )
         scratch_dir = tempfile.mkdtemp(prefix="scratch", dir=self.workdir)
         # make it relative to workdir
@@ -143,48 +155,38 @@ class TCGAExomeAligner(object):
         return input_bam
 
     def choose_bam_at_random(self):
-        """The strategy is as follows:
+        """This queries for a bam file that we can align at random,
+        potentially filtering by size.
 
-        1) Make a subquery for all TCGA exomes
-        2) Select at random a single aliquot which is the
-        source of a file in that subquery
-        3) Select the most recently updated file of the
-        aliquot that doesn't already have a FileDataFromFile
-        edge
-
-        We then set self.input_bam to that file.
         """
-        # NOTE you would think that second .filter would be unnecessary, but
-        # we have some TCGA exomes that end with
+        wxs = ExperimentalStrategy.name.astext == "WXS"
+        broad = Center.short_name.astext == "BI"
+        illumina = Platform.name.astext.contains("Illumina")
+        # NOTE you would think that file_name filter would be
+        # unnecessary but we have some TCGA exomes that end with
         # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
         # for now I am ignoring them
-        tcga_exome_bam_ids = self.graph.nodes(File.node_id)\
-                                       .sysan(source="tcga_cghub")\
-                                       .filter(File.experimental_strategies.any(ExperimentalStrategy.name.astext == "WXS"))\
-                                       .filter(File.file_name.astext.endswith(".bam"))\
-                                       .filter(~File.derived_files.any())
+        alignable_files = self.graph.nodes(File)\
+                                    .props(state="live")\
+                                    .sysan(source="tcga_cghub")\
+                                    .join(FileDataFromAliquot)\
+                                    .join(Aliquot)\
+                                    .distinct(Aliquot.node_id.label("aliquot_id"))\
+                                    .filter(File.experimental_strategies.any(wxs))\
+                                    .filter(File.centers.any(broad))\
+                                    .filter(File.platforms.any(illumina))\
+                                    .filter(File.file_name.astext.endswith(".bam"))\
+                                    .filter(~File.derived_files.any())\
+                                    .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))
         if self.size_limit:
-            tcga_exome_bam_ids = tcga_exome_bam_ids.filter(
+            alignable_files = alignable_files.filter(
                 File.file_size.cast(BigInteger) < self.size_limit
             )
-        tcga_exome_bam_ids = tcga_exome_bam_ids.subquery()
-        aliquot = self.graph.nodes(Aliquot)\
-                            .join(FileDataFromAliquot)\
-                            .join(File)\
-                            .filter(File.node_id.in_(tcga_exome_bam_ids))\
-                            .order_by(func.random())\
-                            .first()
-        if not aliquot:
-            raise NoMoreWorkException("No aliquots with unaligned files found")
-        self.log.info("Selected aliquot %s to work on", aliquot)
-        wxs_files = [f for f in aliquot.files if f.experimental_strategies
-                     and f.experimental_strategies[0].name == "WXS"]
-        self.log.info("Aliquot has %s wxs files", len(wxs_files))
-        sorted_files = sorted([f for f in wxs_files],
-                              key=lambda f: f.sysan["cghub_upload_date"],
-                              reverse=True)
-        input_bam = sorted_files[0]
-        return input_bam
+        input_bam = alignable_files.from_self(File).order_by(func.random()).first()
+        if not input_bam:
+            raise NoMoreWorkException("We appear to have aligned all bam files")
+        else:
+            return input_bam
 
     def choose_bam_to_align(self):
         if self.force_input_id:
@@ -253,18 +255,25 @@ class TCGAExomeAligner(object):
 
     def build_docker_cmd(self):
         return (
-            "/home/ubuntu/.virtualenvs/p3/bin/python /home/ubuntu/apipe/aln.py "
+            "/home/ubuntu/.virtualenvs/p3/bin/python /home/ubuntu/pipelines/dnaseq/aln.py "
             "-r {reference_path} "
             "-b {bam_path} "
             "-u {file_id} "
+            "-x "
+            "-v {intervals_dir} "
+            "-c {libraryname_json} "
+            "-i {intervalname_json} "
             "-s {scratch_dir} "
-            "-t {cores} "
             "-l {log_dir} "
+            "-j {cores} "
             "-d"
         ).format(
             reference_path=self.container_abspath(self.reference),
             bam_path=self.container_abspath(self.input_bam_path),
             file_id=self.input_bam.node_id,
+            intervals_dir=self.container_abspath(self.intervals_dir),
+            libraryname_json=self.container_abspath(self.libraryname_json),
+            intervalname_json=self.container_abspath(self.intervalname_json),
             scratch_dir=self.container_abspath(self.scratch_dir),
             cores=self.cores,
             log_dir=self.container_abspath(self.scratch_dir),
@@ -324,7 +333,7 @@ class TCGAExomeAligner(object):
         return self.host_abspath(
             self.scratch_dir,
             "realn", "md",
-            self.input_bam.file_name+".bai"
+            re.sub("\.bam$", ".bai", self.input_bam.file_name)
         )
 
     @property
