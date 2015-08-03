@@ -19,8 +19,8 @@ TOP_LEVEL_IDS = ['sample', 'portion', 'analyte', 'aliquot', 'slide']
 MULTIFIELDS = {
     'project': ['code', 'disease_type', 'name', 'primary_site'],
     'annotation': ['annotation_id', 'entity_id'],
-    'files': ['file_id', 'file_name'],
-    'case': ['case_id', 'submitter_id'],
+    'files': ['file_name'],
+    'case': ['submitter_id'],
 }
 
 
@@ -294,6 +294,7 @@ def get_project_es_mapping():
     # Patch project
     patch_project(project.properties)
     project.properties.update(multifield('project_id'))
+    project.properties.project_id.search_analyzer = "project_delimeter"
 
     # Summary
     summary = project.properties.summary.properties
