@@ -83,3 +83,37 @@ class TCGAAnnotationTest(ZugTestBase):
             self.graph.nodes(Annotation)\
                       .filter(Annotation.portions.contains(portion))\
                       .one()
+
+    def test_annotation_acl(self):
+        self.create_aliquot("TCGA-06-0237-01A-02D-0234-02")
+        self.create_aliquot("TCGA-06-0237-10A-01D-0235-02")
+        with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):
+            syncer = TCGAAnnotationSyncer()
+            syncer.go()
+        with self.graph.session_scope():
+            annotations = self.graph.nodes(Annotation).all()
+        self.assertEqual(len(annotations), 2)
+        for annotation in annotations:
+            self.assertEqual(annotation.acl, ["open"])
+
+    def test_idempotency(self):
+        self.create_aliquot("TCGA-06-0237-01A-02D-0234-02")
+        self.create_aliquot("TCGA-06-0237-10A-01D-0235-02")
+
+        # First round insert
+        with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):
+            syncer = TCGAAnnotationSyncer()
+            syncer.go()
+
+        # Change a property
+        with self.graph.session_scope():
+            for annotation in self.graph.nodes(Annotation):
+                annotation.acl = []
+
+        # Re-sync and make sure changes are written
+        with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):
+            syncer = TCGAAnnotationSyncer()
+            syncer.go()
+        with self.graph.session_scope():
+            for annotation in self.graph.nodes(Annotation):
+                self.assertEqual(annotation.acl, ["open"])
