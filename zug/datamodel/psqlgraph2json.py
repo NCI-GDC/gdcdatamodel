@@ -644,6 +644,7 @@ class PsqlGraph2JSON(object):
                 'entity_type': e.label,
                 'entity_id': e.node_id,
                 'case_id': case.node_id,
+                'entity_submitter_id': e.props.get('submitter_id'),
             })
         if docs:
             doc['associated_entities'] = docs
