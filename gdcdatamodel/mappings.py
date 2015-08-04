@@ -162,6 +162,7 @@ def get_file_es_mapping(include_case=True):
     files.properties.associated_entities.properties.entity_type = STRING
     files.properties.associated_entities.properties.entity_id = STRING
     files.properties.associated_entities.properties.case_id = STRING
+    files.properties.associated_entities.properties.entity_submitter_id = STRING
 
     # Patch file mutlifields
     add_multifields(files, 'files')
