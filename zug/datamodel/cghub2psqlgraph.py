@@ -126,6 +126,7 @@ class cghub2psqlgraph(object):
             node.state = existing.state
             existing.props.update(node.props)
             existing.sysan.update(node.sysan)
+            existing.acl = node.acl
         else:
             self.log.debug('Adding new {}'.format(file_key))
             node.node_id = self.signpost.create().did
