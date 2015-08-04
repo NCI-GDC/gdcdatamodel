@@ -228,6 +228,8 @@ class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
         with graph.session_scope():
             bam = graph.nodes(File).props(file_name="GS00826-DNA_G08.bam").one()
             self.assertEqual(bam.centers[0].short_name, "CGI")
+            self.assertEqual(bam.acl, ["phs000464", "phs000218"])
+
 
     def test_target_file_with_bccagsc_center(self):
         graph = self.converter.graph
