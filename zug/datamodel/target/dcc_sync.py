@@ -224,7 +224,7 @@ class TARGETDCCFileSyncer(object):
 
     @property
     def acl(self):
-        return ['phs000218', PROJECT_PHSID_MAPPING[self.project]]
+        return []
 
     @property
     def container(self):
