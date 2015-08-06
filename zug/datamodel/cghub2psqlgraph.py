@@ -39,6 +39,10 @@ def to_bool(val):
         raise ValueError("Cannot convert {} to boolean".format(val))
 
 
+TARGET_STUDY_RE = re.compile('(phs000218|phs0004\d\d)')
+TCGA_STUDY_RE = re.compile('phs000178')
+
+
 class cghub2psqlgraph(object):
 
     """
@@ -122,6 +126,7 @@ class cghub2psqlgraph(object):
             node.state = existing.state
             existing.props.update(node.props)
             existing.sysan.update(node.sysan)
+            existing.acl = node.acl
         else:
             self.log.debug('Adding new {}'.format(file_key))
             node.node_id = self.signpost.create().did
@@ -138,16 +143,12 @@ class cghub2psqlgraph(object):
         return node.node_id
 
     def get_source(self, acl):
-        assert len(acl) == 1, 'Not sure how to parse acls with > 1 entry!'
-        phsid = acl[0]
-        target = re.compile('(phs000218|phs0004\d\d)')
-        tcga = re.compile('phs000178')
-        if tcga.match(phsid):
+        if all([TCGA_STUDY_RE.match(phsid) for phsid in acl]):
             return 'tcga_cghub'
-        elif target.match(phsid):
+        elif all([TARGET_STUDY_RE.match(phsid) for phsid in acl]):
             return 'target_cghub'
         else:
-            raise RuntimeError('Unknown phsid! {}'.format(phsid))
+            raise RuntimeError('Cant handle ACL {}'.format(acl))
 
     def delete_later(self, node):
         self.log.info("Marking %s as to_delete in system annotations", node)
@@ -280,6 +281,9 @@ class cghub2psqlgraph(object):
         props.update(self.xml.get_node_datetime_properties(*args))
         props.update(self.xml.get_node_const_properties(*args))
         acl = self.xml.get_node_acl(root, node_type, params)
+        if all([TARGET_STUDY_RE.match(phsid) for phsid in acl]):
+            # add the top-level TARGET phsid
+            acl.append("phs000218")
 
         # Save the node for deletion or insertion
         state = self.get_file_node_state(*args)
@@ -377,23 +381,66 @@ class cghub2psqlgraph(object):
                     file_key, dst_id, dst_label, edge_label, src_label='file')
 
     def save_center_edge(self, root, file_key):
-        legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
-                                          root, single=True, nullable=True)
-        if not legacy_sample_id:
-            self.log.error('No legacy_sample_id for {}'.format(file_key))
-            return
-        code = self.center_regex.match(legacy_sample_id)
-        if not code:
-            self.log.warn('Unable to parse center code from barcode: {}'.format(
-                legacy_sample_id))
-        else:
-            node = self.graph.nodes(Center).props({'code': code.group(2)})\
-                                           .scalar()
-            assert node, 'Missing center code:{}, {}'.format(
-                code.group(2), file_key)
+        study = self.xml.xpath("ancestor::Result/study", root, single=True)
+        # we need to branch on study because so far we've been relying
+        # on parsing aliquot barcodes (legacy_sample_id) to tie TCGA
+        # files to centers. this won't work for TARGET, so I'm simply
+        # leaving the TCGA logic untouched in one half of this
+        # conditional and implementing center_name based logic for
+        # TARGET files in the other. Ideally we would do something
+        # more unified but I'm doing this in the interest of not
+        # breaking things
+        if study == "phs000178":  # TCGA
+            legacy_sample_id = self.xml.xpath('ancestor::Result/legacy_sample_id',
+                                              root, single=True, nullable=True)
+            if not legacy_sample_id:
+                self.log.error('No legacy_sample_id for %s', file_key)
+                return
+            code = self.center_regex.match(legacy_sample_id)
+            if not code:
+                self.log.warn('Unable to parse center code from barcode: %s',
+                              legacy_sample_id)
+            else:
+                center = self.graph.nodes(Center).props(code=code.group(2))\
+                                                 .scalar()
+                assert center, 'Missing center code:{}, {}'.format(
+                    code.group(2), file_key)
+                self.save_edge(
+                    file_key, center.node_id, center.label, 'submitted_by',
+                    src_label='file')
+        else:  # TARGET
+            center_name = self.xml.xpath("ancestor::Result/center_name",
+                                         root, single=True, nullable=True)
+            if not center_name:
+                self.log.error('No center_name for %s', file_key)
+                return
+            if center_name == "CompleteGenomics":
+                # note that this will stop working if we ever add more
+                # CGI centers and this code will need to be updated to
+                # disambiguate
+                center = self.graph.nodes(Center).props(short_name="CGI").one()
+            elif center_name == "BCCAGSC":
+                # we have to specify code explicitly here because
+                # there are two BCGSC CGCC centers, one of which (code
+                # 31) is an accidentaly duplicate of the correct one
+                # (code 13). we have to use the code here to make sure
+                # we get the right one
+                center = self.graph.nodes(Center).props(
+                    code="13",
+                ).one()
+            elif center_name in ["BI", "BCM"]:
+                center = self.graph.nodes(Center).props(
+                    short_name=center_name,
+                    center_type="CGCC",
+                ).one()
+            else:
+                self.log.warning("File %s has unknown center_name: %s",
+                                 file_key, center_name)
+                return
             self.save_edge(
-                file_key, node.node_id, node.label, 'submitted_by',
-                src_label='file')
+                file_key, center.node_id, center.label, 'submitted_by',
+                src_label='file'
+            )
 
     def add_edges(self, root, node_type, params, file_key):
         """

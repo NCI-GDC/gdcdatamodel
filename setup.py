@@ -46,9 +46,9 @@ setup(
         'pyasn1==0.1.8',
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@3394989c90e1cf4bfb017c2f51d1537a03cdcc2d#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@621d7d157fad91bd0834280b8d2c39be384dcb1a#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@99c87f23c6f955fed5971f987dbe36c92c9e4596#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@efaebcf9a7531d90d24d77ab18a9ead66ba5b715#egg=gdcdatamodel',
+        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@d963d362fa10bd3134b3663e593ea92949c68e64#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@63b3c1894299708d568506bce1ed3120fadbdf44#egg=signpostclient',
         'git+ssh://git@github.com/NCI-GDC/python-ds3-sdk.git@6a3382b3766d7e0898e9b70221d7e43f767acb8f#egg=ds3client',
     ]

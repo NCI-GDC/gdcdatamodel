@@ -82,28 +82,19 @@ class TCGAAnnotationSyncer(object):
                 status=self.get_status(doc),
                 notes=note_text,
             )
-            if annotation in dst.annotations:
-                self.log.info("%s already has %s, skipping", dst, annotation)
-                return
-            # doing the assignment adds it to the session, so it gets
-            # persisted when we flush
-            self.log.info("inserting annotation %s tied to %s", annotation, dst)
-            if isinstance(dst, File):
-                annotation.files = [dst]
-            elif isinstance(dst, Sample):
-                annotation.samples = [dst]
-            elif isinstance(dst, Case):
-                annotation.cases = [dst]
-            elif isinstance(dst, Portion):
-                annotation.portions = [dst]
-            elif isinstance(dst, Analyte):
-                annotation.analytes = [dst]
-            elif isinstance(dst, Aliquot):
-                annotation.aliquots = [dst]
-            elif isinstance(dst, Slide):
-                annotation.slides = [dst]
+            annotation.acl = ["open"]
+
+            # Add/update noded in database
+            if annotation.node_id in {n.node_id for n in dst.annotations}:
+                self.log.info(
+                    "%s already has %s, updating annotation", dst, annotation)
+                self.graph.current_session().merge(annotation)
             else:
-                raise RuntimeError("annotations cannot annotate {}".format(dst))
+                self.log.info(
+                    "inserting annotation %s tied to %s", annotation, dst)
+                # Doing the assignment adds it to the session, so it gets
+                # persisted when we flush
+                dst.annotations.append(annotation)
 
     def generate_uuid(self, key):
         """UUID generated from key=(target barcode + noteID)

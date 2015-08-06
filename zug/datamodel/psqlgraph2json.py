@@ -94,6 +94,11 @@ class PsqlGraph2JSON(object):
         self.annotation_entities = None
         self.entity_cases = None
 
+        self.omitted_projects = {
+            ('TCGA', 'CNTL'),
+            ('TCGA', 'MISC'),
+        }
+
         # The body of these nested documents will be flattened into
         # the parent document using the given key's value
         self.flatten = {
@@ -139,6 +144,7 @@ class PsqlGraph2JSON(object):
         :param int maxval: The maximumum value of the progress bar
 
         """
+        maxval = maxval or 1  # prevent maxal of 0
         pbar = ProgressBar(widgets=[
             title, Percentage(), ' ',
             Bar(marker='#', left='[', right=']'), ' ',
@@ -340,6 +346,7 @@ class PsqlGraph2JSON(object):
         for a in annotations.itervalues():
             a['project'] = project
             a['case_id'] = node.node_id
+            a['case_submitter_id'] = node.submitter_id
 
         # Copy the files with all cases
         files = deepcopy(case['files'])
@@ -347,7 +354,7 @@ class PsqlGraph2JSON(object):
         # Trim other cases from fiels
         for f in case['files']:
             f['cases'] = [p for p in f['cases']
-                                 if p['case_id'] == node.node_id]
+                          if p['case_id'] == node.node_id]
             f.pop('annotations', None)
             f.pop('associated_entities', None)
 
@@ -629,6 +636,9 @@ class PsqlGraph2JSON(object):
             node, self.possible_associated_entites)
         docs = []
         for e in entities:
+            if e not in self.entity_cases:
+                # Skip, the cases is likely missing because it is omitted
+                continue
             case = self.entity_cases[e]
             docs.append({
                 'entity_type': e.label,
@@ -877,8 +887,9 @@ class PsqlGraph2JSON(object):
                       in {p['project']['project_id']
                           for p in f['cases']}])
         expected = project_doc['summary']['file_count']
-        assert actual == expected, '{} file count mismatch: {} != {}'.format(
-            project_doc['project_id'], actual, expected)
+        assert actual == expected,\
+            '{} file count mismatch: {} != {}'.format(
+                project_doc['project_id'], actual, expected)
 
     def validate_docs(self, case_docs, file_docs, ann_docs, project_docs):
         for project_doc in project_docs:
@@ -937,13 +948,42 @@ class PsqlGraph2JSON(object):
     ###################################################################
 
     def is_file_indexed(self, node):
+        """Returns false if node is a file that is not supposed to be indexed.
+
+        """
         if node.system_annotations.get("to_delete"):
             return False
         if node.label == 'file' and not node.state == 'live':
             return False
         return True
 
+    def is_from_omitted_project(self, node):
+        """Returns false if the node is a project that is not supposed to be
+        indexed.
+
+        """
+
+        # Get the project and program
+        if node.label == 'project':
+            project = node.code
+            program = node.programs[0].name
+        elif node.label == 'case':
+            project = node.projects[0].code
+            program = node.projects[0].programs[0].name
+        else:
+            project, program = (None, None)
+
+        # Check project and program against omitted_projects
+        if (program, project) in self.omitted_projects:
+            return True
+        else:
+            return False
+
     def is_edge_indexed(self, edge):
+        """Returns false if the node is not supposed to be indexed.
+
+        """
+        # Check for non-indexed files
         if not (self.is_file_indexed(edge.src) and
                 self.is_file_indexed(edge.dst)):
             return False
@@ -951,6 +991,12 @@ class PsqlGraph2JSON(object):
            edge.label == 'data_from' and
            edge.dst.label == 'file'):
             return False
+
+        # Check for omitted_projects
+        if self.is_from_omitted_project(edge.src) or\
+           self.is_from_omitted_project(edge.dst):
+            return False
+
         return True
 
     def cache_database(self):
@@ -1016,10 +1062,10 @@ class PsqlGraph2JSON(object):
                 continue
             paths = [p[1:] for p in self.file_to_case_paths if p[0] == e.label]
             cases = self.walk_paths(e, paths)
-            assert len(cases) == 1,\
-                '{}: Found {} cases: {}'.format(
-                    e, len(cases), paths)
-            self.entity_cases[e] = cases.pop()
+            assert len(cases) <= 1,\
+                '{}: Found {} cases'.format(e, len(cases))
+            if len(cases) != 0:
+                self.entity_cases[e] = cases.pop()
             pbar.update(pbar.currval+1)
         pbar.finish()
 

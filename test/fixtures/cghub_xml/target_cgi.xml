@@ -1,0 +1,304 @@
+<Result id="3">
+  <analysis_id>a5453af5-07d9-5d5f-8235-b1eb791f34c4</analysis_id>
+  <state>live</state>
+  <reason></reason>
+  <last_modified>2014-01-23T03:37:03Z</last_modified>
+  <upload_date>2013-12-17T00:53:57Z</upload_date>
+  <published_date>2013-12-20T01:54:03Z</published_date>
+  <center_name>CompleteGenomics</center_name>
+  <study>phs000464</study>
+  <aliquot_id>e96da5ff-313a-584a-8516-f7276d6ca779</aliquot_id>
+  <files>
+    <file>
+      <filename>GS00826-DNA_G08.bam</filename>
+      <filesize>381965250488</filesize>
+      <checksum type="MD5">be32d3e0be3c141e1b976fbe1a48cd18</checksum>
+    </file>
+    <file>
+      <filename>GS00826-DNA_G08.bam.bai</filename>
+      <filesize>9157032</filesize>
+      <checksum type="MD5">82e010769f4614c341ac7d1d1ce2896c</checksum>
+    </file>
+  </files>
+  <sample_accession></sample_accession>
+  <legacy_sample_id>TARGET-10-PARTKL-04A-01D</legacy_sample_id>
+  <disease_abbr>ALL</disease_abbr>
+  <tss_id></tss_id>
+  <participant_id>PARTKL</participant_id>
+  <sample_id>TARGET-10-PARTKL-04A</sample_id>
+  <analyte_code>D</analyte_code>
+  <sample_type>TARGET_04</sample_type>
+  <library_strategy>WGS</library_strategy>
+  <platform>COMPLETE_GENOMICS</platform>
+  <refassem_short_name>GRCh37-lite</refassem_short_name>
+  <analysis_xml>
+    <ANALYSIS_SET>
+      <ANALYSIS analysis_center="CompleteGenomics" alias="GS00826-DNA_G08" center_name="CompleteGenomics" accession="SRZ023200">
+        <IDENTIFIERS>
+          <PRIMARY_ID>SRZ023200</PRIMARY_ID>
+          <SUBMITTER_ID namespace="CompleteGenomics">GS00826-DNA_G08</SUBMITTER_ID>
+          <UUID>a5453af5-07d9-5d5f-8235-b1eb791f34c4</UUID>
+        </IDENTIFIERS>
+        <TITLE>Complete Genome GS00826-DNA_G08 BAM Submission</TITLE>
+        <STUDY_REF refcenter="National Cancer Institute" accession="SRP011999" refname="phs000464">
+          <IDENTIFIERS>
+            <PRIMARY_ID>SRP011999</PRIMARY_ID>
+          </IDENTIFIERS>
+        </STUDY_REF>
+        <DESCRIPTION/>
+        <ANALYSIS_TYPE>
+          <REFERENCE_ALIGNMENT>
+            <ASSEMBLY>
+              <STANDARD short_name="GRCh37-lite"/>
+            </ASSEMBLY>
+            <RUN_LABELS>
+              <RUN accession="SRR448200" read_group_label="GS38050-FS3_L01" refname="GS38050-FS3_L01" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448201" read_group_label="GS38050-FS3_L03" refname="GS38050-FS3_L03" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448202" read_group_label="GS39226-FS3_L02" refname="GS39226-FS3_L02" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448203" read_group_label="GS38050-FS3_L05" refname="GS38050-FS3_L05" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448204" read_group_label="GS38050-FS3_L04" refname="GS38050-FS3_L04" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448205" read_group_label="GS38050-FS3_L07" refname="GS38050-FS3_L07" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448206" read_group_label="GS38050-FS3_L06" refname="GS38050-FS3_L06" refcenter="CompleteGenomics"/>
+              <RUN accession="SRR448207" read_group_label="GS38051-FS3_L08" refname="GS38051-FS3_L08" refcenter="CompleteGenomics"/>
+            </RUN_LABELS>
+            <SEQ_LABELS>
+              <SEQUENCE seq_label="chr1" accession="NC_000001.10" gi="224589800"/>
+              <SEQUENCE seq_label="chr2" accession="NC_000002.11" gi="224589811"/>
+              <SEQUENCE seq_label="chr3" accession="NC_000003.11" gi="224589815"/>
+              <SEQUENCE seq_label="chr4" accession="NC_000004.11" gi="224589816"/>
+              <SEQUENCE seq_label="chr5" accession="NC_000005.9" gi="224589817"/>
+              <SEQUENCE seq_label="chr6" accession="NC_000006.11" gi="224589818"/>
+              <SEQUENCE seq_label="chr8" accession="NC_000008.10" gi="224589820"/>
+              <SEQUENCE seq_label="chr9" accession="NC_000009.11" gi="224589821"/>
+              <SEQUENCE seq_label="chr10" accession="NC_000010.10" gi="224589801"/>
+              <SEQUENCE seq_label="chr11" accession="NC_000011.9" gi="224589802"/>
+              <SEQUENCE seq_label="chr12" accession="NC_000012.11" gi="224589803"/>
+              <SEQUENCE seq_label="chr13" accession="NC_000013.10" gi="224589804"/>
+              <SEQUENCE seq_label="chr14" accession="NC_000014.8" gi="224589805"/>
+              <SEQUENCE seq_label="chr15" accession="NC_000015.9" gi="224589806"/>
+              <SEQUENCE seq_label="chr16" accession="NC_000016.9" gi="224589807"/>
+              <SEQUENCE seq_label="chr17" accession="NC_000017.10" gi="224589808"/>
+              <SEQUENCE seq_label="chr18" accession="NC_000018.9" gi="224589809"/>
+              <SEQUENCE seq_label="chr19" accession="NC_000019.9" gi="224589810"/>
+              <SEQUENCE seq_label="chr20" accession="NC_000020.10" gi="224589812"/>
+              <SEQUENCE seq_label="chr21" accession="NC_000021.8" gi="224589813"/>
+              <SEQUENCE seq_label="chr22" accession="NC_000022.10" gi="224589814"/>
+              <SEQUENCE seq_label="chrX" accession="NC_000023.10" gi="224589822"/>
+              <SEQUENCE seq_label="chrY" accession="NC_000024.9" gi="224589823"/>
+              <SEQUENCE seq_label="chrM" accession="NC_012920.1" gi="251831106"/>
+            </SEQ_LABELS>
+            <PROCESSING>
+              <PIPELINE>
+                <PIPE_SECTION>
+                  <STEP_INDEX>1</STEP_INDEX>
+                  <PREV_STEP_INDEX/>
+                  <PROGRAM>cgatools</PROGRAM>
+                  <VERSION>1.5.1</VERSION>
+                </PIPE_SECTION>
+              </PIPELINE>
+              <DIRECTIVES>
+                <alignment_includes_unaligned_reads>true</alignment_includes_unaligned_reads>
+                <alignment_marks_duplicate_reads>false</alignment_marks_duplicate_reads>
+                <alignment_includes_failed_reads>false</alignment_includes_failed_reads>
+              </DIRECTIVES>
+            </PROCESSING>
+          </REFERENCE_ALIGNMENT>
+        </ANALYSIS_TYPE>
+        <TARGETS>
+          <TARGET sra_object_type="SAMPLE" refcenter="NCI_TARGET" accession="SRS270600" refname="e96da5ff-313a-584a-8516-f7276d6ca779"/>
+          <IDENTIFIERS>
+            <EXTERNAL_ID label="NCI_TARGET" namespace="phs000464">TARGET-10-PARTKL-04A-01D</EXTERNAL_ID>
+          </IDENTIFIERS>
+        </TARGETS>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+      </ANALYSIS>
+    </ANALYSIS_SET>
+  </analysis_xml>
+  <experiment_xml>
+    <EXPERIMENT_SET>
+      <EXPERIMENT alias="GS00826-DNA_G08" center_name="CompleteGenomics" accession="SRX131517">
+        <TITLE>Complete Genome Sequence GS00826-DNA_G08</TITLE>
+        <STUDY_REF refcenter="National Cancer Institute" accession="SRP011999" refname="phs000464"/>
+        <DESIGN>
+          <DESIGN_DESCRIPTION/>
+          <SAMPLE_DESCRIPTOR refcenter="NCI_TARGET" accession="SRS270600" refname="TARGET-10-PARTKL-04A-01D"/>
+          <LIBRARY_DESCRIPTOR>
+            <LIBRARY_NAME>GS00868-CLS_B08</LIBRARY_NAME>
+            <LIBRARY_STRATEGY>WGS</LIBRARY_STRATEGY>
+            <LIBRARY_SOURCE>GENOMIC</LIBRARY_SOURCE>
+            <LIBRARY_SELECTION>RANDOM</LIBRARY_SELECTION>
+            <LIBRARY_LAYOUT>
+              <PAIRED/>
+            </LIBRARY_LAYOUT>
+          </LIBRARY_DESCRIPTOR>
+          <SPOT_DESCRIPTOR>
+            <SPOT_DECODE_SPEC>
+              <READ_SPEC>
+                <READ_INDEX>0</READ_INDEX>
+                <READ_CLASS>Application Read</READ_CLASS>
+                <READ_TYPE>Forward</READ_TYPE>
+                <BASE_COORD>1</BASE_COORD>
+              </READ_SPEC>
+              <READ_SPEC>
+                <READ_INDEX>1</READ_INDEX>
+                <READ_CLASS>Application Read</READ_CLASS>
+                <READ_TYPE>Forward</READ_TYPE>
+                <BASE_COORD>35</BASE_COORD>
+              </READ_SPEC>
+            </SPOT_DECODE_SPEC>
+          </SPOT_DESCRIPTOR>
+        </DESIGN>
+        <PLATFORM>
+          <COMPLETE_GENOMICS>
+            <INSTRUMENT_MODEL>Complete Genomics</INSTRUMENT_MODEL>
+          </COMPLETE_GENOMICS>
+        </PLATFORM>
+        <PROCESSING/>
+        <EXPERIMENT_ATTRIBUTES>
+          <EXPERIMENT_ATTRIBUTE>
+            <TAG>Gaps Table</TAG>
+            <VALUE>id type armId indArm objArm min max|0 read 0 0 0 5 5|1 gap 0 1 0 -4 -1|2 read 0 2 1 10 10|3 gap 0 3 1 0 3|4 read 0 4 2 10 10|5 gap 0 5 2 3 8|6 read 0 6 3 10 10|7 mategap 0 7 0 100 700|8 read 1 0 0 10 10|9 gap 1 1 0 3 8|10 read 1 2 1 10 10|11 gap 1 3 1 0 3|12 read 1 4 2 10 10|13 gap 1 5 2 -4 -1|14 read 1 6 3 5 5</VALUE>
+          </EXPERIMENT_ATTRIBUTE>
+        </EXPERIMENT_ATTRIBUTES>
+      </EXPERIMENT>
+    </EXPERIMENT_SET>
+  </experiment_xml>
+  <run_xml>
+    <RUN_SET>
+      <RUN run_center="CompleteGenomics" alias="GS38050-FS3_L01" center_name="CompleteGenomics" accession="SRR448200">
+        <IDENTIFIERS>
+          <PRIMARY_ID>SRR448200</PRIMARY_ID>
+          <SECONDARY_ID>SRZ023200</SECONDARY_ID>
+          <SECONDARY_ID>SRR448207</SECONDARY_ID>
+          <SECONDARY_ID>SRR448206</SECONDARY_ID>
+          <SECONDARY_ID>SRR448205</SECONDARY_ID>
+          <SECONDARY_ID>SRR448204</SECONDARY_ID>
+          <SECONDARY_ID>SRR448203</SECONDARY_ID>
+          <SECONDARY_ID>SRR448202</SECONDARY_ID>
+          <SECONDARY_ID>SRR448201</SECONDARY_ID>
+        </IDENTIFIERS>
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+          <RUN_ATTRIBUTE>
+            <TAG>assembly</TAG>
+            <VALUE>GRCh37-lite</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS38050-FS3_L03" center_name="CompleteGenomics" accession="SRR448201">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS39226-FS3_L02" center_name="CompleteGenomics" accession="SRR448202">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS38050-FS3_L05" center_name="CompleteGenomics" accession="SRR448203">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS38050-FS3_L04" center_name="CompleteGenomics" accession="SRR448204">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS38050-FS3_L07" center_name="CompleteGenomics" accession="SRR448205">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS38050-FS3_L06" center_name="CompleteGenomics" accession="SRR448206">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+      <RUN run_center="CompleteGenomics" alias="GS38051-FS3_L08" center_name="CompleteGenomics" accession="SRR448207">
+        <EXPERIMENT_REF refcenter="CompleteGenomics" accession="SRX131517" refname="GS00826-DNA_G08"/>
+        <DATA_BLOCK>
+          <FILES>
+            <FILE checksum="be32d3e0be3c141e1b976fbe1a48cd18" filetype="bam" filename="GS00826-DNA_G08.bam" checksum_method="MD5"/>
+          </FILES>
+        </DATA_BLOCK>
+        <RUN_ATTRIBUTES>
+          <RUN_ATTRIBUTE>
+            <TAG>CompleteGenomics sample ID</TAG>
+            <VALUE>GS00826-DNA_G08</VALUE>
+          </RUN_ATTRIBUTE>
+        </RUN_ATTRIBUTES>
+      </RUN>
+    </RUN_SET>
+  </run_xml>
+  <analysis_detail_uri>https://cghub.ucsc.edu/cghub/metadata/analysisDetail/a5453af5-07d9-5d5f-8235-b1eb791f34c4</analysis_detail_uri>
+  <analysis_submission_uri>https://cghub.ucsc.edu/cghub/metadata/analysisSubmission/a5453af5-07d9-5d5f-8235-b1eb791f34c4</analysis_submission_uri>
+  <analysis_data_uri>https://cghub.ucsc.edu/cghub/data/analysis/download/a5453af5-07d9-5d5f-8235-b1eb791f34c4</analysis_data_uri>
+</Result>
