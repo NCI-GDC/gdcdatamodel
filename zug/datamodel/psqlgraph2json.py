@@ -205,9 +205,9 @@ class PsqlGraph2JSON(object):
             # Aggregate ids as we walk the tree
             if ids is not None and child.label in TOP_LEVEL_IDS:
                 ids['{}_ids'.format(child.label)].append(child.node_id)
-                if child.props.get('submitter_id'):
-                    ids['submitter_{}_ids'.format(child.label)].append(
-                        child.props.get('submitter_id'))
+                sub_id = child._props.get('submitter_id')
+                if sub_id is not None:
+                    ids['submitter_{}_ids'.format(child.label)].append(sub_id)
 
         if corr == ONE_TO_MANY:
             doc.append(subdoc)
@@ -233,7 +233,7 @@ class PsqlGraph2JSON(object):
         """
 
         base = {'{}_id'.format(node.label): node.node_id}
-        base.update(node.properties)
+        base.update(node._props)
         return base
 
     ###################################################################
@@ -640,11 +640,16 @@ class PsqlGraph2JSON(object):
                 # Skip, the cases is likely missing because it is omitted
                 continue
             case = self.entity_cases[e]
-            docs.append({
+            subdoc = {
                 'entity_type': e.label,
                 'entity_id': e.node_id,
-                'case_id': case.node_id,
-            })
+                'case_id': case.node_id
+            }
+            # NOTE: Use _props here to avoid overhead of proxy dictionary
+            esid = e._props.get('submitter_id')
+            if esid:
+                subdoc['entity_submitter_id'] = esid
+            docs.append(subdoc)
         if docs:
             doc['associated_entities'] = docs
 
@@ -805,8 +810,9 @@ class PsqlGraph2JSON(object):
         entity = entities[0]
         ann_doc['entity_type'] = entity.label
         ann_doc['entity_id'] = entity.node_id
-        if 'submitter_id' in entity.properties:
-            ann_doc['entity_submitter_id'] = entity['submitter_id']
+        esid = entity._props.get('submitter_id')
+        if esid:
+            ann_doc['entity_submitter_id'] = esid
         return ann_doc
 
     def denormalize_all(self):
@@ -1012,13 +1018,13 @@ class PsqlGraph2JSON(object):
                                          in self.differentiated_edges)
                 if not self.is_edge_indexed(e):
                     continue
-                if needs_differentiation and e.properties:
+                if needs_differentiation and e._props:
                     self.G.add_edge(
-                        e.src, e.dst, label=e.label, props=e.properties)
-                elif needs_differentiation and not e.properties:
+                        e.src, e.dst, label=e.label, props=e._props)
+                elif needs_differentiation and not e._props:
                     self.G.add_edge(e.src, e.dst, label=e.label)
-                elif e.properties:
-                    self.G.add_edge(e.src, e.dst, props=e.properties)
+                elif e._props:
+                    self.G.add_edge(e.src, e.dst, props=e._props)
                 else:
                     self.G.add_edge(e.src, e.dst)
             pbar.finish()
