@@ -601,6 +601,7 @@ class PsqlGraph2JSON(object):
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
         for p in doc['cases']:
+            self.patch_tcga_ages(p)
             self.patch_project(p['project'])
             self.reconstruct_biospecimen_paths(p)
         return relevant
