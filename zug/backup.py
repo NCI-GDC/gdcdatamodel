@@ -27,9 +27,17 @@ except:
 
 
 ACCESSORS = {
+    "gdc-accessor1.osdc.io": "CLEVERSAFE",
     "gdc-accessor2.osdc.io": "CLEVERSAFE",
+    "gdc-accessor3.osdc.io": "CLEVERSAFE",
+    "gdc-accessor4.osdc.io": "CLEVERSAFE",
+    "gdc-accessor5.osdc.io": "CLEVERSAFE",
+    "gdc-accessor6.osdc.io": "CLEVERSAFE",
+
     "cleversafe.service.consul": "CLEVERSAFE",
-    "ceph.service.consul": "CEPH"
+    "ceph.service.consul": "CEPH",
+    "kh08-9.osdc.io": "CEPH",
+    "kh10-9.osdc.io": "CEPH"
 }
 
 
@@ -74,7 +82,17 @@ def upload_file(path, signpost, ds3_bucket, job, ds3_key, offset, length):
 
         tmp_file = '{}/{}_{}'.format(path, ds3_key.name, offset)
         with open(tmp_file, 'r') as f:
-            ds3_key.put(f, job=job, offset=offset)
+            tries = 10
+            while True:
+                try:
+                    ds3_key.put(f, job=job, offset=offset)
+                    break
+                except:
+                    tries -= 1
+                    logger.exception("Fail to put key for the %d try" % tries)
+                    if tries < 0:
+                        raise
+
         logger.info('Part of file %s uploaded for job %s',
                     ds3_key.name, job.id)
         os.remove(tmp_file)
@@ -194,19 +212,21 @@ class DataBackup(object):
     BACKUP_ACCEPT_STATE = ['backing_up', 'backuped', 'verified']
     BACKUP_FAIL_STATE = 'failed'
     BACKUP_DRIVER = ['primary_backup', 'storage_backup']
-    CHUNK_SIZE = 107374182400
     BUCKET = 'gdc_backup'
 
-    def __init__(self, debug=False, driver='', protocol='https'):
+    def __init__(self, debug=False,
+                 driver='', protocol='https'):
         self.consul = ConsulManager(prefix='databackup')
         self.upload_size = int(os.environ.get('UPLOAD_SIZE', 104857600))
         self.processes = int(os.environ.get('PROCESSES', 5))
+        self.CHUNK_SIZE = int(os.environ.get('CHUNK_SIZE', 107374182400))
         self.graph = PsqlGraphDriver(
             os.environ["PG_HOST"],
             os.environ["PG_USER"],
             os.environ["PG_PASS"],
             os.environ["PG_NAME"]
         )
+
         s3_creds = {}
         for host, endpoint in ACCESSORS.iteritems():
             s3_creds[host] = {
@@ -253,10 +273,33 @@ class DataBackup(object):
         '''
         Upload files in chunk
         '''
-        ds3_bucket = self.get_bucket(self.BUCKET)
+        tries = 10
+        while True:
+            try:
+                ds3_bucket = self.get_bucket(self.BUCKET)
+                break
+            except:
+                if tries > 0:
+                    self.logger.exception("failed to get bucket")
+                    tries -= 1
+                else:
+                    raise
         uploaded = set()
         while(not self.job.is_completed):
-            chunks = list(self.job.chunks(num_of_chunks=100))
+            tries = 5
+            while (True):
+                self.logger.info("Allocating chunks")
+                try:
+                    chunks = list(self.job.chunks(num_of_chunks=100))
+                    break
+                except:
+                    if tries > 0:
+                        self.logger.exception(
+                            "fail to allocation chunks for %d" % tries)
+                        tries -= 1
+                        continue
+                    else:
+                        raise
             self.logger.info("Number of chunks: %s", len(chunks))
             for chunk in chunks:
                 pool = Pool(processes=self.processes)
@@ -290,8 +333,8 @@ class DataBackup(object):
                                  self.job, self.files)
             except:
                 self._record_file_state('failed')
-                self.logger.exception('Job %s failed for files %s',
-                                      self.job, self.files)
+                self.logger.exception('Job failed for files %s',
+                                      self.files)
                 self.job.delete()
             finally:
                 self.cleanup()
@@ -323,6 +366,7 @@ class DataBackup(object):
             return results[0]
 
     def get_key_size(self, url):
+        self.logger.info(url)
         file_size = self.s3.get_url(url).size
         return file_size
 
@@ -334,8 +378,8 @@ class DataBackup(object):
         self.files = []
         self.get_bucket(self.BUCKET)
 
-        with self.consul.consul_session_scope(delay='1s'):
-            while not self.consul.get_consul_lock('get_files'):
+        with self.consul.consul_session_scope(delay='0s'):
+            while not self.consul.get_consul_lock(self.driver):
                 time.sleep(1)
                 self.logger.info("Can't get consul lock for get files")
             with self.graph.session_scope():
@@ -345,6 +389,7 @@ class DataBackup(object):
                 conditions.append(not_(File._sysan.has_key(self.driver)))
                 conditions.append((File._sysan[self.driver].astext
                                   == self.BACKUP_FAIL_STATE))
+
                 query = self.graph.nodes(File).props({'state': 'live'})\
                     .not_sysan({'md5_verify_status': 'failed'})\
                     .filter(or_(*conditions))\
@@ -355,38 +400,36 @@ class DataBackup(object):
                     nodes = query.yield_per(1000)
                     total_size = 0
                     for node in nodes:
-                        s3_key_size = self.get_key_size(
-                            self.signpost.get(node.node_id).urls[0])
-                        if s3_key_size != node.file_size:
-                            self._record_file_state('error', node)
-                            self.logger.info(
-                                "file %s is corrupted, graph reported %d, s3 reported %d"
-                                % (node.file_name, s3_key_size, node.file_size))
-                            continue
-                        # delete the file if it's already in blackpearl
-                        self.logger.info('check file')
-                        if len(list(self.ds3.keys(
-                                name=node.node_id,
-                                bucket_id=self.BUCKET))) != 0:
-                            self.ds3.keys.delete(self.BUCKET, node.node_id)
-                        self.files.append(node)
-                        total_size += node.file_size
                         self.logger.info('Current size: %s' % total_size)
                         if total_size > self.CHUNK_SIZE:
                             self.logger.info('Selected %s size of %s files',
                                              total_size, len(self.files))
 
                             break
+
+                        # delete the file if it's already in blackpearl
+                        if ('primary_backup' in node.sysan and
+                            len(list(self.ds3.keys(
+                                name=node.node_id,
+                                bucket_id=self.BUCKET))) != 0):
+                            self.ds3.keys.delete(self.BUCKET, node.node_id)
+
+
+                        self.files.append(node)
+                        total_size += node.file_size
             if self.files:
                 self._record_file_state('backing_up')
 
+
     def _record_file_state(self, state, node=None):
-        self.logger.info("Mark files %s as state %s", self.files, state)
         with self.graph.session_scope() as session:
             if node is None:
                 for node in self.files:
                     node.system_annotations[self.driver] = state
                     session.merge(node)
+                self.logger.info(
+                    "Mark files %s as state %s", self.files, state)
             else:
                 node.system_annotations[self.driver] = state
                 session.merge(node)
+                self.logger.info("Mark files %s as state %s", node, state)
