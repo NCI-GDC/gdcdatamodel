@@ -42,6 +42,6 @@ class TARGETDCCSyncTest(PreludeMixin, StorageMixin,
                                  .sysan({"source": "target_dcc"}).one()
                 subtype = file.data_subtypes[0]
             self.assertEqual(file["file_name"], "target-wt-snp-indel.mafplus.txt")
-            self.assertEqual(file.acl, ["phs000218", "phs000471"])
+            self.assertEqual(file.acl, [])
             self.assertEqual(file["md5sum"], '5a7146f821d11c8fa91a0f5865f7b6f8')
             self.assertEqual(subtype["name"], "Simple somatic mutation")
