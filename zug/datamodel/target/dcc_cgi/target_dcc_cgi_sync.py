@@ -28,16 +28,25 @@ import md5
 urllib3.disable_warnings()
 logging.captureWarnings(True)
 
+
+# main class to kick off downloading
 class TargetDCCCGIDownloader(object):
 
     def __init__(self):
+
+        # ignore the header line
         self.strings_to_ignore = [ 
             "Name", "Last modified", 
             "Size", "Parent Directory", 
             "lost+found/", "Parent Directory" ]
+
+        # right now, these are the projects to check
         self.urls_to_check = [
             "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/PilotAnalysisPipeline2/",
             "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/" ]
+
+        # kinda hacky, but the table for the file browse uses these classes when we know
+        # we're looking at file/directory lines
         self.row_classes = [ "even", "odd" ]
         self.count = 0
         self.total_size = 0
@@ -56,6 +65,8 @@ class TargetDCCCGIDownloader(object):
         self.log_data = []
         self.logged_keys = []
 
+        # trying to make it look more smartly because the env names seem
+        # to change so much depending (QA_PG_HOST vs. ZUGS_PG_HOST, etc)
         for env in os.environ.keys():
             if env.find('PG_HOST') != -1:
                 print "Setting 'host_name' to", os.environ[env]
@@ -78,12 +89,12 @@ class TargetDCCCGIDownloader(object):
         #self.target_acls = ["phs000471", "phs000218"]
         self.target_acls = []
         self.target_object_store = "ceph"
+        self.target_bucket_name = "test_2"
 
         if 'TARGET_PROTECTED_BUCKET' in os.environ:
             self.target_bucket_name = os.environ['TARGET_PROTECTED_BUCKET']
         else:
-            print "Warning, TARGET_PROTECTED_BUCKET not found, defaulting to test"
-            self.target_bucket_name = "test_2"
+            print "Warning, TARGET_PROTECTED_BUCKET not found, defaulting to", self.target_bucket_name
 
 
     def connect_to_psqlgraph(self):
@@ -140,6 +151,7 @@ class TargetDCCCGIDownloader(object):
             json.dump(data, log_file)
             log_file.write("\n")
 
+    # the main routine that walks the URL and recursively finds all the files
     def process_tree(self, url, auth_data, url_list, test_download=False):
         #print "Walking %s in %s" % (url, cur_dir)
         r = requests.get(url, auth=(auth_data['id'], auth_data['pw']), verify=False)
@@ -205,6 +217,7 @@ class TargetDCCCGIDownloader(object):
                                 print "Downloading file: %s to %s from %s" % (file_name, os.getcwd(), file_url)
                                 open(file_name, 'a').close()
 
+    # gets the list of top level directories to check
     def get_directory_list(self, url, auth_data):
         directory_list = []
         r = requests.get(url, auth=(auth_data['id'], auth_data['pw']), verify=False)
@@ -232,6 +245,7 @@ class TargetDCCCGIDownloader(object):
     def create_signpost_uri(self, object_store, bucket, key_name):
         return "s3://%s/%s/%s" % (object_store, bucket, key_name)
 
+    # create the node in psqlgraph for the tarball file
     def create_tarball_file_node(
         self, pq, signpost, 
         tarball_name, tarball_md5_sum, tarball_size, 
@@ -278,6 +292,7 @@ class TargetDCCCGIDownloader(object):
                 '_participant_barcode': participant_barcode
             }
 
+            # add the new node
             file_node = mod.File(
                 node_id=tarball_node_id,
                 acl=self.target_acls,
@@ -308,6 +323,7 @@ class TargetDCCCGIDownloader(object):
                 '_participant_barcode': participant_barcode
             }
 
+            # update the node
             pq.node_update(
                 file_node,
                 acl=self.target_acls,
@@ -318,6 +334,7 @@ class TargetDCCCGIDownloader(object):
 
         return tarball_node_id, file_node
 
+    # create a node for a related file in psqlgraph
     def create_related_file_node(self, pq, signpost, entry, project, participant_barcode, tarball_file_node):
         if tarball_file_node != None:
             print "Trying to add", entry['file_name']
@@ -400,6 +417,7 @@ class TargetDCCCGIDownloader(object):
                     '_participant_barcode': participant_barcode
                 }
 
+                # update the node
                 pq.node_update(
                     related_file_node,
                     acl=self.target_acls,
@@ -411,6 +429,7 @@ class TargetDCCCGIDownloader(object):
                 #    print "More than one entry, quitting"
                 #    sys.exit()
 
+    # create the edges in psqlgraph to a given tarball node
     def create_edges(self, pq, tarball_node_id, tarball_file_node, project):
         if tarball_file_node != None:
             # platform
@@ -453,6 +472,10 @@ class TargetDCCCGIDownloader(object):
                 else:
                     print "Unable to find Tag '%s'" % project
 
+    # checking our log directory, find the latest log file
+    # (this is used because there's nowhere else to store
+    # the md5 sums that are calculated when creating the
+    # tarball)
     def find_latest_log(self, directory):
         cur_dir = os.getcwd()
         os.chdir(directory)
@@ -460,6 +483,8 @@ class TargetDCCCGIDownloader(object):
         os.chdir(cur_dir)
         return directory + "/" + newest
 
+    # read in the data from a log file, getting file sizes,
+    # key names, md5 sums, etc.
     def get_log_file_data(self, log_file_name):
         file_data = []
         logged_files = []
@@ -471,6 +496,7 @@ class TargetDCCCGIDownloader(object):
                     logged_files.append(data['s3_key_name'])
         return file_data, logged_files
 
+    # main routine to go from a directory to creating a tarball and adding nodes/edges to psqlgraph
     def process_job(self, directory, object_store, bucket, auth_data, project, re_md5_tarball=True):
         print "Processing", directory['dir_name'], "for project", project, "with tarball recheck=", re_md5_tarball
 
@@ -663,6 +689,8 @@ class TargetDCCCGIDownloader(object):
             #sys.exit()
 
 
+    # routine to walk all directories farmed and create a tarball for each,
+    # calling process_job to do the work
     def process_all_work(self, ask_for_nih_creds=False, re_md5_tarball=False):
         print "process_all_work called with re_md5_tarball=", re_md5_tarball
 
@@ -694,4 +722,3 @@ if __name__ == '__main__':
     tdc_dl = TargetDCCCGIDownloader()
     tdc_dl.process_all_work(ask_for_nih_creds=True)
 
-#main()
