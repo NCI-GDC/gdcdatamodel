@@ -27,7 +27,6 @@ setup(
         'signpostclient',
         'ds3client',
         'lockfile',
-#        'simplejson==3.7.1',
         'BeautifulSoup4==4.4.0',
         'lxml==3.4.1',
         'requests==2.5.2',
