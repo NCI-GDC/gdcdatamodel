@@ -8,6 +8,7 @@ from urlparse import urlparse
 from cStringIO import StringIO
 
 from sqlalchemy import func, desc, BigInteger
+from sqlalchemy.pool import NullPool
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
 from requests.exceptions import ReadTimeout
@@ -87,6 +88,7 @@ class TCGAExomeAligner(object):
                 os.environ["PG_USER"],
                 os.environ["PG_PASS"],
                 os.environ["PG_NAME"],
+                poolclass=NullPool,
             )
         if s3:
             self.s3 = s3
