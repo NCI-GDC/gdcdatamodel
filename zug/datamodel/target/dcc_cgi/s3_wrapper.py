@@ -13,7 +13,9 @@ class S3_Wrapper:
 
 
     def __init__(self):
-        
+        # default info for each, we could look at env
+        # also, I've seen secure=False used with boto,
+        # so I mirrored that use
         self.s3_inst_info = { 
             'ceph': {
                 'secure': False,
@@ -24,6 +26,9 @@ class S3_Wrapper:
                 'url': 'cleversafe.service.consul'
             } 
         }
+
+        # being a bit smart about getting the env data, in case we switch
+        # VMs
         for env in os.environ.keys():
             if env.find("ACCESS_KEY") != -1:
                 if env.find("CEPH") != -1:
@@ -47,24 +52,6 @@ class S3_Wrapper:
                     print "ceph/cleversafe secret key from", env
                     self.s3_inst_info['ceph']['secret_key'] = os.environ[env]
                     self.s3_inst_info['cleversafe']['secret_key'] = os.environ[env]
-                
-        #with open("s3_conf.yaml") as s3_file:
-        #    self.s3_settings = yaml.load(s3_file)
-        #self.s3_inst_info = self.s3_settings['S3_INSTS']
-        #print self.s3_inst_info 
-        #for key, value in self.s3_inst_info.iteritems():
-        #    if 'auth_path' in value:
-        #        with open(os.path.expanduser(value['auth_path'])) as f:
-        #            s3_auth = yaml.load(f.read().strip())
-        #            value['access_key'] = s3_auth['access_key']
-        #            value['secret_key'] = s3_auth['secret_key']
-        #    else:
-        #        if key.lower() == "ceph":
-        #            value['access_key'] = os.environ["S3_ACCESS_KEY"]
-        #            value['secret_key'] = os.environ["S3_SECRET_KEY"]
-        #        if key.lower() == "cleversafe":
-        #            value['access_key'] = os.environ["S3_ACCESS_KEY"]
-        #            value['secret_key'] = os.environ["S3_SECRET_KEY"]
 
     def get_nearest_file_size(self, size):
         sizes = [
@@ -84,6 +71,7 @@ class S3_Wrapper:
  
         return value
 
+    # does a simple s3 check to see if we can connect
     def check_s3(self, which_s3, url_offset = 0):
         s3_ok = False
         if type(self.s3_inst_info[which_s3]['url']) == list:
@@ -112,6 +100,7 @@ class S3_Wrapper:
 
         return s3_ok
 
+    # connects to an s3 instance, using the environment vars as set
     def connect_to_s3(self, which_s3, url_offset = 0):
         if which_s3 in self.s3_inst_info:
             if type(self.s3_inst_info[which_s3]['url']) == list:
@@ -128,8 +117,8 @@ class S3_Wrapper:
                 )
         return conn
 
+    # upload a file to an s3 instance
     def upload_file(self, conn, bucket_name, file_name, calc_md5=False):
-
         self.md5_sum = md5.new()
         bucket_exists = False
         bucket_list = conn.get_all_buckets()
@@ -153,6 +142,8 @@ class S3_Wrapper:
         new_key.key = key_name
         new_key.set_contents_from_filename(file_name)
 
+    # upload a file to an s3 instance as a multipart upload
+    # it uses a stream size of 1 GiB per chunk to write
     def upload_multipart_file(self, conn, bucket_name, key_name, file_iterator, calc_md5=False, save_local=False):
         print "Uploading to key %s, bucket %s" % (key_name, bucket_name)
         self.md5_sum = md5.new()
@@ -188,8 +179,8 @@ class S3_Wrapper:
         mp = bucket.initiate_multipart_upload(key_name)
         start_time = time.clock()
 
+        # loop over the file, writing a chunk at a time
         for chunk in file_iterator:
-#            print len(chunk)
             size_info = self.get_nearest_file_size(total_size)
             cur_time = time.clock()
             base_transfer_rate = float(total_size) / float(cur_time - start_time)
@@ -199,7 +190,6 @@ class S3_Wrapper:
             sys.stdout.write("%7.02f %s : %6.02f %s per sec\r" % (
                 cur_conv_size, size_info[1],
                 cur_conv_rate, transfer_info[1]))
-            #sys.stdout.write("%15d - %15d\r" % (total_size, cur_size))
             sys.stdout.flush()
             stream_buffer.write(chunk)
             cur_size += len(chunk)
@@ -252,6 +242,7 @@ class S3_Wrapper:
         del os.environ['https_proxy']
         del os.environ['http_proxy']
 
+        # print out results with transfer time
         cur_time = time.clock()
         size_info = self.get_nearest_file_size(total_size)
         base_transfer_rate = float(total_size) / float(cur_time - start_time)
@@ -275,14 +266,8 @@ class S3_Wrapper:
         print "Upload complete, md5 = %s, %d bytes transferred" % (str(self.md5_sum.hexdigest()), total_size)
         return {"md5_sum" : str(self.md5_sum.hexdigest()), "bytes_transferred" : total_size }
 
-        #print dir(stream_buffer)
-        #stream_buffer.seek(0, os.SEEK_END)
-        #print stream_buffer.tell()
-        #stream_buffer.seek(0, os.SEEK_START)
-        
 
-
-
+    # get a count of all keys in a specified s3 bucket
     def get_count_of_keys_in_s3_bucket(self, conn, bucket_name):
         bucket = conn.get_bucket(bucket_name)
         rs = bucket.list()
@@ -292,8 +277,8 @@ class S3_Wrapper:
 
         return file_count
 
+    # get a file key in a bucket
     def get_file_key(self, conn, bucket_name, file_name):
-#        return_key = ""
         key = None
         try:
             bucket = conn.get_bucket(bucket_name)
@@ -303,24 +288,18 @@ class S3_Wrapper:
         else:
             key = bucket.get_key(file_name)
         return key
-#        rs = bucket.list()
-#        anims = [ '/', '|', '\\', '-' ]
-#        counter = 0
-#        for key in rs:
-#            sys.stdout.write("%05d\r" % counter)
-            #sys.stdout.write("%c\r" % (anims[counter % len(anims)]))
-#            sys.stdout.flush()
-#            counter = counter + 1
-#            if key.name == file_name:
-#                return_key = key
-#                break
-#        return return_key
-    
+   
+    # delete a key in a bucket
     def delete_file_key(self, conn, bucket_name, file_name):
         key = self.get_file_key(conn, bucket_name, file_name)
         key.delete()
 
-
+    # compare the size of an s3 key by the two methods boto
+    # can use to get key size: iterating over keys in a bucket,
+    # or getting a key directly by key name
+    # NB: we found differences in these on ceph, so this routine
+    # allows for checking to see if there's a discrepancy in the
+    # file sizes
     def compare_s3_sizes_by_methods(self, conn, bucket_name):
         file_list = []
         bucket = conn.get_bucket(bucket_name)
@@ -352,8 +331,7 @@ class S3_Wrapper:
         
         return file_list
 
-
-
+    # get all the files in a given s3 bucket into a list
     def get_files_in_s3_bucket(self, conn, bucket_name, check_download=False):
         file_list = []
         bucket = conn.get_bucket(bucket_name)
@@ -368,7 +346,6 @@ class S3_Wrapper:
         for key in rs:
             file_count = file_count + 1
             file_list.append((key.name, key.size))
-            #sys.stdout.write("%c\r" % animation[animation_index % len(animation)])
             format_str = "%%0%dd/%%0%dd\r" % (digits, digits)
             sys.stdout.write(format_str % (file_count, num_files))
             sys.stdout.flush()
@@ -383,9 +360,10 @@ class S3_Wrapper:
                     except:
                         print "Warning, file %s cannot be read" % key.name
                         unreachable_files = unreachable_files + 1
-
         return file_list
 
+    # get all the files in all the buckets on a given
+    # s3 connection (should be renamed, does more than get counts)
     def get_s3_file_counts(self, conn, which_s3):
         if self.check_s3(which_s3):
             rs = conn.get_all_buckets()
@@ -396,14 +374,18 @@ class S3_Wrapper:
                 if entry.name in self.allowed_buckets:
                     self.all_files[entry.name] = self.get_files_in_s3_bucket(conn, entry.name)
             self.check_time = datetime.datetime.now()
-
         else:
             print "Unable to connect to %s" % s3_url
 
+    # after calling get_s3_file_counts, this routine will dump all the
+    # keys into a file
     def save_s3_file_lists(self, which_s3):
-        #graph_db = self.connect_to_neo4j()
         for key, value in self.all_files.iteritems():
-            bucket_filename = "%s_%s_files_%04d-%02d-%02d_%02d-%02d-%02d.json" % (which_s3, key, datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day, datetime.datetime.now().hour, datetime.datetime.now().minute, datetime.datetime.now().second)
+            bucket_filename = "%s_%s_files_%04d-%02d-%02d_%02d-%02d-%02d.json" % (which_s3, 
+                key, datetime.datetime.now().year, datetime.datetime.now().month, 
+                datetime.datetime.now().day, datetime.datetime.now().hour, 
+                datetime.datetime.now().minute, datetime.datetime.now().second
+            )
             with open(bucket_filename, "w") as json_file:
                 print "making psqlgraph connection"
                 psql_test = Psqlgraph_Test()
@@ -411,13 +393,10 @@ class S3_Wrapper:
                     for entry in value:
                         file_entry = {}
                         file_entry['file_name'] = entry[0]
-                        #print "file name: ", file_entry['file_name']
-                        #sys.exit()
                         file_entry['file_size'] = int(entry[1])
                         if len(file_entry['file_name'].split("/")) > 1:
                             file_key = file_entry['file_name'].split("/")[0]
                             file_name = file_entry['file_name'].split("/")[1]
-                            #print "checking psqlgraph for md5 sum for %s" % file_entry['file_name']
                             file_info = self.psql_search_for_filename(psql_test, file_name, file_key)
                             if file_info != None:
                                 if "md5sum" in file_info:
@@ -434,42 +413,24 @@ class S3_Wrapper:
                             simplejson.dump(file_entry, json_file)
                             json_file.write("\n")
 
+    # download a key from a bucket 
     def download_file(self, conn, which_bucket, download_key_name):
         # download the file to local storage
         file_key = self.get_file_key(conn, which_bucket, download_key_name)
         file_name = file_key.name.split('/')[1]
         print "Downloading %s, size %d" % (file_key.name, file_key.size)
         m = md5.new()
+
         # download the file
         with open(file_name, "w") as temp_file:
             bytes_requested = 10485760
             chunk_read = file_key.read(size=bytes_requested)
             total_transfer = 0
-    #        while total_transfer < file_key.size:
-    #            if len(chunk_read):
             while len(chunk_read):
                 m.update(chunk_read) 
-                #sys.stdout.write("%d/%d\r" % (total_transfer, file_key.size))
-                #sys.stdout.flush()
                 temp_file.write(chunk_read)
                 total_transfer = total_transfer + len(chunk_read)
                 chunk_read = file_key.read(size=bytes_requested)
-                #else:
-            #    print "0 bytes read"
 
         return { 'md5_sum': m.hexdigest(), 'bytes_transferred': total_transfer }
-
-    def check_file_list(self, conn, which_s3, files, count=1):
-        max_file_size = 102400000000000
-        results = []
-        graph_db = self.connect_to_neo4j()
-        for i in range(count):
-            print "Pass %d/%d" % ((i + 1), count)
-            for file in files:
-                print file
-                result = self.verify_file(conn, file, graph_db, max_file_size)
-                results.append(result)
-                print
-        return results
-
 
