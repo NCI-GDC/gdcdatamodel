@@ -161,14 +161,14 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         tarball_s3_key_name = "test_target_dcc_cgi/" + tarball_name
         tarball_size = 8888
         tarball_md5_sum = "888f213ba97123da0213709aca183888"
-        aliquot_submitter_ids = ["TARGET-50-CAAAAA"]
+        aliquot_submitter_ids = ["TARGET-50-CAAAAM-01A-01R"]
         tag = "OptionAnalysisPipeline2"
         project = "WT"
         experimental_strategy = "WGS"
         platform = "Complete Genomics"
         data_subtype = "CGI Archive"
         node_data = {}
-        node_data['participant_barcode'] = aliquot_submitter_ids[0]
+        node_data['participant_barcode'] = "TARGET-50-CAAAAM"
         download_list = []
 
         dl_entry = {}
