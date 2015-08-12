@@ -139,9 +139,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
             self.assertEqual(len(directory_list), 0)
         self.assertTrue(True)
 
-
-
-# TEST: stream files into an archive and put it on the object store
+    # TODO: TEST: stream files into an archive and put it on the object store
     def test_stream_create_archive_on_os(self):
         files = [
             "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/manifest.all.unencrypted",
@@ -153,7 +151,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         self.assertEqual(True, True)
 
 
-# TEST: create all nodes and edges associated with an archive
+    # TEST: create all nodes and edges associated with an archive
     def test_create_nodes_and_edges(self):
         self.assertTrue(True)
         signpost = SignpostClient(self.signpost_url)
@@ -207,25 +205,25 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
 
         # create nodes/edges
         with pq.session_scope() as session:
-            tarball_node_id = self.create_tarball_file_node(signpost, tarball_name, tarball_s3_key_name) 
+            tarball_node_id = tdc_cl.create_tarball_file_node(signpost, tarball_name, tarball_s3_key_name) 
             # find aliquot ids
             for sub_id in aliquot_submitter_ids:
                 match = pq.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
                 aliquot_ids.append(match.node_id)
             
             # create the file node for the tarball
-            tarball_node_id, tarball_file_node = self.create_tarball_file_node(
+            tarball_node_id, tarball_file_node = tdc_cl.create_tarball_file_node(
                 pq, tarball_name, tarball_md5_sum, tarball_size, 
                 tarball_s3_key_name, project, 
                 node_data['participant_barcode']
             ) 
 
             # link the tarball file to the other nodes
-            self.create_edges(pq, tarball_node_id, tarball_file_node, project, tag)
+            tdc_cl.create_edges(pq, tarball_node_id, tarball_file_node, project, tag)
 
             # create related files
             for entry in download_list:
-                self.create_related_file_node(
+                tdc_cl.create_related_file_node(
                     pq, entry, project, 
                     node_data['participant_barcode'],
                     tarball_file_node
