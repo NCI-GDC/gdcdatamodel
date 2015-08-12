@@ -1,6 +1,6 @@
 import os
 import random
-from base import ZugTestBase
+from base import ZugTestBase, SignpostMixin
 from mock import patch
 from httmock import urlmatch, all_requests, HTTMock
 from signpostclient import SignpostClient
