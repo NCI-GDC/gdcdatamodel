@@ -232,7 +232,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
             pq.current_session().merge(tarball_file_node)
 
         # check what we just added
-        with pq.session_scope() as session:
+        #with pq.session_scope() as session:
             
             node = pq.nodes(mod.File).props(file_name=tarball_name).one()
 
