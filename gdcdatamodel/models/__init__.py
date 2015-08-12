@@ -5,7 +5,9 @@ from sqlalchemy.orm import configure_mappers
 from gdcdictionary import GDCDictionary
 
 
+excluded_props = ['id']
 dictionary = GDCDictionary()
+
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
@@ -16,7 +18,7 @@ def NodeFactory(name, schema):
 
     for key in schema.get('properties', []):
 
-        if key in links:
+        if key in links + excluded_props:
             continue
 
         def setter(self, value):
@@ -24,6 +26,16 @@ def NodeFactory(name, schema):
 
         setter.__name__ = key
         setattr(cls, key, pg_property(setter))
+
+    @property
+    def node_id(self, value):
+        return self.node_id
+
+    @node_id.setter
+    def node_id(self, value):
+        self.node_id = value
+
+    setattr(cls, 'id', node_id)
 
     return cls
 
