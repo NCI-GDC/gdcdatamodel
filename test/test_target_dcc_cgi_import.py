@@ -234,7 +234,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         # check what we just added
         with pq.session_scope() as session:
             
-            node = pq.nodes(mod.File).props(name=tarball_name).one()
+            node = pq.nodes(mod.File).props(file_name=tarball_name).one()
 
             # check node data
             # check tarball name
