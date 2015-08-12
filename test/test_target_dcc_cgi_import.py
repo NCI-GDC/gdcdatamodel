@@ -206,9 +206,9 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         # create nodes/edges
         with pq.session_scope() as session:
             # find aliquot ids
-            for sub_id in aliquot_submitter_ids:
-                match = pq.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
-                aliquot_ids.append(match.node_id)
+            #for sub_id in aliquot_submitter_ids:
+            #    match = pq.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
+            #    aliquot_ids.append(match.node_id)
             
             # create the file node for the tarball
             tarball_node_id, tarball_file_node = tdc_cl.create_tarball_file_node(
