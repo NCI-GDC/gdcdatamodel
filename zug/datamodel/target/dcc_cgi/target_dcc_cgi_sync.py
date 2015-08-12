@@ -8,6 +8,7 @@ import getpass
 from bs4 import BeautifulSoup
 import urllib3
 import logging
+from cdisutils.log import get_logger
 import datetime, time
 import json
 import shutil
@@ -18,20 +19,12 @@ from gdcdatamodel import models as mod
 from signpostclient import SignpostClient
 from s3_wrapper import S3_Wrapper
 import md5
-#try: # Python 3.x 
-#    import http.client as http_client
-#except ImportError: # Python 2.x 
-#    import httplib as http_client
-
-#http_client.HTTPConnection.debuglevel = 1
 
 urllib3.disable_warnings()
 logging.captureWarnings(True)
 
-
-# main class to kick off downloading
 class TargetDCCCGIDownloader(object):
-
+    """Main class to handle TARGET DCC CGI download"""
     def __init__(self):
 
         # ignore the header line
@@ -45,6 +38,8 @@ class TargetDCCCGIDownloader(object):
             "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/PilotAnalysisPipeline2/",
             "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/" ]
 
+        self.log = get_logger("target_dcc_cgi_project_sync_" + str(os.getpid()))
+
         # kinda hacky, but the table for the file browse uses these classes when we know
         # we're looking at file/directory lines
         self.row_classes = [ "even", "odd" ]
@@ -53,48 +48,51 @@ class TargetDCCCGIDownloader(object):
         if 'SIGNPOST_URL' in os.environ:
             self.signpost_url = os.environ['SIGNPOST_URL']
         else:
-            print "Warning, SIGNPOST_URL not found, defaulting to signpost.service.consul"
             self.signpost_url = "http://signpost.service.consul"
 
         cur_time = datetime.datetime.now()
-        self.log_filename = "/home/ubuntu/logs/added_target_dcc_cgi_files_%04d-%02d-%02d_%02d-%02d-%02d.json" % (
+        self.checkpoint_dir = "/home/ubuntu/checkpoint"
+        self.checkpoint_filename = "%s/added_target_dcc_cgi_files_%04d-%02d-%02d_%02d-%02d-%02d.json" % (
+            self.checkpoint_dir,
             cur_time.year, cur_time.month, cur_time.day,
             cur_time.hour, cur_time.now().minute, cur_time.second)
         self.pq_creds = {}
         self.dcc_creds = {}
-        self.log_data = []
-        self.logged_keys = []
+        self.checkpoint_data = []
+        self.processed_keys = []
+
+        # edge data
+        self.platform = "Complete Genomics"
+        self.data_subtype = "CGI Archive"
+        self.data_format = "TARGZ"
+        self.experimental_strategy = "WGS"
 
         # trying to make it look more smartly because the env names seem
         # to change so much depending (QA_PG_HOST vs. ZUGS_PG_HOST, etc)
         for env in os.environ.keys():
             if env.find('PG_HOST') != -1:
-                print "Setting 'host_name' to", os.environ[env]
                 self.pq_creds['host_name'] = os.environ[env]
             if env.find('PG_USER') != -1:
-                print "Setting 'user_name' to", os.environ[env]
                 self.pq_creds['user_name'] = os.environ[env]
             if env.find('PG_NAME') != -1:
-                print "Setting 'db_name' to", os.environ[env]
                 self.pq_creds['db_name'] = os.environ[env]
             if env.find('PG_PASS') != -1:
-                print "Setting 'password' to", os.environ[env]
                 self.pq_creds['password'] = os.environ[env]
             if env.find('DCC_USER') != -1:
                 self.dcc_creds['id'] = os.environ[env]
             if env.find('DCC_PASS') != -1:
                 self.dcc_creds['pw'] = os.environ[env]
 
-        # TODO: move these to environment vars/config
         #self.target_acls = ["phs000471", "phs000218"]
         self.target_acls = []
-        self.target_object_store = "ceph"
-        self.target_bucket_name = "test_2"
+
+        if 'S3_HOST' in os.environ:
+            self.target_object_store = os.environ['S3_HOST'].split('.')[0]
 
         if 'TARGET_PROTECTED_BUCKET' in os.environ:
             self.target_bucket_name = os.environ['TARGET_PROTECTED_BUCKET']
         else:
-            print "Warning, TARGET_PROTECTED_BUCKET not found, defaulting to", self.target_bucket_name
+            raise RuntimeError("Warning, TARGET_PROTECTED_BUCKET not found")
 
 
     def connect_to_psqlgraph(self):
@@ -143,18 +141,16 @@ class TargetDCCCGIDownloader(object):
                 continue
              value = entry
              break
-        #print "%d bytes, for %s" % (size, value[1])
         return value
 
     def write_json_to_file(self, data):
-        with open(self.log_filename, "a") as log_file:
-            json.dump(data, log_file)
-            log_file.write("\n")
+        with open(self.checkpoint_filename, "a") as checkpoint_file:
+            json.dump(data, checkpoint_file)
+            checkpoint_file.write("\n")
 
-    # the main routine that walks the URL and recursively finds all the files
-    def process_tree(self, url, auth_data, url_list, test_download=False):
-        #print "Walking %s in %s" % (url, cur_dir)
-        r = requests.get(url, auth=(auth_data['id'], auth_data['pw']), verify=False)
+    def process_tree(self, url, url_list, test_download=False):
+        """Walk the given url and recursively find all the file links."""
+        r = requests.get(url, auth=(self.dcc_creds['id'], self.dcc_creds['pw']), verify=False)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text)
             file_table = soup.find('table', attrs={'id':'indexlist'})
@@ -165,7 +161,7 @@ class TargetDCCCGIDownloader(object):
                     # directory
                     if image['alt'].find("[DIR]") != -1:
                         dir_name = row.find('td', class_="indexcolname").get_text().strip()
-                        self.process_tree(url + dir_name, auth_data, url_list)
+                        self.process_tree(url + dir_name, url_list)
                     # file
                     else:
                         if image['alt'].find("DIR") == -1:
@@ -175,52 +171,13 @@ class TargetDCCCGIDownloader(object):
                             if test_download == False:
                                 url_list.append(file_url)
                             else:
-                                print "Downloading file: %s to %s from %s" % (file_name, os.getcwd(), file_url)
+                                self.log.info("Downloading file: %s to %s from %s" % (file_name, os.getcwd(), file_url))
                                 open(file_name, 'a').close()
 
-    # This routine isn't used, but it might be handy to have someday, so leaving it in here for now
-    def download_tree(self, url, auth_data, cur_dir, test_download=False):
-    #    print "Walking %s in %s" % (url, os.getcwd() + "/" + cur_dir)
-        print "Walking %s in %s" % (url, cur_dir)
-        if not os.path.exists(cur_dir):
-            os.makedirs(cur_dir)
-        os.chdir(cur_dir)
-        r = requests.get(url, auth=(auth_data['id'], auth_data['pw']), verify=False)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text)
-            file_table = soup.find('table', attrs={'id':'indexlist'})
-            rows = file_table.find_all('tr')
-            for row in rows:
-                if (row['class'][0] == "even") or (row['class'][0] == "odd"):
-                    image = row.find('img')
-                    # directory
-                    if image['alt'].find("[DIR]") != -1:
-                        dir_name = row.find('td', class_="indexcolname").get_text().strip()
-                        if not os.path.exists(dir_name):
-                            os.makedirs(dir_name)
-                        print "Calling download_tree with %s in %s" % (url + dir_name, dir_name)
-                        self.download_tree(url + dir_name, auth_data, dir_name, test_download)
-                    # file
-                    else:
-                        if image['alt'].find("DIR") == -1:
-                            file_name = row.find('td', class_="indexcolname").get_text().strip()
-                            link = row.find('a')
-                            file_url = url + link['href']
-                            if test_download == False:
-                                dr = requests.get(file_url, auth=(auth_data['id'], auth_data['pw']), stream=True, verify=False)
-                                if dr.status_code == 200:
-                                    with open(file_name, 'wb') as f:
-                                        shutil.copyfileobj(dr.raw, f)
-                                else:
-                                    print "Download failed:", dr.status_code, dr.reason
-                            else:
-                                print "Downloading file: %s to %s from %s" % (file_name, os.getcwd(), file_url)
-                                open(file_name, 'a').close()
-
-    # gets the list of top level directories to check
-    def get_directory_list(self, url, auth_data):
+    def get_directory_list(self, url):
+        """ Get top level list of directories to walk."""
         directory_list = []
-        r = requests.get(url, auth=(auth_data['id'], auth_data['pw']), verify=False)
+        r = requests.get(url, auth=(self.dcc_creds['id'], self.dcc_creds['pw']), verify=False)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text)
             file_table = soup.find('table', attrs={'id':'indexlist'})
@@ -235,21 +192,24 @@ class TargetDCCCGIDownloader(object):
                         dir_data['url'] = url + link['href']
                         directory_list.append(dir_data)
         else:
-            print r.status_code, r.reason
+            error_str = "Unable to get url", url, r.status_code, r.reason
+            self.log.error(error_str)
+            raise RuntimeError(error_str)
 
         return directory_list
 
-    def create_signpost_entry(self):
-        print ""
+    def create_signpost_entry(self, node_id, uri):
+        doc = self.signpost.get(node_id)
+        doc.urls = [uri]
+        doc.patch()
 
     def create_signpost_uri(self, object_store, bucket, key_name):
         return "s3://%s/%s/%s" % (object_store, bucket, key_name)
 
-    # create the node in psqlgraph for the tarball file
-    def create_tarball_file_node(
-        self, pq, signpost, 
+    def create_tarball_file_node(self, pq,  
         tarball_name, tarball_md5_sum, tarball_size, 
-        s3_key_name, project, participant_barcode):
+        s3_key_name, participant_barcode):
+        """Create the file node in psqlgraph for the tarball."""
 
         tarball_node_id = "0"
         file_node = None
@@ -257,33 +217,25 @@ class TargetDCCCGIDownloader(object):
 
         # see if we exist before getting a new ID
         results = pq.nodes(mod.File).props(file_name=tarball_name).all()
-        if len(results) == 0:
-            print "New file, registering with gdcapi"
-        else:
+        if len(results) > 0:
             if len(results) > 1:
-                print "More than one file found with that name, quitting"
-                node_exists = True
-                sys.exit()
+                raise RuntimeError("More than one file found with that name")
             else:
-                print "File exists, verifying/modifying that id"
                 tarball_node_id = results[0].node_id
                 file_node = results[0]
                 node_exists = True
 
         if not node_exists:
             # check if file is in signpost yet
-            tarball_node_id = signpost.create().did
+            tarball_node_id = self.signpost.create().did
             tarball_uri = self.create_signpost_uri(self.target_object_store, self.target_bucket_name, s3_key_name)
-            doc = signpost.get(tarball_node_id)
-            doc.urls = [tarball_uri]
-            doc.patch()
-            node_exists = False
+            self.create_signpost_entry(tarball_node_id, tarball_uri)
             file_properties = {
                 'state': "submitted",
                 'file_size': tarball_size,
                 'md5sum': tarball_md5_sum,
                 'file_name': tarball_name,
-                'submitter_id': project,
+                'submitter_id': participant_barcode,
                 'state_comment': None
             }
 
@@ -302,58 +254,42 @@ class TargetDCCCGIDownloader(object):
         else:
             # verify that the signpost ID works
             tarball_uri = self.create_signpost_uri(self.target_object_store, self.target_bucket_name, s3_key_name)
-            doc = signpost.get(tarball_node_id)
             # NB: we might not just be able to blow away at a point,
             # but for now, if it exists, just reset to our uri
-            doc.urls = [tarball_uri]
-            doc.patch()
+            self.create_signpost_entry(tarball_node_id, tarball_uri)
 
-            # reset all the information
-            file_properties = {
+            file_node.properties.update({
                 'state': "submitted",
                 'file_size': tarball_size,
                 'md5sum': tarball_md5_sum,
                 'file_name': tarball_name,
-                'submitter_id': project,
+                'submitter_id': participant_barcode,
                 'state_comment': None
-            }
+            })
 
-            file_sysan = {
+            file_node.system_annotations.update({
                 'source': 'target_dcc_cgi',
                 '_participant_barcode': participant_barcode
-            }
-
-            # update the node
-            pq.node_update(
-                file_node,
-                acl=self.target_acls,
-                properties=file_properties,
-                system_annotations=file_sysan
-            )
-
+            })
+            file_node.acl = self.target_acls
 
         return tarball_node_id, file_node
 
-    # create a node for a related file in psqlgraph
-    def create_related_file_node(self, pq, signpost, entry, project, participant_barcode, tarball_file_node):
+    def create_related_file_node(self, pq, entry, participant_barcode, tarball_file_node):
+        """Create a node for a related file in psqlgraph."""
         if tarball_file_node != None:
-            print "Trying to add", entry['file_name']
             add_related_file = True
             related_file_node = None
             # check if the node already has an edge to a file with this name
             for related_file in tarball_file_node.related_files:
                 if related_file.file_name == entry['file_name']:
-                    print "Related file found", entry['file_name']
                     add_related_file = False
                     related_file_node = related_file
 
             if add_related_file:
-            #results = pq.nodes(mod.File).props(name=entry['file_name']).all()
-            #if len(results) == 0:
-                print "Adding node to graph for %s" % entry['file_name']
 
                 # get an id from signpost
-                assoc_file_node_id = signpost.create().did
+                assoc_file_node_id = self.signpost.create().did
                 assoc_file_uri = self.create_signpost_uri(
                     self.target_object_store, 
                     self.target_bucket_name, 
@@ -365,7 +301,7 @@ class TargetDCCCGIDownloader(object):
                     'md5sum': entry['md5_sum'],
                     'file_size': entry['file_size'],
                     'file_name': entry['file_name'],
-                    'submitter_id': project,
+                    'submitter_id': participant_barcode,
                     'state_comment': None
                 }
 
@@ -381,16 +317,10 @@ class TargetDCCCGIDownloader(object):
                     system_annotations=file_sysan
                 )
 
-                #print entry
                 tarball_file_node.related_files.append(file_node)
-                #edge_to_file = mod.FileRelatedToFile(assoc_file_node_id, tarball_node_id)
 
-                #pq.current_session().merge(edge_to_file)
-                doc = signpost.get(assoc_file_node_id)
-                doc.urls = [assoc_file_uri]
-                doc.patch()
+                self.create_signpost_entry(assoc_file_node_id, assoc_file_uri)
             else:
-                #if len(results) == 1:
                 # check signpost
                 assoc_file_uri = self.create_signpost_uri(
                     self.target_object_store, 
@@ -398,55 +328,42 @@ class TargetDCCCGIDownloader(object):
                     entry['s3_key_name'])
                 # NB: we might not just be able to blow away at a point,
                 # but for now, if it exists, just reset to our uri
-                doc = signpost.get(related_file_node.node_id)
-                doc.urls = [assoc_file_uri]
-                doc.patch()
+                self.create_signpost_entry(related_file_node.node_id, assoc_file_uri)
 
                 # reset data
-                file_properties = {
+                related_file_node.properties.update({
                     'state': "submitted",
                     'md5sum': entry['md5_sum'],
                     'file_size': entry['file_size'],
                     'file_name': entry['file_name'],
-                    'submitter_id': project,
+                    'submitter_id': participant_barcode,
                     'state_comment': None
-                }
+                })
 
-                file_sysan = {
+                related_file_node.system_annotations.update({
                     'source': 'target_dcc_cgi',
                     '_participant_barcode': participant_barcode
-                }
+                })
+                related_file_node.acl = self.target_acls
 
-                # update the node
-                pq.node_update(
-                    related_file_node,
-                    acl=self.target_acls,
-                    properties=file_properties,
-                    system_annotations=file_sysan
-                )
-
-                #else:
-                #    print "More than one entry, quitting"
-                #    sys.exit()
-
-    # create the edges in psqlgraph to a given tarball node
-    def create_edges(self, pq, tarball_node_id, tarball_file_node, project):
-        if tarball_file_node != None:
+    def create_edges(self, pq, tarball_node_id, tarball_file_node, project, tag):
+        """Create the edges to a given tarball node in psqlgraph."""
+        if tarball_file_node is not None:
             # platform
             if len(tarball_file_node.platforms) == 0:
-                platform_node = pq.nodes(mod.Platform).props(name="Complete Genomics").first()
+                platform_node = pq.nodes(mod.Platform).props(name=self.platform).first()
                 if platform_node != None:
                     tarball_file_node.platforms.append(platform_node)
                 else:
-                    print "Unable to find Platform 'Complete Genomics'"
+                    raise RuntimeError("Unable to find Platform '%s'" % self.platform)
 
             # data_subtype
             if len(tarball_file_node.data_subtypes) == 0:
-                data_subtype_node = pq.nodes(mod.DataSubtype).props(name="CGI Archive").first()
+                data_subtype_node = pq.nodes(mod.DataSubtype).props(name=self.data_subtype).first()
                 if data_subtype_node != None:
                     tarball_file_node.data_subtypes.append(data_subtype_node)
                 else:
-                    print "Unable to find Data Subtype 'CGI Archive'"
+                    raise RuntimeError("Unable to find Data Subtype '%s'" % self.data_subtype)
 
             # data_format
             if len(tarball_file_node.data_formats) == 0:
@@ -454,51 +371,74 @@ class TargetDCCCGIDownloader(object):
                 if data_format_node != None:
                     tarball_file_node.data_formats.append(data_format_node)
                 else:
-                    print "Unable to find Data Format 'TARGZ'"
+                    raise RuntimeError("Unable to find Data Format '%s'" % self.data_format)
 
             # experimental_strategy
             if len(tarball_file_node.experimental_strategies) == 0:
-                experimental_strategy_node = pq.nodes(mod.ExperimentalStrategy).props(name="WGS").first()
+                experimental_strategy_node = pq.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).first()
                 if experimental_strategy_node != None:
                     tarball_file_node.experimental_strategies.append(experimental_strategy_node)
                 else:
-                    print "Unable to find Experimental Strategy 'WGS'"
+                    raise RuntimeError("Unable to find Experimental Strategy '%s'" % self.experimental_strategy)
+
+            # project 
+            if len(tarball_file_node.tags) == 0:
+                project_node = pq.nodes(mod.Project).props(name=project).first()
+                if project_node != None:
+                    tarball_file_node.projects.append(project_node)
+                else:
+                    raise RuntimeError("Unable to find Project '%s'" % project)
 
             # tag
             if len(tarball_file_node.tags) == 0:
-                tag_node = pq.nodes(mod.Tag).props(name=project).first()
+                tag_node = pq.nodes(mod.Tag).props(name=tag).first()
                 if tag_node != None:
                     tarball_file_node.tags.append(tag_node)
                 else:
-                    print "Unable to find Tag '%s'" % project
+                    raise RuntimeError("Unable to find Tag '%s'" % tag)
 
-    # checking our log directory, find the latest log file
-    # (this is used because there's nowhere else to store
-    # the md5 sums that are calculated when creating the
-    # tarball)
-    def find_latest_log(self, directory):
+    def find_latest_checkpoint(self, directory):
+        """Find the latest checkpoint file.
+        
+        This routine is here because right now we're
+        storing the results of the file creation in a
+        checkpoint file, either a) because something
+        could go wrong and it's time intensive to 
+        re-md5 a file, or b) it's a convenient way
+        to re-run the node/edge creation separate from
+        the downloading.
+
+        TODO: Move this to consul key/values.
+        """
+
         cur_dir = os.getcwd()
         os.chdir(directory)
         newest = max(os.listdir("."), key = os.path.getctime)
         os.chdir(cur_dir)
         return directory + "/" + newest
 
-    # read in the data from a log file, getting file sizes,
-    # key names, md5 sums, etc.
-    def get_log_file_data(self, log_file_name):
+    def get_checkpoint_file_data(self, checkpoint_file_name):
+        """Get the data from the checkpoint file.
+
+        Generally, we expect to get the key names, md5 sums, and
+        file sizes.
+        """
+
         file_data = []
-        logged_files = []
-        with open(log_file_name, "r") as log_file:
-            for line in log_file:
+        processed_files = []
+        with open(checkpoint_file_name, "r") as checkpoint_file:
+            for line in checkpoint_file:
                 data = json.loads(line)
                 if "file_name" in data:
                     file_data.append(data)
-                    logged_files.append(data['s3_key_name'])
-        return file_data, logged_files
+                    processed_files.append(data['s3_key_name'])
+        return file_data, processed_files
 
-    # main routine to go from a directory to creating a tarball and adding nodes/edges to psqlgraph
-    def process_job(self, directory, object_store, bucket, auth_data, project, re_md5_tarball=True):
-        print "Processing", directory['dir_name'], "for project", project, "with tarball recheck=", re_md5_tarball
+    def process_job(self, directory, object_store, bucket, project, tag, re_md5_tarball=True):
+        """The main routine to create a tarball and create nodes/edges given a starting point."""
+        self.log.info("Processing %s for project %s with recheck=%u" % (
+            directory['dir_name'], project, re_md5_tarball
+        ))
 
         create_nodes = True 
         node_data = {}
@@ -510,22 +450,23 @@ class TargetDCCCGIDownloader(object):
         pq = self.connect_to_psqlgraph() 
         link_count = 0
 
-        signpost = SignpostClient(self.signpost_url)
+        self.signpost = SignpostClient(self.signpost_url)
 
         self.write_json_to_file({
             'directory name':directory['dir_name'],
-            'project':project
+            'project':project,
+            'tag':tag
         })
 
-        tarball_name = "%s.%s.tar.gz" % (directory['dir_name'].strip('/'), project)
-        print "tarball:", tarball_name
+        tarball_name = "%s.%s.tar.gz" % (directory['dir_name'].strip('/'), tag)
+        self.log.info("tarball: %s" % tarball_name)
 
         node_data['participant_barcode'] = directory['dir_name'].strip("/")
 
         # parse the tree to find files to archive/download
-        self.process_tree(directory['url'], auth_data, url_list)
-        print "Tree complete: %s" % directory['url']
-        print "%d items in list" % len(url_list)
+        self.process_tree(directory['url'], url_list)
+        self.log.info("Tree complete: %s" % directory['url'])
+        self.log.info("%d items in list" % len(url_list))
 
         # find files to exclude
         for entry in url_list:
@@ -533,46 +474,42 @@ class TargetDCCCGIDownloader(object):
             if url_parts[-2] == "EXP":
                 dl_entry = {}
                 dl_entry['url'] = entry
-                dl_entry['s3_key_name'] = project + "/" + url_parts[-3] + "/" + url_parts[-1]
+#                dl_entry['s3_key_name'] = project + "/" + tag + "/" + url_parts[-3] + "/" + url_parts[-1]
+                dl_entry['s3_key_name'] = tag + "/" + url_parts[-3] + "/" + url_parts[-1]
                 dl_entry['file_name'] = url_parts[-1]
                 download_list.append(dl_entry)
             if url_parts[-3] == "EXP":
                 aliquot_submitter_ids.add(url_parts[-2])
-            tar_list.append(Stream(entry, entry, auth_data))
-            #link_count += 1
-            #if link_count > (len(url_list) * 0.5):
-            #    break
+            tar_list.append(Stream(entry, entry, self.dcc_creds))
         
-        print "%d items in tar list" % len(tar_list)
-        print "%d items in download list" % len(download_list)
+        self.log.info("%d items in tar list" % len(tar_list))
+        self.log.info("%d items in download list" % len(download_list))
         for entry in download_list:
-            print entry['s3_key_name']
-        print "%d aliquot submitter ids found" % len(aliquot_submitter_ids)
-        print aliquot_submitter_ids
-
+            self.log.info(entry['s3_key_name'])
+        self.log.info("%d aliquot submitter ids found" % len(aliquot_submitter_ids))
+        self.log.info(aliquot_submitter_ids)
+        
         # check if the key already exists
         s3_inst = S3_Wrapper()
         s3_conn = s3_inst.connect_to_s3(object_store)
-        s3_key_name = "%s/%s%s" % (project, directory['dir_name'], tarball_name) 
-        #s3_key_name = tarball_name 
+#        s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
+        s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
         file_key = s3_inst.get_file_key(s3_conn, bucket, s3_key_name)
 
         # TODO: if the key does exist, we need to check if the archive needs to be updated
         if file_key == None:
-            print "Key %s not found, downloading and creating archive" % s3_key_name
+            self.log.info("Key %s not found, downloading and creating archive" % s3_key_name)
 
             # create the tarball
             tar_ball = TarStream(tar_list, tarball_name)
 
             # upload tarball to s3
-            #s3_inst = S3_Wrapper()
-            #s3_conn = s3_inst.connect_to_s3(object_store)
-            s3_key_name = "%s/%s%s" % (project, directory['dir_name'], tarball_name) 
-            #s3_key_name = tarball_name
+#            s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
+            s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
             upload_stats = s3_inst.upload_multipart_file(s3_conn, bucket, s3_key_name, tar_ball, True)
             tarball_md5_sum = upload_stats['md5_sum']
             tarball_size = upload_stats['bytes_transferred']
-            print "md5 sum:", tarball_md5_sum, "size:", tarball_size
+            self.log.info("md5 sum: %s size: %d" % (tarball_md5_sum, tarball_size))
             self.write_json_to_file({
                 'file_name':tarball_name,
                 's3_key_name':s3_key_name,
@@ -580,8 +517,8 @@ class TargetDCCCGIDownloader(object):
                 'file_size': tarball_size,
             })
         else:
-            print "Key %s already found (%d), skipping upload" % (
-                file_key.name, file_key.size)
+            self.log.info("Key %s already found (%d), skipping upload" % (
+                file_key.name, file_key.size))
             # md5 the file
             md5_1 = md5.new()
             tarball_size = 0
@@ -595,20 +532,19 @@ class TargetDCCCGIDownloader(object):
 
                 tarball_md5_sum = md5_1.hexdigest()
             else:
-                print "skipping md5 recheck"
-                # load the state from the existing log file
+                self.log.info("skipping md5 recheck")
                 tarball_md5_sum = ""
-                tarball_size = -1
-                for file_data in self.log_data:
+                tarball_size = None
+                for file_data in self.checkpoint_data:
                     if file_data['s3_key_name'] == file_key.name:
                         tarball_md5_sum = file_data['md5_sum']
                         tarball_size = file_data['file_size']
                         break
-                if tarball_size == -1:
-                    print "Unable to find key %s in log file" % file_key.name
+                if tarball_size:
+                    self.log.info("Unable to find key %s in checkpoint file" % file_key.name)
 
             if tarball_size == file_key.size:
-                print "md5 sum:", tarball_md5_sum, "size:", tarball_size
+                self.log.info("md5 sum: %s size: %d" % (tarball_md5_sum, tarball_size))
                 self.write_json_to_file({
                     'file_name':tarball_name,
                     's3_key_name':s3_key_name,
@@ -616,25 +552,32 @@ class TargetDCCCGIDownloader(object):
                     'file_size': tarball_size,
                 })
             else:
-                print "File size mismatch for %s, key reports %d, got %d" % (
-                    file_key.name, file_key.size, tarball_size
-                )
-                sys.exit()
+                if file_key.size:
+                    error_str = "File size mismatch for %s, key reports %d, got %d" % (
+                        file_key.name, int(file_key.size), int(tarball_size)
+                    )
+                else:
+                    error_str = "File size mismatch for %s, key not found, got %d" % (
+                        file_key.name, int(tarball_size)
+                    )
+                    
+                self.log.error(error_str)
+                raise RuntimeError(error_str)
 
         # transfer the other files to the object store
         for entry in download_list:
-            print entry 
+            self.log.info(entry)
             # check if the key exists
             file_key = s3_inst.get_file_key(s3_conn, bucket, entry['s3_key_name']) 
             if file_key == None:
-                print "File %s not present, uploading" % entry['s3_key_name']
-                file_stream = Stream(entry['url'], entry['url'].split("/")[-1], auth_data)
+                self.log.info("File %s not present, uploading" % entry['s3_key_name'])
+                file_stream = Stream(entry['url'], entry['url'].split("/")[-1], self.dcc_creds)
                 file_stream.connect()
                 assoc_file_stats = s3_inst.upload_multipart_file(s3_conn, bucket, entry['s3_key_name'], file_stream)
                 entry['md5_sum'] = assoc_file_stats['md5_sum']
                 entry['file_size'] = assoc_file_stats['bytes_transferred']
             else:
-                print "Key %s already found, skipping upload" % file_key.name
+                self.log.info("Key %s already found, skipping upload" % file_key.name)
                 # md5 the file
                 m = md5.new()
                 assoc_file_size = 0
@@ -648,12 +591,13 @@ class TargetDCCCGIDownloader(object):
                 entry['md5_sum'] = m.hexdigest()
                 if assoc_file_size == file_key.size:
                     entry['file_size'] = assoc_file_size
-                    print "md5 sum:", entry['md5_sum'], "size:", entry['file_size']
+                    self.log.info("md5 sum: %s size: %d" % (entry['md5_sum'], entry['file_size']))
                 else:
-                    print "File size mismatch for %s, key reports %d, got %d" % (
+                    error_str = "File size mismatch for %s, key reports %d, got %d" % (
                         file_key.name, file_key.size, assoc_file_size
                     )
-                    sys.exit()
+                    self.log.error(error_str)
+                    raise RuntimeError(error_str)
 
         if create_nodes:
             # create the nodes in psqlgraph
@@ -666,59 +610,54 @@ class TargetDCCCGIDownloader(object):
                 
                 # create the file node for the tarball
                 tarball_node_id, tarball_file_node = self.create_tarball_file_node(
-                    pq, signpost, 
-                    tarball_name, tarball_md5_sum, tarball_size, 
-                    s3_key_name, project, 
-                    node_data['participant_barcode']
+                    pq, tarball_name, tarball_md5_sum, tarball_size, 
+                    s3_key_name, node_data['participant_barcode']
                 ) 
 
                 # link the tarball file to the other nodes
-                self.create_edges(pq, tarball_node_id, tarball_file_node, project)
+                self.create_edges(pq, tarball_node_id, tarball_file_node, project, tag)
 
                 # create related files
                 for entry in download_list:
                     self.create_related_file_node(
-                        pq, signpost, 
-                        entry, project, 
-                        node_data['participant_barcode'],
+                        pq, entry, node_data['participant_barcode'],
                         tarball_file_node
                 )
             
                 # merge in our work
                 pq.current_session().merge(tarball_file_node)
-            #sys.exit()
 
 
-    # routine to walk all directories farmed and create a tarball for each,
-    # calling process_job to do the work
-    def process_all_work(self, ask_for_nih_creds=False, re_md5_tarball=False):
-        print "process_all_work called with re_md5_tarball=", re_md5_tarball
+    def process_all_work(self, re_md5_tarball=False):
+        """Outer loop to delegate work for each directory."""
+        self.log.info("process_all_work called with re_md5_tarball = %s" % re_md5_tarball)
 
-        latest_log = self.find_latest_log("/home/ubuntu/logs")
-        self.log_data, self.logged_keys = self.get_log_file_data(latest_log)
-
-        if ask_for_nih_creds:
-            auth_data = self.get_idpw()
-        else:
-            auth_data = self.dcc_creds
+        latest_checkpoint = self.find_latest_checkpoint(self.checkpoint_dir)
+        self.checkpoint_data, self.processed_keys = self.get_checkpoint_file_data(latest_checkpoint)
 
         # get top level list of folders
         for url1 in self.urls_to_check:
-            project = url1.split("/")[-1]
-            if len(project) < 2:
-                project = url1.split("/")[-2]
-            print "Getting url: %s for project %s" % (url1, project)
-            dir_list = self.get_directory_list(url1, auth_data)
-            print "%d tarballs to create" % len(dir_list)
+            project = filter(None, url1.split("/"))[2]
+            tag = filter(None, url1.split("/"))[-1]
+            self.log.info("Getting url: %s for project %s, tag %s" % (url1, project, tag))
+            dir_list = self.get_directory_list(url1)
+            self.log.info("%d tarballs to create" % len(dir_list))
             for entry in dir_list:
-                print entry
+                self.log.info(entry)
 
             # iterate the list, creating the work
             for directory in dir_list:
-                print directory
-                self.process_job(directory, self.target_object_store, self.target_bucket_name, auth_data, project, re_md5_tarball)
+                self.log.info("Processing: %s" % directory)
+                self.process_job(directory, self.target_object_store, self.target_bucket_name, project, tag, re_md5_tarball)
 
 if __name__ == '__main__':
+   
     tdc_dl = TargetDCCCGIDownloader()
-    tdc_dl.process_all_work(ask_for_nih_creds=True)
+    if len(sys.argv) > 1:
+        for arg in sys.argv:
+            if arg.find("DCC_USER") != -1:
+                tdc_dl.dcc_creds['id'] = arg.split('=')[1]
+            if arg.find("DCC_PASS") != -1:
+                tdc_dl.dcc_creds['pw'] = arg.split('=')[1]
 
+    tdc_dl.process_all_work()

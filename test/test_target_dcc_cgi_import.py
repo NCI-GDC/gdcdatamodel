@@ -8,21 +8,20 @@ from zug.datamodel.target.dcc_cgi.tarstream import TarStream, Stream
 from zug.datamodel.target.dcc_cgi.s3_wrapper import S3_Wrapper
 from zug.datamodel.target.dcc_cgi.target_dcc_cgi_sync import TargetDCCCGIDownloader
 from gdcdatamodel import models as mod
+from cdisutils.log import get_logger
 
 class TARGETDCCCGIImportTest(ZugTestBase):
     def setUp(self):
         super(TARGETDCCCGIImportTest, self).setUp()
-        #self.storage_client.create_containter("test_target_dcc_cgi_protected")
         os.environ["PG_HOST"] = "localhost"
         os.environ["PG_USER"] = "test"
         os.environ["PG_PASS"] = "test"
         os.environ["PG_NAME"] = "automated_test"
-        #os.environ["SIGNPOST_URL"] = self.signpost_url
-        #os.environ["SCRATCH_DIR"] = self.scratch_dir
         os.environ["TARGET_PROTECTED_BUCKET"] = "test_tcga_dcc_protected"
         os.environ["TARGET_PUBLIC_BUCKET"] = "test_tcga_dcc_public"
         os.environ["DCC_USER"] = ""
         os.environ["DCC_PASS"] = ""
+        self.log = get_logger("target_dcc_cgi_project_test_" + str(os.getpid()))
         self.TEST_DIR = os.path.dirname(os.path.realpath(__file__))
         self.FIXTURES_DIR = os.path.join(self.TEST_DIR, "fixtures", "target_dcc_cgi")
         self.test_url = "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/"
@@ -50,7 +49,6 @@ class TARGETDCCCGIImportTest(ZugTestBase):
         ] 
 
     def test_create_download_list(self):
-
         mock_files = {}
         expected_links = {
             "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/TARGET-50-CAAAAH-01A-01D/externalSampleId-GS00828-DNA_A01": False,
@@ -71,18 +69,14 @@ class TARGETDCCCGIImportTest(ZugTestBase):
             with open(self.FIXTURES_DIR + "/" + value, "r") as data_file:
                 mock_files[value] = data_file.read()
 
-        #for key in mock_files.keys():
-        #    print key
 
         tdc_dl = TargetDCCCGIDownloader()
 
-        #auth_data = tdc_dl.get_idpw()
         auth_data = {'id': "", 'pw': ""}
 
-        #@urlmatch(netloc=r'https://target-data.nci.nih.gov/*')
         @all_requests
         def target_mock(url, request):
-            print "Getting:", self.mock_data[url.path]
+            self.log.info("Getting: %s" % self.mock_data[url.path])
             content = mock_files[self.mock_data[url.path]]
             return {"content": content, "status_code": 200}
 
@@ -95,11 +89,9 @@ class TARGETDCCCGIImportTest(ZugTestBase):
                     expected_links[entry] = True
         
         for key, value in expected_links.iteritems():
-            print key, value
             self.assertTrue(value)
 
     def test_parse_bad_data(self):
-
         bad_mock_file_data = []
 
         # load mock data
@@ -170,17 +162,117 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 # TEST: create all nodes and edges associated with an archive
     def test_create_nodes_and_edges(self):
         self.assertTrue(True)
-        #signpost = SignpostClient()
-        #tdc_cl = TargetDCCCGIDownloader()
-        #pq = tdc_cl.connect_to_psqlgraph()
-        #tarball_name = "test_tarball.tar.gz"
-        #tarball_s3_key_name = "test_target_dcc_cgi/" + tarball_name
-        #with pq.session_scope() as session:
-        #    tarball_node_id = self.create_tarball_file_node(signpost, tarball_name, tarball_s3_key_name) 
+        signpost = SignpostClient()
+        tdc_cl = TargetDCCCGIDownloader()
+        pq = tdc_cl.connect_to_psqlgraph()
+        tarball_name = "test_tarball.tar.gz"
+        tarball_s3_key_name = "test_target_dcc_cgi/" + tarball_name
+        tarball_size = 8888
+        tarball_md5_sum = "888f213ba97123da0213709aca183888"
+        aliquot_submitter_ids = ["TARGET-50-CAAAAA"]
+        tag = "OptionAnalysisPipeline2"
+        project = "WT"
+        experimental_strategy = "WGS"
+        platform = "Complete Genomics"
+        data_subtype = "CGI Archive"
+        node_data['participant_barcode'] = aliquot_submitter_ids[0]
+        download_list = []
 
-            # check for existence of nodes
-        #    nodes = pq.nodes(mod.File).props(name=tarball_name).all()
-        #    self.assertEqual(len(nodes), 1)
+        dl_entry = {}
+        dl_entry['file_name'] = "README.2.1.0.txt"
+        dl_entry['url'] = "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/%s/%s/EXP/%s" % (
+            project, node_data['participant_barcode'], dl_entry['file_name']
+        )
+        dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        download_list.append(dl_entry)
+
+        dl_entry = {}
+        dl_entry['file_name'] = "manifest.all.unencrypted"
+        dl_entry['url'] = "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/%s/%s/EXP/%s" % (
+            project, node_data['participant_barcode'], dl_entry['file_name']
+        )
+        dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        download_list.append(dl_entry)
+        
+        dl_entry = {}
+        dl_entry['file_name'] = "manifest.all.unencrypted.sig"
+        dl_entry['url'] = "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/%s/%s/EXP/%s" % (
+            project, node_data['participant_barcode'], dl_entry['file_name']
+        )
+        dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        download_list.append(dl_entry)
+
+        dl_entry = {}
+        dl_entry['file_name'] = "manifest.dcc.unencrypted"
+        dl_entry['url'] = "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/%s/%s/EXP/%s" % (
+            project, node_data['participant_barcode'], dl_entry['file_name']
+        )
+        dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        download_list.append(dl_entry)
+
+        # create nodes/edges
+        with pq.session_scope() as session:
+            tarball_node_id = self.create_tarball_file_node(signpost, tarball_name, tarball_s3_key_name) 
+            # find aliquot ids
+            for sub_id in aliquot_submitter_ids:
+                match = pq.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
+                aliquot_ids.append(match.node_id)
+            
+            # create the file node for the tarball
+            tarball_node_id, tarball_file_node = self.create_tarball_file_node(
+                pq, tarball_name, tarball_md5_sum, tarball_size, 
+                tarball_s3_key_name, project, 
+                node_data['participant_barcode']
+            ) 
+
+            # link the tarball file to the other nodes
+            self.create_edges(pq, tarball_node_id, tarball_file_node, project, tag)
+
+            # create related files
+            for entry in download_list:
+                self.create_related_file_node(
+                    pq, entry, project, 
+                    node_data['participant_barcode'],
+                    tarball_file_node
+            )
+        
+            # merge in our work
+            pq.current_session().merge(tarball_file_node)
+
+        # check what we just added
+        with pq.session_scope() as session:
+            
+            node = pq.nodes(mod.File).props(name=tarball_name).one()
+
+            # check node data
+            # check tarball name
+            self.assertEqual(node.file_name, tarball_name)
+
+            # check size
+            self.assertEqual(node.file_size, tarball_size)
+
+            # check md5 sum
+            self.assertEqual(node.md5_sum, tarball_md5_sum)
+
+            # check source
+            self.assertEqual(node.sysan['source'], "target_dcc_cgi")
+
+            # check edges
+            # check that it has all related file
+            self.assertEqual(len(node.related_files), 4)
+
+            # check tag
+            self.assertEqual(node.tags[0].name, tag)
+
+            # check experimental strategy
+            self.assertEqual(node.experimental_strategies[0].name, experimental_strategy)
+
+            # check platform
+            self.assertEqual(node.platforms[0].name, platform)
+
+            # check data subtype
+            self.assertEqual(node.data_subtypes[0].name, data_subtype)
+
 
 
 if __name__ == '__main__':
