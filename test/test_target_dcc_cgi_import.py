@@ -169,6 +169,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         experimental_strategy = "WGS"
         platform = "Complete Genomics"
         data_subtype = "CGI Archive"
+        node_data = {}
         node_data['participant_barcode'] = aliquot_submitter_ids[0]
         download_list = []
 
