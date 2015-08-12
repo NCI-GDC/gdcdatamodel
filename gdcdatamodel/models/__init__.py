@@ -12,8 +12,12 @@ loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
 def NodeFactory(name, schema):
     cls = type(name, (Node,), {})
+    links = [l['name'] for l in (schema.get('links') or [])]
 
     for key in schema.get('properties', []):
+
+        if key in links:
+            continue
 
         def setter(self, value):
             self._set_property(key, value)
