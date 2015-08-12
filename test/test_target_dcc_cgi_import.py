@@ -10,7 +10,7 @@ from zug.datamodel.target.dcc_cgi.target_dcc_cgi_sync import TargetDCCCGIDownloa
 from gdcdatamodel import models as mod
 from cdisutils.log import get_logger
 
-class TARGETDCCCGIImportTest(ZugTestBase):
+class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
     def setUp(self):
         super(TARGETDCCCGIImportTest, self).setUp()
         os.environ["PG_HOST"] = "localhost"
@@ -72,8 +72,6 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 
         tdc_dl = TargetDCCCGIDownloader()
 
-        auth_data = {'id': "", 'pw': ""}
-
         @all_requests
         def target_mock(url, request):
             self.log.info("Getting: %s" % self.mock_data[url.path])
@@ -82,9 +80,9 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock):
-            directory_list = tdc_dl.get_directory_list(self.test_url, auth_data)
+            directory_list = tdc_dl.get_directory_list(self.test_url)
             for entry in directory_list:
-                tdc_dl.process_tree(entry['url'], auth_data, url_list)
+                tdc_dl.process_tree(entry['url'], url_list)
                 for entry in url_list:
                     expected_links[entry] = True
         
@@ -101,8 +99,6 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 
         tdc_dl = TargetDCCCGIDownloader()
 
-        auth_data = {'id': "", 'pw': ""}
-
         @all_requests
         def target_mock_bad(url, request):
             content = bad_mock_file_data[0]
@@ -110,16 +106,15 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_bad):
-            directory_list = tdc_dl.get_directory_list(self.test_url, auth_data)
+            directory_list = tdc_dl.get_directory_list(self.test_url)
             for entry in directory_list:
-                tdc_dl.process_tree(entry['url'], auth_data, url_list)
+                tdc_dl.process_tree(entry['url'], url_list)
         
         self.assertEquals(len(url_list), 0)
         self.assertEquals(len(directory_list), 0)
 
     def test_check_target_site_down(self):
         tdc_dl = TargetDCCCGIDownloader()
-        auth_data = {'id': "", 'pw': ""}
         @all_requests
         def target_mock_fail(url, request):
             content = "<HTML>You have no valid data!</HTML>"
@@ -127,13 +122,12 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_fail):
-            directory_list = tdc_dl.get_directory_list(self.test_url, auth_data)
+            directory_list = tdc_dl.get_directory_list(self.test_url)
             self.assertEqual(len(directory_list), 0)
         self.assertTrue(True)
 
     def test_check_target_site_error(self):
         tdc_dl = TargetDCCCGIDownloader()
-        auth_data = {'id': "", 'pw': ""}
         @all_requests
         def target_mock_error(url, request):
             content = "<HTML>This is an error message</HTML>"
@@ -141,7 +135,7 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_error):
-            directory_list = tdc_dl.get_directory_list(self.test_url, auth_data)
+            directory_list = tdc_dl.get_directory_list(self.test_url)
             self.assertEqual(len(directory_list), 0)
         self.assertTrue(True)
 
@@ -162,7 +156,7 @@ class TARGETDCCCGIImportTest(ZugTestBase):
 # TEST: create all nodes and edges associated with an archive
     def test_create_nodes_and_edges(self):
         self.assertTrue(True)
-        signpost = SignpostClient()
+        signpost = SignpostClient(self.signpost_url)
         tdc_cl = TargetDCCCGIDownloader()
         pq = tdc_cl.connect_to_psqlgraph()
         tarball_name = "test_tarball.tar.gz"
