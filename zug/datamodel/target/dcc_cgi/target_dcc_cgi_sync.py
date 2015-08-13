@@ -49,7 +49,7 @@ class TargetDCCCGIDownloader(object):
             self.signpost_url = os.environ['SIGNPOST_URL']
         else:
             self.signpost_url = "http://signpost.service.consul"
-
+        self.signpost = SignpostClient(self.signpost_url)
         cur_time = datetime.datetime.now()
         self.checkpoint_dir = "/home/ubuntu/checkpoint"
         self.checkpoint_filename = "%s/added_target_dcc_cgi_files_%04d-%02d-%02d_%02d-%02d-%02d.json" % (
@@ -450,7 +450,7 @@ class TargetDCCCGIDownloader(object):
         pq = self.connect_to_psqlgraph() 
         link_count = 0
 
-        self.signpost = SignpostClient(self.signpost_url)
+
 
         self.write_json_to_file({
             'directory name':directory['dir_name'],
