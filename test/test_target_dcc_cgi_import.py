@@ -213,7 +213,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
             # create the file node for the tarball
             tarball_node_id, tarball_file_node = tdc_cl.create_tarball_file_node(
                 pq, tarball_name, tarball_md5_sum, tarball_size, 
-                tarball_s3_key_name, project, 
+                tarball_s3_key_name,
                 node_data['participant_barcode']
             ) 
 
@@ -223,8 +223,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
             # create related files
             for entry in download_list:
                 tdc_cl.create_related_file_node(
-                    pq, entry, project, 
-                    node_data['participant_barcode'],
+                    pq, entry, node_data['participant_barcode'],
                     tarball_file_node
             )
         
