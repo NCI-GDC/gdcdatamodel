@@ -1,12 +1,12 @@
-from psqlgraph import Node, Edge, pg_property
-from utils import validate
-from misc import *
 from sqlalchemy.orm import configure_mappers
-from gdcdictionary import GDCDictionary
 import re
 
+from gdcdictionary import GDCDictionary
+from misc import *
+from psqlgraph import Node, Edge, pg_property
+from utils import validate
 
-excluded_props = ['id', 'type']
+excluded_props = ['id', 'type', 'alias']
 dictionary = GDCDictionary()
 
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
@@ -29,27 +29,11 @@ def register_class(cls):
     globals()[cls.__name__] = cls
 
 
-def NodeFactory(name, schema):
-    title = remove_spaces(name)
-    label = to_camel_case(title)
+def NodeFactory(title, schema):
+    name = remove_spaces(title)
+    label = to_camel_case(name)
 
-    cls = type(title, (Node,), {'__label__': label})
     links = [l['name'] for l in (schema.get('links') or [])]
-
-    if 'alias' in schema.get('properties', {}):
-        alias = schema['properties'].pop('alias')
-        schema['properties']['submitter_id'] = alias
-
-    for key in schema.get('properties', {}):
-
-        if key in links + excluded_props:
-            continue
-
-        def setter(self, value):
-            self._set_property(key, value)
-
-        setter.__name__ = key
-        setattr(cls, key, pg_property(setter))
 
     @property
     def node_id(self, value):
@@ -59,7 +43,23 @@ def NodeFactory(name, schema):
     def node_id(self, value):
         self.node_id = value
 
-    setattr(cls, 'id', node_id)
+    properties = {
+        key: pg_property(
+            lambda self, val, key=key: self._set_property(key, val))
+        for key, val in schema.get('properties', {}).iteritems()
+        if key not in links
+        and key not in excluded_props
+    }
+
+    if 'alias' in schema.get('properties', {}):
+        properties['submitter_id'] = pg_property(
+            lambda self, val: self._set_property('submitter_id', val))
+
+    cls = type(name, (Node,), dict(
+        __label__=label,
+        id=node_id,
+        **properties
+    ))
 
     return cls
 
