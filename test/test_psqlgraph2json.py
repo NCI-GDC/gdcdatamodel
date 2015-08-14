@@ -1,7 +1,7 @@
 import unittest
 import os
 from gdcdatamodel import get_case_es_mapping
-from gdcdatamodel.models import File, Aliquot, Case, Annotation, Project
+from gdcdatamodel.models import File, Aliquot, Case, Annotation, Project, Portion
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from base import ZugTestBase, PreludeMixin
 import es_fixtures
@@ -269,3 +269,70 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         doc_conv.omitted_projects.add(('TCGA', 'BRCA'))
         self.convert_documents(doc_conv)
         self.assertIsNone(self.case_doc)
+
+    def test_basic_suppression(self):
+        case = self.get_fuzzed_node(Case)
+        annotation = self.get_fuzzed_node(
+            Annotation,
+            classification='Redaction',
+            category='Genotype mismatch',
+        )
+        with self.g.session_scope() as s:
+            f = self.g.nodes(File).ids('file1').first()
+            case.projects.append(self.g.nodes(Project).first())
+            case.files.append(f)
+            case.annotations.append(annotation)
+            map(s.merge, (case, annotation))
+        self.convert_documents()
+        # import ipdb; ipdb.set_trace()
+        # the redacted case should not be there
+        self.assertNotIn(case.node_id, [c["case_id"] for c in self.case_docs])
+        # the redacted file should not be there
+        self.assertNotIn("file1", [f["file_id"] for f in self.file_docs])
+
+    def test_non_case_suppression(self):
+        with self.g.session_scope() as s:
+            annotation = self.get_fuzzed_node(
+                Annotation,
+                classification='Redaction',
+                category='Genotype mismatch',
+            )
+            portion = self.g.nodes(Portion)\
+                            .ids('5b2a99b7-e1a8-4739-acaf-d5f75cc47021')\
+                            .one()
+            portion.annotations = [annotation]
+            sample = portion.samples[0]
+            case = sample.cases[0]
+            analyte = portion.analytes[0]
+            aliquot = analyte.aliquots[0]
+            redacted1 = self.get_fuzzed_node(File, node_id="redact1", state="live")
+            redacted1.portions = [portion]
+            redacted2 = self.get_fuzzed_node(File, node_id="redact2", state="live")
+            redacted2.aliquots = [aliquot]
+            s.add(redacted1)
+            s.add(redacted2)
+        self.convert_documents()
+        case_doc = [c for c in self.case_docs if c["case_id"] == case.node_id][0]
+        sample_doc = [s for s in case_doc["samples"] if s["sample_id"] == sample.node_id][0]
+        self.assertNotIn(portion.node_id, [p["portion_id"] for p in sample_doc["portions"]])
+        self.assertNotIn("redact1", [f["file_id"] for f in self.file_docs])
+        self.assertNotIn("redact2", [f["file_id"] for f in self.file_docs])
+
+    def test_subject_withdrew_consent_is_not_suppressed(self):
+        with self.g.session_scope() as s:
+            case = self.get_fuzzed_node(Case)
+            annotation = self.get_fuzzed_node(
+                Annotation,
+                classification='Redaction',
+                category='Subject withdrew consent',
+            )
+            f = self.g.nodes(File).ids('file1').first()
+            case.projects.append(self.g.nodes(Project).first())
+            case.files.append(f)
+            case.annotations.append(annotation)
+            map(s.merge, (case, annotation))
+        self.convert_documents()
+        # the case should be there
+        self.assertIn(case.node_id, [c["case_id"] for c in self.case_docs])
+        # the file should be there
+        self.assertIn("file1", [f["file_id"] for f in self.file_docs])
