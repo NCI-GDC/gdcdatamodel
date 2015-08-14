@@ -3,7 +3,7 @@ import random
 from base import ZugTestBase, SignpostMixin
 from mock import patch
 from httmock import urlmatch, all_requests, HTTMock
-from signpostclient import SignpostClient
+#from signpostclient import SignpostClient
 from zug.datamodel.target.dcc_cgi.tarstream import TarStream, Stream
 from zug.datamodel.target.dcc_cgi.s3_wrapper import S3_Wrapper
 from zug.datamodel.target.dcc_cgi.target_dcc_cgi_sync import TargetDCCCGIDownloader
@@ -154,7 +154,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
     # TEST: create all nodes and edges associated with an archive
     def test_create_nodes_and_edges(self):
         self.assertTrue(True)
-        signpost = SignpostClient(self.signpost_url)
+        #signpost = SignpostClient(self.signpost_url)
         tdc_cl = TargetDCCCGIDownloader()
         pq = tdc_cl.connect_to_psqlgraph()
         tarball_name = "test_tarball.tar.gz"
