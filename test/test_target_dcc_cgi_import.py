@@ -98,7 +98,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
             with open(self.FIXTURES_DIR + "/" + entry, "r") as data_file:
                 bad_mock_file_data.append(data_file.read())
 
-        tdc_dl = TargetDCCCGIDownloader()
+        tdc_dl = TargetDCCCGIDownloader(self.signpost_client)
 
         @all_requests
         def target_mock_bad(url, request):
@@ -115,7 +115,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         self.assertEquals(len(directory_list), 0)
 
     def test_check_target_site_down(self):
-        tdc_dl = TargetDCCCGIDownloader()
+        tdc_dl = TargetDCCCGIDownloader(self.signpost_client)
         @all_requests
         def target_mock_fail(url, request):
             content = "<HTML>You have no valid data!</HTML>"
@@ -128,7 +128,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         self.assertTrue(True)
 
     def test_check_target_site_error(self):
-        tdc_dl = TargetDCCCGIDownloader()
+        tdc_dl = TargetDCCCGIDownloader(self.signpost_client)
         @all_requests
         def target_mock_error(url, request):
             content = "<HTML>This is an error message</HTML>"
@@ -156,7 +156,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
     def test_create_nodes_and_edges(self):
         self.assertTrue(True)
         #signpost = SignpostClient(self.signpost_url)
-        tdc_cl = TargetDCCCGIDownloader()
+        tdc_cl = TargetDCCCGIDownloader(self.signpost_client)
         pq = tdc_cl.connect_to_psqlgraph()
         tarball_name = "test_tarball.tar.gz"
         tarball_s3_key_name = "test_target_dcc_cgi/" + tarball_name
