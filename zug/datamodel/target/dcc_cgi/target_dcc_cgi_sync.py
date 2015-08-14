@@ -25,7 +25,7 @@ logging.captureWarnings(True)
 
 class TargetDCCCGIDownloader(object):
     """Main class to handle TARGET DCC CGI download"""
-    def __init__(self):
+    def __init__(self, signpost_client=None):
 
         # ignore the header line
         self.strings_to_ignore = [ 
@@ -49,7 +49,10 @@ class TargetDCCCGIDownloader(object):
             self.signpost_url = os.environ['SIGNPOST_URL']
         else:
             self.signpost_url = "http://signpost.service.consul"
-        self.signpost = SignpostClient(self.signpost_url)
+        if not signpost_client:
+            self.signpost = SignpostClient(self.signpost_url)
+        else:
+            self.signpost = signpost_client
         cur_time = datetime.datetime.now()
         self.checkpoint_dir = "/home/ubuntu/checkpoint"
         self.checkpoint_filename = "%s/added_target_dcc_cgi_files_%04d-%02d-%02d_%02d-%02d-%02d.json" % (

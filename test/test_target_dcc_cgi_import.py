@@ -21,6 +21,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
         os.environ["TARGET_PUBLIC_BUCKET"] = "test_tcga_dcc_public"
         os.environ["DCC_USER"] = ""
         os.environ["DCC_PASS"] = ""
+        os.environ["SIGNPOST_URL"] = "localhost"
         self.log = get_logger("target_dcc_cgi_project_test_" + str(os.getpid()))
         self.TEST_DIR = os.path.dirname(os.path.realpath(__file__))
         self.FIXTURES_DIR = os.path.join(self.TEST_DIR, "fixtures", "target_dcc_cgi")
@@ -70,7 +71,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
                 mock_files[value] = data_file.read()
 
 
-        tdc_dl = TargetDCCCGIDownloader()
+        tdc_dl = TargetDCCCGIDownloader(self.signpost_client)
 
         @all_requests
         def target_mock(url, request):
