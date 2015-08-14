@@ -45,11 +45,12 @@ class TargetDCCCGIDownloader(object):
         self.row_classes = [ "even", "odd" ]
         self.count = 0
         self.total_size = 0
-        if 'SIGNPOST_URL' in os.environ:
-            self.signpost_url = os.environ['SIGNPOST_URL']
-        else:
-            self.signpost_url = "http://signpost.service.consul"
+
         if not signpost_client:
+            if 'SIGNPOST_URL' in os.environ:
+                self.signpost_url = os.environ['SIGNPOST_URL']
+            else:
+                self.signpost_url = "http://signpost.service.consul"
             self.signpost = SignpostClient(self.signpost_url)
         else:
             self.signpost = signpost_client
