@@ -14,10 +14,16 @@ loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
 
 special_links = {
-    ('file', 'related_to', 'file'): ('related_files', 'parent_files'),
-    ('file', 'data_from', 'file'): ('derived_files', 'source_files'),
-    ('file', 'describes', 'case'): ('described_cases', 'describing_files'),
-    ('archive', 'related_to', 'file'): ('related_to_files', 'related_archives'),
+    ('file', 'related_to', 'file'): (
+        'related_files', 'parent_files'),
+    ('file', 'data_from', 'file'): (
+        'derived_files', 'source_files'),
+    ('file', 'describes', 'case'): (
+        'described_cases', 'describing_files'),
+    ('archive', 'related_to', 'file'): (
+        'related_to_files', 'related_archives'),
+    ('file', 'member_of', 'experimental_strategy'): (
+        'experimental_strategies', 'files'),
 }
 
 
