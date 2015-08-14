@@ -13,6 +13,14 @@ loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
 
+special_links = {
+    ('file', 'related_to', 'file'): ('related_files', 'parent_files'),
+    ('file', 'data_from', 'file'): ('derived_files', 'source_files'),
+    ('file', 'describes', 'case'): ('described_cases', 'describing_files'),
+    ('archive', 'related_to', 'file'): ('related_to_files', 'related_archives'),
+}
+
+
 def to_camel_case(val):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', val).lower()
 
@@ -94,9 +102,13 @@ def parse_edge(src_label, edge_label, subschema, link):
     edge_name = ''.join(map(to_mixed_case, [
         src_label, edge_label, dst_label]))
 
+    src_dst_assoc, dst_src_assoc = special_links.get(
+        (src_label, edge_label, dst_label),
+        (dst_label+'s', src_label+'s'))
+
     register_class(EdgeFactory(
         edge_name, edge_label, src_title, dst_title,
-        dst_label+'s', src_label+'s'))
+        src_dst_assoc, dst_src_assoc))
 
 
 def load_edges():
