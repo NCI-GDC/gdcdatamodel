@@ -8,7 +8,7 @@ setup(
         'graphviz==0.4.2',
         'addict==0.2.7',
         'psqlgraph',
-        'gdcdictionary,'
+        'gdcdictionary',
     ],
     package_data={
         "gdcdatamodel": [
