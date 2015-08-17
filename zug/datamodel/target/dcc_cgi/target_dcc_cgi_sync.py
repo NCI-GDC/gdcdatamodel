@@ -27,16 +27,38 @@ class TargetDCCCGIDownloader(object):
     """Main class to handle TARGET DCC CGI download"""
     def __init__(self, signpost_client=None):
 
+        self.tag_names = [
+            "PilotAnalysisPipeline2/",
+            "OptionAnalysisPipeline2/"
+        ]
+
+        self.projects = [
+            "AML",
+            "NBL",
+        #    "WT",
+        ]
+
         # ignore the header line
         self.strings_to_ignore = [ 
             "Name", "Last modified", 
             "Size", "Parent Directory", 
             "lost+found/", "Parent Directory" ]
 
+        self.url_base = "https://target-data.nci.nih.gov/"
+        self.url_path = "/Discovery/WGS/CGI/"
+
+        self.urls_to_check = []
+        for project in self.projects:
+            for tag in self.tag_names:
+                self.urls_to_check.append("%s%s%s%s" % (
+                    self.url_base, project,
+                    self.url_path, tag
+                ))
+
         # right now, these are the projects to check
-        self.urls_to_check = [
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/PilotAnalysisPipeline2/",
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/" ]
+        #self.urls_to_check = [
+        #    "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/PilotAnalysisPipeline2/",
+        #    "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/" ]
 
         self.log = get_logger("target_dcc_cgi_project_sync_" + str(os.getpid()))
 
@@ -478,8 +500,8 @@ class TargetDCCCGIDownloader(object):
             if url_parts[-2] == "EXP":
                 dl_entry = {}
                 dl_entry['url'] = entry
-#                dl_entry['s3_key_name'] = project + "/" + tag + "/" + url_parts[-3] + "/" + url_parts[-1]
-                dl_entry['s3_key_name'] = tag + "/" + url_parts[-3] + "/" + url_parts[-1]
+                dl_entry['s3_key_name'] = project + "/" + tag + "/" + url_parts[-3] + "/" + url_parts[-1]
+#                dl_entry['s3_key_name'] = tag + "/" + url_parts[-3] + "/" + url_parts[-1]
                 dl_entry['file_name'] = url_parts[-1]
                 download_list.append(dl_entry)
             if url_parts[-3] == "EXP":
@@ -496,8 +518,8 @@ class TargetDCCCGIDownloader(object):
         # check if the key already exists
         s3_inst = S3_Wrapper()
         s3_conn = s3_inst.connect_to_s3(object_store)
-#        s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
-        s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
+        s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
+#        s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
         file_key = s3_inst.get_file_key(s3_conn, bucket, s3_key_name)
 
         # TODO: if the key does exist, we need to check if the archive needs to be updated
@@ -508,8 +530,8 @@ class TargetDCCCGIDownloader(object):
             tar_ball = TarStream(tar_list, tarball_name)
 
             # upload tarball to s3
-#            s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
-            s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
+            s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
+#            s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
             upload_stats = s3_inst.upload_multipart_file(s3_conn, bucket, s3_key_name, tar_ball, True)
             tarball_md5_sum = upload_stats['md5_sum']
             tarball_size = upload_stats['bytes_transferred']
