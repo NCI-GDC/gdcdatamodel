@@ -24,6 +24,8 @@ from signpostclient import SignpostClient
 from zug.consul_manager import ConsulManager
 from gdcdatamodel.models import File
 
+from abc import ABCMeta, abstractmethod, abstractproperty
+
 
 def first_s3_url(doc):
     for url in doc.urls:
@@ -46,6 +48,8 @@ class AbstractHarmonizer(object):
     a few methods and then can be run.
 
     """
+
+    __metaclass__ = ABCMeta
 
     def __init__(self, graph=None, s3=None,
                  signpost=None, consul_prefix=None,
@@ -370,31 +374,34 @@ class AbstractHarmonizer(object):
 
     # interface methods / properties that subclasses must implement
 
+    @abstractmethod
     def get_config(self):
         raise NotImplementedError()
 
-    @property
+    @abstractproperty
     def valid_extra_kwargs(self):
         raise NotImplementedError()
 
-    @property
+    @abstractproperty
     def name(self):
         raise NotImplementedError()
 
-    @property
+    @abstractproperty
     def input_schema(self):
         raise NotImplementedError()
 
+    @abstractmethod
     def find_inputs(self):
         raise NotImplementedError()
 
-    @property
+    @abstractproperty
     def output_schema(self):
-        return NotImplementedError()
+        raise NotImplementedError()
 
-    @property
+    @abstractproperty
     def output_paths(self):
-        return NotImplementedError()
+        raise NotImplementedError()
 
+    @abstractmethod
     def handle_output(self):
-        return NotImplementedError()
+        raise NotImplementedError()
