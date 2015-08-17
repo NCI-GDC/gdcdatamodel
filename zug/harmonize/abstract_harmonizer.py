@@ -86,6 +86,10 @@ class AbstractHarmonizer(object):
         self.docker = docker.Client(**docker.utils.kwargs_from_env(
             assert_hostname=False
         ))
+        # we need to set self.docker_container to None here in case
+        # self.cleanup is called before self.run_docker, since
+        # self.cleanup checks this variable
+        self.docker_container = None
         if not consul_prefix:
             consul_prefix = self.name
         self.consul = ConsulManager(prefix=consul_prefix)
@@ -149,6 +153,9 @@ class AbstractHarmonizer(object):
         self.log.info("Removing scatch dir %s", scratch_abspath)
         shutil.rmtree(scratch_abspath)
         self.consul.cleanup()
+        if self.docker_container:
+            self.log.info("Removing docker container %s", self.docker_container)
+            self.docker.remove_container(self.docker_container, v=True, force=True)
 
     def try_lock(self, lock_id):
         locked = self.consul.get_consul_lock(lock_id)
@@ -228,28 +235,29 @@ class AbstractHarmonizer(object):
             },
         })
         self.log.info("Docker command: %s", self.docker_cmd)
-        container = self.docker.create_container(
+        self.docker_container = self.docker.create_container(
             image=self.docker_image["Id"],
             command=self.docker_cmd,
             host_config=host_config,
             user="root",
         )
         self.log.info("Starting docker container and waiting for it to complete")
-        self.docker.start(container)
+        self.docker.start(self.docker_container)
         retcode = None
         while retcode is None:
             try:
-                for log in self.docker.logs(container, stream=True,
+                for log in self.docker.logs(self.docker_container, stream=True,
                                             stdout=True, stderr=True):
                     self.log.info(log.strip())  # TODO maybe something better
-                retcode = self.docker.wait(container, timeout=0.1)
+                retcode = self.docker.wait(self.docker_container, timeout=0.1)
             except ReadTimeout:
                 pass
         if retcode != 0:
-            self.docker.remove_container(container, v=True)
+            self.docker.remove_container(self.docker_container, v=True)
             raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
-        self.docker.remove_container(container, v=True)
+        self.docker.remove_container(self.docker_container, v=True)
+        self.docker_container = None
 
     def upload_file(self, abs_path, bucket_name, name, verify=True):
         """Upload the file at abs_path to bucket with key named name. Then
