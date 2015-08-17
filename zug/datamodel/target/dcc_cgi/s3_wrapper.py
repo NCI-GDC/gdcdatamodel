@@ -32,26 +32,32 @@ class S3_Wrapper:
         for env in os.environ.keys():
             if env.find("ACCESS_KEY") != -1:
                 if env.find("CEPH") != -1:
-                    print "ceph access key from", env
+                    #print "ceph access key from", env
                     self.s3_inst_info['ceph']['access_key'] = os.environ[env]
                 elif env.find("CLEVERSAFE") != -1:
-                    print "cleversafe access key from", env
+                    #print "cleversafe access key from", env
                     self.s3_inst_info['cleversafe']['access_key'] = os.environ[env]
                 else:
-                    print "ceph/cleversafe access key from", env
+                    #print "ceph/cleversafe access key from", env
                     self.s3_inst_info['ceph']['access_key'] = os.environ[env]
                     self.s3_inst_info['cleversafe']['access_key'] = os.environ[env]
             if env.find("SECRET_KEY") != -1:
                 if env.find("CEPH") != -1:
-                    print "ceph secret key from", env
+                    #print "ceph secret key from", env
                     self.s3_inst_info['ceph']['secret_key'] = os.environ[env]
                 elif env.find("CLEVERSAFE") != -1:
-                    print "cleversafe secret key from", env
+                    #print "cleversafe secret key from", env
                     self.s3_inst_info['cleversafe']['secret_key'] = os.environ[env]
                 else:
-                    print "ceph/cleversafe secret key from", env
+                    #print "ceph/cleversafe secret key from", env
                     self.s3_inst_info['ceph']['secret_key'] = os.environ[env]
                     self.s3_inst_info['cleversafe']['secret_key'] = os.environ[env]
+
+        for key, values in self.s3_inst_info.iteritems():
+            print key, values
+            if 'access_key' not in values:
+                print "Warning, no access key for", key
+
 
     def get_nearest_file_size(self, size):
         sizes = [
