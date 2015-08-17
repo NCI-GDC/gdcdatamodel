@@ -338,7 +338,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                     aligner.try_lock(file.node_id)
                     # second one should fail because the first locked the only
                     # file to align
-                    with self.assertRaises(RuntimeError):
+                    with self.assertRaises(NoMoreWorkException):
                         aligner.go()
 
     def test_size_limit(self):

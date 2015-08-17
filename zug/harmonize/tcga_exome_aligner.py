@@ -114,6 +114,7 @@ class TCGAExomeAligner(AbstractHarmonizer):
         wxs = ExperimentalStrategy.name.astext == "WXS"
         broad = Center.short_name.astext == "BI"
         illumina = Platform.name.astext.contains("Illumina")
+        currently_being_aligned = self.consul.list_locked_keys()
         # NOTE you would think that file_name filter would be
         # unnecessary but we have some TCGA exomes that end with
         # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
@@ -129,6 +130,7 @@ class TCGAExomeAligner(AbstractHarmonizer):
                                     .filter(File.platforms.any(illumina))\
                                     .filter(File.file_name.astext.endswith(".bam"))\
                                     .filter(~File.derived_files.any())\
+                                    .filter(~File.node_id.in_(currently_being_aligned))\
                                     .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))
         if self.config["size_limit"]:
             alignable_files = alignable_files.filter(
