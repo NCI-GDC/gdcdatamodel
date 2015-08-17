@@ -261,7 +261,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             # too old, so we use the FakeDocker client instead, which
             # just execs things on the host
             docker_patch = patch(
-                "zug.harmonize.tcga_exome_aligner.docker.Client",
+                "zug.harmonize.abstract_harmonizer.docker.Client",
                 new=FakeDockerClient
             )
             return nested(aligner_patches, docker_patch)

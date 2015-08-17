@@ -1,5 +1,4 @@
 import os
-import re
 import hashlib
 import tempfile
 import time
@@ -7,7 +6,6 @@ import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
 
-from sqlalchemy import func, desc, BigInteger
 from sqlalchemy.pool import NullPool
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
@@ -24,12 +22,7 @@ from cdisutils.log import get_logger
 from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from zug.consul_manager import ConsulManager
-from zug.binutils import NoMoreWorkException
-from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform, Center,
-    FileDataFromAliquot, FileDataFromFile
-)
+from gdcdatamodel.models import File
 
 
 def first_s3_url(doc):
