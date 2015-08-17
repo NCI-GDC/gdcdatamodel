@@ -10,7 +10,7 @@ from zug.datamodel.target.dcc_cgi.target_dcc_cgi_sync import TargetDCCCGIDownloa
 from gdcdatamodel import models as mod
 from cdisutils.log import get_logger
 
-class TARGETDCCCGIImportTest(SignpostMixin, ZugTestBase):
+class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
     def setUp(self):
         super(TARGETDCCCGIImportTest, self).setUp()
         os.environ["PG_HOST"] = "localhost"
