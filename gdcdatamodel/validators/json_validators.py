@@ -9,7 +9,7 @@ class GDCJSONValidator(object):
             'definitions.yaml#', self.schemas.definitions)
 
     def iter_errors(self, doc):
-        # Note whenever gdcdictionary use a newer version of schema
+        # Note whenever gdcdictionary use a newer version of jsonschema
         # we need to update the Validator
         validator = Draft4Validator(self.schemas.schema[doc['type']],
                                     resolver=self.resolver)
@@ -29,5 +29,5 @@ class GDCJSONValidator(object):
                 break
             for error in self.iter_errors(json_doc):
                 # the key will looks key-subkey for nested properties
-                entity.record_error(error.message, key='-'.join(error.path))
+                entity.record_error(error.message, key='.'.join(error.path))
             # additional validators go here
