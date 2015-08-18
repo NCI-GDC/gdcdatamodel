@@ -1,42 +1,10 @@
 from gdcdictionary import GDCDictionary
-from jsonschema import Draft4Validator, RefResolver
 
 
-class GDCValidator(object):
+class GDCGraphValidator(object):
+
     def __init__(self):
         self.schemas = GDCDictionary()
-        self.resolver = RefResolver(
-            'definitions.yaml#', self.schemas.definitions)
-
-    def record_erros(self, *args):
-        pass
-
-
-class GDCJSONValidator(GDCValidator):
-
-    def iter_errors(self, doc):
-        # Note whenever gdcdictionary use a newer version of schema
-        # we need to update the Validator
-        validator = Draft4Validator(self.schemas.schema[doc['type']],
-                                    resolver=self.resolver)
-        return validator.iter_errors(doc)
-
-    def record_errrors(self, entities):
-        for entity in entities:
-            json_doc = entity.doc
-            if 'type' not in json_doc:
-                entity.record_error(
-                    "'type' is a required property", key='type')
-                break
-            for error in self.iter_errors(json_doc):
-                # the key will looks key-subkey for nested properties
-                entity.record_error(error.message, key='-'.join(error.path))
-            # additional validators go here
-
-
-class GDCGraphValidator(GDCValidator):
-    def __init__(self):
-        super(GDCGraphValidator, self).__init__()
         self.required_validators = {
             'link_validator': GDCLinkValidator()
         }

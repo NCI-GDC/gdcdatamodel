@@ -1,0 +1,1 @@
+-e git+ssh://git@github.com/NCI-GDC/gdcapi.git@a8cbe9a7d88687ddc551b21a929630fb40ef4b37#egg=gdcapi

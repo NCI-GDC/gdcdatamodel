@@ -3,4 +3,5 @@ python:
   - "2.7"
 before_script:
     - yes | python setup.py install
+    - pip install -r test-requirements.txt
 script: "nosetests -v"
