@@ -1,4 +1,6 @@
 import os
+from os import environ
+from bs4 import BeautifulSoup
 import sys
 import pandas as pd
 import xlrd
@@ -6,10 +8,8 @@ import requests
 import re
 from datetime import datetime
 from uuid import UUID, uuid5
-
 from cdisutils.log import get_logger
 from gdcdatamodel.models import File, Case
-
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
 
@@ -38,6 +38,8 @@ VITAL_STATUS_MAP = {
     "Unknown": None,
     "Lost to Follow-up": "lost to follow-up"
 }
+
+ROW_CLASSES = [ "even", "odd" ]
 
 def parse_race(race):
     if race.strip() == "Unknown":
@@ -71,7 +73,6 @@ def parse_row_into_props(row):
 
 
 def match_date(string_to_check):
-
         version = None
         version_match = re.search("([0-9]{8})", string_to_check)
         if version_match:
@@ -86,6 +87,40 @@ def match_date(string_to_check):
 
         return version
 
+def process_tree(url):
+    """Walk the given url and recursively find all the spreadsheet links."""
+    url_list = []
+    r = requests.get(url, auth=(environ["DCC_USER"], environ["DCC_PASS"]), verify=False)
+    if r.status_code == 200:
+        soup = BeautifulSoup(r.text, "lxml")
+        file_table = soup.find('table', attrs={'id':'indexlist'})
+        rows = file_table.find_all('tr')
+        for row in rows:
+            if row['class'][0] in ROW_CLASSES:
+                image = row.find('img')
+                if "DIR" not in image['alt']:
+                    dir_data = {}
+                    dir_data['dir_name'] = row.find('td', class_="indexcolname").get_text().strip()
+                    link = row.find('a')
+                    if ("xlsx" in link['href']) and ("Clinical" in link['href']):
+                        dir_data['url'] = url + link['href']
+                        url_list.append(dir_data)
+
+    return url_list
+
+def find_spreadsheets(projects_to_sync, base_url):
+    """Find all the spreadsheets for each project."""
+    spreadsheet_urls = {}
+    for project, url_loc in projects_to_sync.iteritems():
+        url = "%s%s%s" % (
+            base_url,
+            project,
+            url_loc
+        )
+        spreadsheets = process_tree(url)
+        spreadsheet_urls[project] = spreadsheets
+    
+    return spreadsheet_urls
 
 class TARGETClinicalSyncer(object):
 
@@ -154,11 +189,20 @@ class TARGETClinicalSyncer(object):
                 case = None
                 for column_title in BARCODE_TITLE_STRINGS:
                     if column_title in row:
-                        if (type(row[column_title]) == str) or (type(row[column_title]) == unicode):
+                        # NB: some of the spreadsheets have blank rows, and
+                        # the error condition is to strip on a non-string
+                        # (it appears to default to int), so we have to use
+                        # this as the check
+                        if isinstance(row[column_title], basestring):
                             case_barcode = row[column_title].strip()
                             break
                         else:
-                            self.log.info("Unrecognized type: %s", str(type(row[column_title]))) 
+                            if type(row[column_title]) == float:
+                                self.log.info("Empty row/int found")
+                            else:
+                                error_str = "Unrecognized type: %s" % str(type(row[column_title]))
+                                self.log.error(error_str)
+                                raise RuntimeError(error_str)
                 if case_barcode:
                     self.log.info("looking up case %s", case_barcode)
                     case = self.graph.nodes(Case)\
