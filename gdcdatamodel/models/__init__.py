@@ -43,11 +43,21 @@ def register_class(cls):
     globals()[cls.__name__] = cls
 
 
+def get_links(schema):
+    links = {}
+    for entry in schema.get('links') or []:
+        if 'subgroup' in entry:
+            for link in entry['subgroup']:
+                links[link['name']] = link
+        else:
+            links[entry['name']] = entry
+    return links
+
+
 def NodeFactory(title, schema):
     name = remove_spaces(title)
     label = to_camel_case(name)
-
-    links = [l['name'] for l in (schema.get('links') or [])]
+    links = get_links(schema).keys()
 
     @property
     def node_id(self, value):
@@ -101,8 +111,10 @@ def load_nodes():
             register_class(NodeFactory(name, subschema))
 
 
-def parse_edge(src_label, edge_label, subschema, link):
-    dst_label = link['link_to_type']
+def parse_edge(src_label, name, edge_label, subschema, link):
+    dst_label = link['target_type']
+    backref = link['backref']
+
     src_title = subschema['title']
     dst_title = dictionary.schema[dst_label]['title']
     edge_name = ''.join(map(to_mixed_case, [
@@ -113,21 +125,14 @@ def parse_edge(src_label, edge_label, subschema, link):
         (dst_label+'s', src_label+'s'))
 
     register_class(EdgeFactory(
-        edge_name, edge_label, src_title, dst_title,
-        src_dst_assoc, dst_src_assoc))
+        edge_name, edge_label, src_title, dst_title, name, backref))
 
 
 def load_edges():
     for src_label, subschema in dictionary.schema.iteritems():
-        for links in subschema.get('links') or []:
-            if 'anyOf' in links:
-                [parse_edge(src_label, links['name'], subschema, l)
-                 for l in links['anyOf']]
-            if 'oneOf' in links:
-                [parse_edge(src_label, links['name'], subschema, l)
-                 for l in links['oneOf']]
-            if 'anyOf' not in links and 'oneOf' not in links:
-                parse_edge(src_label, links['name'], subschema, links)
+        for name, link in get_links(subschema).iteritems():
+            edge_label = link['label']
+            parse_edge(src_label, name, edge_label, subschema, link)
 
 load_nodes()
 load_edges()
