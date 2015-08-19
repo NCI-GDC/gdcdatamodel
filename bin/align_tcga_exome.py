@@ -11,7 +11,7 @@ def main():
         aligner = TCGAExomeAligner(
             force_input_id=args.file_id
         )
-        aligner.align()
+        aligner.go()
 
 if __name__ == "__main__":
     main()
