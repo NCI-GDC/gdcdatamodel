@@ -3,6 +3,10 @@ from gdcdictionary import GDCDictionary
 
 class GDCGraphValidator(object):
 
+    '''
+    
+
+    '''
     def __init__(self):
         self.schemas = GDCDictionary()
         self.required_validators = {
@@ -14,14 +18,17 @@ class GDCGraphValidator(object):
         for entity in entities:
             schema = self.schemas.schema[entity.node.label]
 
-            for validator in self.required_validators.items():
+            for validator in self.required_validators.values():
                 validator.validate(schema, entity)
 
-            for validator_name in schema.get('validators'):
-                self.optional_validators[validator_name].validate()
+            validators = schema.get('validators')
+            if validators:
+                for validator_name in validators:
+                    self.optional_validators[validator_name].validate()
 
 
 class GDCLinkValidator(object):
+
     def validate(self, schema, entity):
         for link in schema['links']:
             if 'name' in link:
@@ -30,23 +37,35 @@ class GDCLinkValidator(object):
                 self.validate_edge_group(link, entity)
 
     def validate_edge_group(self, schema, entity):
-        results = [self.validate_edge(group, entity)
-                   for group in schema['subgroup']]
-        props = [item['name'] for item in schema]
+        submitted_links = []
+        schema_links = []
+        num_of_edges = 0
+        for group in schema['subgroup']:
+            if 'subgroup' in schema['subgroup']:
+                # nested subgroup
+                result = self.validate_edge_group(group, entity)
+            if 'name' in group:
+                result = self.validate_edge(group, entity)
 
+            if result['length'] > 0:
+                submitted_links.append(result)
+                num_of_edges += result['length']
+            schema_links.append(result['name'])
+
+        
         if schema.get('required') is True:
-            if all(result['length'] == 0 for result in results):
+            if len(submitted_links) == 0:
                 entity.record_error(
                     "At lease one of the properties in {} should be provided"
-                    .format(props), key=", ".join(props))
+                    .format(schema_links), key=", ".join(schema_links))
 
         if schema.get("exclusive") is True:
-            targets = [result['name'] for result in results
-                       if result['length'] > 0]
-            if len(targets) > 1:
+            if len(submitted_links) > 1:
                 entity.record_error(
                     "Can only have one of the properties in {}"
-                    .format(props), key=", ".join(targets))
+                    .format(schema_links), key=", ".join(schema_links))
+
+        result = {'length': num_of_edges, 'name': ", ".join(schema_links)}
 
     def validate_edge(self, link_sub_schema, entity):
         association = link_sub_schema['name']
@@ -60,7 +79,7 @@ class GDCLinkValidator(object):
             if multi in ['many_to_one', 'one_to_one']:
                 if len(targets) > 1:
                     entity.record_error(
-                        "'{}' relationship has to be {}"
+                        "'{}' link has to be {}"
                         .format(association, multi),
                         key=association)
 
@@ -68,7 +87,7 @@ class GDCLinkValidator(object):
                 for target in targets:
                     if len(target[link_sub_schema['backref']]) > 1:
                         entity.record_error(
-                            "'{}' relationship has to be {}, target node {} already has {}"
+                            "'{}' link has to be {}, target node {} already has {}"
                             .format(association, multi,
                                     target.label, link_sub_schema['backref']),
                             key=association)
