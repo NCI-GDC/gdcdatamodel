@@ -38,6 +38,7 @@ setup(
         'boto==2.36.0',
         'filechunkio==1.6',
         'docker-py==1.2.2',
+        'beautifulsoup4==4.4.0',
         # these next three are not used directly, but are required for
         # requests to have TLS SNI support, which we need for the
         # target dcc servers, plz don't remove them
