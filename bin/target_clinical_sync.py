@@ -54,8 +54,6 @@ def main():
 
     spreadsheet_data = find_spreadsheets(PROJECTS_TO_SYNC, BASE_URL)
 
-    print spreadsheet_data
-
     # connect to psqlgraph
     graph = PsqlGraphDriver(environ["PG_HOST"], environ["PG_USER"],
                             environ["PG_PASS"], environ["PG_NAME"])
