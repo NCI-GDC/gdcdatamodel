@@ -377,51 +377,30 @@ class TargetDCCCGIDownloader(object):
         if tarball_file_node is not None:
             # platform
             if len(tarball_file_node.platforms) == 0:
-                platform_node = pq.nodes(mod.Platform).props(name=self.platform).first()
-                if platform_node != None:
-                    tarball_file_node.platforms.append(platform_node)
-                else:
-                    raise RuntimeError("Unable to find Platform '%s'" % self.platform)
+                platform_node = pq.nodes(mod.Platform).props(name=self.platform).one()
+                tarball_file_node.platforms.append(platform_node)
 
             # data_subtype
             if len(tarball_file_node.data_subtypes) == 0:
-                data_subtype_node = pq.nodes(mod.DataSubtype).props(name=self.data_subtype).first()
-                if data_subtype_node != None:
-                    tarball_file_node.data_subtypes.append(data_subtype_node)
-                else:
-                    raise RuntimeError("Unable to find Data Subtype '%s'" % self.data_subtype)
+                data_subtype_node = pq.nodes(mod.DataSubtype).props(name=self.data_subtype).one()
+                tarball_file_node.data_subtypes.append(data_subtype_node)
 
             # data_format
             if len(tarball_file_node.data_formats) == 0:
-                data_format_node = pq.nodes(mod.DataFormat).props(name="TARGZ").first()
-                if data_format_node != None:
-                    tarball_file_node.data_formats.append(data_format_node)
-                else:
-                    raise RuntimeError("Unable to find Data Format '%s'" % self.data_format)
+                data_format_node = pq.nodes(mod.DataFormat).props(name="TARGZ").one()
+                tarball_file_node.data_formats.append(data_format_node)
 
             # experimental_strategy
             if len(tarball_file_node.experimental_strategies) == 0:
-                experimental_strategy_node = pq.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).first()
-                if experimental_strategy_node != None:
-                    tarball_file_node.experimental_strategies.append(experimental_strategy_node)
-                else:
-                    raise RuntimeError("Unable to find Experimental Strategy '%s'" % self.experimental_strategy)
+                experimental_strategy_node = pq.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).one()
+                tarball_file_node.experimental_strategies.append(experimental_strategy_node)
 
-            # project 
-            if len(tarball_file_node.tags) == 0:
-                project_node = pq.nodes(mod.Project).props(name=project).first()
-                if project_node != None:
-                    tarball_file_node.projects.append(project_node)
-                else:
-                    raise RuntimeError("Unable to find Project '%s'" % project)
+            # TODO: project when datamodel changes to support
 
             # tag
             if len(tarball_file_node.tags) == 0:
-                tag_node = pq.nodes(mod.Tag).props(name=tag).first()
-                if tag_node != None:
-                    tarball_file_node.tags.append(tag_node)
-                else:
-                    raise RuntimeError("Unable to find Tag '%s'" % tag)
+                tag_node = pq.nodes(mod.Tag).props(name=tag).one()
+                tarball_file_node.tags.append(tag_node)
 
     def find_latest_checkpoint(self, directory):
         """Find the latest checkpoint file.

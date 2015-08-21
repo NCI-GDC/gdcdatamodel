@@ -179,6 +179,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
 
         dl_entry = {}
@@ -187,6 +189,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
         
         dl_entry = {}
@@ -195,6 +199,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
 
         dl_entry = {}
@@ -203,6 +209,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
 
         # create nodes/edges
@@ -245,7 +253,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             self.assertEqual(node.file_size, tarball_size)
 
             # check md5 sum
-            self.assertEqual(node.md5_sum, tarball_md5_sum)
+            self.assertEqual(node.md5sum, tarball_md5_sum)
 
             # check source
             self.assertEqual(node.sysan['source'], "target_dcc_cgi")
