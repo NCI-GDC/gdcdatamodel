@@ -15,7 +15,7 @@ def target_file_mock(url, request):
 
 
 def fake_tree_walk(url, **kwargs):
-    for url in ["https://target-data.nci.nih.gov/WT/Discovery/WXS/L3/mutation/BCM/target-wt-snp-indel.mafplus.txt"]:
+    for url in ["https://target-data.nci.nih.gov/Public/WT/Discovery/WXS/L3/mutation/BCM/target-wt-snp-indel.mafplus.txt"]:
         yield url
 
 
