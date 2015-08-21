@@ -41,7 +41,6 @@ PROJECT_PHSID_MAPPING = {
     'MDLS': 'phs000469',
 }
 
-
 def tree_walk(url, **kwargs):
     """
     Recursively walk the target html file server, yielding the urls of
@@ -51,7 +50,7 @@ def tree_walk(url, **kwargs):
     resp.raise_for_status()
     elem = html.fromstring(resp.content)
     links = [link for link in elem.cssselect("td a")
-             if link.text != "Parent Directory"]
+             if link.attrib["href"] not in url]
     for link in links:
         if not url.endswith("/"):
             url += "/"
@@ -85,6 +84,23 @@ def process_url(kwargs, url):
     syncer = TARGETDCCFileSyncer(url, **kwargs)
     syncer.log.info("syncing file %s", url)
     syncer.sync()
+
+def get_target_dcc_dict(graph):
+
+    # create a dict of the target_dcc files currently in psqlgraph
+    # so that we can pass it to the syncer to mark the ones we
+    # touched, leaving the ones to mark to delete
+    target_dcc_files = {}
+    with graph.session_scope():
+        target_dcc_file_iter = graph.nodes(File).sysan(source="target_dcc")
+        for target_file in target_dcc_file_iter:
+            if 'url' in target_file.sysan:
+                data = {}
+                data['delete'] = True
+                data['id'] = target_file.node_id
+                target_dcc_files[target_file.sysan['url']] = data
+
+    return target_dcc_files
 
 
 class MD5SummingStream(object):
@@ -171,18 +187,63 @@ class TARGETDCCProjectSyncer(object):
         self.signpost_url = signpost_url
         self.graph_info = graph_info
         self.storage_info = storage_info
-        self.base_url = "https://target-data.nci.nih.gov/{}/".format(project)
+        #self.base_url = "https://target-data.nci.nih.gov/{}/".format(project)
+        self.base_url = "https://target-data.nci.nih.gov/"
         self.pool = pool
-        self.log = get_logger("taget_dcc_project_sync_" +
+        self.log = get_logger("target_dcc_project_sync_" +
                               str(os.getpid()) +
                               "_" + self.project)
+        self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
+                                     graph_info["pass"], graph_info["database"])
+
+    def get_target_dcc_dict(self):
+        """Create a dict of target_dcc files for current project"""
+        target_dcc_files = {}
+        with self.graph.session_scope():
+            target_dcc_file_iter = self.graph.nodes(File).sysan(source="target_dcc").filter(
+                File._sysan['url'].astext.contains("/%s/" % self.project)).all()
+            for target_file in target_dcc_file_iter:
+                if 'url' in target_file.sysan:
+                    data = {}
+                    data['delete'] = True
+                    data['id'] = target_file.node_id
+                    target_dcc_files[target_file.sysan['url']] = data
+
+        return target_dcc_files
 
     def file_links(self):
         """A generator for links to files in this project"""
-        for toplevel in ["Discovery", "Validation"]:
-            url = urljoin(self.base_url, toplevel)
-            for file in tree_walk(url, auth=self.dcc_auth):
-                yield file
+        for access_level in ["Public", "Controlled"]:
+            url_part = access_level + "/" + self.project
+            for toplevel in ["Discovery", "Validation"]:
+                url_full = url_part + "/" + toplevel + "/"
+                url = urljoin(self.base_url, url_full)
+                self.log.info(url)
+                resp = requests.get(url, auth=self.dcc_auth)
+                if resp.status_code != 404:
+                    for file in tree_walk(url, auth=self.dcc_auth):
+                        yield file
+
+    def cull(self, target_dcc_files):
+        """Set files to_delete to True based on dict passed"""
+        with self.graph.session_scope():
+            files_to_delete = 0
+            for key, values in target_dcc_files.iteritems():
+                if values['delete'] == True:
+                    files_to_delete += 1
+                    if 'id' not in values:
+                        self.log.warn("Warning, unable to delete %s, id missing." % values['url'])
+                    else:
+                        node_to_delete = self.graph.nodes(File).get(values['id'])
+                        node_to_delete.system_annotations['to_delete'] = True
+                        self.log.info("Setting %s(%s) to be deleted" % (
+                            node_to_delete.system_annotations['url'],
+                            node_to_delete.node_id
+                        ))
+                        self.graph.current_session().merge(node_to_delete)
+
+            self.log.info("%d total files, %d marked for deletion" % (
+                len(target_dcc_files), files_to_delete))
 
     def sync(self):
         self.log.info("running prelude")
@@ -192,6 +253,9 @@ class TARGETDCCProjectSyncer(object):
             "storage_info": self.storage_info,
             "dcc_auth": self.dcc_auth,
         }
+
+        file_dict = self.get_target_dcc_dict()
+
         if self.pool:
             self.log.info("syncing files using process pool")
             async_result = self.pool.map_async(partial(process_url, kwargs), self.file_links())
@@ -200,6 +264,16 @@ class TARGETDCCProjectSyncer(object):
             self.log.info("syncing files serially")
             for url in self.file_links():
                 process_url(kwargs, url)
+                # mark url as found
+                if url in file_dict:
+                    file_dict[url]['delete'] = False
+                else:
+                    data = {}
+                    data['delete'] = False
+                    data['id'] = "unknown"
+                    file_dict[url] = data
+
+            self.cull(file_dict)
 
 
 class TARGETDCCFileSyncer(object):
@@ -209,7 +283,7 @@ class TARGETDCCFileSyncer(object):
                  storage_info=None):
         assert url.startswith("https://target-data.nci.nih.gov")
         self.url = url
-        self.project = url.split("/")[3]
+        self.project = url.split("/")[4]
         self.filename = self.url.split("/")[-1]
         assert self.project in PROJECTS
         self.signpost = SignpostClient(signpost_url, version="v0")
@@ -218,12 +292,13 @@ class TARGETDCCFileSyncer(object):
         self.dcc_auth = dcc_auth
         self.storage_client = storage_info["driver"](storage_info["access_key"],
                                                      **storage_info["kwargs"])
-        self.log = get_logger("taget_dcc_file_sync_" +
+        self.log = get_logger("target_dcc_file_sync_" +
                               str(os.getpid()) +
                               "_" + self.filename)
 
     @property
     def acl(self):
+        # TODO: This will have to be intelligent
         return []
 
     @property
