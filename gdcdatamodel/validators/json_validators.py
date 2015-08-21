@@ -28,6 +28,6 @@ class GDCJSONValidator(object):
                     .format(json_doc['type']), key='type')
                 break
             for error in self.iter_errors(json_doc):
-                # the key will looks key-subkey for nested properties
+                # the key will be  property.subproperty for nested properties
                 entity.record_error(error.message, key='.'.join(error.path))
             # additional validators go here

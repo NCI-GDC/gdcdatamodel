@@ -99,8 +99,8 @@ class TestValidators(unittest.TestCase):
         session.add(node)
         return node
 
-    def update_link_schema(self, entity, schema):
-        self.graph_validator.schemas.schema[entity]['links'] = schema
+    def update_schema(self, entity, key, schema):
+        self.graph_validator.schemas.schema[entity][key] = schema
 
     def test_graph_validator_without_required_link(self):
         with g.session_scope() as session:
@@ -108,8 +108,9 @@ class TestValidators(unittest.TestCase):
                                      'props': {'submitter_id': 'test'},
                                      'edges': {}}, session)
             self.entities[0].node = node
-            self.update_link_schema(
+            self.update_schema(
                 'aliquot',
+                'links',
                 [{'name': 'analytes',
                   'backref': 'aliquots',
                   'label': 'derived_from',
@@ -139,8 +140,9 @@ class TestValidators(unittest.TestCase):
                  'edges': {'analytes': [analyte.node_id],
                            'samples': [sample.node_id]}}, session)
             self.entities[0].node = node
-            self.update_link_schema(
+            self.update_schema(
                 'aliquot',
+                'links',
                 [{'exclusive': True,
                   'required': True,
                   'subgroup': [
@@ -178,8 +180,9 @@ class TestValidators(unittest.TestCase):
                                                             analyte_b.node_id]}},
                                     session)
             self.entities[0].node = node
-            self.update_link_schema(
+            self.update_schema(
                 'aliquot',
+                'links',
                 [{'exclusive': False,
                   'required': True,
                   'subgroup': [
@@ -209,8 +212,9 @@ class TestValidators(unittest.TestCase):
                                      'edges': {'analytes': [analyte.node_id]}},
                                     session)
             self.entities[0].node = node
-            self.update_link_schema(
+            self.update_schema(
                 'aliquot',
+                'links',
                 [{'exclusive': False,
                   'required': True,
                   'subgroup': [
@@ -226,3 +230,18 @@ class TestValidators(unittest.TestCase):
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
             self.assertEquals(0, len(self.entities[0].errors))
+
+    def test_graph_validator_with_existing_unique_keys(self):
+        with g.session_scope() as session:
+            node = self.create_node({'type': 'data_format',
+                                     'props': {'name': 'test'},
+                                     'edges': {}},
+                                    session)
+            node = self.create_node({'type': 'data_format',
+                                     'props': {'name': 'test'},
+                                     'edges': {}},
+                                    session)
+            self.update_schema('data_format', 'uniqueKeys', [['name']])
+            self.entities[0].node = node
+            self.graph_validator.record_errors(g, self.entities)
+            self.assertEquals('name', self.entities[0].errors[0]['key'])
