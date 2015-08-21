@@ -22,6 +22,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
         os.environ["DCC_USER"] = ""
         os.environ["DCC_PASS"] = ""
         os.environ["SIGNPOST_URL"] = "http://localhost"
+        os.environ["S3_HOST"] = "ceph.service.consul"
         self.log = get_logger("target_dcc_cgi_project_test_" + str(os.getpid()))
         self.TEST_DIR = os.path.dirname(os.path.realpath(__file__))
         self.FIXTURES_DIR = os.path.join(self.TEST_DIR, "fixtures", "target_dcc_cgi")
@@ -123,9 +124,9 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_fail):
-            directory_list = tdc_dl.get_directory_list(self.test_url)
-            self.assertEqual(len(directory_list), 0)
-        self.assertTrue(True)
+            self.assertRaises(RuntimeError, tdc_dl.get_directory_list, self.test_url)
+            #directory_list = tdc_dl.get_directory_list(self.test_url)
+            #self.assertEqual(len(directory_list), 0)
 
     def test_check_target_site_error(self):
         tdc_dl = TargetDCCCGIDownloader(self.signpost_client)
@@ -136,9 +137,9 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_error):
-            directory_list = tdc_dl.get_directory_list(self.test_url)
-            self.assertEqual(len(directory_list), 0)
-        self.assertTrue(True)
+            self.assertRaises(RuntimeError, tdc_dl.get_directory_list, self.test_url)
+            #directory_list = tdc_dl.get_directory_list(self.test_url)
+            #self.assertEqual(len(directory_list), 0)
 
     # TODO: TEST: stream files into an archive and put it on the object store
     def test_stream_create_archive_on_os(self):
