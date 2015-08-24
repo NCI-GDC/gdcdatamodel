@@ -17,8 +17,8 @@ class MockSubmissionEntity(object):
         self.node = None
         self.doc = {}
 
-    def record_error(self, message, key=''):
-        self.errors.append({'message': message, 'key': key})
+    def record_error(self, message, **kwargs):
+        self.errors.append(dict(message=message, **kwargs))
 
 
 class TestValidators(unittest.TestCase):
@@ -47,20 +47,20 @@ class TestValidators(unittest.TestCase):
         self.entities[0].doc = {'type': 'aliquot',
                                 'centers': {'alias': 'test'}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(self.entities[0].errors[0]['key'], '')
+        self.assertEqual(self.entities[0].errors[0]['keys'], [])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_wrong_node_type(self):
         self.entities[0].doc = {'type': 'aliquo'}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(self.entities[0].errors[0]['key'], 'type')
+        self.assertEqual(self.entities[0].errors[0]['keys'], ['type'])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_wrong_property_type(self):
         self.entities[0].doc = {'type': 'aliquot',
                                 'alias': 1, 'centers': {'alias': 'test'}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual('alias', self.entities[0].errors[0]['key'])
+        self.assertEqual(['alias'], self.entities[0].errors[0]['keys'])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_multiple_errors(self):
@@ -74,7 +74,7 @@ class TestValidators(unittest.TestCase):
         self.entities[0].doc = {'type': 'aliquot', 'alias': 'test',
                                 'centers': {'alias': True}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual('centers.alias', self.entities[0].errors[0]['key'])
+        self.assertEqual(['centers.alias'], self.entities[0].errors[0]['keys'])
 
     def test_json_validator_with_multiple_entities(self):
         self.entities[0].doc = {'type': 'aliquot', 'alias': 1, 'test': 'test',
@@ -118,7 +118,7 @@ class TestValidators(unittest.TestCase):
                   'target_type': 'analyte',
                   'required': True}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals('analytes', self.entities[0].errors[0]['key'])
+            self.assertEquals(['analytes'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_exclusive_link(self):
         with g.session_scope() as session:
@@ -157,8 +157,8 @@ class TestValidators(unittest.TestCase):
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals('analytes, samples',
-                              self.entities[0].errors[0]['key'])
+            self.assertEquals(['analytes', 'samples'],
+                              self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_wrong_multiplicity(self):
         with g.session_scope() as session:
@@ -197,7 +197,7 @@ class TestValidators(unittest.TestCase):
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals('analytes', self.entities[0].errors[0]['key'])
+            self.assertEquals(['analytes'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_correct_node(self):
         with g.session_scope() as session:
@@ -244,4 +244,4 @@ class TestValidators(unittest.TestCase):
             self.update_schema('data_format', 'uniqueKeys', [['name']])
             self.entities[0].node = node
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals('name', self.entities[0].errors[0]['key'])
+            self.assertEquals(['name'], self.entities[0].errors[0]['keys'])

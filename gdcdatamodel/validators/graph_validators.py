@@ -1,4 +1,4 @@
-from gdcdictionary import GDCDictionary
+from gdcdictionary import gdcdictionary
 
 
 class GDCGraphValidator(object):
@@ -8,7 +8,7 @@ class GDCGraphValidator(object):
 
     '''
     def __init__(self):
-        self.schemas = GDCDictionary()
+        self.schemas = gdcdictionary
         self.required_validators = {
             'links_validator': GDCLinksValidator(),
             'uniqueKeys_validator': GDCUniqueKeysValidator()
@@ -40,6 +40,7 @@ class GDCLinksValidator(object):
         submitted_links = []
         schema_links = []
         num_of_edges = 0
+
         for group in schema['subgroup']:
             if 'subgroup' in schema['subgroup']:
                 # nested subgroup
@@ -52,17 +53,19 @@ class GDCLinksValidator(object):
                 num_of_edges += result['length']
             schema_links.append(result['name'])
 
-        if schema.get('required') is True:
-            if len(submitted_links) == 0:
-                entity.record_error(
-                    "At lease one of the properties in {} should be provided"
-                    .format(schema_links), key=", ".join(schema_links))
+        if schema.get('required') is True and len(submitted_links) == 0:
+            names = ", ".join(
+                schema_links[:-2] + [" or ".join(schema_links[-2:])])
+            entity.record_error(
+                "Entity is missing a required link to {}"
+                .format(names), keys=schema_links)
 
-        if schema.get("exclusive") is True:
-            if len(submitted_links) > 1:
-                entity.record_error(
-                    "Can only have one of the properties in {}"
-                    .format(schema_links), key=", ".join(schema_links))
+        if schema.get("exclusive") is True and len(submitted_links) > 1:
+            names = ", ".join(
+                schema_links[:-2] + [" and ".join(schema_links[-2:])])
+            entity.record_error(
+                "Links to {} are exclusive.  More than one was provided."
+                .format(schema_links), keys=schema_links)
 
         result = {'length': num_of_edges, 'name': ", ".join(schema_links)}
 
@@ -80,7 +83,7 @@ class GDCLinksValidator(object):
                     entity.record_error(
                         "'{}' link has to be {}"
                         .format(association, multi),
-                        key=association)
+                        keys=[association])
 
             if multi in ['one_to_many', 'one_to_one']:
                 for target in targets:
@@ -89,15 +92,16 @@ class GDCLinksValidator(object):
                             "'{}' link has to be {}, target node {} already has {}"
                             .format(association, multi,
                                     target.label, link_sub_schema['backref']),
-                            key=association)
+                            keys=[association])
 
             if multi == 'many_to_many':
                 pass
         else:
             if link_sub_schema.get('required') is True:
                 entity.record_error(
-                    "'{}' is a required property".format(association),
-                    key=association)
+                    "Entity is missing required link to {}"
+                    .format(association),
+                    keys=[association])
         return result
 
 
@@ -121,4 +125,4 @@ class GDCUniqueKeysValidator(object):
             if graph.nodes(type(node)).props(props).count() > 1:
                 entity.record_error(
                     "{} with {} already exists in GDC"
-                    .format(node.label, props), key=','.join(props.keys()))
+                    .format(node.label, props), keys=props.keys())

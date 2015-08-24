@@ -1,13 +1,13 @@
 from sqlalchemy.orm import configure_mappers
 import re
 
-from gdcdictionary import GDCDictionary
+from gdcdictionary import gdcdictionary
 from misc import *
 from psqlgraph import Node, Edge, pg_property
 from utils import validate
 
 excluded_props = ['id', 'type', 'alias']
-dictionary = GDCDictionary()
+dictionary = gdcdictionary
 
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]

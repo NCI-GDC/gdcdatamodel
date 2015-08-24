@@ -1,10 +1,10 @@
-from gdcdictionary import GDCDictionary
+from gdcdictionary import gdcdictionary
 from jsonschema import Draft4Validator, RefResolver
 
 
 class GDCJSONValidator(object):
     def __init__(self):
-        self.schemas = GDCDictionary()
+        self.schemas = gdcdictionary
         self.resolver = RefResolver(
             'definitions.yaml#', self.schemas.definitions)
 
@@ -20,14 +20,16 @@ class GDCJSONValidator(object):
             json_doc = entity.doc
             if 'type' not in json_doc:
                 entity.record_error(
-                    "'type' is a required property", key='type')
+                    "'type' is a required property", keys=['type'])
                 break
             if json_doc['type'] not in self.schemas.schema:
                 entity.record_error(
                     "specified type: {} is not in current data model"
-                    .format(json_doc['type']), key='type')
+                    .format(json_doc['type']), keys=['type'])
                 break
             for error in self.iter_errors(json_doc):
                 # the key will be  property.subproperty for nested properties
-                entity.record_error(error.message, key='.'.join(error.path))
+                entity.record_error(
+                    error.message,
+                    keys=['.'.join(error.path)] if error.path else [])
             # additional validators go here
