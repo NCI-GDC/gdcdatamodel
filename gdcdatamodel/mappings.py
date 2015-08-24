@@ -62,6 +62,8 @@ def _get_header(source):
 def _get_es_type(_type):
     if long in _type or int in _type:
         return 'long'
+    elif float in _type:
+        return 'double'
     else:
         return 'string'
 
