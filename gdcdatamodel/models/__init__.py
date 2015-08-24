@@ -57,7 +57,7 @@ def get_links(schema):
 def NodeFactory(title, schema):
     name = remove_spaces(title)
     label = to_camel_case(name)
-    links = get_links(schema).keys()
+    links = get_links(schema)
 
     @property
     def node_id(self, value):
@@ -78,6 +78,9 @@ def NodeFactory(title, schema):
     if 'alias' in schema.get('properties', {}):
         properties['submitter_id'] = pg_property(
             lambda self, val: self._set_property('submitter_id', val))
+
+    properties['_pg_links'] = {name: Node.get_subclass(l['target_type'])
+                               for name, l in links.iteritems()}
 
     cls = type(name, (Node,), dict(
         __label__=label,
@@ -127,12 +130,21 @@ def parse_edge(src_label, name, edge_label, subschema, link):
     register_class(EdgeFactory(
         edge_name, edge_label, src_title, dst_title, name, backref))
 
+    return '_{}_out'.format(edge_name)
+
 
 def load_edges():
     for src_label, subschema in dictionary.schema.iteritems():
+        src_cls = Node.get_subclass(src_label)
+        src_cls._pg_links = {}
         for name, link in get_links(subschema).iteritems():
             edge_label = link['label']
-            parse_edge(src_label, name, edge_label, subschema, link)
+            edge_name = parse_edge(
+                src_label, name, edge_label, subschema, link)
+            src_cls._pg_links[link['name']] = {
+                'edge_out': edge_name,
+                'dst_type': Node.get_subclass(link['target_type'])
+            }
 
 load_nodes()
 load_edges()
