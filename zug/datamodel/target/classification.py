@@ -22,47 +22,57 @@ CLASSIFICATION = {
     }
   },
   "gwas": {
-    ".+hh550.+txt": {
-      "platform": "Illumina HumanHap550",
-      "data_format": "TXT",
-      "data_subtype": "Genotypes",
-      "data_type": "Simple nucleotide variation",
-      "experimental_strategy": "Genotyping array"
+    "l2": {
+      ".+hh550.+txt": {
+        "platform": "Illumina HumanHap550",
+        "data_format": "TXT",
+        "data_subtype": "Genotypes",
+        "data_type": "Simple nucleotide variation",
+        "experimental_strategy": "Genotyping array"
+      }  
     }
   },
   "wxs": {
     "l4": {
-      ".+txt": {
-        "platform": "Complete Genomics",
-        "data_format": "TXT",
-        "data_subtype": "Simple nucleotide variation",
-        "data_type": "Simple nucleotide variation",
-        "experimental_strategy": "DNA-Seq"
-      }
+      "mutation": {
+        "bcm": {
+          ".+mafplus.txt": {
+            "platform": "Complete Genomics",
+            "data_format": "MAF",
+            "data_subtype": "Simple somatic mutation",
+            "data_type": "Simple nucleotide variation",
+            "experimental_strategy": "DNA-Seq"
+          },
+          ".+variants.txt": {
+            "platform": "Complete Genomics",
+            "data_format": "TXT",
+            "data_subtype": "Simple nucleotide variation",
+            "data_type": "Simple nucleotide variation",
+            "experimental_strategy": "DNA-Seq"
+          }
+        }  
+      }      
     },
     "l3": {
       "copy_number": {
-        ".+sif": {
-          "data_type": "Copy number variation",
-          "data_format": "SIF",
-          "platform": "Complete Genomics",
-          "tag": "summary",
-          "data_subtype": "Copy number variation",
-          "experimental_strategy": "DNA-Seq"
-        },
-        ".+copy_number_segments.zip": {
-          "platform": "Complete Genomics",
-          "data_format": "ZIP",
-          "data_subtype": "Copy number segmentation",
-          "data_type": "Copy number variation",
-          "experimental_strategy": "DNA-Seq"
-        },
-        ".+seg.txt": {
-          "platform": "Complete Genomics",
-          "data_format": "TXT",
-          "data_subtype": "Copy number segmentation",
-          "data_type": "Copy number variation",
-          "experimental_strategy": "DNA-Seq"
+        "broad": {
+          ".+sif": {
+            "data_type": "Copy number variation",
+            "data_format": "SIF",
+            "platform": "Complete Genomics",
+            "tag": "summary",
+            "data_subtype": "Copy number variation",
+            "experimental_strategy": "DNA-Seq",
+            "tag": "Broad"
+          },
+          ".+seg.txt": {
+            "platform": "Complete Genomics",
+            "data_format": "TXT",
+            "data_subtype": "Copy number segmentation",
+            "data_type": "Copy number variation",
+            "experimental_strategy": "DNA-Seq",
+            "tag": "Broad"
+          }
         },
         "mss": {
           ".+zip": {
@@ -88,21 +98,24 @@ CLASSIFICATION = {
             "data_format": "xlsx",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
+            "experimental_strategy": "DNA-Seq",
+            "tag": "BCM"
           },
           ".+mafplus.txt": {
             "platform": "Complete Genomics",
-            "data_format": "xlsx",
+            "data_format": "MAF",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
+            "experimental_strategy": "DNA-Seq",
+            "tag": "BCM"            
           },
           ".+txt": {
             "platform": "Complete Genomics",
             "data_format": "TXT",
             "data_subtype": "Simple nucleotide variation",
             "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
+            "experimental_strategy": "DNA-Seq",
+            "tag": "BCM"            
           }
         },
         ".+mafplus.xlsx": {
@@ -113,57 +126,66 @@ CLASSIFICATION = {
           "experimental_strategy": "DNA-Seq"
         },
         "stjude": {
-          ".+somatic.maf.txt": {
+          ".+somatic.+maf.txt": {
             "platform": "Complete Genomics",
             "data_format": "MAF",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
-          }
+            "experimental_strategy": "DNA-Seq",
+            "tag": "StJude"
+          }  
         },
         "broad": {
-          "target_nbl_wxs_somatic_calls.maf.txt": {
-            "platform": "Complete Genomics",
-            "data_format": "MAF",
-            "data_subtype": "Simple somatic mutation",
-            "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
-          },
-          "nb170_200lines.txt": {
-            "platform": "Complete Genomics",
-            "data_format": "TXT",
-            "data_subtype": "Simple nucleotide variation",
-            "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
-          },
           ".+vcf(.gz)?": {
             "platform": "Complete Genomics",
             "data_format": "VCF",
             "data_subtype": "Simple nucleotide variation",
             "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
-          }
-        },
-        "nci": {
-          ".+somatic.exonic.bcmmaf.txt": {
+            "experimental_strategy": "DNA-Seq",
+            "tag": "Broad"             
+          }, 
+          ".+somatic.+maf.txt": {
             "platform": "Complete Genomics",
-            "data_format": "TXT",
+            "data_format": "MAF",
             "data_subtype": "Simple somatic mutation",
             "data_type": "Simple nucleotide variation",
-            "experimental_strategy": "DNA-Seq"
-          }
+            "experimental_strategy": "DNA-Seq",
+            "tag": "Broad"
+          }  
+        },
+        "nci": {
+          ".+somatic.+bcmmaf.txt": {
+            "platform": "Complete Genomics",
+            "data_format": "MAF",
+            "data_subtype": "Simple somatic mutation",
+            "data_type": "Simple nucleotide variation",
+            "experimental_strategy": "DNA-Seq",
+            "tag": "NCI"             
+          },
+          ".+somatic.+mafplus.xlsx": {
+            "platform": "Complete Genomics",
+            "data_format": "xlsx",
+            "data_subtype": "Simple somatic mutation",
+            "data_type": "Simple nucleotide variation",
+            "experimental_strategy": "DNA-Seq",
+            "tag": "NCI"
+          }  
         }
       }
     }
   },
+  "targeted_pcr_sequencing": {
+    "l1" : {
+      ".+txt": {
+        "platform": "ABI capillary sequencer",
+        "data_format": "TXT",
+        "data_subtype": "ABI sequence trace",
+        "data_type": "Other",
+        "experimental_strategy": "Capillary sequencing"
+      }
+    }
+  },   
   "targeted_capture_sequencing": {
-    ".+": {
-      "platform": "ABI capillary sequencer",
-      "data_format": "TXT",
-      "data_subtype": "ABI sequence trace",
-      "data_type": "Other",
-      "experimental_strategy": "Capillary sequencing"
-    },
     "l3": {
       ".+maf.txt": {
         "platform": "Illumina HiSeq",
@@ -193,6 +215,65 @@ CLASSIFICATION = {
   "mrna-seq": {
     "l3": {
       "expression": {
+        "bcca" :{
+          ".+gene.quantification.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Gene expression quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "BCCA"
+          },
+          ".+exon.quantification.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Exon quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "BCCA"            
+          },
+          ".+spljxn.quantification.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Exon junction quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq"
+          }        
+        },
+        "nci" :{
+          ".+gene.fpkm.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Gene expression quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "NCI"
+          },
+          ".+exon.count.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Exon quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "NCI"            
+          },
+          ".+exon.rpkm.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Exon quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "NCI"            
+          },
+          ".+isoform.fpkm.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TXT",
+            "data_subtype": "Isoform expression quantification",
+            "data_type": "Gene expression",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "NCI"            
+          }         
+        },        
         ".+gene.quantification.txt": {
           "platform": "Illumina HiSeq",
           "data_format": "TXT",
@@ -207,13 +288,6 @@ CLASSIFICATION = {
           "data_type": "Gene expression",
           "experimental_strategy": "RNA-Seq"
         },
-        ".+spljxn.quantification.txt": {
-          "platform": "Illumina HiSeq",
-          "data_format": "TXT",
-          "data_subtype": "Exon junction quantification",
-          "data_type": "Gene expression",
-          "experimental_strategy": "RNA-Seq"
-        },
         ".+isoform.quantification.txt": {
           "platform": "Illumina HiSeq",
           "data_format": "TXT",
@@ -223,6 +297,16 @@ CLASSIFICATION = {
         }
       },
       "mutation": {
+        "bcca": {
+          ".+maf.txt": {
+            "platform": "Illumina HiSeq",
+            "data_format": "MAF",
+            "data_subtype": "Simple nucleotide variation",
+            "data_type": "Simple nucleotide variation",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "BCCA"
+          }
+        },          
         ".+maf.txt": {
           "platform": "Illumina HiSeq",
           "data_format": "MAF",
@@ -239,6 +323,16 @@ CLASSIFICATION = {
         }
       },
       "structural": {
+        "nci": {
+          ".+fusion.+tsv": {
+            "platform": "Illumina HiSeq",
+            "data_format": "TSV",
+            "data_subtype": "Structural variation",
+            "data_type": "Structural rearrangement",
+            "experimental_strategy": "RNA-Seq",
+            "tag": "fusion"
+          }
+        },         
         ".+vcf": {
           "platform": "Illumina HiSeq",
           "data_format": "VCF",
@@ -391,11 +485,21 @@ CLASSIFICATION = {
     }
   },
   "clinical": {
-    ".+xlsx": {
+    ".+(xlsx|xls)": {
       "platform": "Hospital Record",
       "data_subtype": "Clinical data",
       "data_type": "Clinical",
       "data_format": "xlsx"
+    },
+    "orig_file": {
+      ".+(xls|xlsx)": {
+        "platform": "Hospital Record",
+        "tag": "original",
+        "data_subtype": "Clinical data",
+        "data_type": "Clinical",
+        "data_format": "xlsx",
+        "tag": "original"
+      }
     },
     "harmonized": {
       ".+harmonized.(xls|xlsx)": {
@@ -403,7 +507,8 @@ CLASSIFICATION = {
         "tag": "harmonized",
         "data_subtype": "Clinical data",
         "data_type": "Clinical",
-        "data_format": "xlsx"
+        "data_format": "xlsx",
+        "tag": "harmonized"
       }
     }
   },
@@ -437,8 +542,8 @@ CLASSIFICATION = {
   },
   "wgs": {
     "l4": {
-      "cgi": {
-        "circos": {
+      "circos": {
+        "cgi": {
           "somaticcircos.+png": {
             "platform": "Complete Genomics",
             "data_format": "PNG",
@@ -585,6 +690,13 @@ CLASSIFICATION = {
       }
     },
     "l2": {
+      "exon.+txt": {
+        "platform": "Affymetrix U133 Plus 2",
+        "data_format": "TXT",
+        "data_subtype": "Exon quantification",
+        "data_type": "Gene expression",
+        "experimental_strategy": "Gene expression array"
+      },    
       ".+txt": {
         "platform": "Affymetrix U133 Plus 2",
         "data_format": "TXT",
@@ -619,13 +731,6 @@ CLASSIFICATION = {
           "data_subtype": "Normalized intensities",
           "experimental_strategy": "Gene expression array"
         }
-      },
-      "exon.+txt": {
-        "platform": "Affymetrix U133 Plus 2",
-        "data_format": "TXT",
-        "data_subtype": "Exon quantification",
-        "data_type": "Gene expression",
-        "experimental_strategy": "Gene expression array"
       },
       ".+gct": {
         "platform": "Affymetrix U133 Plus 2",
@@ -768,19 +873,12 @@ CLASSIFICATION = {
 
 
 IGNORE = [
-    "md5checksum_file",
-    "version",
     "readme.*",
-    "manifest.+",
     ".+readme.+pdf",
-    ".+doc",
-    ".+(bpm|egt)",
-    "wt cde final.xlsx",
-    "target_allp1_kinome_listofsequencedgenes.xls",
+    ".+listofsequencedgenes.xls",
     "unique.txt",
+    "sitetype.icdo3.+pdf",
+    "target_.+_kinome_listofsequencedgenes.xls",
     ".+docx",
-    "nb170_cols.txt",
-    "nb170_samps.txt",
-    "nbl_wxs_normal_samps_20130805.txt",
-    "nbl_wxs_samps_20130730.txt",
+    ".+mpileups.tar.gz",
 ]
