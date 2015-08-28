@@ -49,6 +49,12 @@ def tree_walk(url, **kwargs):
     resp = requests.get(url, **kwargs)
     resp.raise_for_status()
     elem = html.fromstring(resp.content)
+    # Since the changes to the TARGET site made a few links
+    # that follow the image as well as the text, we have
+    # to be more intelligent about what we're checking for.
+    # The idea here is that we are seeing if the link mirrors
+    # our current url. If so, we are assuming it's a link to
+    # parent and avoiding adding so we don't recurse back up.
     links = [link for link in elem.cssselect("td a")
              if link.attrib["href"] not in url]
     for link in links:
@@ -83,7 +89,7 @@ def classify(path):
 def process_url(kwargs, url):
     syncer = TARGETDCCFileSyncer(url, **kwargs)
     syncer.log.info("syncing file %s", url)
-    syncer.sync()
+    return syncer.sync()
 
 def get_target_dcc_dict(graph):
 
@@ -94,11 +100,10 @@ def get_target_dcc_dict(graph):
     with graph.session_scope():
         target_dcc_file_iter = graph.nodes(File).sysan(source="target_dcc")
         for target_file in target_dcc_file_iter:
-            if 'url' in target_file.sysan:
-                data = {}
-                data['delete'] = True
-                data['id'] = target_file.node_id
-                target_dcc_files[target_file.sysan['url']] = data
+            data = {}
+            data['delete'] = True
+            data['id'] = target_file.node_id
+            target_dcc_files[target_file.sysan['url']] = data
 
     return target_dcc_files
 
@@ -164,7 +169,7 @@ class TARGETDCCEdgeBuilder(object):
 
     def classify(self):
         url = self.file_node.system_annotations["url"]
-        project = url.split("/")[3]
+        project = url.split("/")[4]
         path = re.sub(".*\/{}\/((Discovery)|(Validation)|(Model_Systems))\/".format(project), "", url).split("/")
         self.log.info("classifying with path %s", path)
         classification = classify(path)
@@ -187,7 +192,6 @@ class TARGETDCCProjectSyncer(object):
         self.signpost_url = signpost_url
         self.graph_info = graph_info
         self.storage_info = storage_info
-        #self.base_url = "https://target-data.nci.nih.gov/{}/".format(project)
         self.base_url = "https://target-data.nci.nih.gov/"
         self.pool = pool
         self.log = get_logger("target_dcc_project_sync_" +
@@ -213,6 +217,12 @@ class TARGETDCCProjectSyncer(object):
 
     def file_links(self):
         """A generator for links to files in this project"""
+
+        # We're looking for a URL in the form
+        # [base_url]/[Public/Controlled]/[Project Code]/[Discovery/Validation]
+        # However, right now, "Validation is only present in the old base
+        # url. Since there's a chance it could finally migrate, the code 
+        # gracefully skips it if it 404s.
         for access_level in ["Public", "Controlled"]:
             url_part = access_level + "/" + self.project
             for toplevel in ["Discovery", "Validation"]:
@@ -223,24 +233,31 @@ class TARGETDCCProjectSyncer(object):
                 if resp.status_code != 404:
                     for file in tree_walk(url, auth=self.dcc_auth):
                         yield file
+                else:
+                    self.log.warn("%s not present, skipping" % url)
 
-    def cull(self, target_dcc_files):
+    def cull(self, target_dcc_files, kwargs):
         """Set files to_delete to True based on dict passed"""
         with self.graph.session_scope():
             files_to_delete = 0
             for key, values in target_dcc_files.iteritems():
                 if values['delete'] == True:
-                    files_to_delete += 1
-                    if 'id' not in values:
-                        self.log.warn("Warning, unable to delete %s, id missing." % values['url'])
+                    # try and get the file
+                    resp = requests.get(values['url'], **kwargs)
+                    if resp.status_code == 404:
+                        files_to_delete += 1
+                        if 'id' not in values:
+                            self.log.warn("Warning, unable to delete %s, id missing." % values['url'])
+                        else:
+                            node_to_delete = self.graph.nodes(File).get(values['id'])
+                            node_to_delete.system_annotations['to_delete'] = True
+                            self.log.info("Setting %s(%s) to be deleted" % (
+                                node_to_delete.system_annotations['url'],
+                                node_to_delete.node_id
+                            ))
+                            self.graph.current_session().merge(node_to_delete)
                     else:
-                        node_to_delete = self.graph.nodes(File).get(values['id'])
-                        node_to_delete.system_annotations['to_delete'] = True
-                        self.log.info("Setting %s(%s) to be deleted" % (
-                            node_to_delete.system_annotations['url'],
-                            node_to_delete.node_id
-                        ))
-                        self.graph.current_session().merge(node_to_delete)
+                        self.log.warn("Warning, %s found, not deleting" % values['url'])
 
             self.log.info("%d total files, %d marked for deletion" % (
                 len(target_dcc_files), files_to_delete))
@@ -263,17 +280,17 @@ class TARGETDCCProjectSyncer(object):
         else:
             self.log.info("syncing files serially")
             for url in self.file_links():
-                process_url(kwargs, url)
+                node_id = process_url(kwargs, url)
                 # mark url as found
                 if url in file_dict:
                     file_dict[url]['delete'] = False
                 else:
                     data = {}
                     data['delete'] = False
-                    data['id'] = "unknown"
+                    data['id'] = node_id
                     file_dict[url] = data
 
-            self.cull(file_dict)
+            self.cull(file_dict, kwargs)
 
 
 class TARGETDCCFileSyncer(object):
@@ -359,3 +376,5 @@ class TARGETDCCFileSyncer(object):
                 builder.build()
             except Exception:
                 self.log.exception("failed to classify %s", file_node)
+
+        return file_node.node_id
