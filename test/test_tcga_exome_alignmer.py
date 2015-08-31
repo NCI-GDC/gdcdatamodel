@@ -74,7 +74,7 @@ def fake_build_docker_cmd(self):
     """
     Simulate the action of running the actual docker container.
     """
-    assert self.cores
+    assert self.config["cores"] > 0
     todo = [
         "set -e",
         # assert that input bam exists
@@ -103,20 +103,20 @@ def fake_build_docker_cmd(self):
     else:
         get_path = self.container_abspath
     output_bam_path = get_path(os.path.join(
-        self.scratch_dir, "realn", "md",
-        self.input_bam.file_name)
+        self.config["scratch_dir"], "realn", "md",
+        self.inputs["bam"].file_name)
     )
     output_bai_path = output_bam_path.replace(".bam", ".bai")
     output_log_path = get_path(os.path.join(
-        self.scratch_dir, "aln_"+self.input_bam.node_id+".log")
+        self.config["scratch_dir"], "aln_"+self.inputs["bam"].node_id+".log")
     )
     output_db_path = get_path(os.path.join(
-        self.scratch_dir, self.input_bam.node_id+"_harmonize.db")
+        self.config["scratch_dir"], self.inputs["bam"].node_id+"_harmonize.db")
     )
     return template.format(
-        reference_path=get_path(self.reference),
-        bam_path=get_path(self.input_bam_path),
-        bai_path=get_path(self.input_bai_path),
+        reference_path=get_path(self.config["reference"]),
+        bam_path=get_path(self.input_paths["bam"]),
+        bai_path=get_path(self.input_paths["bam"]),
         output_bam_path=output_bam_path,
         output_bai_path=output_bai_path,
         output_log_path=output_log_path,
@@ -158,6 +158,12 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         os.environ["UPLOAD_S3_HOST"] = "s3.amazonaws.com"
         os.environ["BAM_S3_BUCKET"] = "tcga_exome_alignments"
         os.environ["LOGS_S3_BUCKET"] = "tcga_exome_alignment_logs"
+        # env vars below here are not actually used
+        os.environ["CLEV_ACCESS_KEY"] = "fake"
+        os.environ["CEPH_ACCESS_KEY"] = "fake"
+        os.environ["CLEV_SECRET_KEY"] = "fake"
+        os.environ["CEPH_SECRET_KEY"] = "fake"
+        os.environ["SIGNPOST_URL"] = "http://fake-signpost"
         self.fake_s3.start()
         self.boto_manager["s3.amazonaws.com"].create_bucket("tcga_exome_alignments")
         self.boto_manager["s3.amazonaws.com"].create_bucket("tcga_exome_alignment_logs")
@@ -171,6 +177,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             consul_prefix=self.random_string()+"tcga_exome_align"
         ))
         return TCGAExomeAligner(**kwargs)
+
 
     def create_file(self, name, content):
         bam_doc = self.signpost_client.create()
@@ -254,7 +261,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             # too old, so we use the FakeDocker client instead, which
             # just execs things on the host
             docker_patch = patch(
-                "zug.harmonize.tcga_exome_aligner.docker.Client",
+                "zug.harmonize.abstract_harmonizer.docker.Client",
                 new=FakeDockerClient
             )
             return nested(aligner_patches, docker_patch)
@@ -266,7 +273,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             file.aliquots = [aliquot]
         with self.monkey_patches():
             aligner = self.get_aligner()
-            aligner.align()
+            aligner.go()
         # query for new node and verify pull down from s3
         with self.graph.session_scope():
             new_bam = self.graph.nodes(File)\
@@ -313,7 +320,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             file.derived_files = [second_file]
         with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
             aligner = self.get_aligner()
-            aligner.align()
+            aligner.go()
 
     def test_raises_if_consul_key_is_locked(self):
         """It there are no bam files without derived_files, test that we raise
@@ -328,11 +335,11 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner = self.get_aligner()
             with aligner.consul.consul_session_scope():
                 with self.graph.session_scope():
-                    aligner.choose_bam_to_align()
+                    aligner.try_lock(file.node_id)
                     # second one should fail because the first locked the only
                     # file to align
-                    with self.assertRaises(RuntimeError):
-                        aligner.choose_bam_to_align()
+                    with self.assertRaises(NoMoreWorkException):
+                        aligner.go()
 
     def test_size_limit(self):
         with self.graph.session_scope():
@@ -342,17 +349,17 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         with self.monkey_patches():
             aligner = self.get_aligner()
             with aligner.consul.consul_session_scope():
-                aligner.size_limit = 2
+                aligner.config["size_limit"] = 2
                 with self.assertRaises(NoMoreWorkException):
                     with self.graph.session_scope():
-                        aligner.choose_bam_to_align()
+                        aligner.find_inputs()
             aligner = self.get_aligner()
-            aligner.size_limit = 50
+            aligner.config["size_limit"] = 50
             with aligner.consul.consul_session_scope():
                 with self.graph.session_scope():
-                    aligner.choose_bam_to_align()
-            assert aligner.input_bam
-            assert aligner.input_bai
+                    lock_id, input = aligner.find_inputs()
+            assert "bam" in input
+            assert "bai" in input
 
     def test_force_input_id(self):
         with self.graph.session_scope():
@@ -362,5 +369,5 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         with self.monkey_patches():
             aligner = self.get_aligner(force_input_id=file.node_id)
             with self.graph.session_scope(), aligner.consul.consul_session_scope():
-                aligner.choose_bam_to_align()
-                self.assertEqual(aligner.input_bam.node_id, file.node_id)
+                lock_id, inputs = aligner.find_inputs()
+                self.assertEqual(inputs["bam"].node_id, file.node_id)
