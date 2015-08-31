@@ -47,7 +47,7 @@ class TestValidators(unittest.TestCase):
         self.entities[0].doc = {'type': 'aliquot',
                                 'centers': {'alias': 'test'}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(self.entities[0].errors[0]['keys'], [])
+        self.assertEqual(self.entities[0].errors[0]['keys'], ['alias'])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_wrong_node_type(self):

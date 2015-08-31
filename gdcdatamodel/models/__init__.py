@@ -54,6 +54,31 @@ def get_links(schema):
     return links
 
 
+def PropertyFactory(name, schema, key=None):
+    key = name if key is None else key
+
+    # Lookup and translate types
+    types = schema.get('type')
+    types = [types] if not isinstance(types, list) else types
+    python_types = [a for t in types for a in {
+        'string': [str],
+        'number': [float, int, long],
+        'integer': [int, long],
+        'float': [float],
+        'null': [str],
+        'boolean': [bool],
+        None: [str],
+    }[t]]
+    enum = schema.get('enum')
+
+    # Create pg_property setter
+    @pg_property(*python_types, enum=enum)
+    def setter(self, val):
+        self._set_property(key, val)
+
+    return setter
+
+
 def NodeFactory(title, schema):
     name = remove_spaces(title)
     label = to_camel_case(name)
@@ -68,16 +93,15 @@ def NodeFactory(title, schema):
         self.node_id = value
 
     properties = {
-        key: pg_property(
-            lambda self, val, key=key: self._set_property(key, val))
-        for key, val in schema.get('properties', {}).iteritems()
+        key: PropertyFactory(key, schema)
+        for key, schema in schema.get('properties', {}).iteritems()
         if key not in links
         and key not in excluded_props
     }
 
     if 'alias' in schema.get('properties', {}):
-        properties['submitter_id'] = pg_property(
-            lambda self, val: self._set_property('submitter_id', val))
+        properties['submitter_id'] = PropertyFactory(
+            'alias', schema['properties']['alias'], 'submitter_id')
 
     properties['_pg_links'] = {name: Node.get_subclass(l['target_type'])
                                for name, l in links.iteritems()}
