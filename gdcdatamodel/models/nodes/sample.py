@@ -84,11 +84,15 @@ class Sample(Node):
     def shortest_dimension(self, value):
         return self._set_property('shortest_dimension', value)
 
-    @pg_property(str)
+    # note (jjp, 8/10/15) that these next two are intended to be
+    # floats going forward, the str is only there for backwards
+    # compatibility and should eventually be removed
+
+    @pg_property(float, str)
     def initial_weight(self, value):
         return self._set_property('initial_weight', value)
 
-    @pg_property(str)
+    @pg_property(float, str)
     def current_weight(self, value):
         return self._set_property('current_weight', value)
 

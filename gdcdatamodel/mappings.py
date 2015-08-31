@@ -62,6 +62,8 @@ def _get_header(source):
 def _get_es_type(_type):
     if long in _type or int in _type:
         return 'long'
+    elif float in _type:
+        return 'double'
     else:
         return 'string'
 
@@ -162,6 +164,7 @@ def get_file_es_mapping(include_case=True):
     files.properties.associated_entities.properties.entity_type = STRING
     files.properties.associated_entities.properties.entity_id = STRING
     files.properties.associated_entities.properties.case_id = STRING
+    files.properties.associated_entities.properties.entity_submitter_id = STRING
 
     # Patch file mutlifields
     add_multifields(files, 'files')
