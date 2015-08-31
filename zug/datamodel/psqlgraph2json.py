@@ -94,6 +94,11 @@ class PsqlGraph2JSON(object):
         self.annotation_entities = None
         self.entity_cases = None
 
+        # Suppress entities with redaction annotation if
+        # entity.annotation.category not in this list
+        self.redacted_but_not_suppressed = ['Subject withdrew consent']
+
+        # Omit entities from these projects
         self.omitted_projects = {
             ('TCGA', 'CNTL'),
             ('TCGA', 'MISC'),
@@ -205,9 +210,9 @@ class PsqlGraph2JSON(object):
             # Aggregate ids as we walk the tree
             if ids is not None and child.label in TOP_LEVEL_IDS:
                 ids['{}_ids'.format(child.label)].append(child.node_id)
-                if child.props.get('submitter_id'):
-                    ids['submitter_{}_ids'.format(child.label)].append(
-                        child.props.get('submitter_id'))
+                sub_id = child._props.get('submitter_id')
+                if sub_id is not None:
+                    ids['submitter_{}_ids'.format(child.label)].append(sub_id)
 
         if corr == ONE_TO_MANY:
             doc.append(subdoc)
@@ -233,7 +238,7 @@ class PsqlGraph2JSON(object):
         """
 
         base = {'{}_id'.format(node.label): node.node_id}
-        base.update(node.properties)
+        base.update(node._props)
         return base
 
     ###################################################################
@@ -601,6 +606,7 @@ class PsqlGraph2JSON(object):
             lambda p: self.walk_tree(p, ptree, self.ptree_mapping, [])[0],
             ptree)
         for p in doc['cases']:
+            self.patch_tcga_ages(p)
             self.patch_project(p['project'])
             self.reconstruct_biospecimen_paths(p)
         return relevant
@@ -640,11 +646,16 @@ class PsqlGraph2JSON(object):
                 # Skip, the cases is likely missing because it is omitted
                 continue
             case = self.entity_cases[e]
-            docs.append({
+            subdoc = {
                 'entity_type': e.label,
                 'entity_id': e.node_id,
-                'case_id': case.node_id,
-            })
+                'case_id': case.node_id
+            }
+            # NOTE: Use _props here to avoid overhead of proxy dictionary
+            esid = e._props.get('submitter_id')
+            if esid:
+                subdoc['entity_submitter_id'] = esid
+            docs.append(subdoc)
         if docs:
             doc['associated_entities'] = docs
 
@@ -805,8 +816,9 @@ class PsqlGraph2JSON(object):
         entity = entities[0]
         ann_doc['entity_type'] = entity.label
         ann_doc['entity_id'] = entity.node_id
-        if 'submitter_id' in entity.properties:
-            ann_doc['entity_submitter_id'] = entity['submitter_id']
+        esid = entity._props.get('submitter_id')
+        if esid:
+            ann_doc['entity_submitter_id'] = esid
         return ann_doc
 
     def denormalize_all(self):
@@ -881,7 +893,7 @@ class PsqlGraph2JSON(object):
     ###################################################################
 
     def validate_project_file_counts(self, project_doc, file_docs):
-        print 'Validating {}'.format(project_doc['project_id'])
+        log.info('Validating {}'.format(project_doc['project_id']))
         actual = len([f for f in file_docs
                       if project_doc['project_id']
                       in {p['project']['project_id']
@@ -951,10 +963,19 @@ class PsqlGraph2JSON(object):
         """Returns false if node is a file that is not supposed to be indexed.
 
         """
+
+        # This function should only be for files
+        if node.label != 'file':
+            return True
+
+        # Is file to_delete
         if node.system_annotations.get("to_delete"):
             return False
-        if node.label == 'file' and not node.state == 'live':
+
+        # Is file not live
+        if node.state != 'live':
             return False
+
         return True
 
     def is_from_omitted_project(self, node):
@@ -965,39 +986,99 @@ class PsqlGraph2JSON(object):
 
         # Get the project and program
         if node.label == 'project':
-            project = node.code
-            program = node.programs[0].name
+            project_code = node.code
+            program_name = list(self.neighbors_labeled(
+                node, 'program'))[0].name
         elif node.label == 'case':
-            project = node.projects[0].code
-            program = node.projects[0].programs[0].name
+            project = list(self.neighbors_labeled(node, 'project'))[0]
+            program = list(self.neighbors_labeled(project, 'program'))[0]
+            project_code = project.code
+            program_name = program.name
         else:
-            project, program = (None, None)
+            program_name, project_code = (None, None)
 
         # Check project and program against omitted_projects
-        if (program, project) in self.omitted_projects:
+        if (program_name, project_code) in self.omitted_projects:
             return True
         else:
             return False
 
-    def is_edge_indexed(self, edge):
+    def is_node_indexed(self, node):
         """Returns false if the node is not supposed to be indexed.
 
         """
+
         # Check for non-indexed files
-        if not (self.is_file_indexed(edge.src) and
-                self.is_file_indexed(edge.dst)):
-            return False
-        if (edge.src.label == 'file' and
-           edge.label == 'data_from' and
-           edge.dst.label == 'file'):
+        if not self.is_file_indexed(node):
+            log.info('Node not indexed (file not indexed): {}'.format(node))
             return False
 
         # Check for omitted_projects
-        if self.is_from_omitted_project(edge.src) or\
-           self.is_from_omitted_project(edge.dst):
+        if self.is_from_omitted_project(node):
+            log.info('Node not indexed (omitted project ): {}'.format(node))
             return False
 
         return True
+
+    def truncate_path(self, path, label):
+        """
+        Given a path (a list of node labels), "truncate" it from the left
+        such that it starts with the given label, or return [], e.g.:
+
+        truncate_path(["a", "b", "c"], "a") -> ["b", "c"]
+        truncate_path(["c", "d"], "b") -> []
+
+        """
+        for i, currlabel in enumerate(path):
+            if currlabel == label:
+                return path[i+1:]
+        return []
+
+    def suppressed_nodes(self):
+        """
+        Find all nodes that need to be suppressed due to redactions.
+        """
+        redactions = [a for a in self.nodes_labeled('annotation')
+                      if a.classification == "Redaction" and
+                      a.category not in self.redacted_but_not_suppressed]
+        to_suppress = []
+        for redaction in redactions:
+            redacted_list = self.G.neighbors(redaction)
+            # an annotation should only ever annotate one thing
+            assert len(redacted_list) == 1
+            redacted = redacted_list[0]
+            if redacted.label == "case":
+                paths = self.case_to_file_paths
+            else:
+                paths = [self.truncate_path(p, redacted.label)
+                         for p in self.case_to_file_paths]
+                # filter empty paths
+                paths = [p for p in paths if p]
+            log.info("suppressing %s, which is redacted directly.", redacted)
+            to_suppress.append(redacted)
+            # returning the redaction annotations themselves here might
+            # seem weird, but including the redaction annotations
+            # themselves without the things they point to won't work, so
+            # we have to remove them.
+            log.info("suppressing %s, the redaction annotation.", redaction)
+            to_suppress.append(redaction)
+            log.info("Walking down towards file with paths %s", paths)
+            extra = self.walk_paths(redacted, paths, whole=True)
+            log.info("Found %s other things to suppress by walking from %s",
+                     extra, redacted)
+            to_suppress.extend(extra)
+        return to_suppress
+
+    def remove_unindexed_nodes_from_graph(self):
+        log.info('Selecting entities to be removed from cache...')
+        removed_nodes = [node for node in self.G.nodes()
+                         if not self.is_node_indexed(node)]
+        log.info("Removing {} nodes from cache".format(len(removed_nodes)))
+        self.G.remove_nodes_from(removed_nodes)
+        log.info("Finding and removing suppressed nodes")
+        suppressed = self.suppressed_nodes()
+        log.info("Removing %s suppressed nodes", len(suppressed))
+        self.G.remove_nodes_from(suppressed)
 
     def cache_database(self):
         """Load the database into memory and remember only edge labels that we
@@ -1010,20 +1091,23 @@ class PsqlGraph2JSON(object):
                 pbar.update(pbar.currval+1)
                 needs_differentiation = ((e.src.label, e.label, e.dst.label)
                                          in self.differentiated_edges)
-                if not self.is_edge_indexed(e):
-                    continue
-                if needs_differentiation and e.properties:
+                if needs_differentiation and e._props:
                     self.G.add_edge(
-                        e.src, e.dst, label=e.label, props=e.properties)
-                elif needs_differentiation and not e.properties:
+                        e.src, e.dst, label=e.label, props=e._props)
+                elif needs_differentiation and not e._props:
                     self.G.add_edge(e.src, e.dst, label=e.label)
-                elif e.properties:
-                    self.G.add_edge(e.src, e.dst, props=e.properties)
+                elif e._props:
+                    self.G.add_edge(e.src, e.dst, props=e._props)
                 else:
                     self.G.add_edge(e.src, e.dst)
             pbar.finish()
+
+        # Prune graph
+        log.info('Cached {} nodes'.format(self.G.number_of_nodes()))
+        self.remove_unindexed_nodes_from_graph()
+
+        # Aggressively cache relationships, nodes by type, traversals, etc.
         self._cache_all()
-        print('Cached {} nodes'.format(self.G.number_of_nodes()))
 
     def _cache_all(self):
         """Create key value maps to cache nodes by label, by path, etc.
@@ -1040,12 +1124,12 @@ class PsqlGraph2JSON(object):
 
     def _cache_projects(self):
         if not self.projects:
-            print 'Caching projects...'
+            log.info('Caching projects...')
             self.projects = list(self.nodes_labeled('project'))
 
     def _cache_cases(self):
         if not self.cases:
-            print 'Caching cases...'
+            log.info('Caching cases...')
             self.cases = list(self.nodes_labeled('case'))
 
     def _cache_entity_cases(self):
@@ -1119,7 +1203,7 @@ class PsqlGraph2JSON(object):
 
         if len(self.data_types):
             return
-        print('Caching data types')
+        log.info('Caching data types')
         for data_type in self.nodes_labeled('data_type'):
             self.data_types[data_type] = self.remove_bam_index_files(
                 set(self.walk_path(data_type, ['data_subtype', 'file'])))
@@ -1133,7 +1217,7 @@ class PsqlGraph2JSON(object):
 
         if len(self.experimental_strategies):
             return
-        print('Caching experitmental strategies')
+        log.info('Caching experitmental strategies')
         for exp_strat in self.nodes_labeled('experimental_strategy'):
             self.experimental_strategies[exp_strat] = set(self.walk_path(
                 exp_strat, ['file']))

@@ -79,10 +79,13 @@ class GDCElasticsearch(object):
         self.deploy(case_docs, file_docs, ann_docs, project_docs,
                     roll_alias=roll_alias)
         with self.graph.session_scope() as session:
-            for node in to_delete:
-                node = session.merge(node)
-                self.log.info("Deleting %s", node)
-                session.delete(node)
+            for expired_node in to_delete:
+                node = self.graph.nodes(expired_node.__class__)\
+                                 .ids(expired_node.node_id)\
+                                 .scalar()
+                if node:
+                    self.log.info("Deleting %s", node)
+                    session.delete(node)
 
     def pbar(self, title, maxval):
         """Create and initialize a custom progressbar
