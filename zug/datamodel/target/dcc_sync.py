@@ -236,18 +236,19 @@ class TARGETDCCProjectSyncer(object):
                 else:
                     self.log.warn("%s not present, skipping" % url)
 
-    def cull(self, target_dcc_files, kwargs):
+    def cull(self, target_dcc_files, dcc_auth_info):
         """Set files to_delete to True based on dict passed"""
         with self.graph.session_scope():
             files_to_delete = 0
             for key, values in target_dcc_files.iteritems():
                 if values['delete'] == True:
                     # try and get the file
-                    resp = requests.get(values['url'], **kwargs)
+                    print "Checking", key
+                    resp = requests.get(key, auth=dcc_auth_info)
                     if resp.status_code == 404:
                         files_to_delete += 1
                         if 'id' not in values:
-                            self.log.warn("Warning, unable to delete %s, id missing." % values['url'])
+                            self.log.warn("Warning, unable to delete %s, id missing." % key)
                         else:
                             node_to_delete = self.graph.nodes(File).get(values['id'])
                             node_to_delete.system_annotations['to_delete'] = True
@@ -257,7 +258,7 @@ class TARGETDCCProjectSyncer(object):
                             ))
                             self.graph.current_session().merge(node_to_delete)
                     else:
-                        self.log.warn("Warning, %s found, not deleting" % values['url'])
+                        self.log.warn("Warning, %s found, not deleting" % key)
 
             self.log.info("%d total files, %d marked for deletion" % (
                 len(target_dcc_files), files_to_delete))
@@ -290,7 +291,7 @@ class TARGETDCCProjectSyncer(object):
                     data['id'] = node_id
                     file_dict[url] = data
 
-            self.cull(file_dict, kwargs)
+            self.cull(file_dict, self.dcc_auth)
 
 
 class TARGETDCCFileSyncer(object):
