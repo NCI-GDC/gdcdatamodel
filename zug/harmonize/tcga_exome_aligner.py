@@ -92,7 +92,6 @@ class TCGAExomeAligner(AbstractHarmonizer):
 
         """
         wxs = ExperimentalStrategy.name.astext == "WXS"
-        broad = Center.short_name.astext == "BI"
         illumina = Platform.name.astext.contains("Illumina")
         currently_being_aligned = self.consul.list_locked_keys()
         # NOTE you would think that file_name filter would be
@@ -106,7 +105,6 @@ class TCGAExomeAligner(AbstractHarmonizer):
                                     .join(Aliquot)\
                                     .distinct(Aliquot.node_id.label("aliquot_id"))\
                                     .filter(File.experimental_strategies.any(wxs))\
-                                    .filter(File.centers.any(broad))\
                                     .filter(File.platforms.any(illumina))\
                                     .filter(File.file_name.astext.endswith(".bam"))\
                                     .filter(~File.derived_files.any())\
