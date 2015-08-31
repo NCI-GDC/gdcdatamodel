@@ -59,7 +59,8 @@ def main():
             },
             signpost_url=environ["SIGNPOST_URL"],
             dcc_auth=(environ["DCC_USER"], environ["DCC_PASS"]),
-            pool=Pool(args.pool) if args.pool else None
+            pool=Pool(args.pool) if args.pool else None,
+            verify_missing=environ["VERIFY_MISSING"] if "VERIFY_MISSING" in environ else None
         )
         syncer.sync()
 

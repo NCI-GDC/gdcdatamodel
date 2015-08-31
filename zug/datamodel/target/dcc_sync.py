@@ -186,7 +186,7 @@ class TARGETDCCProjectSyncer(object):
 
     def __init__(self, project, signpost_url=None,
                  graph_info=None, dcc_auth=None,
-                 storage_info=None, pool=None):
+                 storage_info=None, pool=None, verify_missing=True):
         self.project = project
         self.dcc_auth = dcc_auth
         self.signpost_url = signpost_url
@@ -194,6 +194,7 @@ class TARGETDCCProjectSyncer(object):
         self.storage_info = storage_info
         self.base_url = "https://target-data.nci.nih.gov/"
         self.pool = pool
+        self.verify_missing = verify_missing
         self.log = get_logger("target_dcc_project_sync_" +
                               str(os.getpid()) +
                               "_" + self.project)
@@ -244,8 +245,12 @@ class TARGETDCCProjectSyncer(object):
                 if values['delete'] == True:
                     # try and get the file
                     print "Checking", key
-                    resp = requests.get(key, auth=dcc_auth_info)
-                    if resp.status_code == 404:
+                    if self.verify_missing:
+                        resp = requests.get(key, auth=dcc_auth_info)
+                    else:
+                        resp = requests.Response
+                        resp.status_code = 404
+                    if (resp.status_code == 404):
                         files_to_delete += 1
                         if 'id' not in values:
                             self.log.warn("Warning, unable to delete %s, id missing." % key)
