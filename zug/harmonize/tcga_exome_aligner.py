@@ -162,7 +162,6 @@ class TCGAExomeAligner(object):
 
         """
         wxs = ExperimentalStrategy.name.astext == "WXS"
-        broad = Center.short_name.astext == "BI"
         illumina = Platform.name.astext.contains("Illumina")
         # NOTE you would think that file_name filter would be
         # unnecessary but we have some TCGA exomes that end with
@@ -175,7 +174,6 @@ class TCGAExomeAligner(object):
                                     .join(Aliquot)\
                                     .distinct(Aliquot.node_id.label("aliquot_id"))\
                                     .filter(File.experimental_strategies.any(wxs))\
-                                    .filter(File.centers.any(broad))\
                                     .filter(File.platforms.any(illumina))\
                                     .filter(File.file_name.astext.endswith(".bam"))\
                                     .filter(~File.derived_files.any())\
