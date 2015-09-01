@@ -31,11 +31,11 @@ class TargetDCCCGIDownloader(object):
             "PilotAnalysisPipeline2/",
             "OptionAnalysisPipeline2/"
         ]
-
+        # TODO: Move this elsewhere (args? env?)
         self.projects = [
-            "AML",
-            "NBL",
-        #    "WT",
+            #"AML",
+            #"NBL",
+            "WT",
         ]
 
         # ignore the header line
@@ -460,12 +460,27 @@ class TargetDCCCGIDownloader(object):
                     processed_files.append(data['s3_key_name'])
         return file_data, processed_files
 
+    def find_key(self, s3_inst, s3_conn, bucket, s3_key_name, project):
+        self.log.info("Checking for key %s in bucket %s" % (s3_key_name, bucket))
+        file_key = s3_inst.get_file_key(s3_conn, bucket, s3_key_name)
+        if file_key == None:
+            new_key_name = s3_key_name.strip(project+"/")
+            self.log.info("Key not found, checking %s" % new_key_name)
+            file_key = s3_inst.get_file_key(s3_conn, bucket, new_key_name)
+            print file_key
+
+        return file_key
+
     def process_job(self, directory, object_store, bucket, project, tag, re_md5_tarball=True):
         """The main routine to create a tarball and create nodes/edges given a starting point."""
         self.log.info("Processing %s for project %s with recheck=%u" % (
             directory['dir_name'], project, re_md5_tarball
         ))
 
+        if project == "WT":
+            new_key_name = False
+        else:
+            new_key_name = True
         create_nodes = True 
         node_data = {}
         url_list = []
@@ -475,8 +490,6 @@ class TargetDCCCGIDownloader(object):
         aliquot_ids = []
         pq = self.connect_to_psqlgraph() 
         link_count = 0
-
-
 
         self.write_json_to_file({
             'directory name':directory['dir_name'],
@@ -500,8 +513,10 @@ class TargetDCCCGIDownloader(object):
             if url_parts[-2] == "EXP":
                 dl_entry = {}
                 dl_entry['url'] = entry
-                dl_entry['s3_key_name'] = project + "/" + tag + "/" + url_parts[-3] + "/" + url_parts[-1]
-#                dl_entry['s3_key_name'] = tag + "/" + url_parts[-3] + "/" + url_parts[-1]
+                if new_key_name:
+                    dl_entry['s3_key_name'] = project + "/" + tag + "/" + url_parts[-3] + "/" + url_parts[-1]
+                else:
+                    dl_entry['s3_key_name'] = tag + "/" + url_parts[-3] + "/" + url_parts[-1]
                 dl_entry['file_name'] = url_parts[-1]
                 download_list.append(dl_entry)
             if url_parts[-3] == "EXP":
@@ -518,20 +533,24 @@ class TargetDCCCGIDownloader(object):
         # check if the key already exists
         s3_inst = S3_Wrapper()
         s3_conn = s3_inst.connect_to_s3(object_store)
-        s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
-#        s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
-        file_key = s3_inst.get_file_key(s3_conn, bucket, s3_key_name)
-
+        if new_key_name:
+            s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
+        else:
+            s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
+        #file_key = s3_inst.get_file_key(s3_conn, bucket, s3_key_name)
+        file_key = self.find_key(s3_inst, s3_conn, bucket, s3_key_name, project)
         # TODO: if the key does exist, we need to check if the archive needs to be updated
         if file_key == None:
             self.log.info("Key %s not found, downloading and creating archive" % s3_key_name)
-
+            sys.exit()
             # create the tarball
             tar_ball = TarStream(tar_list, tarball_name)
 
             # upload tarball to s3
-            s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
-#            s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
+            if new_key_name:
+                s3_key_name = "%s/%s/%s%s" % (project, tag, directory['dir_name'], tarball_name) 
+            else:
+                s3_key_name = "%s/%s%s" % (tag, directory['dir_name'], tarball_name) 
             upload_stats = s3_inst.upload_multipart_file(s3_conn, bucket, s3_key_name, tar_ball, True)
             tarball_md5_sum = upload_stats['md5_sum']
             tarball_size = upload_stats['bytes_transferred']
@@ -546,28 +565,44 @@ class TargetDCCCGIDownloader(object):
             self.log.info("Key %s already found (%d), skipping upload" % (
                 file_key.name, file_key.size))
             # md5 the file
-            md5_1 = md5.new()
             tarball_size = 0
-            bytes_requested = 10485760
-            if re_md5_tarball:
+            tarball_md5_sum = ""
+            if file_key.name not in self.processed_keys:
+                # if we don't have a key, we have to recheck, regardless
+                #if re_md5_tarball:
+                self.log.info("Re-md5ing file")
+                md5_1 = md5.new()
+                bytes_requested = 10485760
                 chunk_read = file_key.read(size=bytes_requested)
                 while len(chunk_read):
+                    sys.stdout.write("%.02f%%\r" % ((float(tarball_size) / float(file_key.size)) * 100.0))
+                    sys.stdout.flush()
                     tarball_size += len(chunk_read)
                     md5_1.update(chunk_read)
                     chunk_read = file_key.read(size=bytes_requested)
 
                 tarball_md5_sum = md5_1.hexdigest()
             else:
-                self.log.info("skipping md5 recheck")
-                tarball_md5_sum = ""
-                tarball_size = None
-                for file_data in self.checkpoint_data:
-                    if file_data['s3_key_name'] == file_key.name:
-                        tarball_md5_sum = file_data['md5_sum']
-                        tarball_size = file_data['file_size']
-                        break
-                if tarball_size:
-                    self.log.info("Unable to find key %s in checkpoint file" % file_key.name)
+                if not re_md5_tarball:
+                    self.log.info("skipping md5 recheck")
+                    for file_data in self.checkpoint_data:
+                        if file_data['s3_key_name'] == file_key.name:
+                            tarball_md5_sum = file_data['md5_sum']
+                            tarball_size = file_data['file_size']
+                            break
+                    if tarball_size:
+                        self.log.info("Unable to find key %s in checkpoint file" % file_key.name)
+                else:
+                    self.log.info("Re-md5ing file")
+                    md5_1 = md5.new()
+                    bytes_requested = 10485760
+                    chunk_read = file_key.read(size=bytes_requested)
+                    while len(chunk_read):
+                        tarball_size += len(chunk_read)
+                        md5_1.update(chunk_read)
+                        chunk_read = file_key.read(size=bytes_requested)
+
+                    tarball_md5_sum = md5_1.hexdigest()
 
             if tarball_size == file_key.size:
                 self.log.info("md5 sum: %s size: %d" % (tarball_md5_sum, tarball_size))
