@@ -68,6 +68,8 @@ class TargetDCCCGIDownloader(object):
         self.count = 0
         self.total_size = 0
 
+        self.psql = None
+
         if not signpost_client:
             if 'SIGNPOST_URL' in os.environ:
                 self.signpost_url = os.environ['SIGNPOST_URL']
@@ -96,17 +98,17 @@ class TargetDCCCGIDownloader(object):
         # trying to make it look more smartly because the env names seem
         # to change so much depending (QA_PG_HOST vs. ZUGS_PG_HOST, etc)
         for env in os.environ.keys():
-            if env.find('PG_HOST') != -1:
+            if 'PG_HOST' in env:
                 self.pq_creds['host_name'] = os.environ[env]
-            if env.find('PG_USER') != -1:
+            if 'PG_USER' in env:
                 self.pq_creds['user_name'] = os.environ[env]
-            if env.find('PG_NAME') != -1:
+            if 'PG_NAME' in env:
                 self.pq_creds['db_name'] = os.environ[env]
-            if env.find('PG_PASS') != -1:
+            if 'PG_PASS' in env:
                 self.pq_creds['password'] = os.environ[env]
-            if env.find('DCC_USER') != -1:
+            if 'DCC_USER' in env:
                 self.dcc_creds['id'] = os.environ[env]
-            if env.find('DCC_PASS') != -1:
+            if 'DCC_PASS' in env:
                 self.dcc_creds['pw'] = os.environ[env]
 
         #self.target_acls = ["phs000471", "phs000218"]
@@ -122,13 +124,11 @@ class TargetDCCCGIDownloader(object):
 
 
     def connect_to_psqlgraph(self):
-        psql = PsqlGraphDriver(
+        self.psql = PsqlGraphDriver(
             self.pq_creds['host_name'],
             self.pq_creds['user_name'],
             self.pq_creds['password'],
             self.pq_creds['db_name'])
-
-        return psql
 
     def get_idpw(self):
         username = raw_input('Username: ')
@@ -232,7 +232,7 @@ class TargetDCCCGIDownloader(object):
     def create_signpost_uri(self, object_store, bucket, key_name):
         return "s3://%s/%s/%s" % (object_store, bucket, key_name)
 
-    def create_tarball_file_node(self, pq,  
+    def create_tarball_file_node(self,  
         tarball_name, tarball_md5_sum, tarball_size, 
         s3_key_name, participant_barcode):
         """Create the file node in psqlgraph for the tarball."""
@@ -242,7 +242,7 @@ class TargetDCCCGIDownloader(object):
         node_exists = False
 
         # see if we exist before getting a new ID
-        results = pq.nodes(mod.File).props(file_name=tarball_name).all()
+        results = self.psql.nodes(mod.File).props(file_name=tarball_name).all()
         if len(results) > 0:
             if len(results) > 1:
                 raise RuntimeError("More than one file found with that name")
@@ -301,7 +301,7 @@ class TargetDCCCGIDownloader(object):
 
         return tarball_node_id, file_node
 
-    def create_related_file_node(self, pq, entry, participant_barcode, tarball_file_node):
+    def create_related_file_node(self, entry, participant_barcode, tarball_file_node):
         """Create a node for a related file in psqlgraph."""
         if tarball_file_node != None:
             add_related_file = True
@@ -372,56 +372,35 @@ class TargetDCCCGIDownloader(object):
                 })
                 related_file_node.acl = self.target_acls
 
-    def create_edges(self, pq, tarball_node_id, tarball_file_node, project, tag):
+    def create_edges(self, tarball_node_id, tarball_file_node, project, tag):
         """Create the edges to a given tarball node in psqlgraph."""
         if tarball_file_node is not None:
             # platform
             if len(tarball_file_node.platforms) == 0:
-                platform_node = pq.nodes(mod.Platform).props(name=self.platform).first()
-                if platform_node != None:
-                    tarball_file_node.platforms.append(platform_node)
-                else:
-                    raise RuntimeError("Unable to find Platform '%s'" % self.platform)
+                platform_node = self.psql.nodes(mod.Platform).props(name=self.platform).one()
+                tarball_file_node.platforms.append(platform_node)
 
             # data_subtype
             if len(tarball_file_node.data_subtypes) == 0:
-                data_subtype_node = pq.nodes(mod.DataSubtype).props(name=self.data_subtype).first()
-                if data_subtype_node != None:
-                    tarball_file_node.data_subtypes.append(data_subtype_node)
-                else:
-                    raise RuntimeError("Unable to find Data Subtype '%s'" % self.data_subtype)
+                data_subtype_node = self.psql.nodes(mod.DataSubtype).props(name=self.data_subtype).one()
+                tarball_file_node.data_subtypes.append(data_subtype_node)
 
             # data_format
             if len(tarball_file_node.data_formats) == 0:
-                data_format_node = pq.nodes(mod.DataFormat).props(name="TARGZ").first()
-                if data_format_node != None:
-                    tarball_file_node.data_formats.append(data_format_node)
-                else:
-                    raise RuntimeError("Unable to find Data Format '%s'" % self.data_format)
+                data_format_node = self.psql.nodes(mod.DataFormat).props(name="TARGZ").one()
+                tarball_file_node.data_formats.append(data_format_node)
 
             # experimental_strategy
             if len(tarball_file_node.experimental_strategies) == 0:
-                experimental_strategy_node = pq.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).first()
-                if experimental_strategy_node != None:
-                    tarball_file_node.experimental_strategies.append(experimental_strategy_node)
-                else:
-                    raise RuntimeError("Unable to find Experimental Strategy '%s'" % self.experimental_strategy)
+                experimental_strategy_node = self.psql.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).one()
+                tarball_file_node.experimental_strategies.append(experimental_strategy_node)
 
-            # project 
-            if len(tarball_file_node.tags) == 0:
-                project_node = pq.nodes(mod.Project).props(name=project).first()
-                if project_node != None:
-                    tarball_file_node.projects.append(project_node)
-                else:
-                    raise RuntimeError("Unable to find Project '%s'" % project)
+            # TODO: project when datamodel changes to support
 
             # tag
             if len(tarball_file_node.tags) == 0:
-                tag_node = pq.nodes(mod.Tag).props(name=tag).first()
-                if tag_node != None:
-                    tarball_file_node.tags.append(tag_node)
-                else:
-                    raise RuntimeError("Unable to find Tag '%s'" % tag)
+                tag_node = self.psql.nodes(mod.Tag).props(name=tag).one()
+                tarball_file_node.tags.append(tag_node)
 
     def find_latest_checkpoint(self, directory):
         """Find the latest checkpoint file.
@@ -488,7 +467,7 @@ class TargetDCCCGIDownloader(object):
         download_list = []
         aliquot_submitter_ids = set()
         aliquot_ids = []
-        pq = self.connect_to_psqlgraph() 
+        self.connect_to_psqlgraph() 
         link_count = 0
 
         self.write_json_to_file({
@@ -662,31 +641,31 @@ class TargetDCCCGIDownloader(object):
 
         if create_nodes:
             # create the nodes in psqlgraph
-            with pq.session_scope() as session:
+            with self.psql.session_scope() as session:
 
                 # find aliquot ids
                 for sub_id in aliquot_submitter_ids:
-                    match = pq.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
+                    match = self.psql.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
                     aliquot_ids.append(match.node_id)
                 
                 # create the file node for the tarball
                 tarball_node_id, tarball_file_node = self.create_tarball_file_node(
-                    pq, tarball_name, tarball_md5_sum, tarball_size, 
+                    tarball_name, tarball_md5_sum, tarball_size, 
                     s3_key_name, node_data['participant_barcode']
                 ) 
 
                 # link the tarball file to the other nodes
-                self.create_edges(pq, tarball_node_id, tarball_file_node, project, tag)
+                self.create_edges(tarball_node_id, tarball_file_node, project, tag)
 
                 # create related files
                 for entry in download_list:
                     self.create_related_file_node(
-                        pq, entry, node_data['participant_barcode'],
+                        entry, node_data['participant_barcode'],
                         tarball_file_node
                 )
             
                 # merge in our work
-                pq.current_session().merge(tarball_file_node)
+                self.psql.current_session().merge(tarball_file_node)
 
 
     def process_all_work(self, re_md5_tarball=False):

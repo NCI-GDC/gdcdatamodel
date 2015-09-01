@@ -30,27 +30,20 @@ class S3_Wrapper:
         # being a bit smart about getting the env data, in case we switch
         # VMs
         for env in os.environ.keys():
-            if env.find("ACCESS_KEY") != -1:
-                if env.find("CEPH") != -1:
+            if "ACCESS_KEY" in env:
+                if "CEPH" in env:
                     self.s3_inst_info['ceph']['access_key'] = os.environ[env]
-                elif env.find("CLEVERSAFE") != -1:
+                elif "CLEVERSAFE" in env:
                     self.s3_inst_info['cleversafe']['access_key'] = os.environ[env]
-                else:
-                    self.s3_inst_info['ceph']['access_key'] = os.environ[env]
-                    self.s3_inst_info['cleversafe']['access_key'] = os.environ[env]
-            if env.find("SECRET_KEY") != -1:
-                if env.find("CEPH") != -1:
+            if "SECRET_KEY" in env:
+                if "CEPH" in env:
                     self.s3_inst_info['ceph']['secret_key'] = os.environ[env]
-                elif env.find("CLEVERSAFE") != -1:
-                    self.s3_inst_info['cleversafe']['secret_key'] = os.environ[env]
-                else:
-                    self.s3_inst_info['ceph']['secret_key'] = os.environ[env]
+                elif "CLEVERSAFE" in env:
                     self.s3_inst_info['cleversafe']['secret_key'] = os.environ[env]
 
         for key, values in self.s3_inst_info.iteritems():
             if 'access_key' not in values:
                 print "Warning, no access key for", key
-
 
     def get_nearest_file_size(self, size):
         sizes = [
@@ -75,15 +68,12 @@ class S3_Wrapper:
         s3_ok = False
         if type(self.s3_inst_info[which_s3]['url']) == list:
             if url_offset >= len(self.s3_inst_info[which_s3]['url']):
-                print "Invalid offset, using 0"
                 url_offset = 0
             host_url = self.s3_inst_info[which_s3]['url'][url_offset]
         else:
             host_url = self.s3_inst_info[which_s3]['url']
-        print "Checking %s" % which_s3
         if which_s3 in self.s3_inst_info:
             logger.info('Checking that s3 is reachable')
-            print "Checking %s" % format(host_url)
             if self.s3_inst_info[which_s3]['secure']:
                 r = requests.get('https://{}'.format(host_url))
             else:
@@ -93,7 +83,6 @@ class S3_Wrapper:
                 logging.error('Status: {}'.format(r.status_code))
                 raise Exception('s3 unreachable at {}'.format(host_url))
             else:
-                print "Connect ok"
                 s3_ok = True
                 logger.info('Found s3 gateway at {}'.format(host_url))
 
@@ -106,7 +95,6 @@ class S3_Wrapper:
                 host_url = self.s3_inst_info[which_s3]['url'][url_offset]
             else:
                 host_url = self.s3_inst_info[which_s3]['url']
-            print "Connecting to %s - %s" % (which_s3, host_url)
             conn = boto.connect_s3(
                 aws_access_key_id=self.s3_inst_info[which_s3]['access_key'],
                 aws_secret_access_key=self.s3_inst_info[which_s3]['secret_key'],
@@ -137,26 +125,23 @@ class S3_Wrapper:
         else:
             key_name = file_name
 
-        print "Creating key:", key_name
         new_key.key = key_name
         new_key.set_contents_from_filename(file_name)
 
     # upload a file to an s3 instance as a multipart upload
     # it uses a stream size of 1 GiB per chunk to write
     def upload_multipart_file(self, conn, bucket_name, key_name, file_iterator, calc_md5=False, save_local=False):
-        print "Uploading to key %s, bucket %s" % (key_name, bucket_name)
         self.md5_sum = md5.new()
         bucket_exists = False
         if 'https_proxy' in os.environ:
             del os.environ['https_proxy']
         if 'http_proxy' in os.environ:
             del os.environ['http_proxy']
-        print "Checking buckets"
         bucket_exists = False
         try:
             bucket_list = conn.get_all_buckets()
         except:
-            print "Unable to list buckets:", sys.exc_info()[1]
+            raise RuntimeError
         else:
             for instance in bucket_list:
                 if instance.name == bucket_name:
@@ -168,13 +153,11 @@ class S3_Wrapper:
         else:
             bucket = conn.create_bucket(bucket_name)
 
-        print "Creating stream"
         stream_buffer = BIO()
         mp_chunk_size = 1073741824 # 1GiB
         cur_size = 0
         chunk_index = 1
         total_size = 0
-        print "Initiating multipart upload"
         mp = bucket.initiate_multipart_upload(key_name)
         start_time = time.clock()
 
@@ -202,20 +185,15 @@ class S3_Wrapper:
                 os.environ['https_proxy'] = "http://cloud-proxy:3128"
                 stream_buffer.seek(0)
                 if save_local:
-                    print "Saving local copy"
                     with open("tmp_" + key_name.split('/')[1], "wb") as save_file:
                         for chunk in stream_buffer:
                             save_file.write(chunk)
                     stream_buffer.seek(0)
                 try:
-                    print "\nWriting multipart chunk %d" % chunk_index
                     result = mp.upload_part_from_file(stream_buffer, chunk_index)
                 except:
-                    print "Error writing %d bytes" % cur_size
-                    print sys.exc_info()[1]
-                    sys.exit()
+                    raise RuntimeError
                 else:
-                    #print result
                     cur_size = 0
                     stream_buffer = BIO()
                     chunk_index += 1
@@ -228,29 +206,20 @@ class S3_Wrapper:
         os.environ['https_proxy'] = "http://cloud-proxy:3128"
         stream_buffer.seek(0)
         try:
-            print "\nWriting final multipart chunk %d, size %d" % (
-                chunk_index, len(stream_buffer)
-            )
             result = mp.upload_part_from_file(stream_buffer, chunk_index)
         except:
-            print "Error writing %d bytes" % cur_size
-            print sys.exc_info()[1]
-            sys.exit()
+            raise RuntimeError
         else:
             cur_size = 0
         del os.environ['https_proxy']
         del os.environ['http_proxy']
 
-        # print out results with transfer time
         cur_time = time.clock()
         size_info = self.get_nearest_file_size(total_size)
         base_transfer_rate = float(total_size) / float(cur_time - start_time)
         transfer_info = self.get_nearest_file_size(base_transfer_rate)
         cur_conv_size = float(total_size) / float(size_info[0])
         cur_conv_rate = base_transfer_rate / float(transfer_info[0])
-        print "Complete, %7.02f %s : %6.02f %s per sec\r" % (
-            cur_conv_size, size_info[1],
-            cur_conv_rate, transfer_info[1])
 
         if cur_size > 0:
             os.environ['http_proxy'] = "http://cloud-proxy:3128"
@@ -259,10 +228,9 @@ class S3_Wrapper:
             try:
                 result = mp.upload_part_from_file(stream_buffer, chunk_index)
             except:
-                print "Error writing %d bytes" % cur_size
+                raise RuntimeError
 
         mp.complete_upload()
-        print "Upload complete, md5 = %s, %d bytes transferred" % (str(self.md5_sum.hexdigest()), total_size)
         return {"md5_sum" : str(self.md5_sum.hexdigest()), "bytes_transferred" : total_size }
 
 
@@ -283,7 +251,6 @@ class S3_Wrapper:
             bucket = conn.get_bucket(bucket_name)
         except:
             type1, value1, traceback1 = sys.exc_info()
-            print "Unable to get bucket %s, error %s" % (bucket_name, sys.exc_info()[1])
         else:
             key = bucket.get_key(file_name)
         return key
@@ -320,14 +287,10 @@ class S3_Wrapper:
             sys.stdout.write(format_str % (file_count, num_files))
             sys.stdout.flush()
             if (key.size == 0) or (data.size == 0):
-                print "Warning, file %s has zero size" % key.name
                 zero_size_files = zero_size_files + 1
             if key.size != data.size:
-                print "Warning, file %s has size mismatch: %d - key, %d - list" % (key.name, data.size, key.size)
                 mismatched_files = mismatched_files + 1
 
-        print "%d zero length files, %d mismatched file sizes" % (zero_size_files, mismatched_files)
-        
         return file_list
 
     # get all the files in a given s3 bucket into a list
@@ -350,14 +313,12 @@ class S3_Wrapper:
             sys.stdout.flush()
             animation_index = animation_index + 1
             if key.size == 0:
-                print "Warning, file %s has zero size" % key.name
                 zero_size_files = zero_size_files + 1
             else:
                 if check_download:
                     try:
                         data = key.read(size=1024)
                     except:
-                        print "Warning, file %s cannot be read" % key.name
                         unreachable_files = unreachable_files + 1
         return file_list
 
@@ -366,15 +327,11 @@ class S3_Wrapper:
     def get_s3_file_counts(self, conn, which_s3):
         if self.check_s3(which_s3):
             rs = conn.get_all_buckets()
-            print "%d buckets in S3 container" % len(rs)
             self.all_files = {}
             for entry in rs:
-                print entry.name
                 if entry.name in self.allowed_buckets:
                     self.all_files[entry.name] = self.get_files_in_s3_bucket(conn, entry.name)
             self.check_time = datetime.datetime.now()
-        else:
-            print "Unable to connect to %s" % s3_url
 
     # after calling get_s3_file_counts, this routine will dump all the
     # keys into a file
@@ -386,7 +343,6 @@ class S3_Wrapper:
                 datetime.datetime.now().minute, datetime.datetime.now().second
             )
             with open(bucket_filename, "w") as json_file:
-                print "making psqlgraph connection"
                 psql_test = Psqlgraph_Test()
                 with psql_test.driver.session_scope() as session:
                     for entry in value:
@@ -417,7 +373,6 @@ class S3_Wrapper:
         # download the file to local storage
         file_key = self.get_file_key(conn, which_bucket, download_key_name)
         file_name = file_key.name.split('/')[1]
-        print "Downloading %s, size %d" % (file_key.name, file_key.size)
         m = md5.new()
 
         # download the file

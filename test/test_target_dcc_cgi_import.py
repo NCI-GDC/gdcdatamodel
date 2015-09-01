@@ -22,6 +22,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
         os.environ["DCC_USER"] = ""
         os.environ["DCC_PASS"] = ""
         os.environ["SIGNPOST_URL"] = "http://localhost"
+        os.environ["S3_HOST"] = "ceph.service.consul"
         self.log = get_logger("target_dcc_cgi_project_test_" + str(os.getpid()))
         self.TEST_DIR = os.path.dirname(os.path.realpath(__file__))
         self.FIXTURES_DIR = os.path.join(self.TEST_DIR, "fixtures", "target_dcc_cgi")
@@ -123,9 +124,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_fail):
-            directory_list = tdc_dl.get_directory_list(self.test_url)
-            self.assertEqual(len(directory_list), 0)
-        self.assertTrue(True)
+            self.assertRaises(RuntimeError, tdc_dl.get_directory_list, self.test_url)
 
     def test_check_target_site_error(self):
         tdc_dl = TargetDCCCGIDownloader(self.signpost_client)
@@ -136,20 +135,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
 
         url_list = []
         with HTTMock(target_mock_error):
-            directory_list = tdc_dl.get_directory_list(self.test_url)
-            self.assertEqual(len(directory_list), 0)
-        self.assertTrue(True)
-
-    # TODO: TEST: stream files into an archive and put it on the object store
-    def test_stream_create_archive_on_os(self):
-        files = [
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/manifest.all.unencrypted",
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/README.2.1.0.txt",
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/manifest.all.unencrypted.sig",
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/manifest.dcc.unencrypted", 
-            "https://target-data.nci.nih.gov/WT/Discovery/WGS/CGI/OptionAnalysisPipeline2/TARGET-50-CAAAAH/EXP/TARGET-50-CAAAAH-01A-01D/ASM/EVIDENCE-GS000010157-ASM-N1/evidenceDnbs-chr1-GS000010157-ASM-T1.tsv.bz2"]
-
-        self.assertEqual(True, True)
+            self.assertRaises(RuntimeError, tdc_dl.get_directory_list, self.test_url)
 
 
     # TEST: create all nodes and edges associated with an archive
@@ -157,7 +143,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
         self.assertTrue(True)
         #signpost = SignpostClient(self.signpost_url)
         tdc_cl = TargetDCCCGIDownloader(self.signpost_client)
-        pq = tdc_cl.connect_to_psqlgraph()
+        tdc_cl.connect_to_psqlgraph()
         tarball_name = "test_tarball.tar.gz"
         tarball_s3_key_name = "test_target_dcc_cgi/" + tarball_name
         tarball_size = 8888
@@ -178,6 +164,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
 
         dl_entry = {}
@@ -186,6 +174,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
         
         dl_entry = {}
@@ -194,6 +184,8 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
 
         dl_entry = {}
@@ -202,39 +194,34 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             project, node_data['participant_barcode'], dl_entry['file_name']
         )
         dl_entry['s3_key_name'] = project + "/" + node_data['participant_barcode'] + "/" + dl_entry['file_name']
+        dl_entry['md5_sum'] = "9203230090f4a0c3d05aeab528971bae"
+        dl_entry['file_size'] = 13930
         download_list.append(dl_entry)
 
         # create nodes/edges
-        with pq.session_scope() as session:
-            # find aliquot ids
-            #for sub_id in aliquot_submitter_ids:
-            #    match = pq.nodes(mod.Aliquot).props(submitter_id=sub_id).one()
-            #    aliquot_ids.append(match.node_id)
+        with tdc_cl.psql.session_scope() as session:
             
             # create the file node for the tarball
             tarball_node_id, tarball_file_node = tdc_cl.create_tarball_file_node(
-                pq, tarball_name, tarball_md5_sum, tarball_size, 
+                tarball_name, tarball_md5_sum, tarball_size, 
                 tarball_s3_key_name,
                 node_data['participant_barcode']
             ) 
 
             # link the tarball file to the other nodes
-            tdc_cl.create_edges(pq, tarball_node_id, tarball_file_node, project, tag)
+            tdc_cl.create_edges(tarball_node_id, tarball_file_node, project, tag)
 
             # create related files
             for entry in download_list:
                 tdc_cl.create_related_file_node(
-                    pq, entry, node_data['participant_barcode'],
+                    entry, node_data['participant_barcode'],
                     tarball_file_node
             )
         
             # merge in our work
-            pq.current_session().merge(tarball_file_node)
-
-        # check what we just added
-        #with pq.session_scope() as session:
+            tdc_cl.psql.current_session().merge(tarball_file_node)
             
-            node = pq.nodes(mod.File).props(file_name=tarball_name).one()
+            node = tdc_cl.psql.nodes(mod.File).props(file_name=tarball_name).one()
 
             # check node data
             # check tarball name
@@ -244,7 +231,7 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             self.assertEqual(node.file_size, tarball_size)
 
             # check md5 sum
-            self.assertEqual(node.md5_sum, tarball_md5_sum)
+            self.assertEqual(node.md5sum, tarball_md5_sum)
 
             # check source
             self.assertEqual(node.sysan['source'], "target_dcc_cgi")
