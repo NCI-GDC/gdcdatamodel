@@ -242,6 +242,7 @@ class TargetDCCCGIDownloader(object):
         node_exists = False
 
         # see if we exist before getting a new ID
+        self.log.info("Checking db for %s" % tarball_name)
         results = self.psql.nodes(mod.File).props(file_name=tarball_name).all()
         if len(results) > 0:
             if len(results) > 1:
