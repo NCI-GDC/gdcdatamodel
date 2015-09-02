@@ -113,10 +113,9 @@ def NodeFactory(title, schema):
                       self._ownership_traversals)
         if not queries:
             return []
-        root = queries[0]
-        query = root
+        query = queries[0]
         for q in queries[1:]:
-            query = root.union(q)
+            query = query.union(q)
         return query.all()
 
     @property
