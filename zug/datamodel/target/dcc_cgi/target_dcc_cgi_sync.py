@@ -268,7 +268,6 @@ class TargetDCCCGIDownloader(object):
 
             file_sysan = {
                 'source': 'target_dcc_cgi',
-                '_participant_barcode': participant_barcode
             }
 
             # add the new node
@@ -296,7 +295,6 @@ class TargetDCCCGIDownloader(object):
 
             file_node.system_annotations.update({
                 'source': 'target_dcc_cgi',
-                '_participant_barcode': participant_barcode
             })
             file_node.acl = self.target_acls
 
@@ -334,7 +332,6 @@ class TargetDCCCGIDownloader(object):
 
                 file_sysan = {
                     'source': 'target_dcc_cgi',
-                    '_participant_barcode': participant_barcode
                 }
 
                 file_node = mod.File(
@@ -369,7 +366,6 @@ class TargetDCCCGIDownloader(object):
 
                 related_file_node.system_annotations.update({
                     'source': 'target_dcc_cgi',
-                    '_participant_barcode': participant_barcode
                 })
                 related_file_node.acl = self.target_acls
 
@@ -377,29 +373,29 @@ class TargetDCCCGIDownloader(object):
         """Create the edges to a given tarball node in psqlgraph."""
         if tarball_file_node is not None:
             # platform
-            if len(tarball_file_node.platforms) == 0:
+            if tarball_file_node.platforms:
                 platform_node = self.psql.nodes(mod.Platform).props(name=self.platform).one()
                 tarball_file_node.platforms.append(platform_node)
 
             # data_subtype
-            if len(tarball_file_node.data_subtypes) == 0:
+            if tarball_file_node.data_subtypes:
                 data_subtype_node = self.psql.nodes(mod.DataSubtype).props(name=self.data_subtype).one()
                 tarball_file_node.data_subtypes.append(data_subtype_node)
 
             # data_format
-            if len(tarball_file_node.data_formats) == 0:
+            if tarball_file_node.data_formats:
                 data_format_node = self.psql.nodes(mod.DataFormat).props(name="TARGZ").one()
                 tarball_file_node.data_formats.append(data_format_node)
 
             # experimental_strategy
-            if len(tarball_file_node.experimental_strategies) == 0:
+            if tarball_file_node.experimental_strategies:
                 experimental_strategy_node = self.psql.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).one()
                 tarball_file_node.experimental_strategies.append(experimental_strategy_node)
 
             # TODO: project when datamodel changes to support
 
             # tag
-            if len(tarball_file_node.tags) == 0:
+            if tarball_file_node.tags:
                 tag_node = self.psql.nodes(mod.Tag).props(name=tag).one()
                 tarball_file_node.tags.append(tag_node)
 
@@ -447,7 +443,6 @@ class TargetDCCCGIDownloader(object):
             new_key_name = s3_key_name.strip(project+"/")
             self.log.info("Key not found, checking %s" % new_key_name)
             file_key = s3_inst.get_file_key(s3_conn, bucket, new_key_name)
-            print file_key
 
         return file_key
 
@@ -457,10 +452,17 @@ class TargetDCCCGIDownloader(object):
             directory['dir_name'], project, re_md5_tarball
         ))
 
+        # NB: I messed up and named the keys incorrectly for WT. I misunderstood
+        # the difference between tag and project, so the WT don't have the
+        # project code at the beginning of the key. This could cause a collision.
+        # A rename would take a long time, but new projects will be named
+        # correctly, avoiding collisions. This is a hack to handle the different 
+        # key naming conventions until I come up with a better solution.
         if project == "WT":
             new_key_name = False
         else:
             new_key_name = True
+
         create_nodes = True 
         node_data = {}
         url_list = []

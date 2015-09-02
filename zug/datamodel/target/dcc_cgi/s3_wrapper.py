@@ -5,6 +5,7 @@ from boto.s3.key import Key
 from cStringIO import StringIO as BIO
 import md5
 import time
+from cdisutils.log import get_logger
 
 class S3_Wrapper:
 
@@ -19,13 +20,14 @@ class S3_Wrapper:
         self.s3_inst_info = { 
             'ceph': {
                 'secure': False,
-                'url': 'ceph.service.consul'
+                'url': ['ceph.service.consul']
             }, 
             'cleversafe': {
                 'secure': False,
-                'url': 'cleversafe.service.consul'
+                'url': ['cleversafe.service.consul']
             } 
         }
+        self.log = get_logger("target_dcc_cgi_s3_wrapper_" + str(os.getpid()))
 
         # being a bit smart about getting the env data, in case we switch
         # VMs
@@ -43,7 +45,7 @@ class S3_Wrapper:
 
         for key, values in self.s3_inst_info.iteritems():
             if 'access_key' not in values:
-                print "Warning, no access key for", key
+                self.log.warning("Warning, no access key for %s" % key)
 
     def get_nearest_file_size(self, size):
         sizes = [
@@ -66,12 +68,9 @@ class S3_Wrapper:
     # does a simple s3 check to see if we can connect
     def check_s3(self, which_s3, url_offset = 0):
         s3_ok = False
-        if type(self.s3_inst_info[which_s3]['url']) == list:
-            if url_offset >= len(self.s3_inst_info[which_s3]['url']):
-                url_offset = 0
-            host_url = self.s3_inst_info[which_s3]['url'][url_offset]
-        else:
-            host_url = self.s3_inst_info[which_s3]['url']
+        if url_offset >= len(self.s3_inst_info[which_s3]['url']):
+            url_offset = 0
+        host_url = self.s3_inst_info[which_s3]['url'][url_offset]
         if which_s3 in self.s3_inst_info:
             logger.info('Checking that s3 is reachable')
             if self.s3_inst_info[which_s3]['secure']:
@@ -80,7 +79,7 @@ class S3_Wrapper:
                 r = requests.get('http://{}'.format(host_url))
 
             if r.status_code != 200:
-                logging.error('Status: {}'.format(r.status_code))
+                self.log.error('Status: {}'.format(r.status_code))
                 raise Exception('s3 unreachable at {}'.format(host_url))
             else:
                 s3_ok = True
