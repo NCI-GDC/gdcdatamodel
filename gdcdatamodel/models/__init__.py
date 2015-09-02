@@ -1,4 +1,6 @@
 from sqlalchemy.orm import configure_mappers
+from sqlalchemy import select
+
 import re
 
 from gdcdictionary import gdcdictionary
@@ -76,17 +78,59 @@ def NodeFactory(title, schema):
     }
 
     if 'alias' in schema.get('properties', {}):
-        properties['submitter_id'] = pg_property(
-            lambda self, val: self._set_property('submitter_id', val))
+
+        def setter(self, val):
+            self._set_property('submitter_id', val)
+
+        properties['submitter_id'] = pg_property(setter)
 
     properties['_pg_links'] = {name: Node.get_subclass(l['target_type'])
                                for name, l in links.iteritems()}
+
+    properties['_ownership_traversals'] = schema.get('ownershipTraversals', [])
 
     cls = type(name, (Node,), dict(
         __label__=label,
         id=node_id,
         **properties
     ))
+
+    def _traverse(self, session, path):
+        if not session:
+            raise RuntimeError(
+                '{} not bound to a session. Cannot lookup project.'
+                .format(self))
+
+        q = session.query(Node.get_subclass('project'))
+        for e in path:
+            q = q.join(*getattr(q.entity(), e).attr)
+        return q.ids(self.node_id)
+
+    @property
+    def _projects(self):
+        session = self.get_session()
+        queries = map(lambda p: self._traverse(session, p),
+                      self._ownership_traversals)
+        if not queries:
+            return []
+        root = queries[0]
+        query = root
+        for q in queries[1:]:
+            query = root.union(q)
+        return query.all()
+
+    @property
+    def _project_ids(self):
+        return ['{}-{}'.format(p.programs[0].name, p.code)
+                for p in self._projects]
+
+    def _is_in_project(self, project_id):
+        return any([project_id == p for p in self._project_ids])
+
+    cls._projects = _projects
+    cls._traverse = _traverse
+    cls._project_ids = _project_ids
+    cls._is_in_project = _is_in_project
 
     return cls
 
