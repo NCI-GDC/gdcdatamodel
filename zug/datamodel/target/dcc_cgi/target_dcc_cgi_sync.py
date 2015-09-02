@@ -695,9 +695,11 @@ if __name__ == '__main__':
     tdc_dl = TargetDCCCGIDownloader()
     if len(sys.argv) > 1:
         for arg in sys.argv:
-            if arg.find("DCC_USER") != -1:
+            if "S3_HOST" in arg:
+                tdc_dl.target_object_store = arg.split('=')[1].split('.')[0]
+            if "DCC_USER" in arg:
                 tdc_dl.dcc_creds['id'] = arg.split('=')[1]
-            if arg.find("DCC_PASS") != -1:
+            if "DCC_PASS" in arg:
                 tdc_dl.dcc_creds['pw'] = arg.split('=')[1]
 
     tdc_dl.process_all_work()
