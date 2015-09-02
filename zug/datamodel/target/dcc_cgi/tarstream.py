@@ -7,12 +7,12 @@ import requests
 import urllib3
 import logging
 import md5
+from cdisutils.log import get_logger
 
 urllib3.disable_warnings()
 logging.captureWarnings(True)
 
 class Stream(object):
-    #def __init__(self, url, name, auth_data, chunk_size=1073741824, expected_md5_sum=None, size=None, calc_md5=False):
     def __init__(self, url, name, auth_data, chunk_size=1000000, expected_md5_sum=None, size=None, calc_md5=False):
         self.name = name
         self.url = url
@@ -27,6 +27,7 @@ class Stream(object):
         self.auth_data = auth_data
         self._bytes_streamed = 0
         self.result = None
+        self.log = get_logger("target_dcc_cgi_stream_" + str(os.getpid()))
 
     @property
     def filename(self):
@@ -37,8 +38,6 @@ class Stream(object):
             self._bytes_streamed += len(chunk)
             if self.calc_md5:
                 self.md5_val.update(chunk)
-            #sys.stdout.write("%d bytes\r" % len(chunk))
-            #sys.stdout.flush()
             yield chunk
 
     def get_md5(self):
@@ -49,25 +48,23 @@ class Stream(object):
         return result
 
     def connect(self):
-        #os.environ['http_proxy'] = "http://cloud-proxy:3128"
-        #os.environ['https_proxy'] = "http://cloud-proxy:3128"
-        print "Connecting to", self.url         
+        self.log.info("Connecting to %s", self.url)         
         try:
             self.result = requests.get(self.url, auth=(self.auth_data['id'], self.auth_data['pw']), stream=True, verify=False)
         except:
-            print "Error on request:", sys.exc_info()[1]
+            error_str = "Error on request:", sys.exc_info()[1]
+            self.log.error(error_str)
+            raise RuntimeError(error_str)
         else:
             if self.result.status_code == 200:
                 self.size = int(self.result.headers['content-length'])
-                #print "Connected to %s, length = %d" % (self.url, self.size)
                 self.iterable = self.result.iter_content(self.chunk_size)
             else:
-                print "Connect to %s failed: %s %s" % (self.url, self.result.status_code, self.result.reason)
-        #del os.environ['https_proxy']
-        #del os.environ['http_proxy']
+                error_str = "Connect to %s failed: %s %s" % (self.url, self.result.status_code, self.result.reason)
+                self.log.error(error_str)
+                raise RuntimeError(error_str)
 
 class TarStream(object):
-    #def __init__(self, streams, file_name, manifest=False, md5_sum=True, chunk_size=134217728):
     def __init__(self, streams, file_name, manifest=False, md5_sum=True, chunk_size=131072):
         self.streams = streams
         self.buffer = ""
@@ -76,10 +73,9 @@ class TarStream(object):
         if md5_sum:
             self.md5_sum = md5.new()
         self.manifest = manifest
-        #self.out_file = open("tmp_" + file_name, 'wb')
+        self.log = get_logger("target_dcc_cgi_tarstream_" + str(os.getpid()))
 
     def write(self, data):
-        #self.md5_sum.update(data)
         self.buffer += data
 
     def flush(self):
@@ -95,21 +91,17 @@ class TarStream(object):
 
     def _write_and_yield(self, data):
         self.tar_file.fileobj.write(data)
-        #self.out_file.write(data)
         self.tar_file.offset += len(data)
         for chunk in self._yield_from_buffer():
             yield chunk
 
-    #def write_tar_data_to_file(self):    
-
-
     def __iter__(self):
         if self.manifest:
-            print "No manifest created yet"
-            # create a manifest here
+            self.log.info("No manifest created yet")
+            # TODO: create a manifest here
 
         for stream in self.streams:
-            print "Tar - processing stream %s" % stream.name
+            self.log.info("Tar - processing stream %s" % stream.name)
             stream.connect()
             tinfo = tarfile.TarInfo(name=stream.name)
             if stream.size != None:
@@ -131,10 +123,9 @@ class TarStream(object):
             if remainder > 0:
                 for chunk in self._write_and_yield(tarfile.NUL * (tarfile.BLOCKSIZE - remainder)):
                     yield chunk
-        #else:
-        print "Tarfile complete, closing"
+
+        self.log.info("Tarfile complete, closing")
         self.tar_file.close()
-        #self.out_file.close()
         for chunk in self._yield_from_buffer(flush=True):
             yield chunk
 
