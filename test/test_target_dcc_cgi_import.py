@@ -221,35 +221,45 @@ class TARGETDCCCGIImportTest(SignpostMixin, PreludeMixin, ZugTestBase):
             # merge in our work
             tdc_cl.psql.current_session().merge(tarball_file_node)
             
+        with tdc_cl.psql.session_scope() as session:
             node = tdc_cl.psql.nodes(mod.File).props(file_name=tarball_name).one()
 
             # check node data
             # check tarball name
+            self.log.info("Checking file name")
             self.assertEqual(node.file_name, tarball_name)
 
             # check size
+            self.log.info("Checking size")
             self.assertEqual(node.file_size, tarball_size)
 
             # check md5 sum
+            self.log.info("Checking md5")
             self.assertEqual(node.md5sum, tarball_md5_sum)
 
             # check source
+            self.log.info("Checking source")
             self.assertEqual(node.sysan['source'], "target_dcc_cgi")
 
             # check edges
             # check that it has all related file
+            self.log.info("Checking related files")
             self.assertEqual(len(node.related_files), 4)
 
             # check tag
+            self.log.info("Checking tag")
             self.assertEqual(node.tags[0].name, tag)
 
             # check experimental strategy
+            self.log.info("Checking experimental strategy")
             self.assertEqual(node.experimental_strategies[0].name, experimental_strategy)
 
             # check platform
+            self.log.info("Checking platform")
             self.assertEqual(node.platforms[0].name, platform)
 
             # check data subtype
+            self.log.info("Checking data subtype")
             self.assertEqual(node.data_subtypes[0].name, data_subtype)
 
 

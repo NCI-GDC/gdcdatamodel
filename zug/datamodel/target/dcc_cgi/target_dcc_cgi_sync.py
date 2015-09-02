@@ -371,33 +371,49 @@ class TargetDCCCGIDownloader(object):
 
     def create_edges(self, tarball_node_id, tarball_file_node, project, tag):
         """Create the edges to a given tarball node in psqlgraph."""
+
+        self.log.info("Creating edges for node %s, tag %s, project %s" % (tarball_node_id, tag, project))
         if tarball_file_node is not None:
             # platform
-            if tarball_file_node.platforms:
+            if not tarball_file_node.platforms:
                 platform_node = self.psql.nodes(mod.Platform).props(name=self.platform).one()
                 tarball_file_node.platforms.append(platform_node)
+            else:
+                self.log.warn("Platform already present in node %s" % tarball_node_id)
 
             # data_subtype
-            if tarball_file_node.data_subtypes:
+            if not tarball_file_node.data_subtypes:
                 data_subtype_node = self.psql.nodes(mod.DataSubtype).props(name=self.data_subtype).one()
                 tarball_file_node.data_subtypes.append(data_subtype_node)
+            else:
+                self.log.warn("Data subtype already present in node %s" % tarball_node_id)
 
             # data_format
-            if tarball_file_node.data_formats:
+            if not tarball_file_node.data_formats:
                 data_format_node = self.psql.nodes(mod.DataFormat).props(name="TARGZ").one()
                 tarball_file_node.data_formats.append(data_format_node)
+            else:
+                self.log.warn("Data format already present in node %s" % tarball_node_id)
 
             # experimental_strategy
-            if tarball_file_node.experimental_strategies:
+            if not tarball_file_node.experimental_strategies:
                 experimental_strategy_node = self.psql.nodes(mod.ExperimentalStrategy).props(name=self.experimental_strategy).one()
                 tarball_file_node.experimental_strategies.append(experimental_strategy_node)
+            else:
+                self.log.warn("Experimental strategy already present in node %s" % tarball_node_id)
 
             # TODO: project when datamodel changes to support
 
             # tag
-            if tarball_file_node.tags:
+            if not tarball_file_node.tags:
                 tag_node = self.psql.nodes(mod.Tag).props(name=tag).one()
                 tarball_file_node.tags.append(tag_node)
+            else:
+                self.log.warn("Tag already present in node %s" % tarball_node_id)
+
+        else:
+            self.log.warn("Tarball node for %s is None" % tarball_node_id)
+                
 
     def find_latest_checkpoint(self, directory):
         """Find the latest checkpoint file.
