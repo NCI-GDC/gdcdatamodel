@@ -2,6 +2,7 @@ import os
 import re
 import time
 from datadog import statsd
+statsd.host = 'datadogproxy.service.consul'
 from sqlalchemy import func, desc, BigInteger
 
 from zug.binutils import NoMoreWorkException
@@ -176,7 +177,6 @@ class TCGABWAAligner(AbstractHarmonizer):
         self.log.info("Submitting metrics")
         took = int(time.time()) - self.start_time
         input_id = self.inputs["bam"].node_id
-        statsd.host = 'datadogproxy.service.consul'
         statsd.event(
             "{} aligned".format(input_id),
             "successfully aligned {} in {} minutes".format(input_id, took / 60),
@@ -196,7 +196,7 @@ class TCGABWAAligner(AbstractHarmonizer):
         statsd.histogram('harmonization.{}.seconds'.format(self.name),
                          took)
         statsd.histogram('harmonization.{}.seconds_per_byte'.format(self.name),
-                         took / self.inputs["bam"].file_size)
+                         float(took) / self.inputs["bam"].file_size)
 
     def handle_output(self):
         self.upload_secondary_files()
