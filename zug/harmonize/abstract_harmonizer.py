@@ -5,6 +5,8 @@ import time
 import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
+from datadog import statsd
+statsd.host = 'datadogproxy.service.consul'
 
 from sqlalchemy.pool import NullPool
 import docker

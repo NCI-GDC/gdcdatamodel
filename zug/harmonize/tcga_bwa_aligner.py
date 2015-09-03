@@ -2,7 +2,6 @@ import os
 import re
 import time
 from datadog import statsd
-statsd.host = 'datadogproxy.service.consul'
 from sqlalchemy import func, desc, BigInteger
 
 from zug.binutils import NoMoreWorkException
@@ -184,9 +183,8 @@ class TCGABWAAligner(AbstractHarmonizer):
             alert_type="success",
         )
         with self.graph.session_scope():
-            total = self.relevant_bams_query.count()
-            done = self.relevant_bams_query\
-                       .filter(File.derived_files.any()).count()
+            total = self.bam_files.count()
+            done = self.bam_files.filter(File.derived_files.any()).count()
         self.log.info("%s bams aligned out of %s", done, total)
         frac = float(done) / float(total)
         statsd.gauge('harmonization.{}.completed_bams'.format(self.name),
