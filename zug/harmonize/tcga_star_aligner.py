@@ -18,32 +18,34 @@ class TCGASTARAligner(AbstractHarmonizer):
     __metaclass__ = abc.ABCMeta
 
     def get_config(self, kwargs):
+        
         if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
             size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
         else:
             size_limit = None
+        
+        genome_dir = os.environ['GENOME_DIR']
+        genome_ref = os.environ['GENOME_REF']
+        genome_ref_flat = os.environ['GENOME_REF_FLAT']
+        genome_annotations = os.environ['GENOME_ANNOTATIONS']
+        rnaseq_qc_annotations = os.environ['RNASEQ_QC_ANNOTATIONS']
+        
         return {
             "output_buckets": {
                 "bam": os.environ["BAM_S3_BUCKET"],
                 "bai": os.environ["BAM_S3_BUCKET"],
                 "log": os.environ["LOGS_S3_BUCKET"],
-                "db": os.environ["LOGS_S3_BUCKET"],
                 "meta": os.environ["META_S3_BUCKET"],
             },
-            # all paths are workdir-relative. this is convenient
-            # because we can absolutize-them with respect to the
-            # container or the host.
-            # TODO FIXME update / ensure that these are still valid
-            "paths": {
-                "reference": os.environ.get("ALIGNMENT_REFERENCE",
-                                            "reference/GRCh38.d1.vd1.fa"),
-                "intervals_dir": os.environ.get("ALIGNMENT_INTERVAL_DIR",
-                                                "intervals/"),
-                "libraryname_json": os.environ.get("ALIGNMENT_LIBRARYNAME_JSON",
-                                                   "intervals/bam_libraryname_capturekey.json"),
-                "intervalname_json": os.environ.get("ALIGNMENT_INTERVALNAME_JSON",
-                                                    "intervals/bait_target_key_interval.json"),
+            
+            'paths': {
+                'genome_dir': genome_dir,
+                'genome_ref': genome_ref,
+                'genome_ref_flat': genome_ref_flat,
+                'genome_annotations': genome_annotations,
+                'rnaseq_qc_annotations': rnaseq_qc_annotations,
             },
+            
             "size_limit": size_limit,
             "cores": int(os.environ.get("ALIGNMENT_CORES", "8")),
             "force_input_id": kwargs.get("force_input_id"),
@@ -113,12 +115,26 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--out {output_bam}',
             '--workDir {scratch_dir}',
             '--id {uuid}',
-            '--ref_flat {flat_ref}',
+            '--ref_flat {genome_ref_flat}',
             '--runThreadN {nthreads}',
-            # TODO FIXME same as --ref_genome in all cases?
+            # TODO FIXME verify same as --ref_genome in all cases
             '--genomeFastaFiles {genome_ref}',
-            '--rna_seq_qc_annotation {rna_seq_qc_annotation}',
-        ]).format(**self.config)
+            '--rna_seq_qc_annotation {rnaseq_qc_annotation}',
+        ]).format(
+            scratch_dir = self.container_abspath(''),
+            genome_dir = self.container_abspath(self.config['genome_dir']),
+            genome_ref = self.container_abspath(self.config['genome_ref']),
+            genome_ref_flat = self.container_abspath(self.config['genome_ref_flat']),
+            genome_annotations = self.container_abspath(self.config['genome_annotations']),
+            rnaseq_qc_annotation = self.container_abspath(self.config['rnaseq_qc_annotations']),
+            # TODO FIXME verify that fastq_tarball will be in self.config
+            fastq_tarball = self.container_abspath(self.config['fastq_tarball']),
+            # TODO FIXME replace this with an actual output bam
+            output_bam = self.container_abspath('out.bam'),
+            # TODO FIXME replace this with the actual fastq id
+            uuid = 'deadbeef-dead-4eef-dead-beefdeadbeef',
+            nthreads = self.config['cores'],
+        )
 
     @property
     def output_paths(self):
