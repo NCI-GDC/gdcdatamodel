@@ -121,16 +121,18 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--genomeFastaFiles {genome_ref}',
             '--rna_seq_qc_annotation {rnaseq_qc_annotation}',
         ]).format(
-            scratch_dir = self.container_abspath(''),
+            scratch_dir = self.container_abspath(self.config['scratch_dir']),
             genome_dir = self.container_abspath(self.config['genome_dir']),
             genome_ref = self.container_abspath(self.config['genome_ref']),
             genome_ref_flat = self.container_abspath(self.config['genome_ref_flat']),
             genome_annotations = self.container_abspath(self.config['genome_annotations']),
             rnaseq_qc_annotation = self.container_abspath(self.config['rnaseq_qc_annotations']),
-            # TODO FIXME verify that fastq_tarball will be in self.config
-            fastq_tarball = self.container_abspath(self.config['fastq_tarball']),
-            # TODO FIXME replace this with an actual output bam
-            output_bam = self.container_abspath('out.bam'),
+            fastq_tarball = self.container_abspath(self.input_paths['fastq_tarball']),
+            output_bam = self.container_abspatch(
+                self.config['scratch_dir'],
+                # TODO FIXME replace this with an actual output bam
+                'out.bam',
+            ),
             # TODO FIXME replace this with the actual fastq id
             uuid = 'deadbeef-dead-4eef-dead-beefdeadbeef',
             nthreads = self.config['cores'],
