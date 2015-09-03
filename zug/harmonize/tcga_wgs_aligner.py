@@ -3,29 +3,29 @@ from sqlalchemy import func, desc, BigInteger
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
     Aliquot, File, ExperimentalStrategy,
-    Platform,
+    Platform, Center,
     FileDataFromAliquot,
 )
 
 from zug.harmonize.tcga_bwa_aligner import TCGABWAAligner
 
 
-class TCGAExomeAligner(TCGABWAAligner):
+class TCGAWGSAligner(TCGABWAAligner):
 
     @property
     def name(self):
-        return "tcga_exome_aligner"
+        return "tcga_wgs_aligner"
 
     @property
     def source(self):
-        return "tcga_exome_alignment"
+        return "tcga_wgs_alignment"
 
     def choose_bam_by_forced_id(self):
         input_bam = self.graph.nodes(File).ids(self.config["force_input_id"]).one()
         assert input_bam.sysan["source"] == "tcga_cghub"
         assert input_bam.file_name.endswith(".bam")
         assert input_bam.data_formats[0].name == "BAM"
-        assert input_bam.experimental_strategies[0].name == "WXS"
+        assert input_bam.experimental_strategies[0].name == "WGS"
         return input_bam
 
     def choose_bam_at_random(self):
@@ -33,7 +33,8 @@ class TCGAExomeAligner(TCGABWAAligner):
         potentially filtering by size.
 
         """
-        wxs = ExperimentalStrategy.name.astext == "WXS"
+        wgs = ExperimentalStrategy.name.astext == "WGS"
+        hms = Center.short_name.astext == "HMS"
         illumina = Platform.name.astext.contains("Illumina")
         currently_being_aligned = self.consul.list_locked_keys()
         # NOTE you would think that file_name filter would be
@@ -46,7 +47,8 @@ class TCGAExomeAligner(TCGABWAAligner):
                                     .join(FileDataFromAliquot)\
                                     .join(Aliquot)\
                                     .distinct(Aliquot.node_id.label("aliquot_id"))\
-                                    .filter(File.experimental_strategies.any(wxs))\
+                                    .filter(File.experimental_strategies.any(wgs))\
+                                    .filter(File.centers.any(hms))\
                                     .filter(File.platforms.any(illumina))\
                                     .filter(File.file_name.astext.endswith(".bam"))\
                                     .filter(~File.derived_files.any())\

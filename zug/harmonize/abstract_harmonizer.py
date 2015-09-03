@@ -155,7 +155,13 @@ class AbstractHarmonizer(object):
         self.consul.cleanup()
         if self.docker_container:
             self.log.info("Removing docker container %s", self.docker_container)
-            self.docker.remove_container(self.docker_container, v=True, force=True)
+            try:
+                self.docker.remove_container(self.docker_container, v=True, force=True)
+            except docker.errors.APIError as e:
+                if e.message.response.status_code == 404:
+                    pass
+                else:
+                    raise e
 
     def try_lock(self, lock_id):
         locked = self.consul.get_consul_lock(lock_id)
@@ -359,7 +365,7 @@ class AbstractHarmonizer(object):
             submitter_id=None,
         )
         file_node.system_annotations = {
-            "source": "tcga_exome_alignment",
+            "source": self.source,
             # TODO anything else here?
         }
         self.log.info("File node: %s", file_node)
@@ -392,6 +398,10 @@ class AbstractHarmonizer(object):
 
     @abstractproperty
     def name(self):
+        raise NotImplementedError()
+
+    @abstractproperty
+    def source(self):
         raise NotImplementedError()
 
     @abstractproperty
