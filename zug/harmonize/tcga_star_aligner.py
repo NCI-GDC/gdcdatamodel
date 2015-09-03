@@ -111,7 +111,7 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--genomeDir {genome_dir}',
             '--ref_genome {genome_ref}',
             '--input {fastq_tarball}',
-            '--genome_annotation {genome_annotation}',
+            '--genome_annotation {genome_annotations}',
             '--out {output_bam}',
             '--workDir {scratch_dir}',
             '--id {uuid}',
@@ -119,16 +119,16 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--runThreadN {nthreads}',
             # TODO FIXME verify same as --ref_genome in all cases
             '--genomeFastaFiles {genome_ref}',
-            '--rna_seq_qc_annotation {rnaseq_qc_annotation}',
+            '--rna_seq_qc_annotation {rnaseq_qc_annotations}',
         ]).format(
             scratch_dir = self.container_abspath(self.config['scratch_dir']),
             genome_dir = self.container_abspath(self.config['genome_dir']),
             genome_ref = self.container_abspath(self.config['genome_ref']),
             genome_ref_flat = self.container_abspath(self.config['genome_ref_flat']),
             genome_annotations = self.container_abspath(self.config['genome_annotations']),
-            rnaseq_qc_annotation = self.container_abspath(self.config['rnaseq_qc_annotations']),
+            rnaseq_qc_annotations = self.container_abspath(self.config['rnaseq_qc_annotations']),
             fastq_tarball = self.container_abspath(self.input_paths['fastq_tarball']),
-            output_bam = self.container_abspatch(
+            output_bam = self.container_abspath(
                 self.config['scratch_dir'],
                 # TODO FIXME replace this with an actual output bam
                 'out.bam',

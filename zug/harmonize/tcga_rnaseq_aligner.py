@@ -43,7 +43,7 @@ class TCGARNASeqAligner(TCGASTARAligner):
         return tar
 
 
-    def choose_tar_at_random(self):
+    def choose_fastq_at_random(self):
         '''
         Return a PSQLGraph node representing a 'randomly' chosen TCGA RNA-Seq
         FASTQ File node.
