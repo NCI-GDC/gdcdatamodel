@@ -138,6 +138,7 @@ class TCGASTARAligner(AbstractHarmonizer):
 
     @property
     def output_paths(self):
+        return {} # TODO FIXME REMOVE ME
         # TODO FIXME finish this
         return {
             "bam": self.host_abspath(
@@ -160,6 +161,7 @@ class TCGASTARAligner(AbstractHarmonizer):
         """
         Upload the log file and sqlite db to the relevant bucket
         """
+        return # TODO FIXME REMOVE ME
         # TODO FIXME go over this
         for key in ["log", "db"]:
             path = os.path.normpath(self.host_abspath(self.output_paths[key]))
@@ -170,6 +172,7 @@ class TCGASTARAligner(AbstractHarmonizer):
             )
 
     def handle_output(self):
+        return # TODO FIXME REMOVE ME
         # TODO FIXME go over this
         self.upload_secondary_files()
         output_nodes = {}
