@@ -1,7 +1,7 @@
 import os
 import re
 import time
-
+from datadog import statsd
 from sqlalchemy import func, desc, BigInteger
 
 from zug.binutils import NoMoreWorkException
@@ -130,7 +130,7 @@ class TCGABWAAligner(AbstractHarmonizer):
             log_dir=self.container_abspath(self.config["scratch_dir"]),
         )
         if self.name == "tcga_exome_aligner":
-            cmd.append(" -x")
+            cmd += " -x"
         return cmd
 
 
@@ -168,6 +168,35 @@ class TCGABWAAligner(AbstractHarmonizer):
                 self.config["output_buckets"][key],
                 os.path.basename(path),
             )
+
+    def submit_metrics(self):
+        """
+        Submit metrics to datadog
+        """
+        self.log.info("Submitting metrics")
+        took = int(time.time()) - self.start_time
+        input_id = self.inputs["bam"].node_id
+        statsd.host = 'datadogproxy.service.consul'
+        statsd.event(
+            "{} aligned".format(input_id),
+            "successfully aligned {} in {} minutes".format(input_id, took / 60),
+            source_type_name="harmonization",
+            alert_type="success",
+        )
+        with self.graph.session_scope():
+            total = self.relevant_bams_query.count()
+            done = self.relevant_bams_query\
+                       .filter(File.derived_files.any()).count()
+        self.log.info("%s bams aligned out of %s", done, total)
+        frac = float(done) / float(total)
+        statsd.gauge('harmonization.{}.completed_bams'.format(self.name),
+                     done)
+        statsd.gauge('harmonization.{}.fraction_complete'.format(self.name),
+                     frac)
+        statsd.histogram('harmonization.{}.seconds'.format(self.name),
+                         took)
+        statsd.histogram('harmonization.{}.seconds_per_byte'.format(self.name),
+                         took / self.inputs["bam"].file_size)
 
     def handle_output(self):
         self.upload_secondary_files()

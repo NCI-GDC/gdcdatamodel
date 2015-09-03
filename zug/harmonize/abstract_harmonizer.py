@@ -383,6 +383,7 @@ class AbstractHarmonizer(object):
             self.run_docker()
             self.check_output_paths()
             self.handle_output()
+            self.submit_metrics()
         finally:
             self.cleanup()
 
@@ -422,4 +423,8 @@ class AbstractHarmonizer(object):
 
     @abstractmethod
     def handle_output(self):
+        raise NotImplementedError()
+
+    @abstractmethod 
+    def submit_metrics(self):
         raise NotImplementedError()
