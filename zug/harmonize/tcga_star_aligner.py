@@ -104,7 +104,6 @@ class TCGASTARAligner(AbstractHarmonizer):
         '''
         Build the docker command based on configuration options.
         '''
-        # TODO FIXME make sure that self.config and these options line up
         return ' '.join([
             '/usr/bin/python',
             '/home/ubuntu/star_docker/align_star.py',
@@ -117,7 +116,7 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--id {uuid}',
             '--ref_flat {genome_ref_flat}',
             '--runThreadN {nthreads}',
-            # TODO FIXME verify same as --ref_genome in all cases
+            # TODO verify same as --ref_genome in all cases
             '--genomeFastaFiles {genome_ref}',
             '--rna_seq_qc_annotation {rnaseq_qc_annotations}',
         ]).format(
@@ -130,32 +129,27 @@ class TCGASTARAligner(AbstractHarmonizer):
             fastq_tarball = self.container_abspath(self.input_paths['fastq_tarball']),
             output_bam = self.container_abspath(
                 self.config['scratch_dir'],
-                # TODO FIXME replace this with an actual output bam
-                'out.bam',
+                '{uuid}.bam'.format(uuid=self.inputs['fastq_tarball'].node_id),
             ),
-            # TODO FIXME replace this with the actual fastq id
-            uuid = 'deadbeef-dead-4eef-dead-beefdeadbeef',
+            uuid = self.inputs['fastq_tarball'].node_id,
             nthreads = self.config['cores'],
         )
 
     @property
     def output_paths(self):
-        return {} # TODO FIXME REMOVE ME
-        # TODO FIXME finish this
+        uuid = self.inputs['fastq_tarball'].node_id
         return {
-            "bam": self.host_abspath(
-                'output',
-                self.config['host_output_bam'],
+            'bam': self.host_abspath(
+                self.config['scratch_dir'],
+                '{uuid}.bam'.format(uuid=uuid),
             ),
-            "bai": self.host_abspath(
-                'output',
-                self.config['host_output_bai'],
+            'bai': self.host_abspath(
+                self.config['scratch_dir'],
+                '{uuid}.bam.bai'.format(uuid=uuid),
             ),
-            "log": self.host_abspath(
-                self.config["scratch_dir"],
-                "aln_" + self.inputs["bam"].node_id + ".log"
-            ),
-            'meta': self.host_abspath(
+            'log': self.host_abspath(
+                self.config['scratch_dir'],
+                '{uuid}.log'.format(uuid=uuid),
             ),
         }
 
@@ -163,19 +157,16 @@ class TCGASTARAligner(AbstractHarmonizer):
         """
         Upload the log file and sqlite db to the relevant bucket
         """
-        return # TODO FIXME REMOVE ME
-        # TODO FIXME go over this
-        for key in ["log", "db"]:
-            path = os.path.normpath(self.host_abspath(self.output_paths[key]))
-            self.upload_file(
-                path,
-                self.config["output_buckets"][key],
-                os.path.basename(path),
-            )
+        path = os.path.normpath(self.host_abspath(self.output_paths['log']))
+        self.upload_file(
+            path,
+            self.config['output_buckets']['log'],
+            os.path.basename(path),
+        )
+        
+        # TODO FIXME upload a tarball of the metadata
 
     def handle_output(self):
-        return # TODO FIXME REMOVE ME
-        # TODO FIXME go over this
         self.upload_secondary_files()
         output_nodes = {}
         for key in ["bam", "bai"]:
@@ -201,7 +192,7 @@ class TCGASTARAligner(AbstractHarmonizer):
                 "alignment_docker_image_id": self.docker_image["Id"],
                 "alignment_docker_image_tag": docker_tag,
                 "alignment_docker_cmd": self.docker_cmd,
-                "alignment_reference_name": os.path.basename(self.config["reference"]),
+                "alignment_reference_name": os.path.basename(self.config["genome_ref"]),
             }
         )
         with self.graph.session_scope() as session:
