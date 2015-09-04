@@ -28,32 +28,42 @@ class TCGAWGSAligner(TCGABWAAligner):
         assert input_bam.experimental_strategies[0].name == "WGS"
         return input_bam
 
+    @property
+    def bam_files(self):
+        '''targeted bam files query'''
+        wgs = ExperimentalStrategy.name.astext == "WGS"
+        hms = Center.short_name.astext == "HMS"
+        illumina = Platform.name.astext.contains("Illumina")
+        # NOTE you would think that file_name filter would be
+        # unnecessary but we have some TCGA exomes that end with
+        # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
+        # for now I am ignoring them
+        return self.graph.nodes(File)\
+                         .props(state="live")\
+                         .sysan(source="tcga_cghub")\
+                         .join(FileDataFromAliquot)\
+                         .join(Aliquot)\
+                         .distinct(Aliquot.node_id.label("aliquot_id"))\
+                         .filter(File.experimental_strategies.any(wgs))\
+                         .filter(File.centers.any(hms))\
+                         .filter(File.platforms.any(illumina))\
+                         .filter(File.file_name.astext.endswith(".bam"))\
+                         .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))
+
+    @property
+    def alignable_files(self):
+        '''bam files that are not aligned'''
+        currently_being_aligned = self.consul.list_locked_keys()
+        return self.bam_files\
+            .filter(~File.derived_files.any())\
+            .filter(~File.node_id.in_(currently_being_aligned))
+
     def choose_bam_at_random(self):
         """This queries for a bam file that we can align at random,
         potentially filtering by size.
 
         """
-        wgs = ExperimentalStrategy.name.astext == "WGS"
-        hms = Center.short_name.astext == "HMS"
-        illumina = Platform.name.astext.contains("Illumina")
-        currently_being_aligned = self.consul.list_locked_keys()
-        # NOTE you would think that file_name filter would be
-        # unnecessary but we have some TCGA exomes that end with
-        # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
-        # for now I am ignoring them
-        alignable_files = self.graph.nodes(File)\
-                                    .props(state="live")\
-                                    .sysan(source="tcga_cghub")\
-                                    .join(FileDataFromAliquot)\
-                                    .join(Aliquot)\
-                                    .distinct(Aliquot.node_id.label("aliquot_id"))\
-                                    .filter(File.experimental_strategies.any(wgs))\
-                                    .filter(File.centers.any(hms))\
-                                    .filter(File.platforms.any(illumina))\
-                                    .filter(File.file_name.astext.endswith(".bam"))\
-                                    .filter(~File.derived_files.any())\
-                                    .filter(~File.node_id.in_(currently_being_aligned))\
-                                    .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))
+        alignable_files = self.alignable_files
         if self.config["size_limit"]:
             alignable_files = alignable_files.filter(
                 File.file_size.cast(BigInteger) < self.config["size_limit"]
