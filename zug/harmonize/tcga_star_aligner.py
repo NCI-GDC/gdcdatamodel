@@ -1,6 +1,7 @@
 import os
 import abc
 import time
+import shutil
 
 from gdcdatamodel.models import (
     File,
@@ -138,6 +139,7 @@ class TCGASTARAligner(AbstractHarmonizer):
     @property
     def output_paths(self):
         uuid = self.inputs['fastq_tarball'].node_id
+        
         return {
             'bam': self.host_abspath(
                 self.config['scratch_dir'],
@@ -153,7 +155,7 @@ class TCGASTARAligner(AbstractHarmonizer):
             ),
         }
 
-    def upload_secondary_files(self):
+    def upload_secondary_files(self, prefix=''):
         """
         Upload the log file and sqlite db to the relevant bucket
         """
@@ -161,27 +163,71 @@ class TCGASTARAligner(AbstractHarmonizer):
         self.upload_file(
             path,
             self.config['output_buckets']['log'],
-            os.path.basename(path),
+            os.path.join(
+                prefix,
+                os.path.basename(path),
+            ),
         )
+
+    def upload_tertiary_files(self, prefix=''):
+        '''
+        Upload any remaining files.
+        '''
+        tree = os.walk(self.host_abspath(self.config['scratch_dir']))
+        for root, _, files in tree:
+            for f in files:
+                host_f = os.path.normpath(os.path.join(root, f))
+                key = os.path.join(
+                    prefix,
+                    os.path.relpath(
+                        host_f,
+                        self.host_abspath(self.config['scratch_dir']),
+                    ),
+                )
+                
+                self.upload_file(
+                    host_f,
+                    self.config['output_buckets']['meta'],
+                    key,
+                )
+
+    def clean_input_files(self):
+        '''
+        Clean the scratch directory of any input files.
+        '''
+        uuid = self.inputs['fastq_tarball'].node_id
         
-        # TODO FIXME upload a tarball of the metadata
+        os.remove(self.host_abspath(self.input_paths['fastq_tarball']))
+        
+        shutil.rmtree(self.host_abspath(
+            self.config['scratch_dir'],
+            '{uuid}_fastq_files'.format(uuid=uuid),
+        ))
+
+    def clean_primary_files(self):
+        '''
+        Clean the scratch directory of any primary files.
+        '''
+        uuid = self.inputs['fastq_tarball'].node_id
+        
+        os.remove(self.output_paths['bam'])
+        os.remove(self.output_paths['bai'])
 
     def handle_output(self):
-        self.upload_secondary_files()
         output_nodes = {}
         for key in ["bam", "bai"]:
-            name = self.inputs[key].file_name.replace(".bam", "_gdc_realn.bam")
+            name = os.path.basename(self.output_paths[key]).replace(".bam", "_gdc_realn.bam")
             output_nodes[key] = self.upload_file_and_save_to_db(
                 self.host_abspath(self.output_paths[key]),
                 self.config["output_buckets"][key],
                 name,
-                self.inputs["bam"].acl
+                self.inputs["fastq_tarball"].acl
             )
         output_nodes["bam"].related_files = [output_nodes["bai"]]
         docker_tag = (self.docker_image["RepoTags"][0]
                       if self.docker_image["RepoTags"] else None)
         edge = FileDataFromFile(
-            src=self.inputs["bam"],
+            src=self.inputs["fastq_tarball"],
             dst=output_nodes["bam"],
             system_annotations={
                 "alignment_started": self.start_time,
@@ -197,14 +243,20 @@ class TCGASTARAligner(AbstractHarmonizer):
         )
         with self.graph.session_scope() as session:
             # merge old bam file so we can get its classification
-            session.add(self.inputs["bam"])
+            session.add(self.inputs["fastq_tarball"])
             # classify new bam file, same as the old bam file
-            output_nodes["bam"].experimental_strategies = self.inputs["bam"].experimental_strategies
-            output_nodes["bam"].data_formats =  self.inputs["bam"].data_formats
-            output_nodes["bam"].data_subtypes = self.inputs["bam"].data_subtypes
-            output_nodes["bam"].platforms = self.inputs["bam"].platforms
+            output_nodes["bam"].experimental_strategies = self.inputs["fastq_tarball"].experimental_strategies
+            output_nodes["bam"].data_formats =  self.inputs["fastq_tarball"].data_formats
+            output_nodes["bam"].data_subtypes = self.inputs["fastq_tarball"].data_subtypes
+            output_nodes["bam"].platforms = self.inputs["fastq_tarball"].platforms
             # this line implicitly merges the new bam and new bai
             session.merge(edge)
+        
+        self.clean_input_files()
+        self.clean_primary_files()
+        
+        self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
+        self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
 
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):
