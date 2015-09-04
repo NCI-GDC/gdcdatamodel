@@ -45,9 +45,9 @@ class TestValidators(unittest.TestCase):
 
     def test_json_validator_with_insufficient_properties(self):
         self.entities[0].doc = {'type': 'aliquot',
-                                'centers': {'alias': 'test'}}
+                                'centers': {'submitter_id': 'test'}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(self.entities[0].errors[0]['keys'], ['alias'])
+        self.assertEqual(self.entities[0].errors[0]['keys'], ['submitter_id'])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_wrong_node_type(self):
@@ -58,30 +58,30 @@ class TestValidators(unittest.TestCase):
 
     def test_json_validator_with_wrong_property_type(self):
         self.entities[0].doc = {'type': 'aliquot',
-                                'alias': 1, 'centers': {'alias': 'test'}}
+                                'submitter_id': 1, 'centers': {'submitter_id': 'test'}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(['alias'], self.entities[0].errors[0]['keys'])
+        self.assertEqual(['submitter_id'], self.entities[0].errors[0]['keys'])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_multiple_errors(self):
-        self.entities[0].doc = {'type': 'aliquot', 'alias': 1,
+        self.entities[0].doc = {'type': 'aliquot', 'submitter_id': 1,
                                 'test': 'test',
-                                'centers': {'alias': 'test'}}
+                                'centers': {'submitter_id': 'test'}}
         self.json_validator.record_errors(self.entities)
         self.assertEqual(2, len(self.entities[0].errors))
 
     def test_json_validator_with_nested_error_keys(self):
-        self.entities[0].doc = {'type': 'aliquot', 'alias': 'test',
-                                'centers': {'alias': True}}
+        self.entities[0].doc = {'type': 'aliquot', 'submitter_id': 'test',
+                                'centers': {'submitter_id': True}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(['centers.alias'], self.entities[0].errors[0]['keys'])
+        self.assertEqual(['centers'], self.entities[0].errors[0]['keys'])
 
     def test_json_validator_with_multiple_entities(self):
-        self.entities[0].doc = {'type': 'aliquot', 'alias': 1, 'test': 'test',
-                                'centers': {'alias': 'test'}}
+        self.entities[0].doc = {'type': 'aliquot', 'submitter_id': 1, 'test': 'test',
+                                'centers': {'submitter_id': 'test'}}
         entity = MockSubmissionEntity()
-        entity.doc = {'type': 'aliquot', 'alias': 'test',
-                      'centers': {'alias': 'test'}}
+        entity.doc = {'type': 'aliquot', 'submitter_id': 'test',
+                      'centers': {'submitter_id': 'test'}}
         self.entities.append(entity)
 
         self.json_validator.record_errors(self.entities)
