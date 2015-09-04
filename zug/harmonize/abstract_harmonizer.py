@@ -430,3 +430,10 @@ class AbstractHarmonizer(object):
     @abstractmethod 
     def submit_metrics(self):
         raise NotImplementedError()
+
+    @abstractmethod
+    def build_docker_cmd(self):
+        '''
+        Returns a docker command string.
+        '''
+        raise NotImplementedError()
