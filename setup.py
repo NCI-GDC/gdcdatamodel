@@ -29,7 +29,7 @@ setup(
         'lockfile',
         'BeautifulSoup4==4.4.0',
         'lxml==3.4.1',
-        'requests==2.5.2',
+        'requests==2.6.0',
         'apache-libcloud==0.15.1',
         'cssselect==0.9.1',
         'elasticsearch==1.4.0',
@@ -46,12 +46,13 @@ setup(
         'pyOpenSSL==0.15.1',
         'ndg-httpsclient==0.4.0',
         'pyasn1==0.1.8',
+        'datadog==0.9.0',
     ],
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@621d7d157fad91bd0834280b8d2c39be384dcb1a#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@99c87f23c6f955fed5971f987dbe36c92c9e4596#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@61c2040cc51120f813d380f817ac3b32da8e812a#egg=gdcdatamodel',
-        'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@63b3c1894299708d568506bce1ed3120fadbdf44#egg=signpostclient',
+        'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@ebc91a5f8343e8f4cb2caefc523b9ad3a1eb7c6c#egg=signpostclient',
         'git+ssh://git@github.com/NCI-GDC/python-ds3-sdk.git@6a3382b3766d7e0898e9b70221d7e43f767acb8f#egg=ds3client',
     ]
 )
