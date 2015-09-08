@@ -258,6 +258,13 @@ class TCGASTARAligner(AbstractHarmonizer):
         self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
         self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
 
+    def submit_metrics(self):
+        '''
+        Submit alignment metrics.
+        '''
+        # TODO FIXME implement this
+        pass
+
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):
         '''
