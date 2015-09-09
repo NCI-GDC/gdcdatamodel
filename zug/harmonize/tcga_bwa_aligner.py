@@ -21,6 +21,10 @@ class TCGABWAAligner(AbstractHarmonizer):
             size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
         else:
             size_limit = None
+        if os.environ.get("ALIGNMENT_SIZE_MIN"):
+            size_min = int(os.environ["ALIGNMENT_SIZE_MIN"])
+        else:
+            size_min = None
         return {
             "output_buckets": {
                 "bam": os.environ["BAM_S3_BUCKET"],
@@ -42,8 +46,10 @@ class TCGABWAAligner(AbstractHarmonizer):
                                                     "intervals/bait_target_key_interval.json"),
             },
             "size_limit": size_limit,
+            "size_min": size_min,
             "cores": int(os.environ.get("ALIGNMENT_CORES", "8")),
             "force_input_id": kwargs.get("force_input_id"),
+            "center_limit": os.environ.get("ALIGNMENT_CENTER_LIMIT")
         }
 
     @property
@@ -74,6 +80,16 @@ class TCGABWAAligner(AbstractHarmonizer):
             "db": File,
         }
 
+    def choose_bam_at_random(self):
+        """This queries for a bam file that we can align at random,
+        potentially filtering by size.
+
+        """
+        input_bam = self.alignable_files.from_self(File).order_by(func.random()).first()
+        if not input_bam:
+            raise NoMoreWorkException("We appear to have aligned all bam files")
+        else:
+            return input_bam
 
     def find_inputs(self):
         if self.config["force_input_id"]:

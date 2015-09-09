@@ -361,6 +361,23 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             assert "bam" in input
             assert "bai" in input
 
+    def test_doesnt_choose_older_files(self):
+        with self.graph.session_scope():
+            aliquot = self.create_aliquot()
+            file = self.create_file("test1.bam", "fake_test_content")
+            file.aliquots = [aliquot]
+            derived_file = self.get_fuzzed_node(File, state="live")
+            file.derived_files = [derived_file]
+            older_file = self.create_file("test_older.bam", "more_fake_test_content")
+            older_file.aliquots = [aliquot]
+            older_file.sysan["cghub_upload_date"] = 100
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.assertRaises(NoMoreWorkException):
+                    with self.graph.session_scope():
+                        aligner.find_inputs()
+
     def test_force_input_id(self):
         with self.graph.session_scope():
             aliquot = self.create_aliquot()
