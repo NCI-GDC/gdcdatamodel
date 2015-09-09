@@ -85,9 +85,9 @@ class AbstractHarmonizer(object):
             self.signpost = signpost
         else:
             self.signpost = SignpostClient(self.config["signpost_url"])
-        self.docker = docker.Client(**docker.utils.kwargs_from_env(
-            assert_hostname=False
-        ))
+        docker_args = docker.utils.kwargs_from_env(assert_hostname=False)
+        docker_args["timeout"] = 5 * 60
+        self.docker = docker.Client(**docker_args)
         # we need to set self.docker_container to None here in case
         # self.cleanup is called before self.run_docker, since
         # self.cleanup checks this variable
@@ -427,6 +427,6 @@ class AbstractHarmonizer(object):
     def handle_output(self):
         raise NotImplementedError()
 
-    @abstractmethod 
+    @abstractmethod
     def submit_metrics(self):
         raise NotImplementedError()
