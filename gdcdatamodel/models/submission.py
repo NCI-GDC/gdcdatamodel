@@ -70,6 +70,11 @@ class TransactionLog(Base):
         server_default=text('now()'),
     )
 
+    response_json = Column(
+        JSONB,
+        nullable=False,
+    )
+
     canonical_json = Column(
         JSONB,
         nullable=False,
