@@ -183,16 +183,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         uuid = self.inputs['bam'].node_id
         
         return {
-            'bam': self.host_abspath(
-                self.config['scratch_dir'],
-                'realn/bwa_aln_s/sorted/',
-                '{uuid}.bam'.format(uuid=uuid),
-            ),
-            'bai': self.host_abspath(
-                self.config['scratch_dir'],
-                'realn/bwa_aln_s/sorted/',
-                '{uuid}.bam.bai'.format(uuid=uuid),
-            ),
             'log': self.host_abspath(
                 self.config['scratch_dir'],
                 'aln_' + self.inputs['bam'].node_id + '.log',
