@@ -117,7 +117,7 @@ TAGS = [
     "gene", "patient", "nte", "radiation", "drug", "B_Allele_Freq",
     "Delta_B_Allele_Freq", "Genotypes", "LOH", "Normal_LogR",
     "Paired_LogR", "seg", "segnormal", "Unpaired_LogR", "MSI", "hpv",
-    "cov", "batch_effect_removed", "harmonized", "summary"
+    "cov", "batch_effect_removed", "harmonized", "summary", "original"
 ]
 
 DATA_FORMATS = [
