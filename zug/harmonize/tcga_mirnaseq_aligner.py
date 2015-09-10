@@ -203,49 +203,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             ),
         }
 
-    def upload_secondary_files(self, prefix=''):
-        """
-        Upload the log file and sqlite db to the relevant bucket
-        """
-        for key in ["log", "db"]:
-            path = os.path.normpath(self.host_abspath(self.output_paths[key]))
-            self.upload_file(
-                path,
-                self.config["output_buckets"][key],
-                os.path.join(
-                    prefix,
-                    os.path.basename(path),
-                ),
-            )
-
-    def upload_tertiary_files(self, prefix=''):
-        '''
-        Upload any remaining files.
-        '''
-        # TODO FIXME implement me
-        pass
-
-    def clean_input_files(self):
-        '''
-        Clean the scratch directory of any input files.
-        '''
-        # TODO FIXME implement me
-        pass
-
-    def clean_primary_files(self):
-        '''
-        Clean the scratch directory of any primary files.
-        '''
-        os.remove(self.output_paths['bam'])
-        os.remove(self.output_paths['bai'])
-
-    def clean_secondary_files(self):
-        '''
-        Clean the scratch directory of any secondary files.
-        '''
-        os.remove(self.output_paths['log'])
-        os.remove(self.output_paths['db'])
-
     def submit_metrics(self):
         """
         Submit metrics to datadog
@@ -273,50 +230,109 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         statsd.histogram('harmonization.{}.seconds_per_byte'.format(self.name),
                          float(took) / self.inputs["bam"].file_size)
 
-    def handle_output(self):
-        output_nodes = {}
-        for key in ["bam", "bai"]:
-            name = self.inputs[key].file_name.replace(".bam", "_gdc_realn.bam")
-            output_nodes[key] = self.upload_file_and_save_to_db(
-                self.host_abspath(self.output_paths[key]),
-                self.config["output_buckets"][key],
-                name,
-                self.inputs["bam"].acl
-            )
-        output_nodes["bam"].related_files = [output_nodes["bai"]]
+    def upload_primary_files(self):
+        '''
+        Upload primary outputs - bams and bais.
+        '''
+        uuid = self.inputs['bam'].node_id
+        
         docker_tag = (self.docker_image["RepoTags"][0]
                       if self.docker_image["RepoTags"] else None)
-        edge = FileDataFromFile(
-            src=self.inputs["bam"],
-            dst=output_nodes["bam"],
-            system_annotations={
-                "alignment_started": self.start_time,
-                "alignment_finished": int(time.time()),
-                # raw_docker as opposed to whatever we might use in
-                # the future, e.g. CWL
-                "alignment_method": "raw_docker",
-                "alignment_docker_image_id": self.docker_image["Id"],
-                "alignment_docker_image_tag": docker_tag,
-                "alignment_docker_cmd": self.docker_cmd,
-                "alignment_reference_name": os.path.basename(self.config["reference"]),
-            }
+        
+        output_directory = self.host_abspath(
+            self.config['scratch_dir'],
+            'realn/bwa_aln_s/sorted/',
         )
-        with self.graph.session_scope() as session:
-            # merge old bam file so we can get its classification
-            session.add(self.inputs["bam"])
-            # classify new bam file, same as the old bam file
-            output_nodes["bam"].experimental_strategies = self.inputs["bam"].experimental_strategies
-            output_nodes["bam"].data_formats =  self.inputs["bam"].data_formats
-            output_nodes["bam"].data_subtypes = self.inputs["bam"].data_subtypes
-            output_nodes["bam"].platforms = self.inputs["bam"].platforms
-            # this line implicitly merges the new bam and new bai
-            session.merge(edge)
         
-        # TODO FIXME add handles for qc upload
-        self.clean_input_files()
-        self.clean_primary_files()
+        primaries = set()
         
+        for f in os.listdir(output_directory):
+            fpath = os.path.join(output_directory, f)
+            
+            if not os.path.isfile(fpath):
+                continue
+            
+            if not any([
+                f.endswith('.bam'),
+                f.endswith('.bai'),
+            ]): continue
+            
+            primaries.add(f[:-4])
+        
+        for primary in primaries:
+            bam = os.path.join(output_directory, primary, '.bam')
+            bai = os.path.join(output_directory, primary, '.bai')
+            
+            if not all([
+                os.path.isfile(bam),
+                os.path.isfile(bai),
+            ]): raise ValueError('incomplete pairing of bams and bais')
+            
+            bam_node = self.upload_file_and_save_to_db(
+                bam,
+                self.config['output_buckets']['bam'],
+                os.path.join(uuid, primary, '.bam'),
+                self.inputs['bam'].acl,
+            )
+            
+            bai_node = self.upload_file_and_save_to_db(
+                bai,
+                self.config['output_buckets']['bai'],
+                os.path.join(uuid, primary, '.bai'),
+                self.inputs['bam'].acl,
+            )
+            
+            bam_node.related_files = [bai_node]
+            
+            edge = FileDataFromFile(
+                src=self.inputs["bam"],
+                dst=bam_node,
+                system_annotations={
+                    "alignment_started": self.start_time,
+                    "alignment_finished": int(time.time()),
+                    # raw_docker as opposed to whatever we might use in
+                    # the future, e.g. CWL
+                    "alignment_method": "raw_docker",
+                    "alignment_docker_image_id": self.docker_image["Id"],
+                    "alignment_docker_image_tag": docker_tag,
+                    "alignment_docker_cmd": self.docker_cmd,
+                    "alignment_reference_name": os.path.basename(self.config["reference"]),
+                }
+            )
+            with self.graph.session_scope() as session:
+                # merge old bam file so we can get its classification
+                session.add(bam_node)
+                # classify new bam file, same as the old bam file
+                bam_node.experimental_strategies = self.inputs["bam"].experimental_strategies
+                bam_node.data_formats =  self.inputs["bam"].data_formats
+                bam_node.data_subtypes = self.inputs["bam"].data_subtypes
+                bam_node.platforms = self.inputs["bam"].platforms
+                # this line implicitly merges the new bam and new bai
+                session.merge(edge)
+
+    def upload_secondary_files(self, prefix=''):
+        """
+        Upload the log file and sqlite db to the relevant bucket
+        """
+        for key in ["log", "db"]:
+            path = os.path.normpath(self.host_abspath(self.output_paths[key]))
+            self.upload_file(
+                path,
+                self.config["output_buckets"][key],
+                os.path.join(
+                    prefix,
+                    os.path.basename(path),
+                ),
+            )
+
+    def upload_tertiary_files(self, prefix=''):
+        '''
+        Upload any remaining files.
+        '''
+        # TODO FIXME implement me
+        pass
+
+    def handle_output(self):
+        self.upload_primary_files()
         self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
-        self.clean_secondary_files()
-        
         self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
