@@ -2,13 +2,11 @@ import os
 import re
 import time
 from datadog import statsd
-from sqlalchemy import func, desc, BigInteger
+from sqlalchemy import func
 
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform, Center,
-    FileDataFromAliquot, FileDataFromFile
+    File, FileDataFromFile
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
@@ -85,6 +83,9 @@ class TCGABWAAligner(AbstractHarmonizer):
         potentially filtering by size.
 
         """
+        total_bams = self.bam_files.count()
+        aligned = self.bam_files.filter(File.derived_files.any()).count()
+        self.log.info("Aligned %s out of %s files", aligned, total_bams)
         input_bam = self.alignable_files.from_self(File).order_by(func.random()).first()
         if not input_bam:
             raise NoMoreWorkException("We appear to have aligned all bam files")

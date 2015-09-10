@@ -179,7 +179,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         return TCGAExomeAligner(**kwargs)
 
 
-    def create_file(self, name, content):
+    def create_file(self, name, content, aliquot=None):
         bam_doc = self.signpost_client.create()
         assert name.endswith(".bam")
         bam_file = File(
@@ -207,6 +207,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             "source": "tcga_cghub",
             "cghub_last_modified": 12345567,
             "cghub_upload_date": 12345567,
+            "cghub_legacy_sample_id": aliquot
         }
         with self.graph.session_scope():
             strat = self.graph.nodes(ExperimentalStrategy)\
@@ -237,16 +238,6 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         bai_doc.patch()
         return bam_file
 
-    def create_aliquot(self):
-        aliquot = Aliquot(
-            node_id=str(uuid4()),
-            submitter_id="fake_barcode",
-            source_center="foo",
-            amount=3.5,
-            concentration=10.0
-        )
-        return aliquot
-
     def monkey_patches(self):
         aligner_patches = patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
@@ -268,9 +259,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
     def test_basic_align(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner()
             aligner.go()
@@ -313,9 +303,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
         """
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
             second_file = self.get_fuzzed_node(File, state="live")
             file.derived_files = [second_file]
         with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
@@ -328,9 +317,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
         """
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner()
             with aligner.consul.consul_session_scope():
@@ -343,9 +331,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
     def test_size_limit(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner()
             with aligner.consul.consul_session_scope():
@@ -363,13 +350,12 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
     def test_doesnt_choose_older_files(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
             derived_file = self.get_fuzzed_node(File, state="live")
             file.derived_files = [derived_file]
-            older_file = self.create_file("test_older.bam", "more_fake_test_content")
-            older_file.aliquots = [aliquot]
+            older_file = self.create_file("test_older.bam", "more_fake_test_content",
+                                          aliquot="foo")
             older_file.sysan["cghub_upload_date"] = 100
         with self.monkey_patches():
             aligner = self.get_aligner()
@@ -380,9 +366,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
     def test_force_input_id(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner(force_input_id=file.node_id)
             with self.graph.session_scope(), aligner.consul.consul_session_scope():

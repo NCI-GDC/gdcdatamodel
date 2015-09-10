@@ -1,10 +1,8 @@
-from sqlalchemy import func, desc, BigInteger
+from sqlalchemy import desc, BigInteger
 
-from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform, Center,
-    FileDataFromAliquot,
+    File, ExperimentalStrategy,
+    Platform, Center, DataFormat
 )
 
 from zug.harmonize.tcga_bwa_aligner import TCGABWAAligner
@@ -32,29 +30,25 @@ class TCGAWGSAligner(TCGABWAAligner):
     def bam_files(self):
         '''targeted bam files query'''
         wgs = ExperimentalStrategy.name.astext == "WGS"
-        illumina = Platform.name.astext.contains("Illumina")
-        # NOTE you would think that file_name filter would be
-        # unnecessary but we have some TCGA exomes that end with
-        # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
-        # for now I am ignoring them
-        all_file_ids_sq = self.graph.nodes(File.node_id.label("file_id"))\
-                                    .props(state="live")\
+        illumina_plus_hiseq_x_ten = Platform.name.astext.contains("Illumina") | (Platform.name.astext == "HiSeq X Ten")
+        bam = DataFormat.name.astext == "BAM"
+        all_file_ids_sq = self.graph.nodes(File.node_id)\
                                     .sysan(source="tcga_cghub")\
-                                    .join(FileDataFromAliquot)\
-                                    .join(Aliquot)\
-                                    .distinct(Aliquot.node_id.label("aliquot_id"))\
+                                    .distinct(File._sysan["cghub_legacy_sample_id"].astext)\
                                     .filter(File.experimental_strategies.any(wgs))\
-                                    .filter(File.platforms.any(illumina))\
-                                    .filter(File.file_name.astext.endswith(".bam"))\
-                                    .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))\
+                                    .filter(File.platforms.any(illumina_plus_hiseq_x_ten))\
+                                    .filter(File.data_formats.any(bam))\
+                                    .order_by(File._sysan["cghub_legacy_sample_id"].astext,
+                                              desc(File._sysan["cghub_upload_date"].cast(BigInteger)))\
                                     .subquery()
-        return self.graph.nodes(File).filter(File.node_id == all_file_ids_sq.c.file_id)
+        return self.graph.nodes(File).filter(File.node_id == all_file_ids_sq.c.node_id)
 
     @property
     def alignable_files(self):
         '''bam files that are not aligned'''
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.bam_files\
+                        .props(state="live")\
                         .filter(~File.derived_files.any())\
                         .filter(~File.node_id.in_(currently_being_aligned))
         if self.config["size_limit"]:
