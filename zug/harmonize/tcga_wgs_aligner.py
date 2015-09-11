@@ -1,10 +1,7 @@
-from sqlalchemy import desc, BigInteger
+from sqlalchemy import BigInteger
+from queries import wgs
 
-from gdcdatamodel.models import (
-    File, ExperimentalStrategy,
-    Platform, Center, DataFormat
-)
-
+from gdcdatamodel.models import File, Center
 from zug.harmonize.tcga_bwa_aligner import TCGABWAAligner
 
 
@@ -29,19 +26,7 @@ class TCGAWGSAligner(TCGABWAAligner):
     @property
     def bam_files(self):
         '''targeted bam files query'''
-        wgs = ExperimentalStrategy.name.astext == "WGS"
-        illumina_plus_hiseq_x_ten = Platform.name.astext.contains("Illumina") | (Platform.name.astext == "HiSeq X Ten")
-        bam = DataFormat.name.astext == "BAM"
-        all_file_ids_sq = self.graph.nodes(File.node_id)\
-                                    .sysan(source="tcga_cghub")\
-                                    .distinct(File._sysan["cghub_legacy_sample_id"].astext)\
-                                    .filter(File.experimental_strategies.any(wgs))\
-                                    .filter(File.platforms.any(illumina_plus_hiseq_x_ten))\
-                                    .filter(File.data_formats.any(bam))\
-                                    .order_by(File._sysan["cghub_legacy_sample_id"].astext,
-                                              desc(File._sysan["cghub_upload_date"].cast(BigInteger)))\
-                                    .subquery()
-        return self.graph.nodes(File).filter(File.node_id == all_file_ids_sq.c.node_id)
+        return wgs(self.graph, 'tcga_cghub')
 
     @property
     def alignable_files(self):
