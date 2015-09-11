@@ -30,16 +30,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
 
     def get_config(self, kwargs):
         
-        if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
-            size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
-        else:
-            size_limit = None
-        
-        if os.environ.get("ALIGNMENT_SIZE_MIN"):
-            size_min = int(os.environ["ALIGNMENT_SIZE_MIN"])
-        else:
-            size_min = None
-        
         reference = os.environ['REFERENCE']
         
         return {
@@ -55,8 +45,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                 'reference': reference,
             },
             
-            'size_limit': size_limit,
-            'size_min': size_min,
             'force_input_id': kwargs.get('force_input_id'),
         }
 
@@ -117,16 +105,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             .props(state='live')\
             .filter(~File.derived_files.any())\
             .filter(~File.node_id.in_(currently_being_aligned))
-        
-        if self.config['size_limit']:
-            alignable = alignable.filter(
-                File.file_size.cast(BigInteger) < self.config['size_limit']
-            )
-        
-        if self.config['size_min']:
-            alignable = alignable.filter(
-                File.file_Size.cast(BigInteger) > self.config['size_min']
-            )
         
         return alignable
 
