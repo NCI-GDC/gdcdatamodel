@@ -259,14 +259,14 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             bam_node = self.upload_file_and_save_to_db(
                 bam,
                 self.config['output_buckets']['bam'],
-                os.path.join(uuid, primary + '.bam'),
+                primary + '.bam',
                 self.inputs['bam'].acl,
             )
             
             bai_node = self.upload_file_and_save_to_db(
                 bai,
                 self.config['output_buckets']['bai'],
-                os.path.join(uuid, primary + '.bai'),
+                primary + '.bai',
                 self.inputs['bam'].acl,
             )
             
@@ -317,8 +317,26 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         '''
         Upload any remaining files.
         '''
-        # TODO FIXME implement me
-        pass
+        tree = os.walk(self.host_abspath(
+            self.config['scratch_dir'],
+            'fastq',
+        ))
+        for root, _, files in tree:
+            for f in files:
+                host_f = os.path.normpath(os.path.join(root, f))
+                key = os.path.join(
+                    prefix,
+                    os.path.relpath(
+                        host_f,
+                        self.host_abspath(self.config['scratch_dir']),
+                    ),
+                )
+                
+                self.upload_file(
+                    host_f,
+                    self.config['output_buckets']['meta'],
+                    key,
+                )
 
     def handle_output(self):
         self.upload_primary_files()
