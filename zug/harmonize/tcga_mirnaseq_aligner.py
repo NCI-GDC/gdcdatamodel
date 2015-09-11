@@ -198,12 +198,11 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             done = self.bam_files.filter(File.derived_files.any()).count()
         
         self.log.info('%s bams aligned out of %s', done, total)
-        frac = float(done) / float(total)
         statsd.gauge('harmonization.completed_bams',
                      done,
                      tags=tags)
-        statsd.gauge('harmonization.fraction_complete',
-                     frac,
+        statsd.gauge('harmonization.total_bams',
+                     total,
                      tags=tags)
         statsd.histogram('harmonization.seconds',
                          took,
