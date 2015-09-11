@@ -15,9 +15,6 @@ from gdcdatamodel.models import (
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 
 
-statsd.host = 'datadogproxy.service.consul'
-
-
 class TCGAMIRNASeqAligner(AbstractHarmonizer):
 
     @property
