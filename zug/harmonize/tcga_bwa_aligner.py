@@ -3,7 +3,7 @@ import re
 import time
 from datadog import statsd
 from sqlalchemy import func
-
+import socket
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
     File, FileDataFromFile
@@ -210,25 +210,37 @@ class TCGABWAAligner(AbstractHarmonizer):
         self.log.info("Submitting metrics")
         took = int(time.time()) - self.start_time
         input_id = self.inputs["bam"].node_id
+
+        tags=["alignment_type:{}".format(self.name),
+              "alignment_host:{}".format(socket.gethostname())]
         statsd.event(
             "{} aligned".format(input_id),
             "successfully aligned {} in {} minutes".format(input_id, took / 60),
             source_type_name="harmonization",
             alert_type="success",
+            tags=tags
         )
         with self.graph.session_scope():
             total = self.bam_files.count()
             done = self.bam_files.filter(File.derived_files.any()).count()
         self.log.info("%s bams aligned out of %s", done, total)
         frac = float(done) / float(total)
-        statsd.gauge('harmonization.{}.completed_bams'.format(self.name),
-                     done)
-        statsd.gauge('harmonization.{}.fraction_complete'.format(self.name),
-                     frac)
-        statsd.histogram('harmonization.{}.seconds'.format(self.name),
-                         took)
-        statsd.histogram('harmonization.{}.seconds_per_byte'.format(self.name),
-                         float(took) / self.inputs["bam"].file_size)
+        statsd.gauge('harmonization.completed_bams',
+                     done,
+                     tags=tags)
+        statsd.gauge('harmonization.fraction_complete',
+                     frac,
+                     tags=tags)
+        statsd.histogram('harmonization.seconds',
+                         took,
+                         tags=tags)
+        statsd.histogram('harmonization.seconds_per_byte',
+                         float(took) / self.inputs["bam"].file_size,
+                         tags=tags)
+
+        statsd.set("harmonization.hosts",
+                   socket.gethostname(),
+                   tags=tags)
 
     def handle_output(self):
         self.upload_secondary_files()

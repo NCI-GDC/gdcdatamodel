@@ -5,6 +5,7 @@ import time
 import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
+import socket
 from datadog import statsd
 statsd.host = 'datadogproxy.service.consul'
 
@@ -396,6 +397,7 @@ class AbstractHarmonizer(object):
     def go(self):
         try:
             delete_scratch = True
+            self.submit_event("Aligner start", "")
             self.consul.start_consul_session()
             with self.graph.session_scope():
                 lock_id, inputs = self.find_inputs()
@@ -403,6 +405,7 @@ class AbstractHarmonizer(object):
             self.try_lock(lock_id)
             self.inputs = inputs
             self.input_paths = self.download_inputs()
+            self.submit_event("Docker start running", "")
             self.run_docker()
             self.check_output_paths()
             self.handle_output()
@@ -435,6 +438,14 @@ class AbstractHarmonizer(object):
 
     # interface methods / properties that subclasses must implement
 
+    def submit_event(self, name, description, alert_type='success'):
+        self.log.info("[datadog] submit event {}".format(name))
+        tags=["alignment_type:{}".format(self.name),
+              "alignment_host:{}".format(socket.gethostname())]
+
+        statsd.event(name, description, source_type_name='harmonization',
+                     alert_type=alert_type,
+                     tags=tags)
     @abstractmethod
     def get_config(self):
         raise NotImplementedError()
