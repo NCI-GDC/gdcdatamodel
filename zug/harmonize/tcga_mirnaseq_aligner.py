@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import socket
 from datadog import statsd
 from sqlalchemy import func, desc, BigInteger
 
@@ -12,6 +13,9 @@ from gdcdatamodel.models import (
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
+
+
+statsd.host = 'datadogproxy.service.consul'
 
 
 class TCGAMIRNASeqAligner(AbstractHarmonizer):
@@ -191,31 +195,48 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         }
 
     def submit_metrics(self):
-        """
+        '''
         Submit metrics to datadog
-        """
-        self.log.info("Submitting metrics")
+        '''
+        self.log.info('Submitting metrics')
         took = int(time.time()) - self.start_time
-        input_id = self.inputs["bam"].node_id
+        input_id = self.inputs['bam'].node_id
+        
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
         statsd.event(
-            "{} aligned".format(input_id),
-            "successfully aligned {} in {} minutes".format(input_id, took / 60),
-            source_type_name="harmonization",
-            alert_type="success",
+            '{} aligned'.format(input_id),
+            'successfully aligned {} in {} minutes'.format(input_id, took / 60),
+            source_type_name='harmonization',
+            alert_type='success',
+            tags=tags
         )
+        
         with self.graph.session_scope():
             total = self.bam_files.count()
             done = self.bam_files.filter(File.derived_files.any()).count()
-        self.log.info("%s bams aligned out of %s", done, total)
+        
+        self.log.info('%s bams aligned out of %s', done, total)
         frac = float(done) / float(total)
-        statsd.gauge('harmonization.{}.completed_bams'.format(self.name),
-                     done)
-        statsd.gauge('harmonization.{}.fraction_complete'.format(self.name),
-                     frac)
-        statsd.histogram('harmonization.{}.seconds'.format(self.name),
-                         took)
-        statsd.histogram('harmonization.{}.seconds_per_byte'.format(self.name),
-                         float(took) / self.inputs["bam"].file_size)
+        statsd.gauge('harmonization.completed_bams',
+                     done,
+                     tags=tags)
+        statsd.gauge('harmonization.fraction_complete',
+                     frac,
+                     tags=tags)
+        statsd.histogram('harmonization.seconds',
+                         took,
+                         tags=tags)
+        statsd.histogram('harmonization.seconds_per_byte',
+                         float(took) / self.inputs['bam'].file_size,
+                         tags=tags)
+        
+        statsd.set('harmonization.hosts',
+                   socket.gethostname(),
+                   tags=tags)
 
     def upload_primary_files(self):
         '''
