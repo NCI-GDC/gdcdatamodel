@@ -53,7 +53,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             
             'size_limit': size_limit,
             'size_min': size_min,
-            'cores': int(os.environ.get('ALIGNMENT_CORES', '8')),
             'force_input_id': kwargs.get('force_input_id'),
         }
 
