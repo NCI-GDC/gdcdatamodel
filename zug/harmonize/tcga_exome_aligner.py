@@ -48,6 +48,7 @@ class TCGAExomeAligner(TCGABWAAligner):
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.bam_files\
                         .props(state="live")\
+                        .not_sysan(alignment_data_problem=True)\
                         .filter(~File.derived_files.any())\
                         .filter(~File.node_id.in_(currently_being_aligned))
         if self.config["size_limit"]:

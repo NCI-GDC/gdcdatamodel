@@ -12,6 +12,10 @@ from gdcdatamodel.models import (
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 
 
+def has_fixmate_failure(logs):
+    return "FixMateInformation" in logs
+
+
 class TCGABWAAligner(AbstractHarmonizer):
 
     def get_config(self, kwargs):
@@ -49,6 +53,20 @@ class TCGABWAAligner(AbstractHarmonizer):
             "force_input_id": kwargs.get("force_input_id"),
             "center_limit": os.environ.get("ALIGNMENT_CENTER_LIMIT")
         }
+
+    @property
+    def docker_log_flag_funcs(self):
+        return {
+            "fixmate_failure": has_fixmate_failure
+        }
+
+    def docker_failure_cleanup(self):
+        if self.docker_log_flags["fixmate_failure"]:
+            # mark the file as not to do in the future
+            with self.graph.session_scope() as session:
+                session.add(self.inputs["bam"])
+                self.inputs["bam"].sysan["alignment_data_problem"] = True
+                self.inputs["bam"].sysan["alignment_fixmate_failure"] = True
 
     @property
     def valid_extra_kwargs(self):
@@ -149,7 +167,6 @@ class TCGABWAAligner(AbstractHarmonizer):
         if self.name == "tcga_exome_aligner":
             cmd += " -x"
         return cmd
-
 
     @property
     def output_paths(self):

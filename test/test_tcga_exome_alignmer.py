@@ -35,6 +35,7 @@ class FakeDockerClient(object):
     def __init__(self, *args, **kwargs):
         self.containers = {}
         self._fail = False
+        self._logs = ["FAKE", "DOCKER", "LOGS"]
 
     def images(self):
         return [{
@@ -65,8 +66,7 @@ class FakeDockerClient(object):
             self.containers[cont["Id"]]["retcode"] = retcode
 
     def logs(self, cont, **kwargs):
-        # TODO maybe store actual logs
-        return ["FAKE", "DOCKER", "LOGS"]
+        return self._logs
 
     def wait(self, cont, **kwargs):
         return self.containers[cont["Id"]]["retcode"]
@@ -346,6 +346,28 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.docker._fail = True
             aligner.go()
         self.assertTrue(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+
+    def test_marks_file_on_fixmate_failure(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.docker._logs = ["foo", "bar", "FixMateInformation"]
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertTrue(file.sysan["alignment_data_problem"])
+
+    def test_doesnt_align_data_problem_files(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            file.sysan["alignment_data_problem"] = True
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.go()
 
     def test_size_limit(self):
         with self.graph.session_scope():

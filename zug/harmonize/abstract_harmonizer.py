@@ -66,7 +66,8 @@ class AbstractHarmonizer(object):
             assert kwarg in self.valid_extra_kwargs
         self.config = self.get_base_config()
         self.config.update(self.get_config(kwargs))
-
+        self.docker_log_flags = {flag: False for flag
+                                 in self.docker_log_flag_funcs.keys()}
         # do some simple validations
         self.validate_config()
 
@@ -261,17 +262,23 @@ class AbstractHarmonizer(object):
         self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(self.docker_container)
         retcode = None
+        all_docker_logs = ""
         while retcode is None:
             try:
                 for log in self.docker.logs(self.docker_container, stream=True,
                                             stdout=True, stderr=True):
+                    all_docker_logs += log
                     self.log.info(log.strip())  # TODO maybe something better
                 retcode = self.docker.wait(self.docker_container, timeout=0.1)
             except ReadTimeout:
                 pass
+        for flag, func in self.docker_log_flag_funcs.iteritems():
+            if func(all_docker_logs):
+                self.docker_log_flags[flag] = True
         if retcode != 0:
             self.docker.remove_container(self.docker_container, v=True)
             self.docker_container = None
+            self.docker_failure_cleanup()
             if self.config["stop_on_docker_error"]:
                 raise DockerFailedException("Docker container failed with exit code {}".format(retcode))
             else:
@@ -405,6 +412,26 @@ class AbstractHarmonizer(object):
             raise
         finally:
             self.cleanup(delete_scratch=delete_scratch)
+
+    def docker_failure_cleanup(self):
+        """Subclasses can override to do something special when the docker
+        container fails
+
+        """
+        pass
+
+    @property
+    def docker_log_flag_funcs(self):
+        """A map from string keys to functions. Each function will be called
+        on the log output of the docker container and the
+        corresponding string in self.docker_log_flags set to True if
+        the function returns True.
+
+        The subclass can then inspect the flags and take action based
+        on them later.
+
+        """
+        return {}
 
     # interface methods / properties that subclasses must implement
 
