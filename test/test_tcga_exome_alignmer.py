@@ -10,6 +10,7 @@ from uuid import uuid4
 from mock import patch
 from base import ZugTestBase, FakeS3Mixin, SignpostMixin, PreludeMixin
 
+from zug.harmonize.abstract_harmonizer import DockerFailedException
 from zug.harmonize.tcga_exome_aligner import TCGAExomeAligner
 from zug.binutils import NoMoreWorkException
 # TODO really need to find a better place for this
@@ -33,6 +34,8 @@ class FakeDockerClient(object):
 
     def __init__(self, *args, **kwargs):
         self.containers = {}
+        self._fail = False
+        self._logs = ["FAKE", "DOCKER", "LOGS"]
 
     def images(self):
         return [{
@@ -57,11 +60,13 @@ class FakeDockerClient(object):
     def start(self, cont, **kwargs):
         retcode = subprocess.call(self.containers[cont["Id"]]["command"],
                                   shell=True)
-        self.containers[cont["Id"]]["retcode"] = retcode
+        if self._fail:
+            self.containers[cont["Id"]]["retcode"] = 1
+        else:
+            self.containers[cont["Id"]]["retcode"] = retcode
 
     def logs(self, cont, **kwargs):
-        # TODO maybe store actual logs
-        return ["FAKE", "DOCKER", "LOGS"]
+        return self._logs
 
     def wait(self, cont, **kwargs):
         return self.containers[cont["Id"]]["retcode"]
@@ -295,6 +300,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
+            # assert that we remove the scratch dir
+            self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
             self.fake_s3.stop()
 
     def test_raises_if_no_work(self):
@@ -328,6 +335,39 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                     # file to align
                     with self.assertRaises(NoMoreWorkException):
                         aligner.go()
+
+    def test_stop_on_docker_error(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(DockerFailedException):
+            aligner = self.get_aligner()
+            aligner.config["stop_on_docker_error"] = True
+            aligner.docker._fail = True
+            aligner.go()
+        self.assertTrue(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+
+    def test_marks_file_on_fixmate_failure(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.docker._logs = ["foo", "bar", "FixMateInformation"]
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertTrue(file.sysan["alignment_data_problem"])
+
+    def test_doesnt_align_data_problem_files(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            file.sysan["alignment_data_problem"] = True
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.go()
 
     def test_size_limit(self):
         with self.graph.session_scope():

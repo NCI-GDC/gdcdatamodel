@@ -24,9 +24,14 @@ from cdisutils.log import get_logger
 from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from zug.consul_manager import ConsulManager
+from zug.binutils import DoNotRestartException
 from gdcdatamodel.models import File
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+
+
+class DockerFailedException(DoNotRestartException):
+    pass
 
 
 def first_s3_url(doc):
@@ -61,7 +66,8 @@ class AbstractHarmonizer(object):
             assert kwarg in self.valid_extra_kwargs
         self.config = self.get_base_config()
         self.config.update(self.get_config(kwargs))
-
+        self.docker_log_flags = {flag: False for flag
+                                 in self.docker_log_flag_funcs.keys()}
         # do some simple validations
         self.validate_config()
 
@@ -128,6 +134,7 @@ class AbstractHarmonizer(object):
             "scratch_dir": os.path.relpath(scratch_dir, start=workdir),
             "container_workdir": "/alignment",  # TODO make this configurable?
             "docker_image_id": os.environ["DOCKER_IMAGE_ID"],
+            "stop_on_docker_error": os.environ.get("ALIGNMENT_STOP_ON_DOCKER_ERROR")
         }
 
     def validate_config(self):
@@ -150,10 +157,13 @@ class AbstractHarmonizer(object):
         assert os.path.isabs(self.config["workdir"])
         assert os.path.isabs(self.config["container_workdir"])
 
-    def cleanup(self):
+    def cleanup(self, delete_scratch=True):
         scratch_abspath = self.host_abspath(self.config["scratch_dir"])
-        self.log.info("Removing scatch dir %s", scratch_abspath)
-        shutil.rmtree(scratch_abspath)
+        if delete_scratch:
+            self.log.info("Removing scatch dir %s", scratch_abspath)
+            shutil.rmtree(scratch_abspath)
+        else:
+            self.log.info("Not deleting scratch space per config")
         self.consul.cleanup()
         if self.docker_container:
             self.log.info("Removing docker container %s", self.docker_container)
@@ -252,17 +262,27 @@ class AbstractHarmonizer(object):
         self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(self.docker_container)
         retcode = None
+        all_docker_logs = ""
         while retcode is None:
             try:
                 for log in self.docker.logs(self.docker_container, stream=True,
                                             stdout=True, stderr=True):
+                    all_docker_logs += log
                     self.log.info(log.strip())  # TODO maybe something better
                 retcode = self.docker.wait(self.docker_container, timeout=0.1)
             except ReadTimeout:
                 pass
+        for flag, func in self.docker_log_flag_funcs.iteritems():
+            if func(all_docker_logs):
+                self.docker_log_flags[flag] = True
         if retcode != 0:
             self.docker.remove_container(self.docker_container, v=True)
-            raise RuntimeError("Docker container failed with exit code {}".format(retcode))
+            self.docker_container = None
+            self.docker_failure_cleanup()
+            if self.config["stop_on_docker_error"]:
+                raise DockerFailedException("Docker container failed with exit code {}".format(retcode))
+            else:
+                raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(self.docker_container, v=True)
         self.docker_container = None
@@ -375,6 +395,7 @@ class AbstractHarmonizer(object):
 
     def go(self):
         try:
+            delete_scratch = True
             self.consul.start_consul_session()
             with self.graph.session_scope():
                 lock_id, inputs = self.find_inputs()
@@ -386,8 +407,31 @@ class AbstractHarmonizer(object):
             self.check_output_paths()
             self.handle_output()
             self.submit_metrics()
+        except DockerFailedException:
+            delete_scratch = False
+            raise
         finally:
-            self.cleanup()
+            self.cleanup(delete_scratch=delete_scratch)
+
+    def docker_failure_cleanup(self):
+        """Subclasses can override to do something special when the docker
+        container fails
+
+        """
+        pass
+
+    @property
+    def docker_log_flag_funcs(self):
+        """A map from string keys to functions. Each function will be called
+        on the log output of the docker container and the
+        corresponding string in self.docker_log_flags set to True if
+        the function returns True.
+
+        The subclass can then inspect the flags and take action based
+        on them later.
+
+        """
+        return {}
 
     # interface methods / properties that subclasses must implement
 
