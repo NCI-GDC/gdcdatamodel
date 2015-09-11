@@ -77,8 +77,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         Mapping from names to output types.
         '''
         return {
-            'bam': File,
-            'bai': File,
             'log': File,
             'db': File,
         }
@@ -250,8 +248,8 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             primaries.add(f[:-4])
         
         for primary in primaries:
-            bam = os.path.join(output_directory, primary, '.bam')
-            bai = os.path.join(output_directory, primary, '.bai')
+            bam = os.path.join(output_directory, primary + '.bam')
+            bai = os.path.join(output_directory, primary + '.bai')
             
             if not all([
                 os.path.isfile(bam),
@@ -261,14 +259,14 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             bam_node = self.upload_file_and_save_to_db(
                 bam,
                 self.config['output_buckets']['bam'],
-                os.path.join(uuid, primary, '.bam'),
+                os.path.join(uuid, primary + '.bam'),
                 self.inputs['bam'].acl,
             )
             
             bai_node = self.upload_file_and_save_to_db(
                 bai,
                 self.config['output_buckets']['bai'],
-                os.path.join(uuid, primary, '.bai'),
+                os.path.join(uuid, primary + '.bai'),
                 self.inputs['bam'].acl,
             )
             
@@ -324,5 +322,5 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
 
     def handle_output(self):
         self.upload_primary_files()
-        self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
-        self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
+        self.upload_secondary_files()
+        self.upload_tertiary_files()
