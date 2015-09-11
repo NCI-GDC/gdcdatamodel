@@ -99,7 +99,10 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             .filter(File.experimental_strategies.any(strategy))\
             .filter(File.platforms.any(platform))\
             .filter(File.data_formats.any(dataformat))\
-            .order_by(desc(File._sysan['cghub_upload_date'].cast(BigInteger)))\
+            .order_by(
+                File._sysan['cghub_legacy_sample_id'].astext,
+                desc(File._sysan['cghub_upload_date'].cast(BigInteger)),
+            )\
             .subquery()
         
         return self.graph.nodes(File).filter(File.node_id == subquery.c.node_id)
