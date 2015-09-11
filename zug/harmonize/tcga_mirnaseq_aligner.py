@@ -6,9 +6,9 @@ from sqlalchemy import func, desc, BigInteger
 
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform, Center,
-    FileDataFromAliquot, FileDataFromFile
+    File, ExperimentalStrategy,
+    Platform, Center, DataFormat,
+    FileDataFromFile,
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
@@ -38,7 +38,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         
         reference = os.environ['REFERENCE']
         
-        # TODO FIXME match config with salt state / needed fields
         return {
             'output_buckets': {
                 'bam': os.environ['BAM_S3_BUCKET'],
@@ -84,34 +83,32 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
     def choose_bam_by_forced_id(self):
         input_bam = self.graph.nodes(File).ids(self.config['force_input_id']).one()
         assert input_bam.sysan['source'] == 'tcga_cghub'
-        assert input_bam.file_name.endswith('.bam')
         assert input_bam.data_formats[0].name == 'BAM'
         assert input_bam.experimental_strategies[0].name == 'miRNA-Seq'
         return input_bam
 
     @property
     def bam_files(self):
-        mirnaseq = ExperimentalStrategy.name.astext == 'miRNA-Seq'
-        illumina = Platform.name.astext.contains('Illumina')
+        strategy = ExperimentalStrategy.name.astext == 'miRNA-Seq'
+        platform = Platform.name.astext.contains('Illumina')
+        dataformat = DataFormat.name.astext == 'BAM'
         
-        subquery = self.graph.nodes(File.node_id.label('file_id'))\
-            .props(state='live')\
+        subquery = self.graph.nodes(File.node_id)\
             .sysan(source='tcga_cghub')\
-            .join(FileDataFromAliquot)\
-            .join(Aliquot)\
-            .distinct(Aliquot.node_id.label('aliquot_id'))\
-            .filter(File.experimental_strategies.any(mirnaseq))\
-            .filter(File.platforms.any(illumina))\
-            .filter(File.file_name.astext.endswith('.bam'))\
-            .order_by(Aliquot.node_id, desc(File._sysan['cghub_upload_date'].cast(BigInteger)))\
+            .distinct(File._sysan['cghub_legacy_sample_id'].astext)\
+            .filter(File.experimental_strategies.any(strategy))\
+            .filter(File.platforms.any(platform))\
+            .filter(File.data_formats.any(dataformat))\
+            .order_by(desc(File._sysan['cghub_upload_date'].cast(BigInteger)))\
             .subquery()
         
-        return self.graph.nodes(File).filter(File.node_id == subquery.c.file_id)
+        return self.graph.nodes(File).filter(File.node_id == subquery.c.node_id)
 
     @property
     def alignable_files(self):
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.bam_files\
+            .props(state='live')\
             .filter(~File.derived_files.any())\
             .filter(~File.node_id.in_(currently_being_aligned))
         
