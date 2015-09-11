@@ -340,5 +340,5 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
 
     def handle_output(self):
         self.upload_primary_files()
-        self.upload_secondary_files()
-        self.upload_tertiary_files()
+        self.upload_secondary_files(prefix=self.inputs['bam'].node_id)
+        self.upload_tertiary_files(prefix=self.inputs['bam'].node_id)
