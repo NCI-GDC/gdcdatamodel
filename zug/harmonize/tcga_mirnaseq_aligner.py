@@ -232,6 +232,13 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         
         primaries = set()
         
+        # NOTE Currently the miRNA-Seq docker image produces onre or more
+        # output BAM / BAI pairs, each named after their internal read group
+        # name. At present, there is not a particularly easy or accurate way
+        # to predict these names without inspecting the input file itself.
+        # So to handle this, we simply target all BAMs and BAIs in the output
+        # directory and leave the chore of handling the read group names to
+        # something more suited to the task.
         for f in os.listdir(output_directory):
             fpath = os.path.join(output_directory, f)
             
@@ -243,7 +250,9 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                 f.endswith('.bai'),
             ]): continue
             
-            primaries.add(f[:-4])
+            primary = os.path.splitext(f)[0]
+            
+            primaries.add(primary)
         
         for primary in primaries:
             bam = os.path.join(output_directory, primary + '.bam')
