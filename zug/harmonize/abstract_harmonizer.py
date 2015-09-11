@@ -24,9 +24,14 @@ from cdisutils.log import get_logger
 from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from zug.consul_manager import ConsulManager
+from zug.binutils import DoNotRestartException
 from gdcdatamodel.models import File
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+
+
+class DockerFailedException(DoNotRestartException):
+    pass
 
 
 def first_s3_url(doc):
@@ -128,6 +133,7 @@ class AbstractHarmonizer(object):
             "scratch_dir": os.path.relpath(scratch_dir, start=workdir),
             "container_workdir": "/alignment",  # TODO make this configurable?
             "docker_image_id": os.environ["DOCKER_IMAGE_ID"],
+            "stop_on_docker_error": os.environ.get("ALIGNMENT_STOP_ON_DOCKER_ERROR")
         }
 
     def validate_config(self):
@@ -150,10 +156,13 @@ class AbstractHarmonizer(object):
         assert os.path.isabs(self.config["workdir"])
         assert os.path.isabs(self.config["container_workdir"])
 
-    def cleanup(self):
+    def cleanup(self, delete_scratch=True):
         scratch_abspath = self.host_abspath(self.config["scratch_dir"])
-        self.log.info("Removing scatch dir %s", scratch_abspath)
-        shutil.rmtree(scratch_abspath)
+        if delete_scratch:
+            self.log.info("Removing scatch dir %s", scratch_abspath)
+            shutil.rmtree(scratch_abspath)
+        else:
+            self.log.info("Not deleting scratch space per config")
         self.consul.cleanup()
         if self.docker_container:
             self.log.info("Removing docker container %s", self.docker_container)
@@ -262,7 +271,11 @@ class AbstractHarmonizer(object):
                 pass
         if retcode != 0:
             self.docker.remove_container(self.docker_container, v=True)
-            raise RuntimeError("Docker container failed with exit code {}".format(retcode))
+            self.docker_container = None
+            if self.config["stop_on_docker_error"]:
+                raise DockerFailedException("Docker container failed with exit code {}".format(retcode))
+            else:
+                raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(self.docker_container, v=True)
         self.docker_container = None
@@ -375,6 +388,7 @@ class AbstractHarmonizer(object):
 
     def go(self):
         try:
+            delete_scratch = True
             self.consul.start_consul_session()
             with self.graph.session_scope():
                 lock_id, inputs = self.find_inputs()
@@ -386,8 +400,11 @@ class AbstractHarmonizer(object):
             self.check_output_paths()
             self.handle_output()
             self.submit_metrics()
+        except DockerFailedException:
+            delete_scratch = False
+            raise
         finally:
-            self.cleanup()
+            self.cleanup(delete_scratch=delete_scratch)
 
     # interface methods / properties that subclasses must implement
 
