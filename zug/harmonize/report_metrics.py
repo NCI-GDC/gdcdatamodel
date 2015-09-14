@@ -2,6 +2,7 @@ from psqlgraph import PsqlGraphDriver
 import os
 from queries import wgs, exome, mirnaseq
 from datadog import statsd
+statsd.host = 'datadogproxy.service.consul'
 
 
 class Reporter(object):

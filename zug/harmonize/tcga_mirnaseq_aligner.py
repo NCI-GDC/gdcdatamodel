@@ -1,7 +1,7 @@
 import os
 import re
-import time
 import socket
+import time
 from datadog import statsd
 from sqlalchemy import func
 from queries import mirnaseq
@@ -191,9 +191,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                          float(took) / self.inputs['bam'].file_size,
                          tags=tags)
         
-        statsd.set('harmonization.hosts',
-                   socket.gethostname(),
-                   tags=tags)
 
     def upload_primary_files(self):
         '''
