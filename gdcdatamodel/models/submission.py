@@ -24,17 +24,23 @@ class TransactionLog(Base):
     def to_json(self, fields=set()):
         existing_fields = [c.name for c in self.__table__.c]+['entities']
         custom_fields = {'timestamp', 'entities'}
-        fields = fields or existing_fields
+        entity_fields = {f for f in fields if f.startswith('entities.')}
+        fields = fields - entity_fields
+        entity_fields = {f.replace('entities.', '') for f in entity_fields}
+        if not fields:
+            fields = {'id', 'submitter', 'role', 'program'}
+        if entity_fields:
+            fields.add('entities')
 
         if set(fields) - set(existing_fields):
             raise RuntimeError('Fields do not exist: {}'.format(
-                set(fields) - set(existing_fields)))
+                ', '.join((set(fields) - set(existing_fields)))))
 
         doc = {key: getattr(self, key) for key in fields
                if key not in custom_fields}
 
         if 'entities' in fields:
-            doc['entities'] = [n.to_json() for n in self.entities]
+            doc['entities'] = [n.to_json(entity_fields) for n in self.entities]
         if 'timestamp' in fields:
             doc['timestamp'] = self.timestamp.isoformat("T")
 
@@ -136,10 +142,11 @@ class TransactionSnapshot(Base):
     def to_json(self, fields=set()):
         fields = set(fields)
         existing_fields = [c.name for c in self.__table__.c]
-        fields = fields or existing_fields
+        if not fields:
+            fields = existing_fields
         if set(fields) - set(existing_fields):
-            raise RuntimeError('Fields do not exist: {}'.format(
-                set(fields) - set(existing_fields)))
+            raise RuntimeError('Entity fields do not exist: {}'.format(
+                ', '.join((set(fields) - set(existing_fields)))))
         doc = {key: getattr(self, key) for key in fields}
         return doc
 
