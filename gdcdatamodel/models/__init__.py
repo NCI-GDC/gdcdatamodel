@@ -79,6 +79,8 @@ def PropertyFactory(name, schema, key=None):
     def setter(self, val):
         self._set_property(key, val)
 
+    setter.__name__ = name
+
     return setter
 
 
