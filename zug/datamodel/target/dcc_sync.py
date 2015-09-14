@@ -85,28 +85,10 @@ def classify(path):
         if re.match(regex, filename, re.IGNORECASE):
             return classification
 
-
 def process_url(kwargs, url):
     syncer = TARGETDCCFileSyncer(url, **kwargs)
     syncer.log.info("syncing file %s", url)
     return syncer.sync()
-
-def get_target_dcc_dict(graph):
-
-    # create a dict of the target_dcc files currently in psqlgraph
-    # so that we can pass it to the syncer to mark the ones we
-    # touched, leaving the ones to mark to delete
-    target_dcc_files = {}
-    with graph.session_scope():
-        target_dcc_file_iter = graph.nodes(File).sysan(source="target_dcc")
-        for target_file in target_dcc_file_iter:
-            data = {}
-            data['delete'] = True
-            data['id'] = target_file.node_id
-            target_dcc_files[target_file.sysan['url']] = data
-
-    return target_dcc_files
-
 
 class MD5SummingStream(object):
 
@@ -230,12 +212,27 @@ class TARGETDCCProjectSyncer(object):
                 url_full = url_part + "/" + toplevel + "/"
                 url = urljoin(self.base_url, url_full)
                 self.log.info(url)
-                resp = requests.get(url, auth=self.dcc_auth)
+                resp = requests.head(url, auth=self.dcc_auth)
                 if resp.status_code != 404:
-                    for file in tree_walk(url, auth=self.dcc_auth):
-                        yield file
+                    return tree_walk(url, auth=self.dcc_auth):
                 else:
                     self.log.warn("%s not present, skipping" % url)
+
+    def check_if_missing(self, url, dcc_auth_info):
+
+        if self.verify_missing:
+            resp = requests.head(url, auth=dcc_auth_info)
+        else:
+            resp = requests.Response
+            resp.status_code = 404
+
+        if resp.status_code == 200:
+            is_missing = False
+        else:
+            self.log.info("Status code: %d" % resp.status_code)
+            is_missing = True
+
+        return is_missing
 
     def cull(self, target_dcc_files, dcc_auth_info):
         """Set files to_delete to True based on dict passed"""
@@ -245,12 +242,7 @@ class TARGETDCCProjectSyncer(object):
                 if values['delete'] == True:
                     # try and get the file
                     print "Checking", key
-                    if self.verify_missing:
-                        resp = requests.get(key, auth=dcc_auth_info)
-                    else:
-                        resp = requests.Response
-                        resp.status_code = 404
-                    if (resp.status_code == 404):
+                    if check_if_missing(key, dcc_auth_info):
                         files_to_delete += 1
                         if 'id' not in values:
                             self.log.warn("Warning, unable to delete %s, id missing." % key)
