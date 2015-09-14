@@ -82,10 +82,3 @@ class TCGARNASeqAligner(TCGASTARAligner):
             raise NoMoreWorkException('Could not find any unprocessed FASTQs.')
         
         return tar
-
-    def submit_metrics(self):
-        '''
-        Submit alignment metrics.
-        '''
-        # TODO FIXME implement this
-        pass

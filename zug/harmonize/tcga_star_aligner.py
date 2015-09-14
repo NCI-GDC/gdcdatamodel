@@ -1,6 +1,7 @@
 import os
 import abc
 import time
+import socket
 import shutil
 
 from gdcdatamodel.models import (
@@ -247,10 +248,46 @@ class TCGASTARAligner(AbstractHarmonizer):
 
     def submit_metrics(self):
         '''
-        Submit alignment metrics.
+        Submit metrics to datadog
         '''
-        # TODO FIXME implement this
-        pass
+        self.log.info('Submitting metrics')
+        took = int(time.time()) - self.start_time
+        input_id = self.inputs['bam'].node_id
+        
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
+        statsd.event(
+            '{} aligned'.format(input_id),
+            'successfully aligned {} in {} minutes'.format(input_id, took / 60),
+            source_type_name='harmonization',
+            alert_type='success',
+            tags=tags
+        )
+        
+        with self.graph.session_scope():
+            total = self.bam_files.count()
+            done = self.bam_files.filter(File.derived_files.any()).count()
+        
+        self.log.info('%s bams aligned out of %s', done, total)
+        statsd.gauge('harmonization.completed_bams',
+                     done,
+                     tags=tags)
+        statsd.gauge('harmonization.total_bams',
+                     total,
+                     tags=tags)
+        statsd.histogram('harmonization.seconds',
+                         took,
+                         tags=tags)
+        statsd.histogram('harmonization.seconds_per_byte',
+                         float(took) / self.inputs['bam'].file_size,
+                         tags=tags)
+        
+        statsd.set('harmonization.hosts',
+                   socket.gethostname(),
+                   tags=tags)
 
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):
