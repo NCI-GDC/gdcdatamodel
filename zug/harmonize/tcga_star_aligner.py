@@ -173,8 +173,15 @@ class TCGASTARAligner(AbstractHarmonizer):
         '''
         Upload any remaining files.
         '''
-        tree = os.walk(self.host_abspath(self.config['scratch_dir']))
-        for root, _, files in tree:
+        scratch = self.host_abspath(self.config['scratch_dir'])
+        
+        for root, _, files in os.walk(scratch):
+            
+            if not any([
+                'pre_alignment_qc' in root,
+                'post_alignment_qc' in root,
+            ]): continue
+            
             for f in files:
                 host_f = os.path.normpath(os.path.join(root, f))
                 key = os.path.join(
@@ -213,7 +220,10 @@ class TCGASTARAligner(AbstractHarmonizer):
         os.remove(self.output_paths['bam'])
         os.remove(self.output_paths['bai'])
 
-    def handle_output(self):
+    def upload_primary_files(self):
+        '''
+        Upload primary outputs - bams and bais.
+        '''
         output_nodes = {}
         for key in ["bam", "bai"]:
             name = os.path.basename(self.output_paths[key]).replace(".bam", "_gdc_realn.bam")
@@ -251,10 +261,9 @@ class TCGASTARAligner(AbstractHarmonizer):
             output_nodes["bam"].platforms = self.inputs["fastq_tarball"].platforms
             # this line implicitly merges the new bam and new bai
             session.merge(edge)
-        
-        self.clean_input_files()
-        self.clean_primary_files()
-        
+
+    def handle_output(self):
+        self.upload_primary_files()
         self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
         self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
 
