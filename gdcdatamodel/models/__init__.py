@@ -117,7 +117,7 @@ def NodeFactory(title, schema):
 
     @event.listens_for(cls, 'before_insert')
     def set_created_updated_datetimes(mapper, connection, target):
-        ts = target.get_session().timestamp.isoformat('T')
+        ts = target.get_session()._flush_timestamp.isoformat('T')
         if 'updated_datetime' in target.props:
             target._props['updated_datetime'] = ts
         if 'created_datetime' in target.props:
@@ -125,7 +125,7 @@ def NodeFactory(title, schema):
 
     @event.listens_for(cls, 'before_update')
     def set_updated_datetimes(mapper, connection, target):
-        ts = target.get_session().timestamp.isoformat('T')
+        ts = target.get_session()._flush_timestamp.isoformat('T')
         if 'updated_datetime' in target.props:
             target._props['updated_datetime'] = ts
 

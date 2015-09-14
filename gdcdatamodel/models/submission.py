@@ -36,7 +36,7 @@ class TransactionLog(Base):
         if 'entities' in fields:
             doc['entities'] = [n.to_json() for n in self.entities]
         if 'timestamp' in fields:
-            doc['timestamp'] = datetime_to_unix(self.timestamp)
+            doc['timestamp'] = self.timestamp.isoformat("T")
 
         return doc
 
