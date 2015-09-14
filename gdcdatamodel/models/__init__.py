@@ -1,4 +1,6 @@
+from datetime import datetime
 from sqlalchemy.orm import configure_mappers
+from sqlalchemy import event
 import re
 
 from gdcdictionary import gdcdictionary
@@ -62,6 +64,7 @@ def PropertyFactory(name, schema, key=None):
     types = [types] if not isinstance(types, list) else types
     python_types = [a for t in types for a in {
         'string': [str],
+        'date-time': [str],
         'number': [float, int, long],
         'integer': [int, long],
         'float': [float],
@@ -111,6 +114,20 @@ def NodeFactory(title, schema):
         id=node_id,
         **properties
     ))
+
+    @event.listens_for(cls, 'before_insert')
+    def set_created_updated_datetimes(mapper, connection, target):
+        ts = target.get_session().timestamp.isoformat('T')
+        if 'updated_datetime' in target.props:
+            target._props['updated_datetime'] = ts
+        if 'created_datetime' in target.props:
+            target._props['created_datetime'] = ts
+
+    @event.listens_for(cls, 'before_update')
+    def set_updated_datetimes(mapper, connection, target):
+        ts = target.get_session().timestamp.isoformat('T')
+        if 'updated_datetime' in target.props:
+            target._props['updated_datetime'] = ts
 
     return cls
 
