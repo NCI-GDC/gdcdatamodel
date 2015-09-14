@@ -198,28 +198,6 @@ class TCGASTARAligner(AbstractHarmonizer):
                     key,
                 )
 
-    def clean_input_files(self):
-        '''
-        Clean the scratch directory of any input files.
-        '''
-        uuid = self.inputs['fastq_tarball'].node_id
-        
-        os.remove(self.host_abspath(self.input_paths['fastq_tarball']))
-        
-        shutil.rmtree(self.host_abspath(
-            self.config['scratch_dir'],
-            '{uuid}_fastq_files'.format(uuid=uuid),
-        ))
-
-    def clean_primary_files(self):
-        '''
-        Clean the scratch directory of any primary files.
-        '''
-        uuid = self.inputs['fastq_tarball'].node_id
-        
-        os.remove(self.output_paths['bam'])
-        os.remove(self.output_paths['bai'])
-
     def upload_primary_files(self):
         '''
         Upload primary outputs - bams and bais.
