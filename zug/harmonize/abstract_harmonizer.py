@@ -405,7 +405,6 @@ class AbstractHarmonizer(object):
             self.try_lock(lock_id)
             self.inputs = inputs
             self.input_paths = self.download_inputs()
-            self.submit_event("Docker start running", "")
             self.run_docker()
             self.check_output_paths()
             self.handle_output()
@@ -438,7 +437,7 @@ class AbstractHarmonizer(object):
 
     # interface methods / properties that subclasses must implement
 
-    def submit_event(self, name, description, alert_type='success'):
+    def submit_event(self, name, description, alert_type='info'):
         self.log.info("[datadog] submit event {}".format(name))
         tags=["alignment_type:{}".format(self.name),
               "alignment_host:{}".format(socket.gethostname())]

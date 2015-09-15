@@ -237,10 +237,6 @@ class TCGABWAAligner(AbstractHarmonizer):
                          float(took) / self.inputs["bam"].file_size,
                          tags=tags)
 
-        statsd.set("harmonization.hosts",
-                   socket.gethostname(),
-                   tags=tags)
-
     def handle_output(self):
         self.upload_secondary_files()
         output_nodes = {}

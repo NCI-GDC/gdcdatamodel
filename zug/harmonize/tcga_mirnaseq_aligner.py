@@ -1,15 +1,14 @@
 import os
 import re
-import time
 import socket
+import time
 from datadog import statsd
-from sqlalchemy import func, desc, BigInteger
+from sqlalchemy import func
+from queries import mirnaseq
 
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
-    File, ExperimentalStrategy,
-    Platform, Center, DataFormat,
-    FileDataFromFile,
+    File, FileDataFromFile,
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
@@ -77,23 +76,7 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
 
     @property
     def bam_files(self):
-        strategy = ExperimentalStrategy.name.astext == 'miRNA-Seq'
-        platform = Platform.name.astext.contains('Illumina')
-        dataformat = DataFormat.name.astext == 'BAM'
-        
-        subquery = self.graph.nodes(File.node_id)\
-            .sysan(source='tcga_cghub')\
-            .distinct(File._sysan['cghub_legacy_sample_id'].astext)\
-            .filter(File.experimental_strategies.any(strategy))\
-            .filter(File.platforms.any(platform))\
-            .filter(File.data_formats.any(dataformat))\
-            .order_by(
-                File._sysan['cghub_legacy_sample_id'].astext,
-                desc(File._sysan['cghub_upload_date'].cast(BigInteger)),
-            )\
-            .subquery()
-        
-        return self.graph.nodes(File).filter(File.node_id == subquery.c.node_id)
+        return mirnaseq(self.graph, 'tcga_cghub')
 
     @property
     def alignable_files(self):
@@ -208,9 +191,6 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                          float(took) / self.inputs['bam'].file_size,
                          tags=tags)
         
-        statsd.set('harmonization.hosts',
-                   socket.gethostname(),
-                   tags=tags)
 
     def upload_primary_files(self):
         '''
