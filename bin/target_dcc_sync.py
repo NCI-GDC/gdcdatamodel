@@ -34,30 +34,36 @@ def main():
         help="number of processes to use in process pool", 
         default=environ.get("NUM_PROCESSES", 0)
     )
-    parser.add_argument("--pg_host", type=str, help="hostname of psqlgraph", default=environ.get("PG_HOST"))
-    parser.add_argument("--pg_user", type=str, help="psqlgraph username", default=environ.get("PG_USER"))
-    parser.add_argument("--pg_pass", type=str, help="psqlgraph password", default=environ.get("PG_PASS"))
-    parser.add_argument("--pg_name", type=str, help="name of psqlgraph db", default=environ.get("PG_NAME"))
-    parser.add_argument("--s3_access", type=str, help="access key for S3", default=environ.get("S3_ACCESS_KEY"))
-    parser.add_argument("--s3_secret", type=str, help="secret key for S3", default=environ.get("S3_SECRET_KEY"))
-    parser.add_argument("--s3_host", type=str, help="hostname for S3", default=environ.get("S3_HOST"))
-    parser.add_argument("--signpost_url", type=str, help="hostname for signpost_url", default=environ.get("SIGNPOST_URL"))
-    parser.add_argument("--dcc_user", type=str, help="hostname for S3", default=environ.get("DCC_USER"))
-    parser.add_argument("--dcc_pass", type=str, help="hostname for S3", default=environ.get("DCC_PASS"))
-    parser.add_argument("--verify_missing", type=str, help="hostname for S3", default=environ.get("VERIFY_MISSING"))
-    parser.add_argument("--project", 
-        nargs="+", type=str,
-        choices=VALID_PROJECTS_TO_SYNC,
-        usage="project code to sync", 
-        default=environ.get("DCC_PROJECT", "WT")
-    )
-    args = parser.parse_args()
+    parser.add_argument("--pg_host", help="hostname of psqlgraph", default=environ.get("PG_HOST"))
+    parser.add_argument("--pg_user", help="psqlgraph username", default=environ.get("PG_USER"))
+    parser.add_argument("--pg_pass", help="psqlgraph password", default=environ.get("PG_PASS"))
+    parser.add_argument("--pg_name", help="name of psqlgraph db", default=environ.get("PG_NAME"))
+    parser.add_argument("--s3_access", help="access key for S3", default=environ.get("S3_ACCESS_KEY"))
+    parser.add_argument("--s3_secret", help="secret key for S3", default=environ.get("S3_SECRET_KEY"))
+    parser.add_argument("--s3_host", help="hostname for S3", default=environ.get("S3_HOST"))
+    parser.add_argument("--signpost_url", help="hostname for signpost_url", default=environ.get("SIGNPOST_URL"))
+    parser.add_argument("--dcc_user", help="username for DCC", default=environ.get("DCC_USER"))
+    parser.add_argument("--dcc_pass", help="password for DCC", default=environ.get("DCC_PASS"))
+    parser.add_argument("--verify_missing", 
+        dest="verify_missing",
+        help="verify URLs of files before flagging for deletion", 
+        action="store_true"
+        )
 
+    parser.add_argument("--project", 
+        nargs="*", 
+        choices=VALID_PROJECTS_TO_SYNC,
+        help="project code to sync", 
+        default=environ.get("DCC_PROJECT", ["WT"])
+    )
+
+    parser.set_defaults(verify_missing=False)
+    args = parser.parse_args()
     graph = PsqlGraphDriver(args.pg_host, args.pg_user,
                             args.pg_pass, args.pg_name)
     create_prelude_nodes(graph)
 
-    for project in PROJECTS_TO_SYNC:
+    for project in args.project:
         syncer = TARGETDCCProjectSyncer(
             project,
             graph_info={
@@ -71,7 +77,7 @@ def main():
                 "access_key": args.s3_access,
                 "kwargs": {
                     "secret": args.s3_secret,
-                    "host": args.s3_host),
+                    "host": args.s3_host,
                     "secure": False
                 }
             },

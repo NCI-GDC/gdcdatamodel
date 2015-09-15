@@ -214,7 +214,7 @@ class TARGETDCCProjectSyncer(object):
                 self.log.info(url)
                 resp = requests.head(url, auth=self.dcc_auth)
                 if resp.status_code != 404:
-                    return tree_walk(url, auth=self.dcc_auth):
+                    return tree_walk(url, auth=self.dcc_auth)
                 else:
                     self.log.warn("%s not present, skipping" % url)
 
