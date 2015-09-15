@@ -118,9 +118,10 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--id {uuid}',
             '--ref_flat {genome_ref_flat}',
             '--runThreadN {nthreads}',
-            # TODO verify same as --ref_genome in all cases
             '--genomeFastaFiles {genome_ref}',
             '--rna_seq_qc_annotation {rnaseq_qc_annotations}',
+            '--sample {sample}',
+            '--library {library}',
         ]).format(
             scratch_dir = self.container_abspath(self.config['scratch_dir']),
             genome_dir = self.container_abspath(self.config['genome_dir']),
@@ -135,6 +136,8 @@ class TCGASTARAligner(AbstractHarmonizer):
             ),
             uuid = self.inputs['fastq_tarball'].node_id,
             nthreads = self.config['cores'],
+            sample = self.inputs['fastq_tarball'].sysan['cghub_legacy_sample_id'],
+            library = 'unknown', # TODO FIXME this information needs indexing
         )
 
     @property
