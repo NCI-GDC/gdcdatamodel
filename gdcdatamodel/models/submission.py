@@ -19,30 +19,48 @@ class TransactionLog(Base):
     __tablename__ = 'transaction_logs'
 
     def __repr__(self):
-        return "<TransactionLog({}, {})>".format(self.id, self.timestamp)
+        return "<TransactionLog({}, {})>".format(
+            self.id, self.created_datetime)
 
     def to_json(self, fields=set()):
-        existing_fields = [c.name for c in self.__table__.c]+['entities']
-        custom_fields = {'timestamp', 'entities'}
-        entity_fields = {f for f in fields if f.startswith('entities.')}
-        fields = fields - entity_fields
-        entity_fields = {f.replace('entities.', '') for f in entity_fields}
-        if not fields:
-            fields = {'id', 'submitter', 'role', 'program'}
-        if entity_fields:
-            fields.add('entities')
+        # Source fields
+        existing_fields = [c.name for c in self.__table__.c]+[
+            'entities', 'documents']
+        custom_fields = {'created_datetime', 'entities', 'documents'}
 
+        # Pull out child fields
+        entity_fields = {f for f in fields if f.startswith('entities.')}
+        document_fields = {f for f in fields if f.startswith('documents.')}
+        fields = fields - entity_fields - document_fields
+
+        # Reformat child fields
+        entity_fields = {
+            f.replace('entities.', '') for f in entity_fields}
+        document_fields = {
+            f.replace('documents.', '') for f in document_fields}
+
+        # Default fields
+        if not fields:
+            fields = {'id', 'submitter', 'role', 'program', 'created_datetime'}
+
+        # Check for field existence
         if set(fields) - set(existing_fields):
             raise RuntimeError('Fields do not exist: {}'.format(
                 ', '.join((set(fields) - set(existing_fields)))))
 
+        # Set standard fields
         doc = {key: getattr(self, key) for key in fields
                if key not in custom_fields}
 
-        if 'entities' in fields:
-            doc['entities'] = [n.to_json(entity_fields) for n in self.entities]
-        if 'timestamp' in fields:
-            doc['timestamp'] = self.timestamp.isoformat("T")
+        # Add custom fields
+        if 'entities' in fields or entity_fields:
+            doc['entities'] = [
+                n.to_json(entity_fields) for n in self.entities]
+        if 'documents' in fields or document_fields:
+            doc['documents'] = [
+                n.to_json(document_fields) for n in self.documents]
+        if 'created_datetime' in fields:
+            doc['created_datetime'] = self.created_datetime.isoformat("T")
 
         return doc
 
@@ -70,67 +88,16 @@ class TransactionLog(Base):
         nullable=False,
     )
 
-    timestamp = Column(
+    created_datetime = Column(
         DateTime(timezone=True),
         nullable=False,
         server_default=text('now()'),
-    )
-
-    response_json = Column(
-        JSONB,
-        nullable=False,
     )
 
     canonical_json = Column(
         JSONB,
         nullable=False,
     )
-
-    doc_format = Column(
-        Text,
-        nullable=False,
-    )
-
-    doc = Column(
-        Text,
-        nullable=False,
-    )
-
-    @property
-    def is_json(self):
-        if self.doc_format.upper() != 'JSON':
-            return False
-        else:
-            return True
-
-    @property
-    def is_xml(self):
-        if self.doc_format.upper() != 'XML':
-            return False
-        else:
-            return True
-
-    @property
-    def json(self):
-        if not self.is_json:
-            return None
-        return loads(self.doc)
-
-    @json.setter
-    def json(self, doc):
-        self.doc_format = 'JSON'
-        self.doc = dumps(doc)
-
-    @property
-    def xml(self):
-        if not self.is_xml:
-            return None
-        return self.doc
-
-    @xml.setter
-    def xml(self, doc):
-        self.doc_format = 'XML'
-        self.doc = doc
 
 
 class TransactionSnapshot(Base):
@@ -181,3 +148,96 @@ class TransactionSnapshot(Base):
         "TransactionLog",
         backref="entities"
     )
+
+
+class TransactionDocument(Base):
+    __tablename__ = 'transaction_documents'
+
+    def to_json(self, fields=set()):
+        # Source fields
+        fields = set(fields)
+        existing_fields = {c.name for c in self.__table__.c}
+
+        # Default fields
+        if not fields:
+            fields = existing_fields
+
+        # Check field existence
+        if set(fields) - set(existing_fields):
+            raise RuntimeError('Entity fields do not exist: {}'.format(
+                ', '.join(fields - existing_fields)))
+
+        # Generate doc
+        doc = {key: getattr(self, key) for key in fields}
+        return doc
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        nullable=False,
+    )
+
+    transaction_id = Column(
+        Integer,
+        ForeignKey('transaction_logs.id'),
+        primary_key=True,
+    )
+
+    name = Column(
+        Text,
+    )
+
+    doc_format = Column(
+        Text,
+        nullable=False,
+    )
+
+    doc = Column(
+        Text,
+        nullable=False,
+    )
+
+    response_json = Column(
+        JSONB,
+    )
+
+    transaction = relationship(
+        "TransactionLog",
+        backref="documents"
+    )
+
+    @property
+    def is_json(self):
+        if self.doc_format.upper() != 'JSON':
+            return False
+        else:
+            return True
+
+    @property
+    def is_xml(self):
+        if self.doc_format.upper() != 'XML':
+            return False
+        else:
+            return True
+
+    @property
+    def json(self):
+        if not self.is_json:
+            return None
+        return loads(self.doc)
+
+    @json.setter
+    def json(self, doc):
+        self.doc_format = 'JSON'
+        self.doc = dumps(doc)
+
+    @property
+    def xml(self):
+        if not self.is_xml:
+            return None
+        return self.doc
+
+    @xml.setter
+    def xml(self, doc):
+        self.doc_format = 'XML'
+        self.doc = doc
