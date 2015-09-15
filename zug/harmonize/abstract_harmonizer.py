@@ -5,6 +5,8 @@ import time
 import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
+from datadog import statsd
+statsd.host = 'datadogproxy.service.consul'
 
 from sqlalchemy.pool import NullPool
 import docker
@@ -155,7 +157,13 @@ class AbstractHarmonizer(object):
         self.consul.cleanup()
         if self.docker_container:
             self.log.info("Removing docker container %s", self.docker_container)
-            self.docker.remove_container(self.docker_container, v=True, force=True)
+            try:
+                self.docker.remove_container(self.docker_container, v=True, force=True)
+            except docker.errors.APIError as e:
+                if e.message.response.status_code == 404:
+                    pass
+                else:
+                    raise e
 
     def try_lock(self, lock_id):
         locked = self.consul.get_consul_lock(lock_id)
@@ -359,7 +367,7 @@ class AbstractHarmonizer(object):
             submitter_id=None,
         )
         file_node.system_annotations = {
-            "source": "tcga_exome_alignment",
+            "source": self.source,
             # TODO anything else here?
         }
         self.log.info("File node: %s", file_node)
@@ -377,6 +385,7 @@ class AbstractHarmonizer(object):
             self.run_docker()
             self.check_output_paths()
             self.handle_output()
+            self.submit_metrics()
         finally:
             self.cleanup()
 
@@ -392,6 +401,10 @@ class AbstractHarmonizer(object):
 
     @abstractproperty
     def name(self):
+        raise NotImplementedError()
+
+    @abstractproperty
+    def source(self):
         raise NotImplementedError()
 
     @abstractproperty
@@ -412,4 +425,15 @@ class AbstractHarmonizer(object):
 
     @abstractmethod
     def handle_output(self):
+        raise NotImplementedError()
+
+    @abstractmethod 
+    def submit_metrics(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def build_docker_cmd(self):
+        '''
+        Returns a docker command string.
+        '''
         raise NotImplementedError()
