@@ -16,7 +16,7 @@ def has_fixmate_failure(logs):
     return "FixMateInformation" in logs
 
 
-class TCGABWAAligner(AbstractHarmonizer):
+class BWAAligner(AbstractHarmonizer):
 
     def get_config(self, kwargs):
         if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
@@ -74,7 +74,7 @@ class TCGABWAAligner(AbstractHarmonizer):
 
     @property
     def input_schema(self):
-        """The TCGA exome aligner has two inputs, a bam file and it's
+        """The BWA aligner has two inputs, a bam file and it's
         corresponding bai.
         """
         return {
@@ -164,7 +164,7 @@ class TCGABWAAligner(AbstractHarmonizer):
             cores=self.config["cores"],
             log_dir=self.container_abspath(self.config["scratch_dir"]),
         )
-        if self.name == "tcga_exome_aligner":
+        if "exome" in self.name:
             cmd += " -x"
         return cmd
 

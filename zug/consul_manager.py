@@ -108,8 +108,7 @@ class ConsulManager(object):
                    self.consul.kv.find(
                        "/".join([self.consul_prefix, "current"]))]
         self.logger.info(
-            "there are %s keys currently being synced: %s",
-            len(current), current)
+            "there are %s keys currently being synced", len(current))
         return current
 
     def start_consul_session(self, behavior='delete', ttl='60s', delay='15s'):

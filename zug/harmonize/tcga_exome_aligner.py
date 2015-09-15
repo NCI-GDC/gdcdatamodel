@@ -3,10 +3,10 @@ from sqlalchemy import BigInteger
 from gdcdatamodel.models import File
 
 
-from zug.harmonize.tcga_bwa_aligner import TCGABWAAligner
+from zug.harmonize.bwa_aligner import BWAAligner
 
 
-class TCGAExomeAligner(TCGABWAAligner):
+class TCGAExomeAligner(BWAAligner):
 
     @property
     def name(self):
