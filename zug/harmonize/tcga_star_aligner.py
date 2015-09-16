@@ -243,11 +243,13 @@ class TCGASTARAligner(AbstractHarmonizer):
             output_nodes["bam"].platforms = self.inputs["fastq_tarball"].platforms
             # this line implicitly merges the new bam and new bai
             session.merge(edge)
+        
+        return output_nodes['bam'].node_id
 
     def handle_output(self):
-        self.upload_primary_files()
-        self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
-        self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
+        prefix = self.upload_primary_files()
+        self.upload_secondary_files(prefix=prefix)
+        self.upload_tertiary_files(prefix=prefix)
 
     def submit_metrics(self):
         '''
