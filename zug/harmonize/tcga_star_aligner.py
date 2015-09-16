@@ -4,6 +4,8 @@ import time
 import socket
 import shutil
 
+from datadog import statsd
+
 from gdcdatamodel.models import (
     File,
     FileDataFromFile
