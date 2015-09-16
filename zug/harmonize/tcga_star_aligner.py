@@ -287,10 +287,6 @@ class TCGASTARAligner(AbstractHarmonizer):
         statsd.histogram('harmonization.seconds_per_byte',
                          float(took) / self.inputs['fastq_tarball'].file_size,
                          tags=tags)
-        
-        statsd.set('harmonization.hosts',
-                   socket.gethostname(),
-                   tags=tags)
 
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):
