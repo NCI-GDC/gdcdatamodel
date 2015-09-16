@@ -46,7 +46,7 @@ class TCGARNASeqAligner(TCGASTARAligner):
     @property
     def alignable_files(self):
         currently_being_aligned = self.consul.list_locked_keys()
-        alignable = self.bam_files\
+        alignable = self.fastq_files\
             .props(state='live')\
             .filter(~File.derived_files.any())\
             .filter(~File.node_id.in_(currently_being_aligned))

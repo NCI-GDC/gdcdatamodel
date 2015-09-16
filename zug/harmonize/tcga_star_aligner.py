@@ -255,7 +255,7 @@ class TCGASTARAligner(AbstractHarmonizer):
         '''
         self.log.info('Submitting metrics')
         took = int(time.time()) - self.start_time
-        input_id = self.inputs['bam'].node_id
+        input_id = self.inputs['fastq_tarball'].node_id
         
         tags = [
             'alignment_type:{}'.format(self.name),
@@ -271,21 +271,21 @@ class TCGASTARAligner(AbstractHarmonizer):
         )
         
         with self.graph.session_scope():
-            total = self.bam_files.count()
-            done = self.bam_files.filter(File.derived_files.any()).count()
+            total = self.fastq_files.count()
+            done = self.fastq_files.filter(File.derived_files.any()).count()
         
         self.log.info('%s bams aligned out of %s', done, total)
-        statsd.gauge('harmonization.completed_bams',
+        statsd.gauge('harmonization.completed_fastqs',
                      done,
                      tags=tags)
-        statsd.gauge('harmonization.total_bams',
+        statsd.gauge('harmonization.total_fastqs',
                      total,
                      tags=tags)
         statsd.histogram('harmonization.seconds',
                          took,
                          tags=tags)
         statsd.histogram('harmonization.seconds_per_byte',
-                         float(took) / self.inputs['bam'].file_size,
+                         float(took) / self.inputs['fastq_tarball'].file_size,
                          tags=tags)
         
         statsd.set('harmonization.hosts',
