@@ -1,11 +1,8 @@
-from sqlalchemy import func, desc, BigInteger
+from sqlalchemy import func
+from queries import rnaseq
 
 from zug.binutils import NoMoreWorkException
-from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform, Center, DataFormat, 
-    FileDataFromAliquot,
-)
+from gdcdatamodel.models import File
 
 from zug.harmonize.tcga_star_aligner import TCGASTARAligner
 
@@ -23,25 +20,7 @@ class TCGARNASeqAligner(TCGASTARAligner):
 
     @property
     def fastq_files(self):
-        strategy = ExperimentalStrategy.name.astext == 'RNA-Seq'
-        platform = Platform.name.astext.contains('Illumina')
-        dataformat = DataFormat.name.astext.in_(['TAR', 'TARGZ'])
-        centers = Center.short_name.astext == 'UNC'
-        
-        subquery = self.graph.nodes(File.node_id)\
-            .sysan(source='tcga_cghub')\
-            .distinct(File._sysan['cghub_legacy_sample_id'].astext)\
-            .filter(File.experimental_strategies.any(strategy))\
-            .filter(File.platforms.any(platform))\
-            .filter(File.data_formats.any(dataformat))\
-            .filter(File.centers.any(centers))\
-            .order_by(
-                File._sysan['cghub_legacy_sample_id'].astext,
-                desc(File._sysan['cghub_upload_date'].cast(BigInteger)),
-            )\
-            .subquery()
-        
-        return self.graph.nodes(File).filter(File.node_id == subquery.c.node_id)
+        return rnaseq(self.graph, 'tcga_cghub')
 
     @property
     def alignable_files(self):

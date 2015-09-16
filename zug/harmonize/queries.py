@@ -1,6 +1,7 @@
 from gdcdatamodel.models import (
     File, ExperimentalStrategy,
-    Platform, DataFormat
+    Platform, DataFormat,
+    Center,
 )
 from sqlalchemy import desc, BigInteger
 
@@ -53,4 +54,26 @@ def mirnaseq(graph, source):
             desc(File._sysan['cghub_upload_date'].cast(BigInteger)),
         )\
         .subquery()
+    return graph.nodes(File).filter(File.node_id == subquery.c.node_id)
+
+
+def rnaseq(graph, source):
+    strategy = ExperimentalStrategy.name.astext == 'RNA-Seq'
+    platform = Platform.name.astext.contains('Illumina')
+    dataformat = DataFormat.name.astext.in_(['TAR', 'TARGZ'])
+    centers = Center.short_name.astext == 'UNC'
+
+    subquery = graph.nodes(File.node_id)\
+        .sysan(source=source)\
+        .distinct(File._sysan['cghub_legacy_sample_id'].astext)\
+        .filter(File.experimental_strategies.any(strategy))\
+        .filter(File.platforms.any(platform))\
+        .filter(File.data_formats.any(dataformat))\
+        .filter(File.centers.any(centers))\
+        .order_by(
+            File._sysan['cghub_legacy_sample_id'].astext,
+            desc(File._sysan['cghub_upload_date'].cast(BigInteger)),
+        )\
+        .subquery()
+
     return graph.nodes(File).filter(File.node_id == subquery.c.node_id)
