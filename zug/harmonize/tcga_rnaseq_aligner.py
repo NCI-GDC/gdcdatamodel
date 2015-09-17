@@ -2,7 +2,9 @@ from sqlalchemy import func
 from queries import rnaseq
 
 from zug.binutils import NoMoreWorkException
-from gdcdatamodel.models import File
+from gdcdatamodel.models import (
+    File, Center,
+)
 
 from zug.harmonize.tcga_star_aligner import TCGASTARAligner
 
@@ -24,11 +26,13 @@ class TCGARNASeqAligner(TCGASTARAligner):
 
     @property
     def alignable_files(self):
+        centers = Center.short_name.astext == 'UNC'
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.fastq_files\
             .props(state='live')\
             .filter(~File.derived_files.any())\
-            .filter(~File.node_id.in_(currently_being_aligned))
+            .filter(~File.node_id.in_(currently_being_aligned))\
+            .filter(File.centers.any(centers))
         
         size_limit = self.config.get('size_limit', False)
         if size_limit:
