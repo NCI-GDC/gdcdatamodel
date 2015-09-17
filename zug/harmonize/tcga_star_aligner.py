@@ -1,7 +1,10 @@
 import os
 import abc
 import time
+import socket
 import shutil
+
+from datadog import statsd
 
 from gdcdatamodel.models import (
     File,
@@ -117,9 +120,10 @@ class TCGASTARAligner(AbstractHarmonizer):
             '--id {uuid}',
             '--ref_flat {genome_ref_flat}',
             '--runThreadN {nthreads}',
-            # TODO verify same as --ref_genome in all cases
             '--genomeFastaFiles {genome_ref}',
             '--rna_seq_qc_annotation {rnaseq_qc_annotations}',
+            '--sample {sample}',
+            '--library {library}',
         ]).format(
             scratch_dir = self.container_abspath(self.config['scratch_dir']),
             genome_dir = self.container_abspath(self.config['genome_dir']),
@@ -134,6 +138,8 @@ class TCGASTARAligner(AbstractHarmonizer):
             ),
             uuid = self.inputs['fastq_tarball'].node_id,
             nthreads = self.config['cores'],
+            sample = self.inputs['fastq_tarball'].sysan['cghub_legacy_sample_id'],
+            library = 'unknown', # TODO FIXME this information needs indexing
         )
 
     @property
@@ -173,8 +179,15 @@ class TCGASTARAligner(AbstractHarmonizer):
         '''
         Upload any remaining files.
         '''
-        tree = os.walk(self.host_abspath(self.config['scratch_dir']))
-        for root, _, files in tree:
+        scratch = self.host_abspath(self.config['scratch_dir'])
+        
+        for root, _, files in os.walk(scratch):
+            
+            if not any([
+                'pre_alignment_qc' in root,
+                'post_alignment_qc' in root,
+            ]): continue
+            
             for f in files:
                 host_f = os.path.normpath(os.path.join(root, f))
                 key = os.path.join(
@@ -191,29 +204,10 @@ class TCGASTARAligner(AbstractHarmonizer):
                     key,
                 )
 
-    def clean_input_files(self):
+    def upload_primary_files(self):
         '''
-        Clean the scratch directory of any input files.
+        Upload primary outputs - bams and bais.
         '''
-        uuid = self.inputs['fastq_tarball'].node_id
-        
-        os.remove(self.host_abspath(self.input_paths['fastq_tarball']))
-        
-        shutil.rmtree(self.host_abspath(
-            self.config['scratch_dir'],
-            '{uuid}_fastq_files'.format(uuid=uuid),
-        ))
-
-    def clean_primary_files(self):
-        '''
-        Clean the scratch directory of any primary files.
-        '''
-        uuid = self.inputs['fastq_tarball'].node_id
-        
-        os.remove(self.output_paths['bam'])
-        os.remove(self.output_paths['bai'])
-
-    def handle_output(self):
         output_nodes = {}
         for key in ["bam", "bai"]:
             name = os.path.basename(self.output_paths[key]).replace(".bam", "_gdc_realn.bam")
@@ -252,18 +246,51 @@ class TCGASTARAligner(AbstractHarmonizer):
             # this line implicitly merges the new bam and new bai
             session.merge(edge)
         
-        self.clean_input_files()
-        self.clean_primary_files()
-        
-        self.upload_secondary_files(prefix=output_nodes['bam'].node_id)
-        self.upload_tertiary_files(prefix=output_nodes['bam'].node_id)
+        return output_nodes['bam'].node_id
+
+    def handle_output(self):
+        prefix = self.upload_primary_files()
+        self.upload_secondary_files(prefix=prefix)
+        self.upload_tertiary_files(prefix=prefix)
 
     def submit_metrics(self):
         '''
-        Submit alignment metrics.
+        Submit metrics to datadog
         '''
-        # TODO FIXME implement this
-        pass
+        self.log.info('Submitting metrics')
+        took = int(time.time()) - self.start_time
+        input_id = self.inputs['fastq_tarball'].node_id
+        
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
+        statsd.event(
+            '{} aligned'.format(input_id),
+            'successfully aligned {} in {} minutes'.format(input_id, took / 60),
+            source_type_name='harmonization',
+            alert_type='success',
+            tags=tags
+        )
+        
+        with self.graph.session_scope():
+            total = self.fastq_files.count()
+            done = self.fastq_files.filter(File.derived_files.any()).count()
+        
+        self.log.info('%s bams aligned out of %s', done, total)
+        statsd.gauge('harmonization.completed_fastqs',
+                     done,
+                     tags=tags)
+        statsd.gauge('harmonization.total_fastqs',
+                     total,
+                     tags=tags)
+        statsd.histogram('harmonization.seconds',
+                         took,
+                         tags=tags)
+        statsd.histogram('harmonization.seconds_per_byte',
+                         float(took) / self.inputs['fastq_tarball'].file_size,
+                         tags=tags)
 
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):

@@ -1,6 +1,6 @@
 from psqlgraph import PsqlGraphDriver
 import os
-from queries import wgs, exome, mirnaseq
+from queries import wgs, exome, mirnaseq, rnaseq
 from datadog import statsd
 statsd.host = 'datadogproxy.service.consul'
 
@@ -36,6 +36,13 @@ class Reporter(object):
             statsd.gauge('harmonization.total',
                          mirna_totals,
                          tags=['alignment_type:tcga_mirnaseq_aligner'])
+
+            rna_totals = rnaseq(self.graph, 'tcga_cghub').count()\
+                + rnaseq(self.graph, 'target_cghub').count()
+            print 'rna', rna_totals 
+            statsd.gauge('harmonization.total',
+                         rna_totals,
+                         tags=['alignment_type:tcga_rnaseq_aligner'])
 
 if __name__ == "__main__":
     report = Reporter()
