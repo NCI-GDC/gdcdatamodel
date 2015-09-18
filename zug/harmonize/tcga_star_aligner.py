@@ -292,6 +292,22 @@ class TCGASTARAligner(AbstractHarmonizer):
                          float(took) / self.inputs['fastq_tarball'].file_size,
                          tags=tags)
 
+    def docker_failure_cleanup(self):
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
+        statsd.event(
+            'Alignment Failure',
+            'alignment of %s has failed' % self.inputs['fastq_tarball'].node_id,
+            source_type_name='harmonization',
+            alert_type='error',
+            tags=tags,
+        )
+        
+        return super(TCGASTARAligner, self).docker_failure_cleanup()
+
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):
         '''
