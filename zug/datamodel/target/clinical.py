@@ -1,6 +1,4 @@
 import os
-from os import environ
-from bs4 import BeautifulSoup
 import sys
 import pandas as pd
 import xlrd
@@ -8,8 +6,11 @@ import requests
 import re
 from datetime import datetime
 from uuid import UUID, uuid5
+from bs4 import BeautifulSoup
+
 from cdisutils.log import get_logger
 from gdcdatamodel.models import File, Case
+
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
 
@@ -37,6 +38,27 @@ VITAL_STATUS_MAP = {
     "Dead": "dead",
     "Unknown": None,
     "Lost to Follow-up": "lost to follow-up"
+}
+
+BASE_URL = "https://target-data.nci.nih.gov"
+
+ACCESS_LEVELS = [
+    "Controlled",
+    "Public"
+]
+
+PROJECTS_TO_SYNC = { 
+    # "ALL-P1",
+    # "ALL-P2",
+    #"ALL/Phase_I" : "/Discovery/clinical/harmonized/",  # temp
+    #"ALL/Phase_II" : "/Discovery/clinical/harmonized/", # temp
+    "AML" : "Discovery/clinical/harmonized/",
+    #"AML-IF" : "/Discovery/clinical/",                  # temp
+    #"CCSK" : "/Discovery/clinical/harmonized/",         # temp
+    "NBL" : "Discovery/clinical/harmonized/",
+    #"OS" : "/Discovery/clinical/",                      # temp
+    #"RT" : "/Discovery/clinical/harmonized/",           # temp
+    "WT" : "Discovery/clinical/harmonized/"
 }
 
 ROW_CLASSES = [ "even", "odd" ]
@@ -73,6 +95,7 @@ def parse_row_into_props(row):
 
 
 def match_date(string_to_check):
+
         version = None
         version_match = re.search("([0-9]{8})", string_to_check)
         if version_match:
@@ -87,10 +110,10 @@ def match_date(string_to_check):
 
         return version
 
-def process_tree(url):
+def process_tree(url, dcc_user, dcc_pass):
     """Walk the given url and recursively find all the spreadsheet links."""
     url_list = []
-    r = requests.get(url, auth=(environ["DCC_USER"], environ["DCC_PASS"]), verify=False)
+    r = requests.get(url, auth=(dcc_user, dcc_pass), verify=False)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text, "lxml")
         file_table = soup.find('table', attrs={'id':'indexlist'})
@@ -98,27 +121,23 @@ def process_tree(url):
         for row in rows:
             if row['class'][0] in ROW_CLASSES:
                 image = row.find('img')
-                if "DIR" not in image['alt']:
+                if image['alt'].find("DIR") == -1:
                     dir_data = {}
                     dir_data['dir_name'] = row.find('td', class_="indexcolname").get_text().strip()
                     link = row.find('a')
-                    if ("xlsx" in link['href']) and ("Clinical" in link['href']):
+                    if (link['href'].find("xlsx") != -1) and (link['href'].find("Clinical") != -1):
                         dir_data['url'] = url + link['href']
                         url_list.append(dir_data)
 
     return url_list
 
-def find_spreadsheets(projects_to_sync, base_url):
-    """Find all the spreadsheets for each project."""
+def find_clinical(args):
     spreadsheet_urls = {}
-    for project, url_loc in projects_to_sync.iteritems():
-        url = "%s%s%s" % (
-            base_url,
-            project,
-            url_loc
-        )
-        spreadsheets = process_tree(url)
-        spreadsheet_urls[project] = spreadsheets
+    for project in args.projects:
+        for access_level in ACCESS_LEVELS:
+            url = "/".join([BASE_URL, access_level, project, PROJECTS_TO_SYNC[project]])
+            spreadsheets = process_tree(url, args.dcc_user, args.dcc_pass)
+            spreadsheet_urls[project] = spreadsheets
     
     return spreadsheet_urls
 
@@ -129,7 +148,18 @@ class TARGETClinicalSyncer(object):
         I am not sure of a good way to automatically determine the correct
         url for a project so for now you have to pass the url explicitly.
         """
-        assert url.startswith("https://target-data.nci.nih.gov/{}/Discovery/".format(project))
+
+        url_verified = False
+        for level in ACCESS_LEVELS:
+            url_str = "/".join([BASE_URL, level, project, "Discovery"])
+            if url.startswith(url_str):
+                url_verified = True
+                break
+
+        #url_str = "%s%s/Discovery" % (base_url, project)
+        assert url_verified
+        #assert url.startswith(url_str)
+        #assert url.startswith("https://target-data.nci.nih.gov/{}/Discovery/".format(project))
         self.project = project
         self.url = url
         self.version = match_date(url)
@@ -182,27 +212,21 @@ class TARGETClinicalSyncer(object):
                                       .sysan({"source": "target_dcc",
                                               "url": self.url}).one()
             self.log.info("found clinical file %s as %s", self.url, clinical_file)
+            row_count = 0
             for _, row in df.iterrows():
                 # the .strip is necessary because sometimes there is a
                 # space after the name, e.g. 'TARGET-50-PAEAFB '
-                case_barcode = None
                 case = None
                 for column_title in BARCODE_TITLE_STRINGS:
+                    case_barcode = None
                     if column_title in row:
-                        # NB: some of the spreadsheets have blank rows, and
-                        # the error condition is to strip on a non-string
-                        # (it appears to default to int), so we have to use
-                        # this as the check
-                        if isinstance(row[column_title], basestring):
+                        if (type(row[column_title]) == str) or (type(row[column_title]) == unicode):
                             case_barcode = row[column_title].strip()
                             break
                         else:
-                            if type(row[column_title]) == float:
-                                self.log.info("Empty row/int found")
-                            else:
-                                error_str = "Unrecognized type: %s" % str(type(row[column_title]))
-                                self.log.error(error_str)
-                                raise RuntimeError(error_str)
+                            self.log.info("Unrecognized type: %s at %d in %s", 
+                                str(type(row[column_title])), row_count, column_title
+                            )
                 if case_barcode:
                     self.log.info("looking up case %s", case_barcode)
                     case = self.graph.nodes(Case)\
@@ -223,6 +247,7 @@ class TARGETClinicalSyncer(object):
                 self.log.info("inserted clinical info as %s, tieing to case", clinical)
                 self.create_edge("describes", clinical, case)
                 self.create_edge("describes", clinical_file, case)
+                row_count += 1
 
     def sync(self):
         df = self.load_df()

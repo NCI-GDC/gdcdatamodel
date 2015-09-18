@@ -55,10 +55,14 @@ class TARGETClinicalSyncerTest(ZugTestBase):
         )
 
     def test_basic_sync(self):
-        self.create_file("https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx")
+        ROOT_TEST_URL = "https://target-data.nci.nih.gov/Public/WT/Discovery/clinical/"
+        self.create_file("%stest_target_clinical_19911205.xlsx" % ROOT_TEST_URL)
         case = self.create_case("TARGET-50-ABCDEF")
-        syncer = TARGETClinicalSyncer("WT", "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx",
-                                      graph=self.graph)
+        syncer = TARGETClinicalSyncer(
+            "WT", 
+            "%stest_target_clinical_19911205.xlsx" % ROOT_TEST_URL,
+            graph=self.graph
+        )
         with HTTMock(target_clinical_mock):
             syncer.sync()
         with self.graph.session_scope():
@@ -70,5 +74,5 @@ class TARGETClinicalSyncerTest(ZugTestBase):
             self.assertEqual(clin["age_at_diagnosis"], 123)
             # make sure the file now describes the case
             self.graph.nodes(File)\
-                      .sysan({"url": "https://target-data.nci.nih.gov/WT/Discovery/clinical/test_target_clinical_19911205.xlsx"})\
+                      .sysan({"url": "%stest_target_clinical_19911205.xlsx" % ROOT_TEST_URL})\
                       .with_edge_to_node(FileDescribesCase, case).one()
