@@ -23,6 +23,11 @@ def with_derived(q):
     return q.filter(File.derived_files.any())
 
 
+def alignment_time(file):
+    return (file._FileDataFromFile_out[0].sysan["alignment_finished"] -
+            file._FileDataFromFile_out[0].sysan["alignment_started"])
+
+
 class AlignmentReporter(object):
 
     def __init__(self, graph=None, mailserver=None, toaddrs=None):
@@ -53,6 +58,7 @@ class AlignmentReporter(object):
             "RNA-Seq (TCGA)": 11293,
         }
 
+    @property
     def aligned_files(self):
         if not self._aligned:
             self.log.info("Querying for aligned files")
@@ -66,7 +72,7 @@ class AlignmentReporter(object):
         return self._aligned
 
     def aligned_file_counts(self):
-        return {key: len(val) for key, val in self.aligned_files().iteritems()}
+        return {key: len(val) for key, val in self.aligned_files.iteritems()}
 
     def attach_numbers_file(self, msg):
         self.log.info("Generating file with aligned numbers")
@@ -90,7 +96,7 @@ class AlignmentReporter(object):
     def attach_aligned_analysis_ids_file(self, msg):
         self.log.info("Generating file with aligned analysis ids")
         analysis_ids = []
-        for _, files in self.aligned_files().iteritems():
+        for _, files in self.aligned_files.iteritems():
             analysis_ids.extend([f.sysan["analysis_id"] for f in files])
             filename = "analysis_ids_complete.txt"
         attachment = "\n".join(analysis_ids)
@@ -110,6 +116,36 @@ class AlignmentReporter(object):
                         self.graph.nodes(File._sysan["analysis_id"])
                         .filter(File.node_id.in_(in_progres_gdc_ids)).all()]
         filename = "analysis_ids_in_progress.txt"
+        attachment = "\n".join(analysis_ids)
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment)
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition',
+                        "attachment; filename= {}".format(filename))
+        msg.attach(part)
+
+    def attach_timings_file(self, msg):
+        self.log.info("Generating wgs timings file")
+        filename = "wgs_timings.txt"
+        aligned_wgs_files = self.aligned_files["WGS"]
+        attachment = ""
+        for file in aligned_wgs_files:
+            attachment += ",".join([file.sysan["analysis_id"], str(alignment_time(file))])
+            attachment += "\n"
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment)
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition',
+                        "attachment; filename= {}".format(filename))
+        msg.attach(part)
+
+    def attach_fixmate_problem_analysis_ids_file(self, msg):
+        self.log.info("Generating file with in FixMateInformation failure analysis ids")
+        problem_files = self.graph.nodes(File)\
+                                  .sysan(alignment_fixmate_failure=True)\
+                                  .all()
+        analysis_ids = [f.sysan["analysis_id"] for f in problem_files]
+        filename = "analysis_ids_fixmate_problem.txt"
         attachment = "\n".join(analysis_ids)
         part = MIMEBase('application', 'octet-stream')
         part.set_payload(attachment)
@@ -143,6 +179,8 @@ class AlignmentReporter(object):
             self.attach_numbers_file(msg)
             self.attach_aligned_analysis_ids_file(msg)
             self.attach_in_progress_analysis_ids_file(msg)
+            self.attach_timings_file(msg)
+            self.attach_fixmate_problem_analysis_ids_file(msg)
 
         self.log.info("Connecting and sending email")
         server = smtplib.SMTP(self.mailserver, 25)
