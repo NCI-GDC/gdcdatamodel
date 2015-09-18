@@ -7,7 +7,7 @@ import subprocess
 from contextlib import nested
 from uuid import uuid4
 
-from mock import patch
+from mock import patch, Mock
 from base import ZugTestBase, FakeS3Mixin, SignpostMixin, PreludeMixin
 
 from zug.harmonize.abstract_harmonizer import DockerFailedException
@@ -346,6 +346,27 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.docker._fail = True
             aligner.go()
         self.assertTrue(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+
+    @patch('datadog.statsd')
+    def test_docker_failure_cleanup(self, mock_statsd):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        aligner = self.get_aligner()
+        aligner.inputs = {'bam': file}
+        aligner.docker_failure_cleanup()
+        mock_statsd.event.assert_called_once()
+
+    def test_error_report_on_docker_error(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker_failure_cleanup = Mock(name='docker_failure_cleanup')
+            aligner.docker._fail = True
+            aligner.go()
+        aligner.docker_failure_cleanup.assert_called_once()
 
     def test_marks_file_on_fixmate_failure(self):
         with self.graph.session_scope():
