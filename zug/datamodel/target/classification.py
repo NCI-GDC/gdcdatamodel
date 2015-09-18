@@ -175,14 +175,12 @@ CLASSIFICATION = {
     }
   },
   "targeted_pcr_sequencing": {
-    "l1" : {
-      ".+txt": {
-        "platform": "ABI capillary sequencer",
-        "data_format": "TXT",
-        "data_subtype": "ABI sequence trace",
-        "data_type": "Other",
-        "experimental_strategy": "Capillary sequencing"
-      }
+    ".+txt(.gz|.zip)?": {
+      "platform": "ABI capillary sequencer",
+      "data_format": "TXT",
+      "data_subtype": "ABI sequence trace",
+      "data_type": "Other",
+      "experimental_strategy": "Capillary sequencing"
     }
   },   
   "targeted_capture_sequencing": {
@@ -409,12 +407,14 @@ CLASSIFICATION = {
           "experimental_strategy": "Genotyping array"
         }
       },
-      ".+(knsp|ksty).+txt": {
-        "platform": "Affymetrix SNP Array 6.0",
-        "data_format": "TXT",
-        "data_subtype": "Genotypes",
-        "data_type": "Simple nucleotide variation",
-        "experimental_strategy": "Genotyping array"
+      "normalizedintensity": {
+        ".+(knsp|ksty).+txt": {
+          "platform": "Affymetrix SNP Array 6.0",
+          "data_format": "TXT",
+          "data_subtype": "Genotypes",
+          "data_type": "Simple nucleotide variation",
+          "experimental_strategy": "Genotyping array"
+        }  
       },
       "cnmz": {
         ".+cnmz.txt": {
@@ -555,6 +555,13 @@ CLASSIFICATION = {
       }
     },
     "l3": {
+      ".+maf.txt": {
+        "platform": "Complete Genomics",
+        "data_format": "MAF",
+        "data_subtype": "Simple nucleotide variation",
+        "data_type": "Simple nucleotide variation",
+        "experimental_strategy": "DNA-Seq"
+      },          
       "copy_number": {
         "cgi": {
           ".+tsv": {
@@ -821,6 +828,13 @@ CLASSIFICATION = {
         "data_subtype": "Raw intensities",
         "data_type": "Raw microarray data",
         "experimental_strategy": "Gene expression array"
+      },
+      ".+txt": {
+        "platform": "Affymetrix U133 Plus 2",
+        "data_format": "TXT",
+        "data_subtype": "Raw intensities",
+        "data_type": "Raw microarray data",
+        "experimental_strategy": "Gene expression array"
       }
     }
   },
@@ -881,4 +895,7 @@ IGNORE = [
     "target_.+_kinome_listofsequencedgenes.xls",
     ".+docx",
     ".+mpileups.tar.gz",
+    ".+linking_table.txt",
+    ".+targreseqsamps_mapped.+txt",
+    "manifest.txt",
 ]
