@@ -67,6 +67,21 @@ class BWAAligner(AbstractHarmonizer):
                 session.add(self.inputs["bam"])
                 self.inputs["bam"].sysan["alignment_data_problem"] = True
                 self.inputs["bam"].sysan["alignment_fixmate_failure"] = True
+        
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
+        statsd.event(
+            'Alignment Failure',
+            'alignment of %s has failed' % self.inputs['bam'].node_id,
+            source_type_name='harmonization',
+            alert_type='error',
+            tags=tags,
+        )
+        
+        return super(BWAAligner, self).docker_failure_cleanup()
 
     @property
     def valid_extra_kwargs(self):

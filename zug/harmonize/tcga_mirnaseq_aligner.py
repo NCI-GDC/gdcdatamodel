@@ -321,6 +321,22 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                     key,
                 )
 
+    def docker_failure_cleanup(self):
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
+        statsd.event(
+            'Alignment Failure',
+            'alignment of %s has failed' % self.inputs['bam'].node_id,
+            source_type_name='harmonization',
+            alert_type='error',
+            tags=tags,
+        )
+        
+        return super(TCGAMIRNASeqAligner, self).docker_failure_cleanup()
+
     def handle_output(self):
         self.upload_primary_files()
         self.upload_secondary_files(prefix=self.inputs['bam'].node_id)
