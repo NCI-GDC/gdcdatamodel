@@ -10,13 +10,15 @@ from email.MIMEBase import MIMEBase
 from email import encoders
 
 from consulate import Consul
-from gdcdatamodel.models import File
+from gdcdatamodel.models import File, FileDataFromFile
 
 from zug.harmonize.queries import exome, wgs, mirnaseq, rnaseq
 from cdisutils.log import get_logger
 
 from psqlgraph import PsqlGraphDriver
 from sqlalchemy.pool import NullPool
+
+from sqlalchemy import create_engine, desc
 
 
 def with_derived(q):
@@ -30,7 +32,7 @@ def alignment_time(file):
 
 class AlignmentReporter(object):
 
-    def __init__(self, graph=None, mailserver=None, toaddrs=None):
+    def __init__(self, graph=None, os_mysql=None, mailserver=None, toaddrs=None):
         if graph:
             self.graph = graph
         else:
@@ -42,6 +44,16 @@ class AlignmentReporter(object):
                 poolclass=NullPool,
             )
         self.consul = Consul()
+        if os_mysql:
+            self.os_mysql = os_mysql
+        else:
+            conn_str = 'mysql://{user}:{pw}@{host}/{db}'.format(
+                user=os.environ["OS_MYSQL_USER"],
+                pw=os.environ["OS_MYSQL_PASS"],
+                host=os.environ["OS_MYSQL_HOST"],
+                db=os.environ["OS_MYSQL_NAME"],
+            )
+            self.os_mysql = create_engine(conn_str)
         self.mailserver = mailserver
         self.toaddrs = toaddrs
         self._aligned = None
@@ -51,7 +63,8 @@ class AlignmentReporter(object):
     def totals(self):
         "totals per zhenyu"
         return {
-            "WGS": 4799,
+            "WGS (>= 320 GB)": 364,
+            "WGS (< 320 GB)": 4435,
             "WXS": 24189,
             "miRNA-Seq": 11914,
             "RNA-Seq (TARGET)": 721,
@@ -62,8 +75,10 @@ class AlignmentReporter(object):
     def aligned_files(self):
         if not self._aligned:
             self.log.info("Querying for aligned files")
+            wgs_files = with_derived(wgs(self.graph, "tcga_cghub")).all() + with_derived(wgs(self.graph, "target_cghub")).all()
             self._aligned = {
-                "WGS": with_derived(wgs(self.graph, "tcga_cghub")).all() + with_derived(wgs(self.graph, "target_cghub")).all(),
+                "WGS (>= 320 GB)": [f for f in wgs_files if f.file_size >= 320000000000],
+                "WGS (< 320 GB)": [f for f in wgs_files if f.file_size < 320000000000],
                 "WXS": with_derived(exome(self.graph, "tcga_cghub")).all() + with_derived(exome(self.graph, "target_cghub")).all(),
                 "miRNA-Seq": with_derived(mirnaseq(self.graph, "tcga_cghub")).all() + with_derived(mirnaseq(self.graph, "target_cghub")).all(),
                 "RNA-Seq (TARGET)": with_derived(rnaseq(self.graph, "target_cghub")).all(),
@@ -74,9 +89,18 @@ class AlignmentReporter(object):
     def aligned_file_counts(self):
         return {key: len(val) for key, val in self.aligned_files.iteritems()}
 
-    def attach_numbers_file(self, msg):
+    def generate_files_to_attach(self):
+        self.log.info("Generating files to attach")
+        return {
+            "alignment_numbers.txt": self.generate_numbers_file(),
+            "analysis_ids_complete.txt": self.generate_aligned_analysis_ids_file(),
+            "analysis_ids_in_progres.txt": self.generate_in_progress_analysis_ids_file(),
+            "wgs_timings.txt": self.generate_timings_file(),
+            "analysis_ids_fixmate_problem.txt": self.generate_fixmate_problem_analysis_ids_file()
+        }
+
+    def generate_numbers_file(self):
         self.log.info("Generating file with aligned numbers")
-        filename = "alignment_numbers.txt"
         aligned_counts = self.aligned_file_counts()
         attachment = "Aligned Files\n"
         attachment += "=============\n\n"
@@ -85,29 +109,18 @@ class AlignmentReporter(object):
                                          aligned=aligned_counts[key],
                                          total=total,
                                          percent=100*(float(aligned_counts[key])/total))
-                                 for key, total in self.totals.iteritems()])
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment)
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        "attachment; filename= {}".format(filename))
-        msg.attach(part)
+                                 for key, total in iter(sorted(self.totals.iteritems()))])
+        return attachment
 
-    def attach_aligned_analysis_ids_file(self, msg):
+    def generate_aligned_analysis_ids_file(self):
         self.log.info("Generating file with aligned analysis ids")
         analysis_ids = []
         for _, files in self.aligned_files.iteritems():
             analysis_ids.extend([f.sysan["analysis_id"] for f in files])
-            filename = "analysis_ids_complete.txt"
         attachment = "\n".join(analysis_ids)
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment)
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        "attachment; filename= {}".format(filename))
-        msg.attach(part)
+        return attachment
 
-    def attach_in_progress_analysis_ids_file(self, msg):
+    def generate_in_progress_analysis_ids_file(self):
         self.log.info("Generating file with in progress analysis ids")
         in_progres_gdc_ids = [k.split("/")[-1] for k in self.consul.kv.keys()
                               if "align" in k and "current" in k]
@@ -115,44 +128,55 @@ class AlignmentReporter(object):
         analysis_ids = [res[0] for res in
                         self.graph.nodes(File._sysan["analysis_id"])
                         .filter(File.node_id.in_(in_progres_gdc_ids)).all()]
-        filename = "analysis_ids_in_progress.txt"
         attachment = "\n".join(analysis_ids)
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment)
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        "attachment; filename= {}".format(filename))
-        msg.attach(part)
+        return attachment
 
-    def attach_timings_file(self, msg):
+    def generate_timings_file(self):
         self.log.info("Generating wgs timings file")
-        filename = "wgs_timings.txt"
-        aligned_wgs_files = self.aligned_files["WGS"]
-        attachment = ""
+        aligned_wgs_files = []
+        for key, files in self.aligned_files.iteritems():
+            if "WGS" in key:
+                aligned_wgs_files.extend(files)
+        self.log.info("Getting uuid -> hostname mapping from gdc mysql")
+        uuid_to_host = dict(
+            self.os_mysql.execute("SELECT uuid, host from instances;")
+            .fetchall()
+        )
+        attachment = "analysis_id,alignment_time,input_file_size,aligner_uuid,aligner_host\n"
+        self.log.info("Generating rows")
         for file in aligned_wgs_files:
-            attachment += ",".join([file.sysan["analysis_id"], str(alignment_time(file))])
+            edge = self.graph.edges(FileDataFromFile).src(file.node_id)\
+                                                     .order_by(desc(FileDataFromFile.created))\
+                                                     .first()
+            os_uuid = edge.sysan.get("alignment_host_openstack_uuid")
+            row = [
+                file.sysan["analysis_id"],
+                str(alignment_time(file)),
+                str(file.file_size),
+                str(os_uuid),
+                str(uuid_to_host.get(os_uuid)),
+            ]
+            attachment += ",".join(row)
             attachment += "\n"
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment)
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        "attachment; filename= {}".format(filename))
-        msg.attach(part)
+        return attachment
 
-    def attach_fixmate_problem_analysis_ids_file(self, msg):
+    def generate_fixmate_problem_analysis_ids_file(self):
         self.log.info("Generating file with in FixMateInformation failure analysis ids")
         problem_files = self.graph.nodes(File)\
                                   .sysan(alignment_fixmate_failure=True)\
                                   .all()
         analysis_ids = [f.sysan["analysis_id"] for f in problem_files]
-        filename = "analysis_ids_fixmate_problem.txt"
         attachment = "\n".join(analysis_ids)
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment)
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        "attachment; filename= {}".format(filename))
-        msg.attach(part)
+        return attachment
+
+    def attach_files(self, msg, files):
+        for name, contents in files.iteritems():
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(contents)
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition',
+                            "attachment; filename= {}".format(name))
+            msg.attach(part)
 
     def send_email(self):
         self.log.info("Building email")
@@ -173,15 +197,10 @@ class AlignmentReporter(object):
 
         msg.attach(MIMEText(body, 'plain'))
 
-        self.log.info("Attaching files")
         # first the numbers file
         with self.graph.session_scope():
-            self.attach_numbers_file(msg)
-            self.attach_aligned_analysis_ids_file(msg)
-            self.attach_in_progress_analysis_ids_file(msg)
-            self.attach_timings_file(msg)
-            self.attach_fixmate_problem_analysis_ids_file(msg)
-
+            files = self.generate_files_to_attach()
+        self.attach_files(msg, files)
         self.log.info("Connecting and sending email")
         server = smtplib.SMTP(self.mailserver, 25)
         if len(toaddrs) == 1:
