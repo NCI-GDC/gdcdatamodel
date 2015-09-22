@@ -219,7 +219,6 @@ class TARGETDCCProjectSyncer(object):
                     self.log.warn("%s not present, skipping" % url)
 
     def check_if_missing(self, url, dcc_auth_info):
-
         if self.verify_missing:
             resp = requests.head(url, auth=dcc_auth_info)
         else:
@@ -242,7 +241,7 @@ class TARGETDCCProjectSyncer(object):
                 if values['delete'] == True:
                     # try and get the file
                     print "Checking", key
-                    if check_if_missing(key, dcc_auth_info):
+                    if self.check_if_missing(key, dcc_auth_info):
                         files_to_delete += 1
                         if 'id' not in values:
                             self.log.warn("Warning, unable to delete %s, id missing." % key)
