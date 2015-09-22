@@ -279,6 +279,7 @@ class BWAAligner(AbstractHarmonizer):
                 "alignment_docker_image_tag": docker_tag,
                 "alignment_docker_cmd": self.docker_cmd,
                 "alignment_reference_name": os.path.basename(self.config["reference"]),
+                "alignment_hostname": socket.gethostname(),
             }
         )
         with self.graph.session_scope() as session:

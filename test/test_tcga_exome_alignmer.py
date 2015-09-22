@@ -6,6 +6,7 @@ import string
 import subprocess
 from contextlib import nested
 from uuid import uuid4
+import socket
 
 from mock import patch, Mock
 from base import ZugTestBase, FakeS3Mixin, SignpostMixin, PreludeMixin
@@ -297,6 +298,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                 "6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6",
             )
             self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
+            self.assertEqual(edge.sysan["alignment_hostname"], socket.gethostname())
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
