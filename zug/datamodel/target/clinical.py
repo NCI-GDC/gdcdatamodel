@@ -215,59 +215,66 @@ class TARGETClinicalSyncer(object):
         self.log.info("loading clinical info into graph")
         with self.graph.session_scope():
             self.log.info("looking up the node corresponding to %s", self.url)
-            clinical_file = self.graph.nodes(File)\
-                                      .sysan({"source": "target_dcc",
-                                              "url": self.url}).one()
-            self.log.info("found clinical file %s as %s", self.url, clinical_file)
-            row_count = 0
-            for _, row in df.iterrows():
-                # the .strip is necessary because sometimes there is a
-                # space after the name, e.g. 'TARGET-50-PAEAFB '
-                case = None
-                for column_title in BARCODE_TITLE_STRINGS:
-                    case_barcode = None
-                    if column_title in row:
-                        # NB: some of the spreadsheets have blank rows, and
-                        # the error condition is to strip on a non-string
-                        # (it appears to default to int), so we have to use
-                        # this as the check
-                        if isinstance(row[column_title], basestring):
-                            case_barcode = row[column_title].strip()
-                            break
-                        else:
-                            if type(row[column_title]) == float:
-                                self.log.info("Empty row/int found at %d in %s" % (
-                                    row_count, column_title
-                                    )
-                                )
+            try:
+                clinical_file = self.graph.nodes(File)\
+                                   .sysan({"source": "target_dcc",
+                                   "url": self.url}).one()
+            except:
+                error_str = "Unable to find node in db with url %s" % self.url
+                self.log.error(error_str)
+                self.log.error("Have you done the DCC import for this project?")
+                raise RuntimeError(error_str)
+            else:
+                self.log.info("found clinical file %s as %s", self.url, clinical_file)
+                row_count = 0
+                for _, row in df.iterrows():
+                    # the .strip is necessary because sometimes there is a
+                    # space after the name, e.g. 'TARGET-50-PAEAFB '
+                    case = None
+                    for column_title in BARCODE_TITLE_STRINGS:
+                        case_barcode = None
+                        if column_title in row:
+                            # NB: some of the spreadsheets have blank rows, and
+                            # the error condition is to strip on a non-string
+                            # (it appears to default to int), so we have to use
+                            # this as the check
+                            if isinstance(row[column_title], basestring):
+                                case_barcode = row[column_title].strip()
+                                break
                             else:
-                                error_str = "Unrecognized type: %s at %d in %s" % (
-                                    str(type(row[column_title])),
-                                    row_count, column_title
+                                if type(row[column_title]) == float:
+                                    self.log.info("Empty row/int found at %d in %s" % (
+                                        row_count, column_title
+                                        )
                                     )
-                                self.log.error(error_str)
-                                raise RuntimeError(error_str)
-                if case_barcode:
-                    self.log.info("looking up case %s", case_barcode)
-                    case = self.graph.nodes(Case)\
-                           .props({"submitter_id": case_barcode}).scalar()
-                if not case:
-                    self.log.warning("couldn't find case %s, not inserting clinical data", case_barcode)
-                    continue
-                self.log.info("found case %s as %s, inserting clinical info", case_barcode, case)
-                clinical = self.graph.node_merge(
-                    node_id=str(uuid5(CLINICAL_NAMESPACE, case_barcode.encode('ascii'))),
-                    label="clinical",
-                    properties=parse_row_into_props(row),
-                    system_annotations={
-                        "url": self.url,
-                        "version": self.version
-                    }
-                )
-                self.log.info("inserted clinical info as %s, tieing to case", clinical)
-                self.create_edge("describes", clinical, case)
-                self.create_edge("describes", clinical_file, case)
-                row_count += 1
+                                else:
+                                    error_str = "Unrecognized type: %s at %d in %s" % (
+                                        str(type(row[column_title])),
+                                        row_count, column_title
+                                        )
+                                    self.log.error(error_str)
+                                    raise RuntimeError(error_str)
+                    if case_barcode:
+                        self.log.info("looking up case %s", case_barcode)
+                        case = self.graph.nodes(Case)\
+                               .props({"submitter_id": case_barcode}).scalar()
+                    if not case:
+                        self.log.warning("couldn't find case %s, not inserting clinical data", case_barcode)
+                        continue
+                    self.log.info("found case %s as %s, inserting clinical info", case_barcode, case)
+                    clinical = self.graph.node_merge(
+                        node_id=str(uuid5(CLINICAL_NAMESPACE, case_barcode.encode('ascii'))),
+                        label="clinical",
+                        properties=parse_row_into_props(row),
+                        system_annotations={
+                            "url": self.url,
+                            "version": self.version
+                        }
+                    )
+                    self.log.info("inserted clinical info as %s, tieing to case", clinical)
+                    self.create_edge("describes", clinical, case)
+                    self.create_edge("describes", clinical_file, case)
+                    row_count += 1
 
     def sync(self):
         """Main sync routine to sync the data."""
