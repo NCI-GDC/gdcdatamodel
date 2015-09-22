@@ -240,7 +240,7 @@ class TARGETClinicalSyncer(object):
                                     row_count, column_title
                                     )
                                 self.log.error(error_str)
-                                raise.RuntimeError(error_str)
+                                raise RuntimeError(error_str)
                 if case_barcode:
                     self.log.info("looking up case %s", case_barcode)
                     case = self.graph.nodes(Case)\

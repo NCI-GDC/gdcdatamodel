@@ -31,10 +31,9 @@ def main():
         nargs="*",
         choices=PROJECTS_TO_SYNC.keys(),
         help="project code to sync",
-        default=environ.get("DCC_PROJECT", PROJECTS_TO_SYNC.keys()[-1])
+        default=environ.get("DCC_PROJECT", [PROJECTS_TO_SYNC.keys()[-1]])
     )
     args = parser.parse_args()
-    
     log = get_logger("target_clinical_sync_bin_{}".format(os.getpid()))
 
     # connect to psqlgraph
