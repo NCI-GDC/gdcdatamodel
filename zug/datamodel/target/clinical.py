@@ -63,6 +63,8 @@ PROJECTS_TO_SYNC = {
 
 ROW_CLASSES = [ "even", "odd" ]
 
+log = get_logger("target_clinical_sync_{}".format(os.getpid()))
+
 def parse_race(race):
     """Parse the race into a canonical form."""
     if race.strip() == "Unknown":
@@ -128,7 +130,11 @@ def process_tree(url, dcc_user, dcc_pass):
                     if ("xlsx" in link['href']) and ("Clinical" in link['href']):
                         dir_data['url'] = url + link['href']
                         url_list.append(dir_data)
-
+    else:
+        log.error("Unable to connect to %s, result %d - %s" % (
+            url, r.status_code, r.reason
+            )
+        )
     return url_list
 
 def find_clinical(args):
