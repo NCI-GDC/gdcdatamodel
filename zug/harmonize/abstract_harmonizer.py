@@ -12,6 +12,7 @@ statsd.host = 'datadogproxy.service.consul'
 from sqlalchemy.pool import NullPool
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
+import requests
 from requests.exceptions import ReadTimeout
 
 # buffer 10 MB in memory at once
@@ -29,6 +30,8 @@ from zug.binutils import DoNotRestartException
 from gdcdatamodel.models import File
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+
+OPENSTACK_METADATA_URL = "http://169.254.169.254/openstack/latest/meta_data.json"
 
 
 class DockerFailedException(DoNotRestartException):
@@ -104,6 +107,18 @@ class AbstractHarmonizer(object):
         self.consul = ConsulManager(prefix=consul_prefix)
         self.start_time = int(time.time())
         self.log = get_logger(self.name)
+        self.openstack_uuid = self.get_openstack_uuid()
+
+    def get_openstack_uuid(self):
+        try:
+            resp = requests.get(OPENSTACK_METADATA_URL)
+            resp.raise_for_status()
+            os_uuid = resp.json()["uuid"]
+            self.log.info("Openstack uuid is %s", os_uuid)
+            return os_uuid
+        except:
+            self.log.exception("Failed to get openstack uuid.")
+            return None
 
     def get_base_config(self):
         """Compute a config dictionary from the process environment. This
