@@ -1,5 +1,7 @@
+import re
 from consulate import Consul
 from threading import Thread, current_thread
+import thread as thread_module
 from cdisutils.log import get_logger
 import time
 from contextlib import contextmanager
@@ -20,23 +22,6 @@ class StoppableThread(Thread):
         return self._stop
 
 
-def consul_heartbeat(session, interval, debug=True):
-    """
-    Heartbeat with consul to keep `session` alive every `interval`
-    seconds. This must be called as the `target` of a `StoppableThread`.
-    """
-    consul = Consul()
-    logger = get_logger("consul_heartbeat_thread")
-    if not debug:
-        logger.level = 30
-    thread = current_thread()
-    logger.info("current thread is %s", thread)
-    while not thread.stopped():
-        logger.debug("renewing consul session %s", session)
-        consul.session.renew(session)
-        time.sleep(interval)
-
-
 class ConsulManager(object):
     '''
     Consul Manager class for utilizing consul key value store
@@ -49,6 +34,7 @@ class ConsulManager(object):
         self.heartbeat_thread = None
         self.consul_session = None
         self.logger = get_logger('consul_manager')
+        self.should_have_lock = False
         self.debug = debug
         if not debug:
             self.logger.level = 30
@@ -56,6 +42,48 @@ class ConsulManager(object):
             self.consul_prefix = prefix
         else:
             self.consul_prefix = self.__class__.__name__.lower()
+
+    def consul_heartbeat(self, debug=True):
+        """Heartbeat with consul to keep `self.session` alive every
+        `self.interval` seconds. This must be called as the `target`
+        of a `StoppableThread`.
+        """
+        logger = get_logger("consul_heartbeat_thread")
+        if not debug:
+            logger.level = 30
+        thread = current_thread()
+        logger.info("current thread is %s", thread)
+        while not thread.stopped():
+            try:
+                logger.debug("renewing consul session %s", self.consul_session)
+                ret = self.consul.session.renew(self.consul_session)
+                if isinstance(ret, basestring) and "not found" in ret:
+                    self.key_acquired = False  # key is lost with session
+                    logger.info("consul session %s appears to have been invalidated, creating new session",
+                                self.consul_session)
+                    # session has been invalidated, get a new session and
+                    # reaquire lock if necessary
+                    self.consul_session = self.consul.session.create(
+                        behavior=self.behavior,
+                        ttl=self.ttl,
+                        delay=self.delay,
+                    )
+                    logger.info("got new consul session: %s", self.consul_session)
+                if self.should_have_lock and not self.key_acquired:
+                    logger.info("We previously had a lock on %s, attempting reaquisition after waiting %s seconds",
+                                self.consul_key, 2*self.delay_seconds)
+                    time.sleep(2*self.delay_seconds)
+                    self.key_acquired = self.consul.kv.acquire_lock(
+                        self.consul_key, self.consul_session)
+                    if self.key_acquired:
+                        logger.info("Lock successfully reaquired")
+                    else:
+                        logger.warning("Could not reaquire lock!")
+            except Exception as e:
+                logger.info("Caught %s: %s while trying to consul heartbeat, retrying",
+                            e.__class__, e)
+            finally:
+                time.sleep(self.interval)
 
     @property
     def consul_key(self):
@@ -98,6 +126,7 @@ class ConsulManager(object):
                 "Attempting to lock %s in consul", self.consul_key)
             self.key_acquired = self.consul.kv.acquire_lock(
                 self.consul_key, self.consul_session)
+            self.should_have_lock = True
             return self.key_acquired
         else:
             self.logger.error("Consul session not started")
@@ -111,18 +140,25 @@ class ConsulManager(object):
             "there are %s keys currently being synced", len(current))
         return current
 
-    def start_consul_session(self, behavior='delete', ttl='60s', delay='15s'):
+    def start_consul_session(self, behavior='delete', ttl='60s',
+                             delay='15s', interval=10):
         self.logger.info("Starting new consul session")
+        self.behavior = behavior
+        self.ttl = ttl
+        assert re.match("\d*s$", delay)
+        self.delay = delay
+        self.delay_seconds = int(delay.strip("s"))
+        self.interval = interval
         self.consul_session = self.consul.session.create(
-            behavior=behavior,
-            ttl=ttl,
-            delay=delay
+            behavior=self.behavior,
+            ttl=self.ttl,
+            delay=self.delay,
         )
         self.logger.info(
             "Consul session %s started, forking thread to heartbeat",
             self.consul_session)
-        self.heartbeat_thread = StoppableThread(target=consul_heartbeat,
-                                                args=(self.consul_session, 10, self.debug))
+        self.heartbeat_thread = StoppableThread(target=self.consul_heartbeat,
+                                                args=(self.debug,))
         self.heartbeat_thread.daemon = True
         self.heartbeat_thread.start()
 
