@@ -6,10 +6,12 @@ import string
 import subprocess
 from contextlib import nested
 from uuid import uuid4
+import socket
 
-from mock import patch
+from mock import patch, Mock
 from base import ZugTestBase, FakeS3Mixin, SignpostMixin, PreludeMixin
 
+from zug.harmonize.abstract_harmonizer import DockerFailedException
 from zug.harmonize.tcga_exome_aligner import TCGAExomeAligner
 from zug.binutils import NoMoreWorkException
 # TODO really need to find a better place for this
@@ -33,6 +35,8 @@ class FakeDockerClient(object):
 
     def __init__(self, *args, **kwargs):
         self.containers = {}
+        self._fail = False
+        self._logs = ["FAKE", "DOCKER", "LOGS"]
 
     def images(self):
         return [{
@@ -57,11 +61,13 @@ class FakeDockerClient(object):
     def start(self, cont, **kwargs):
         retcode = subprocess.call(self.containers[cont["Id"]]["command"],
                                   shell=True)
-        self.containers[cont["Id"]]["retcode"] = retcode
+        if self._fail:
+            self.containers[cont["Id"]]["retcode"] = 1
+        else:
+            self.containers[cont["Id"]]["retcode"] = retcode
 
     def logs(self, cont, **kwargs):
-        # TODO maybe store actual logs
-        return ["FAKE", "DOCKER", "LOGS"]
+        return self._logs
 
     def wait(self, cont, **kwargs):
         return self.containers[cont["Id"]]["retcode"]
@@ -179,7 +185,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         return TCGAExomeAligner(**kwargs)
 
 
-    def create_file(self, name, content):
+    def create_file(self, name, content, aliquot=None):
         bam_doc = self.signpost_client.create()
         assert name.endswith(".bam")
         bam_file = File(
@@ -207,6 +213,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             "source": "tcga_cghub",
             "cghub_last_modified": 12345567,
             "cghub_upload_date": 12345567,
+            "cghub_legacy_sample_id": aliquot
         }
         with self.graph.session_scope():
             strat = self.graph.nodes(ExperimentalStrategy)\
@@ -237,16 +244,6 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         bai_doc.patch()
         return bam_file
 
-    def create_aliquot(self):
-        aliquot = Aliquot(
-            node_id=str(uuid4()),
-            submitter_id="fake_barcode",
-            source_center="foo",
-            amount=3.5,
-            concentration=10.0
-        )
-        return aliquot
-
     def monkey_patches(self):
         aligner_patches = patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
@@ -268,9 +265,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
     def test_basic_align(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner()
             aligner.go()
@@ -302,9 +298,12 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                 "6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6",
             )
             self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
+            self.assertEqual(edge.sysan["alignment_hostname"], socket.gethostname())
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
+            # assert that we remove the scratch dir
+            self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
             self.fake_s3.stop()
 
     def test_raises_if_no_work(self):
@@ -313,9 +312,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
         """
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
             second_file = self.get_fuzzed_node(File, state="live")
             file.derived_files = [second_file]
         with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
@@ -328,9 +326,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
 
         """
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner()
             with aligner.consul.consul_session_scope():
@@ -341,11 +338,64 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                     with self.assertRaises(NoMoreWorkException):
                         aligner.go()
 
+    def test_stop_on_docker_error(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(DockerFailedException):
+            aligner = self.get_aligner()
+            aligner.config["stop_on_docker_error"] = True
+            aligner.docker._fail = True
+            aligner.go()
+        self.assertTrue(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+
+    @patch('datadog.statsd')
+    def test_docker_failure_cleanup(self, mock_statsd):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        aligner = self.get_aligner()
+        aligner.inputs = {'bam': file}
+        aligner.docker_failure_cleanup()
+        mock_statsd.event.assert_called_once()
+
+    def test_error_report_on_docker_error(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker_failure_cleanup = Mock(name='docker_failure_cleanup')
+            aligner.docker._fail = True
+            aligner.go()
+        aligner.docker_failure_cleanup.assert_called_once()
+
+    def test_marks_file_on_fixmate_failure(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.docker._logs = ["foo", "bar", "FixMateInformation"]
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertTrue(file.sysan["alignment_data_problem"])
+
+    def test_doesnt_align_data_problem_files(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            file.sysan["alignment_data_problem"] = True
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.go()
+
     def test_size_limit(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner()
             with aligner.consul.consul_session_scope():
@@ -361,11 +411,26 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             assert "bam" in input
             assert "bai" in input
 
+    def test_doesnt_choose_older_files(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            derived_file = self.get_fuzzed_node(File, state="live")
+            file.derived_files = [derived_file]
+            older_file = self.create_file("test_older.bam", "more_fake_test_content",
+                                          aliquot="foo")
+            older_file.sysan["cghub_upload_date"] = 100
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.assertRaises(NoMoreWorkException):
+                    with self.graph.session_scope():
+                        aligner.find_inputs()
+
     def test_force_input_id(self):
         with self.graph.session_scope():
-            aliquot = self.create_aliquot()
-            file = self.create_file("test1.bam", "fake_test_content")
-            file.aliquots = [aliquot]
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
         with self.monkey_patches():
             aligner = self.get_aligner(force_input_id=file.node_id)
             with self.graph.session_scope(), aligner.consul.consul_session_scope():

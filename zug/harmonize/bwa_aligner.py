@@ -2,25 +2,31 @@ import os
 import re
 import time
 from datadog import statsd
-from sqlalchemy import func, desc, BigInteger
-
+from sqlalchemy import func
+import socket
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform, Center,
-    FileDataFromAliquot, FileDataFromFile
+    File, FileDataFromFile
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 
 
-class TCGABWAAligner(AbstractHarmonizer):
+def has_fixmate_failure(logs):
+    return "FixMateInformation" in logs
+
+
+class BWAAligner(AbstractHarmonizer):
 
     def get_config(self, kwargs):
         if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
             size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
         else:
             size_limit = None
+        if os.environ.get("ALIGNMENT_SIZE_MIN"):
+            size_min = int(os.environ["ALIGNMENT_SIZE_MIN"])
+        else:
+            size_min = None
         return {
             "output_buckets": {
                 "bam": os.environ["BAM_S3_BUCKET"],
@@ -42,9 +48,40 @@ class TCGABWAAligner(AbstractHarmonizer):
                                                     "intervals/bait_target_key_interval.json"),
             },
             "size_limit": size_limit,
+            "size_min": size_min,
             "cores": int(os.environ.get("ALIGNMENT_CORES", "8")),
             "force_input_id": kwargs.get("force_input_id"),
+            "center_limit": os.environ.get("ALIGNMENT_CENTER_LIMIT")
         }
+
+    @property
+    def docker_log_flag_funcs(self):
+        return {
+            "fixmate_failure": has_fixmate_failure
+        }
+
+    def docker_failure_cleanup(self):
+        if self.docker_log_flags["fixmate_failure"]:
+            # mark the file as not to do in the future
+            with self.graph.session_scope() as session:
+                session.add(self.inputs["bam"])
+                self.inputs["bam"].sysan["alignment_data_problem"] = True
+                self.inputs["bam"].sysan["alignment_fixmate_failure"] = True
+        
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+        
+        statsd.event(
+            'Alignment Failure',
+            'alignment of %s has failed' % self.inputs['bam'].node_id,
+            source_type_name='harmonization',
+            alert_type='error',
+            tags=tags,
+        )
+        
+        return super(BWAAligner, self).docker_failure_cleanup()
 
     @property
     def valid_extra_kwargs(self):
@@ -52,7 +89,7 @@ class TCGABWAAligner(AbstractHarmonizer):
 
     @property
     def input_schema(self):
-        """The TCGA exome aligner has two inputs, a bam file and it's
+        """The BWA aligner has two inputs, a bam file and it's
         corresponding bai.
         """
         return {
@@ -74,6 +111,19 @@ class TCGABWAAligner(AbstractHarmonizer):
             "db": File,
         }
 
+    def choose_bam_at_random(self):
+        """This queries for a bam file that we can align at random,
+        potentially filtering by size.
+
+        """
+        total_bams = self.bam_files.count()
+        aligned = self.bam_files.filter(File.derived_files.any()).count()
+        self.log.info("Aligned %s out of %s files", aligned, total_bams)
+        input_bam = self.alignable_files.from_self(File).order_by(func.random()).first()
+        if not input_bam:
+            raise NoMoreWorkException("We appear to have aligned all bam files")
+        else:
+            return input_bam
 
     def find_inputs(self):
         if self.config["force_input_id"]:
@@ -129,10 +179,9 @@ class TCGABWAAligner(AbstractHarmonizer):
             cores=self.config["cores"],
             log_dir=self.container_abspath(self.config["scratch_dir"]),
         )
-        if self.name == "tcga_exome_aligner":
+        if "exome" in self.name:
             cmd += " -x"
         return cmd
-
 
     @property
     def output_paths(self):
@@ -176,25 +225,32 @@ class TCGABWAAligner(AbstractHarmonizer):
         self.log.info("Submitting metrics")
         took = int(time.time()) - self.start_time
         input_id = self.inputs["bam"].node_id
+
+        tags=["alignment_type:{}".format(self.name),
+              "alignment_host:{}".format(socket.gethostname())]
         statsd.event(
             "{} aligned".format(input_id),
             "successfully aligned {} in {} minutes".format(input_id, took / 60),
             source_type_name="harmonization",
             alert_type="success",
+            tags=tags
         )
         with self.graph.session_scope():
             total = self.bam_files.count()
             done = self.bam_files.filter(File.derived_files.any()).count()
         self.log.info("%s bams aligned out of %s", done, total)
-        frac = float(done) / float(total)
-        statsd.gauge('harmonization.{}.completed_bams'.format(self.name),
-                     done)
-        statsd.gauge('harmonization.{}.fraction_complete'.format(self.name),
-                     frac)
-        statsd.histogram('harmonization.{}.seconds'.format(self.name),
-                         took)
-        statsd.histogram('harmonization.{}.seconds_per_byte'.format(self.name),
-                         float(took) / self.inputs["bam"].file_size)
+        statsd.gauge('harmonization.completed_bams',
+                     done,
+                     tags=tags)
+        statsd.gauge('harmonization.total_bams',
+                     total,
+                     tags=tags)
+        statsd.histogram('harmonization.seconds',
+                         took,
+                         tags=tags)
+        statsd.histogram('harmonization.seconds_per_byte',
+                         float(took) / self.inputs["bam"].file_size,
+                         tags=tags)
 
     def handle_output(self):
         self.upload_secondary_files()
@@ -223,6 +279,8 @@ class TCGABWAAligner(AbstractHarmonizer):
                 "alignment_docker_image_tag": docker_tag,
                 "alignment_docker_cmd": self.docker_cmd,
                 "alignment_reference_name": os.path.basename(self.config["reference"]),
+                "alignment_hostname": socket.gethostname(),
+                "alignment_host_openstack_uuid": self.openstack_uuid,
             }
         )
         with self.graph.session_scope() as session:
