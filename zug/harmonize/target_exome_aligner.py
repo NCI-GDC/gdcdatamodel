@@ -1,32 +1,33 @@
 from sqlalchemy import BigInteger
-from queries import wgs
 
+from queries import exome
 
-from gdcdatamodel.models import File, Center
+from gdcdatamodel.models import File
+
 from zug.harmonize.bwa_aligner import BWAAligner
 
 
-class TCGAWGSAligner(BWAAligner):
+class TARGETExomeAligner(BWAAligner):
 
     @property
     def name(self):
-        return "tcga_wgs_aligner"
+        return "target_exome_aligner"
 
     @property
     def source(self):
-        return "tcga_wgs_alignment"
+        return "target_exome_alignment"
 
     def choose_bam_by_forced_id(self):
         input_bam = self.graph.nodes(File).ids(self.config["force_input_id"]).one()
-        assert input_bam.sysan["source"] == "tcga_cghub"
+        assert input_bam.sysan["source"] == "target_cghub"
         assert input_bam.data_formats[0].name == "BAM"
-        assert input_bam.experimental_strategies[0].name == "WGS"
+        assert input_bam.experimental_strategies[0].name == "WXS"
         return input_bam
 
     @property
     def bam_files(self):
         '''targeted bam files query'''
-        return wgs(self.graph, 'tcga_cghub')
+        return exome(self.graph, "target_cghub")
 
     @property
     def alignable_files(self):
@@ -45,8 +46,4 @@ class TCGAWGSAligner(BWAAligner):
             alignable = alignable.filter(
                 File.file_size.cast(BigInteger) > self.config["size_min"]
             )
-        if self.config["center_limit"]:
-            # limit to just HMS for now
-            hms = Center.short_name.astext == "HMS"
-            alignable = alignable.filter(File.centers.any(hms))
         return alignable
