@@ -1,3 +1,5 @@
+import time
+from consulate import Consul
 from zug.consul_manager import ConsulManager
 from unittest import TestCase
 
@@ -5,9 +7,12 @@ from unittest import TestCase
 class ConsulManagerTest(TestCase):
     def setUp(self):
         self.worker = ConsulManager()
+        self.consul = Consul()
+        self.session = self.consul.session.create(delay='0s')
 
     def tearDown(self):
         self.worker.cleanup()
+        self.consul.session.destroy(self.session)
 
     def test_acquire_lock(self):
         self.worker.start_consul_session(delay='0s')
@@ -33,3 +38,12 @@ class ConsulManagerTest(TestCase):
         self.assertTrue(worker2.get_consul_lock('id1'))
         self.assertFalse(self.worker.get_consul_lock('id1'))
         worker2.cleanup()
+
+    def test_session_loss_recovery(self):
+        self.worker.start_consul_session(delay='0s', interval=1)
+        self.assertTrue(self.worker.get_consul_lock('test_key'))
+        # first, let's kill the worker's session
+        self.consul.session.destroy(self.worker.consul_session)
+        # now if we wait, it should reacquire the lock . . .
+        time.sleep(3)
+        self.assertFalse(self.consul.kv.acquire_lock(self.worker.consul_key, self.session))
