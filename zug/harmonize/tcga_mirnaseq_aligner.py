@@ -3,7 +3,6 @@ import re
 import socket
 import time
 from datadog import statsd
-from sqlalchemy import func
 from queries import mirnaseq
 
 from zug.binutils import NoMoreWorkException
@@ -12,6 +11,7 @@ from gdcdatamodel.models import (
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
+from zug.harmonize.queries import SORT_ORDER
 
 
 class TCGAMIRNASeqAligner(AbstractHarmonizer):
@@ -25,9 +25,9 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         return 'tcga_mirnaseq_alignment'
 
     def get_config(self, kwargs):
-        
+
         reference = os.environ['REFERENCE']
-        
+
         return {
             'output_buckets': {
                 'bam': os.environ['BAM_S3_BUCKET'],
@@ -36,11 +36,11 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                 'db': os.environ['LOGS_S3_BUCKET'],
                 'meta': os.environ['META_S3_BUCKET'],
             },
-            
+
             'paths': {
                 'reference': reference,
             },
-            
+
             'force_input_id': kwargs.get('force_input_id'),
         }
 
@@ -85,7 +85,7 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             .props(state='live')\
             .filter(~File.derived_files.any())\
             .filter(~File.node_id.in_(currently_being_aligned))
-        
+
         return alignable
 
     def choose_bam_at_random(self):
@@ -93,7 +93,7 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         potentially filtering by size.
 
         """
-        input_bam = self.alignable_files.from_self(File).order_by(func.random()).first()
+        input_bam = self.alignable_files.from_self(File).order_by(*SORT_ORDER).first()
         if not input_bam:
             raise NoMoreWorkException("We appear to have aligned all bam files")
         else:
@@ -109,12 +109,12 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         else:
             input_bam = self.choose_bam_at_random()
         self.log.info('Selected %s for alignment.', input_bam)
-        
+
         # we expunge from this session so we can merge into another
         # session later and load up it's classifiction nodes to
         # classify the newly produced bam
         self.graph.current_session().expunge(input_bam)
-        
+
         return input_bam.node_id, {
             "bam": input_bam,
         }
@@ -140,7 +140,7 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
     @property
     def output_paths(self):
         uuid = self.inputs['bam'].node_id
-        
+
         return {
             'log': self.host_abspath(
                 self.config['scratch_dir'],
@@ -159,12 +159,12 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         self.log.info('Submitting metrics')
         took = int(time.time()) - self.start_time
         input_id = self.inputs['bam'].node_id
-        
+
         tags = [
             'alignment_type:{}'.format(self.name),
             'alignment_host:{}'.format(socket.gethostname()),
         ]
-        
+
         statsd.event(
             '{} aligned'.format(input_id),
             'successfully aligned {} in {} minutes'.format(input_id, took / 60),
@@ -172,11 +172,11 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
             alert_type='success',
             tags=tags
         )
-        
+
         with self.graph.session_scope():
             total = self.bam_files.count()
             done = self.bam_files.filter(File.derived_files.any()).count()
-        
+
         self.log.info('%s bams aligned out of %s', done, total)
         statsd.gauge('harmonization.completed_bams',
                      done,
@@ -190,24 +190,24 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         statsd.histogram('harmonization.seconds_per_byte',
                          float(took) / self.inputs['bam'].file_size,
                          tags=tags)
-        
+
 
     def upload_primary_files(self):
         '''
         Upload primary outputs - bams and bais.
         '''
         uuid = self.inputs['bam'].node_id
-        
+
         docker_tag = (self.docker_image["RepoTags"][0]
                       if self.docker_image["RepoTags"] else None)
-        
+
         output_directory = self.host_abspath(
             self.config['scratch_dir'],
             'realn/bwa_aln_s/sorted/',
         )
-        
+
         primaries = set()
-        
+
         # NOTE Currently the miRNA-Seq docker image produces onre or more
         # output BAM / BAI pairs, each named after their internal read group
         # name. At present, there is not a particularly easy or accurate way
@@ -217,44 +217,44 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         # something more suited to the task.
         for f in os.listdir(output_directory):
             fpath = os.path.join(output_directory, f)
-            
+
             if not os.path.isfile(fpath):
                 continue
-            
+
             if not any([
                 f.endswith('.bam'),
                 f.endswith('.bai'),
             ]): continue
-            
+
             primary = os.path.splitext(f)[0]
-            
+
             primaries.add(primary)
-        
+
         for primary in primaries:
             bam = os.path.join(output_directory, primary + '.bam')
             bai = os.path.join(output_directory, primary + '.bai')
-            
+
             if not all([
                 os.path.isfile(bam),
                 os.path.isfile(bai),
             ]): raise ValueError('incomplete pairing of bams and bais')
-            
+
             bam_node = self.upload_file_and_save_to_db(
                 bam,
                 self.config['output_buckets']['bam'],
                 primary + '.bam',
                 self.inputs['bam'].acl,
             )
-            
+
             bai_node = self.upload_file_and_save_to_db(
                 bai,
                 self.config['output_buckets']['bai'],
                 primary + '.bai',
                 self.inputs['bam'].acl,
             )
-            
+
             bam_node.related_files = [bai_node]
-            
+
             edge = FileDataFromFile(
                 src=self.inputs["bam"],
                 dst=bam_node,
@@ -316,28 +316,12 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
                         self.host_abspath(self.config['scratch_dir']),
                     ),
                 )
-                
+
                 self.upload_file(
                     host_f,
                     self.config['output_buckets']['meta'],
                     key,
                 )
-
-    def docker_failure_cleanup(self):
-        tags = [
-            'alignment_type:{}'.format(self.name),
-            'alignment_host:{}'.format(socket.gethostname()),
-        ]
-        
-        statsd.event(
-            'Alignment Failure',
-            'alignment of %s has failed' % self.inputs['bam'].node_id,
-            source_type_name='harmonization',
-            alert_type='error',
-            tags=tags,
-        )
-        
-        return super(TCGAMIRNASeqAligner, self).docker_failure_cleanup()
 
     def handle_output(self):
         self.upload_primary_files()

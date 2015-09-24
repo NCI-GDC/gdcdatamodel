@@ -2,7 +2,6 @@ import os
 import re
 import time
 from datadog import statsd
-from sqlalchemy import func
 import socket
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
@@ -10,6 +9,7 @@ from gdcdatamodel.models import (
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
+from zug.harmonize.queries import SORT_ORDER
 
 
 def has_fixmate_failure(logs):
@@ -65,33 +65,16 @@ class BWAAligner(AbstractHarmonizer):
             "markdups_failure": has_markdups_failure
         }
 
-    def docker_failure_cleanup(self):
+    def docker_failure_cleanup(self, logs):
         if self.docker_log_flags["fixmate_failure"]:
-            # mark the file as not to do in the future
             with self.graph.session_scope() as session:
                 session.add(self.inputs["bam"])
-                self.inputs["bam"].sysan["alignment_data_problem"] = True
                 self.inputs["bam"].sysan["alignment_fixmate_failure"] = True
         if self.docker_log_flags["markdups_failure"]:
-            # mark the file as having fixmate failure
             with self.graph.session_scope() as session:
                 session.add(self.inputs["bam"])
                 self.inputs["bam"].sysan["alignment_markdups_failure"] = True
-
-        tags = [
-            'alignment_type:{}'.format(self.name),
-            'alignment_host:{}'.format(socket.gethostname()),
-        ]
-
-        statsd.event(
-            'Alignment Failure',
-            'alignment of %s has failed' % self.inputs['bam'].node_id,
-            source_type_name='harmonization',
-            alert_type='error',
-            tags=tags,
-        )
-
-        return super(BWAAligner, self).docker_failure_cleanup()
+        return super(BWAAligner, self).docker_failure_cleanup(logs)
 
     @property
     def valid_extra_kwargs(self):
@@ -129,7 +112,7 @@ class BWAAligner(AbstractHarmonizer):
         total_bams = self.bam_files.count()
         aligned = self.bam_files.filter(File.derived_files.any()).count()
         self.log.info("Aligned %s out of %s files", aligned, total_bams)
-        input_bam = self.alignable_files.from_self(File).order_by(func.random()).first()
+        input_bam = self.alignable_files.from_self(File).order_by(*SORT_ORDER).first()
         if not input_bam:
             raise NoMoreWorkException("We appear to have aligned all bam files")
         else:

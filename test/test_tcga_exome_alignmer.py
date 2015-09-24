@@ -5,7 +5,7 @@ import random
 import string
 import subprocess
 from contextlib import nested
-from uuid import uuid4
+import time
 import socket
 
 from mock import patch, Mock
@@ -251,7 +251,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
             download_inputs=self.with_fake_s3(TCGAExomeAligner.download_inputs),
             upload_file=self.with_fake_s3(TCGAExomeAligner.upload_file),
-            build_docker_cmd=fake_build_docker_cmd(output_dir=output_dir)
+            build_docker_cmd=fake_build_docker_cmd(output_dir=output_dir),
+            get_openstack_uuid=lambda self: None,
         )
         if not os.environ.get("TRAVIS"):
             return aligner_patches
@@ -301,6 +302,9 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             )
             self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
             self.assertEqual(edge.sysan["alignment_hostname"], socket.gethostname())
+            # shouldn't have failure indicators
+            self.assertIsNone(new_bam.source_files[0].sysan.get("alignment_seen_docker_error"))
+            self.assertIsNone(new_bam.source_files[0].sysan.get("alignment_last_docker_error_image"))
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
@@ -358,7 +362,9 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                                     aliquot="foo")
         aligner = self.get_aligner()
         aligner.inputs = {'bam': file}
-        aligner.docker_failure_cleanup()
+        aligner.lock_id = file.node_id
+        aligner.docker_image = {"Id": "fake_image_id"}
+        aligner.docker_failure_cleanup("fake error logs")
         mock_statsd.event.assert_called_once()
 
     def test_error_report_on_docker_error(self):
@@ -383,7 +389,6 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.go()
         with self.graph.session_scope():
             file = self.graph.nodes(File).ids(file.node_id).one()
-            self.assertTrue(file.sysan["alignment_data_problem"])
             self.assertTrue(file.sysan["alignment_fixmate_failure"])
 
     def test_marks_file_on_markdups_failure(self):
@@ -398,6 +403,28 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         with self.graph.session_scope():
             file = self.graph.nodes(File).ids(file.node_id).one()
             self.assertTrue(file.sysan["alignment_markdups_failure"])
+
+    def test_marks_file_on_general_failure(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        fake_error_logs = ["fake", "error", "logs"] * 500
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.docker._logs = fake_error_logs
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertTrue(file.sysan["alignment_seen_docker_error"])
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_image"],
+                '6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6',
+            )
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_logs"],
+                "".join(fake_error_logs)[-1000:]
+            )
 
     def test_doesnt_align_data_problem_files(self):
         with self.graph.session_scope():
@@ -442,6 +469,39 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                 with self.assertRaises(NoMoreWorkException):
                     with self.graph.session_scope():
                         aligner.find_inputs()
+
+    def test_chooses_unerrored_files_over_errored(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            errored_file = self.create_file(
+                "test2.bam",
+                "more_fake_test_content",
+                aliquot="bar"
+            )
+            errored_file.sysan["alignment_last_docker_error_image"] = "fake_image_id"
+            errored_file.sysan["alignment_last_docker_error_logs"] = "fake error logs"
+            errored_file.sysan["alignment_seen_docker_error"] = True
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
+                    lock_id, inputs = aligner.find_inputs()
+                    self.assertEqual(lock_id, file.node_id)
+
+    def test_chooses_errored_file_if_no_unerrored(self):
+        with self.graph.session_scope():
+            file1 = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            file1.sysan["alignment_last_docker_error_image"] = "fake_image_id"
+            file1.sysan["alignment_last_docker_error_logs"] = "some fake logs"
+            file1.sysan["alignment_seen_docker_error"] = True
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
+                    lock_id, inputs = aligner.find_inputs()
+                    self.assertEqual(lock_id, file1.node_id)
 
     def test_force_input_id(self):
         with self.graph.session_scope():
