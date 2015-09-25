@@ -47,6 +47,6 @@ class TCGAWGSAligner(BWAAligner):
             )
         if self.config["center_limit"]:
             # limit to just HMS for now
-            hms = Center.short_name.astext == "HMS"
-            alignable = alignable.filter(File.centers.any(hms))
+            not_washu = Center.short_name.astext != "WUSM"
+            alignable = alignable.filter(File.centers.any(not_washu))
         return alignable
