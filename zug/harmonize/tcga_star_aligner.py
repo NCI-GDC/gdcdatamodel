@@ -233,6 +233,7 @@ class TCGASTARAligner(AbstractHarmonizer):
                 "alignment_docker_image_tag": docker_tag,
                 "alignment_docker_cmd": self.docker_cmd,
                 "alignment_reference_name": os.path.basename(self.config["genome_ref"]),
+                "alignment_host_openstack_uuid": self.openstack_uuid,
             }
         )
         with self.graph.session_scope() as session:
