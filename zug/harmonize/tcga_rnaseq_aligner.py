@@ -1,4 +1,4 @@
-from sqlalchemy import func
+from sqlalchemy import func, BigInteger
 from queries import rnaseq
 
 from zug.binutils import NoMoreWorkException
