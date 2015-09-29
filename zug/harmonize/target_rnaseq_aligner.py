@@ -8,7 +8,7 @@ from gdcdatamodel.models import (
     File, Center,
 )
 
-from zug.harmonize.tcga_star_aligner import TCGASTARAligner
+from zug.harmonize.star_aligner import TCGASTARAligner
 
 
 class TARGETRNASeqAligner(TCGASTARAligner):
