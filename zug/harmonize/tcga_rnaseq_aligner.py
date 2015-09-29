@@ -1,4 +1,6 @@
 from sqlalchemy import func, BigInteger
+from sqlalchemy.orm.query import Query
+
 from queries import rnaseq
 
 from zug.binutils import NoMoreWorkException
@@ -22,7 +24,10 @@ class TCGARNASeqAligner(TCGASTARAligner):
 
     @property
     def fastq_files(self):
-        return rnaseq(self.graph, 'tcga_cghub')
+        return Query.union(
+            rnaseq(self.graph, 'tcga_cghub'),
+            rnaseq(self.graph, 'tcga_target'),
+        )
 
     @property
     def alignable_files(self):
