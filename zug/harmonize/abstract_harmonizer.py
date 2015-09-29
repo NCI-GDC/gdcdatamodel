@@ -177,7 +177,20 @@ class AbstractHarmonizer(object):
         scratch_abspath = self.host_abspath(self.config["scratch_dir"])
         if delete_scratch:
             self.log.info("Removing scatch dir %s", scratch_abspath)
-            shutil.rmtree(scratch_abspath)
+            N_RM_SCRATCH_TRIES = 5
+            for n_try in range(1, N_RM_SCRATCH_TRIES+1):
+                try:
+                    shutil.rmtree(scratch_abspath)
+                except:
+                    self.log.exception("failed to remove scratch dir on try %s",
+                                       n_try)
+                    if n_try >= N_RM_SCRATCH_TRIES:
+                        self.log.error("exhausted retries cleaning up scratch dir")
+                        raise
+                    else:
+                        time.sleep(3)
+                else:
+                    break
         else:
             self.log.info("Not deleting scratch space per config")
         self.consul.cleanup()
