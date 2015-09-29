@@ -24,10 +24,7 @@ class TCGARNASeqAligner(TCGASTARAligner):
 
     @property
     def fastq_files(self):
-        return Query.union(
-            rnaseq(self.graph, 'tcga_cghub'),
-            rnaseq(self.graph, 'tcga_target'),
-        )
+        return rnaseq(self.graph, 'tcga_cghub')
 
     @property
     def alignable_files(self):
