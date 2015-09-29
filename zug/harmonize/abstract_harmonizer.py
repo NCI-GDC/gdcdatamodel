@@ -357,7 +357,20 @@ class AbstractHarmonizer(object):
                                    "match size on s3 {}"
                                    .format(disk_size, s3_size))
             self.log.info("md5ing from s3 to verify")
-            md5_on_s3 = md5sum(key)
+            N_MD5SUM_TRIES = 5
+            for md5sum_try in range(1, N_MD5SUM_TRIES+1):
+                try:
+                    md5_on_s3 = md5sum(key)
+                except:
+                    self.log.exception("failed while md5summing from s3 on try %s",
+                                       md5sum_try)
+                    if md5sum_try >= N_MD5SUM_TRIES:
+                        self.log.error("exhausted retries trying to md5sum from s3")
+                        raise
+                    else:
+                        time.sleep(5)
+                else:
+                    break
             if uploaded_md5 != md5_on_s3:
                 raise RuntimeError("checksums do not match: "
                                    "uploaded {}, s3 has {}"
