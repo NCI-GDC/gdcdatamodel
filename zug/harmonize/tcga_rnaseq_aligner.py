@@ -31,7 +31,7 @@ class TCGARNASeqAligner(TCGASTARAligner):
 
     @property
     def alignable_files(self):
-        centers = Center.short_name.astext == 'UNC'
+        centers = Center.short_name.astext.in_(['UNC', 'BCGSC'])
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.fastq_files\
             .props(state='live')\
