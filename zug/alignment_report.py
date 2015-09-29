@@ -89,6 +89,10 @@ class AlignmentReporter(object):
     def aligned_file_counts(self):
         return {key: len(val) for key, val in self.aligned_files.iteritems()}
 
+    def aligned_file_sizes(self):
+        return {key: sum([f.file_size for f in val])
+                for key, val in self.aligned_files.iteritems()}
+
     def generate_files_to_attach(self):
         self.log.info("Generating files to attach")
         return {
@@ -102,7 +106,8 @@ class AlignmentReporter(object):
     def generate_numbers_file(self):
         self.log.info("Generating file with aligned numbers")
         aligned_counts = self.aligned_file_counts()
-        attachment = "Aligned Files\n"
+        aligned_sizes = self.aligned_file_sizes()
+        attachment = "Aligned Files (counts)\n"
         attachment += "=============\n\n"
         attachment += "\n".join(["{key}: {aligned} / {total} ({percent:.2f}%)"
                                  .format(key=key,
@@ -110,6 +115,12 @@ class AlignmentReporter(object):
                                          total=total,
                                          percent=100*(float(aligned_counts[key])/total))
                                  for key, total in iter(sorted(self.totals.iteritems()))])
+        attachment += "\n\n"
+        attachment += "Total sizes aligned\n"
+        attachment += "=============\n\n"
+        attachment += "\n".join(["{key}: {aligned:.2f} TB"
+                                 .format(key=key, aligned=float(size)/1e12)
+                                 for key, size in iter(sorted(aligned_sizes.iteritems()))])
         return attachment
 
     def generate_aligned_analysis_ids_file(self):
