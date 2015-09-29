@@ -8,10 +8,10 @@ from gdcdatamodel.models import (
     File, Center,
 )
 
-from zug.harmonize.star_aligner import TCGASTARAligner
+from zug.harmonize.star_aligner import STARAligner
 
 
-class TARGETRNASeqAligner(TCGASTARAligner):
+class TARGETRNASeqAligner(STARAligner):
 
     @property
     def name(self):
