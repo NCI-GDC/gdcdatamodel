@@ -127,6 +127,7 @@ class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
                                  .count(), 1)
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
+            self.assertEqual(bam.sysan["cghub_state"], "live")
             self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
             # there are two files uploaded on this date, the bam and the bai
             self.assertEqual(self.converter.graph.nodes()
