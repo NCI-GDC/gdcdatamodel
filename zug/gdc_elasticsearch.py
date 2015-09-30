@@ -5,6 +5,7 @@ from gdcdatamodel.mappings import (
     get_case_es_mapping,
     get_file_es_mapping,
 )
+from gdcdatamodel.models import File
 import os
 import re
 import json
@@ -22,6 +23,27 @@ BATCH_SIZE = 16
 
 
 INDEX_PATTERN = '{base}_{n}'
+
+
+def shouldnt_delete(node):
+    """In most cases, we delete any node that's marked
+    `to_delete`. However, if the node is a file, we don't, for two reasons:
+
+    1. We would lose the information about the alignment.
+
+    2. CGHub sometimes suppresses and then unsupresses files. In most
+    cases this is fine, but if a file has derived files, deleting and
+    recreating it will cause the relevant edge to be lost, which we
+    don't want.
+
+    This is a predicate to filter files with derived files so we don't
+    delete them.
+
+    """
+    if isinstance(node, File) and node.derived_files:
+        return True
+    else:
+        return False
 
 
 class GDCElasticsearch(object):
@@ -64,6 +86,7 @@ class GDCElasticsearch(object):
             self.converter.cache_database()
             self.log.info("Querying for old nodes to delete")
             to_delete = self.graph.nodes().sysan({"to_delete": True}).all()
+            to_delete = [n for n in to_delete if not shouldnt_delete(n)]
             self.log.info("Found %s to_delete nodes, saving for later",
                           len(to_delete))
         self.log.info("Denormalizing database into JSON docs")
