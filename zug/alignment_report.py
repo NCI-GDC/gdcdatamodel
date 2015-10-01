@@ -65,7 +65,8 @@ class AlignmentReporter(object):
         return {
             "WGS (>= 320 GB)": 364,
             "WGS (< 320 GB)": 4435,
-            "WXS": 24189,
+            "WXS (TCGA)": 22561,
+            "WXS (TARGET)": 1630,
             "miRNA-Seq": 11914,
             "RNA-Seq (TARGET)": 721,
             "RNA-Seq (TCGA)": 11293,
@@ -79,7 +80,8 @@ class AlignmentReporter(object):
             self._aligned = {
                 "WGS (>= 320 GB)": [f for f in wgs_files if f.file_size >= 320000000000],
                 "WGS (< 320 GB)": [f for f in wgs_files if f.file_size < 320000000000],
-                "WXS": with_derived(exome(self.graph, "tcga_cghub")).all() + with_derived(exome(self.graph, "target_cghub")).all(),
+                "WXS (TCGA)": with_derived(exome(self.graph, "tcga_cghub")).all(),
+                "WXS (TARGET)": with_derived(exome(self.graph, "target_cghub")).all(),
                 "miRNA-Seq": with_derived(mirnaseq(self.graph, "tcga_cghub")).all() + with_derived(mirnaseq(self.graph, "target_cghub")).all(),
                 "RNA-Seq (TARGET)": with_derived(rnaseq(self.graph, "target_cghub")).all(),
                 "RNA-Seq (TCGA)": with_derived(rnaseq(self.graph, "tcga_cghub")).all(),
@@ -208,7 +210,6 @@ class AlignmentReporter(object):
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # first the numbers file
         with self.graph.session_scope():
             files = self.generate_files_to_attach()
         self.attach_files(msg, files)
