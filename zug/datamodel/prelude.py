@@ -97,7 +97,7 @@ DATA_TYPES = {
     ],
     "Raw sequencing data": [
         "Coverage WIG", "Sequencing tag", "Sequencing tag counts",
-        'Aligned reads', 'Unaligned reads'
+        'Aligned reads', 'Unaligned reads', "CGI Archive"
     ],
     "Other": [
         "Microsattelite instability", "ABI sequence trace", "HPV Test",
@@ -117,7 +117,8 @@ TAGS = [
     "gene", "patient", "nte", "radiation", "drug", "B_Allele_Freq",
     "Delta_B_Allele_Freq", "Genotypes", "LOH", "Normal_LogR",
     "Paired_LogR", "seg", "segnormal", "Unpaired_LogR", "MSI", "hpv",
-    "cov", "batch_effect_removed", "harmonized", "summary"
+    "cov", "batch_effect_removed", "harmonized", "summary", "original",
+    "PilotAnalysisPipeline2", "OptionAnalysisPipeline2" 
 ]
 
 DATA_FORMATS = [

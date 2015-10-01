@@ -1,6 +1,4 @@
 import os
-from os import environ
-from bs4 import BeautifulSoup
 import sys
 import pandas as pd
 import xlrd
@@ -8,11 +6,12 @@ import requests
 import re
 from datetime import datetime
 from uuid import UUID, uuid5
+from bs4 import BeautifulSoup
+
 from cdisutils.log import get_logger
 from gdcdatamodel.models import File, Case
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
-
 
 ETHNICITY_MAP = {
     "Hispanic or Latino": "hispanic or latino",
@@ -39,23 +38,47 @@ VITAL_STATUS_MAP = {
     "Lost to Follow-up": "lost to follow-up"
 }
 
+BASE_URL = "https://target-data.nci.nih.gov"
+
+ACCESS_LEVELS = [
+    "Controlled",
+    "Public"
+]
+
+# NB: projects commented out now that haven't been tested, but should
+# be run eventually
+PROJECTS_TO_SYNC = { 
+    # "ALL-P1",
+    # "ALL-P2",
+    #"ALL/Phase_I" : "/Discovery/clinical/harmonized/",  # temp
+    #"ALL/Phase_II" : "/Discovery/clinical/harmonized/", # temp
+    "AML" : "Discovery/clinical/harmonized/",
+    #"AML-IF" : "/Discovery/clinical/",                  # temp
+    #"CCSK" : "/Discovery/clinical/harmonized/",         # temp
+    "NBL" : "Discovery/clinical/harmonized/",
+    #"OS" : "/Discovery/clinical/",                      # temp
+    #"RT" : "/Discovery/clinical/harmonized/",           # temp
+    "WT" : "Discovery/clinical/harmonized/"
+}
+
 ROW_CLASSES = [ "even", "odd" ]
 
 def parse_race(race):
+    """Parse the race into a canonical form."""
     if race.strip() == "Unknown":
         return "not reported"
     else:
         return race.lower().strip()
 
-
 def parse_vital_status(vital_status):
+    """Parse the vital status into a canonical form."""
     if vital_status.strip() in VITAL_STATUS_MAP:
         return VITAL_STATUS_MAP[vital_status.strip()]
     else:
         raise RuntimeError("Unknown vital status:", vital_status)
 
 def parse_row_into_props(row):
-
+    """Parse a given row from a spreadsheet into a properties dict."""
     for entry in AGE_TITLE_STRINGS:
         if entry in row:
             age_row_string = entry
@@ -71,26 +94,26 @@ def parse_row_into_props(row):
         "icd_10": None,
     }
 
-
 def match_date(string_to_check):
-        version = None
-        version_match = re.search("([0-9]{8})", string_to_check)
+    """Match a version date found in a file name."""
+    version = None
+    version_match = re.search("([0-9]{8})", string_to_check)
+    if version_match:
+        version = datetime.strptime(version_match.group(1), "%Y%m%d").toordinal()
+
+    if not version:
+        version_match = re.search("([1-9]|1[012])[_ /.]([1-9]|[12][0-9]|3[01])[_ /.](19|20)\d\d",
+            string_to_check
+        )
         if version_match:
-            version = datetime.strptime(version_match.group(1), "%Y%m%d").toordinal()
+            version = datetime.strptime(version_match.group(0), "%m_%d_%Y").toordinal()
 
-        if not version:
-            version_match = re.search("([1-9]|1[012])[_ /.]([1-9]|[12][0-9]|3[01])[_ /.](19|20)\d\d",
-                string_to_check
-            )
-            if version_match:
-                version = datetime.strptime(version_match.group(0), "%m_%d_%Y").toordinal()
+    return version
 
-        return version
-
-def process_tree(url):
+def process_tree(url, dcc_user, dcc_pass):
     """Walk the given url and recursively find all the spreadsheet links."""
     url_list = []
-    r = requests.get(url, auth=(environ["DCC_USER"], environ["DCC_PASS"]), verify=False)
+    r = requests.get(url, auth=(dcc_user, dcc_pass), verify=False)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text, "lxml")
         file_table = soup.find('table', attrs={'id':'indexlist'})
@@ -108,17 +131,14 @@ def process_tree(url):
 
     return url_list
 
-def find_spreadsheets(projects_to_sync, base_url):
-    """Find all the spreadsheets for each project."""
+def find_clinical(args):
+    """Find all the clinical spreadsheets for each project."""
     spreadsheet_urls = {}
-    for project, url_loc in projects_to_sync.iteritems():
-        url = "%s%s%s" % (
-            base_url,
-            project,
-            url_loc
-        )
-        spreadsheets = process_tree(url)
-        spreadsheet_urls[project] = spreadsheets
+    for project in args.projects:
+        for access_level in ACCESS_LEVELS:
+            url = "/".join([BASE_URL, access_level, project, PROJECTS_TO_SYNC[project]])
+            spreadsheets = process_tree(url, args.dcc_user, args.dcc_pass)
+            spreadsheet_urls[project] = spreadsheets
     
     return spreadsheet_urls
 
@@ -129,7 +149,15 @@ class TARGETClinicalSyncer(object):
         I am not sure of a good way to automatically determine the correct
         url for a project so for now you have to pass the url explicitly.
         """
-        assert url.startswith("https://target-data.nci.nih.gov/{}/Discovery/".format(project))
+
+        url_verified = False
+        for level in ACCESS_LEVELS:
+            url_str = "/".join([BASE_URL, level, project, "Discovery"])
+            if url.startswith(url_str):
+                url_verified = True
+                break
+
+        assert url_verified
         self.project = project
         self.url = url
         self.version = match_date(url)
@@ -140,6 +168,7 @@ class TARGETClinicalSyncer(object):
         self.log = get_logger("target_clinical_sync_{}_{}".format(self.project, os.getpid()))
 
     def load_df(self):
+        """Load the dataframe from a spreadsheet."""
         self.log.info("downloading clinical xlsx from target dcc")
         resp = requests.get(self.url, auth=self.dcc_auth)
         self.log.info("parsing clinical info into dataframe")
@@ -160,6 +189,7 @@ class TARGETClinicalSyncer(object):
         return pd.read_excel(book, engine="xlrd", sheetname=SHEET)
 
     def create_edge(self, label, src, dst):
+        """Create a graph edge based upon the data."""
         maybe_edge = self.graph.edge_lookup(
             label=label,
             src_id=src.node_id,
@@ -175,6 +205,7 @@ class TARGETClinicalSyncer(object):
             ))
 
     def insert(self, df):
+        """Insert the clinical data into the database."""
         self.log.info("loading clinical info into graph")
         with self.graph.session_scope():
             self.log.info("looking up the node corresponding to %s", self.url)
@@ -182,12 +213,13 @@ class TARGETClinicalSyncer(object):
                                       .sysan({"source": "target_dcc",
                                               "url": self.url}).one()
             self.log.info("found clinical file %s as %s", self.url, clinical_file)
+            row_count = 0
             for _, row in df.iterrows():
                 # the .strip is necessary because sometimes there is a
                 # space after the name, e.g. 'TARGET-50-PAEAFB '
-                case_barcode = None
                 case = None
                 for column_title in BARCODE_TITLE_STRINGS:
+                    case_barcode = None
                     if column_title in row:
                         # NB: some of the spreadsheets have blank rows, and
                         # the error condition is to strip on a non-string
@@ -198,9 +230,15 @@ class TARGETClinicalSyncer(object):
                             break
                         else:
                             if type(row[column_title]) == float:
-                                self.log.info("Empty row/int found")
+                                self.log.info("Empty row/int found at %d in %s" % (
+                                    row_count, column_title
+                                    )
+                                )
                             else:
-                                error_str = "Unrecognized type: %s" % str(type(row[column_title]))
+                                error_str = "Unrecognized type: %s at %d in %s" % (
+                                    str(type(row[column_title])),
+                                    row_count, column_title
+                                    )
                                 self.log.error(error_str)
                                 raise RuntimeError(error_str)
                 if case_barcode:
@@ -223,7 +261,9 @@ class TARGETClinicalSyncer(object):
                 self.log.info("inserted clinical info as %s, tieing to case", clinical)
                 self.create_edge("describes", clinical, case)
                 self.create_edge("describes", clinical_file, case)
+                row_count += 1
 
     def sync(self):
+        """Main sync routine to sync the data."""
         df = self.load_df()
         self.insert(df)

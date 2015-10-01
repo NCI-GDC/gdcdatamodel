@@ -41,7 +41,6 @@ PROJECT_PHSID_MAPPING = {
     'MDLS': 'phs000469',
 }
 
-
 def tree_walk(url, **kwargs):
     """
     Recursively walk the target html file server, yielding the urls of
@@ -50,8 +49,14 @@ def tree_walk(url, **kwargs):
     resp = requests.get(url, **kwargs)
     resp.raise_for_status()
     elem = html.fromstring(resp.content)
+    # Since the changes to the TARGET site made a few links
+    # that follow the image as well as the text, we have
+    # to be more intelligent about what we're checking for.
+    # The idea here is that we are seeing if the link mirrors
+    # our current url. If so, we are assuming it's a link to
+    # parent and avoiding adding so we don't recurse back up.
     links = [link for link in elem.cssselect("td a")
-             if link.text != "Parent Directory"]
+             if link.attrib["href"] not in url]
     for link in links:
         if not url.endswith("/"):
             url += "/"
@@ -80,12 +85,10 @@ def classify(path):
         if re.match(regex, filename, re.IGNORECASE):
             return classification
 
-
 def process_url(kwargs, url):
     syncer = TARGETDCCFileSyncer(url, **kwargs)
     syncer.log.info("syncing file %s", url)
-    syncer.sync()
-
+    return syncer.sync()
 
 class MD5SummingStream(object):
 
@@ -148,7 +151,7 @@ class TARGETDCCEdgeBuilder(object):
 
     def classify(self):
         url = self.file_node.system_annotations["url"]
-        project = url.split("/")[3]
+        project = url.split("/")[4]
         path = re.sub(".*\/{}\/((Discovery)|(Validation)|(Model_Systems))\/".format(project), "", url).split("/")
         self.log.info("classifying with path %s", path)
         classification = classify(path)
@@ -165,24 +168,97 @@ class TARGETDCCProjectSyncer(object):
 
     def __init__(self, project, signpost_url=None,
                  graph_info=None, dcc_auth=None,
-                 storage_info=None, pool=None):
+                 storage_info=None, pool=None, verify_missing=True):
         self.project = project
         self.dcc_auth = dcc_auth
         self.signpost_url = signpost_url
         self.graph_info = graph_info
         self.storage_info = storage_info
-        self.base_url = "https://target-data.nci.nih.gov/{}/".format(project)
+        self.base_url = "https://target-data.nci.nih.gov/"
         self.pool = pool
-        self.log = get_logger("taget_dcc_project_sync_" +
+        self.verify_missing = verify_missing
+        self.log = get_logger("target_dcc_project_sync_" +
                               str(os.getpid()) +
                               "_" + self.project)
+        self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
+                                     graph_info["pass"], graph_info["database"])
+
+    def get_target_dcc_dict(self):
+        """Create a dict of target_dcc files for current project"""
+        target_dcc_files = {}
+        with self.graph.session_scope():
+            target_dcc_file_iter = self.graph.nodes(File).sysan(source="target_dcc").filter(
+                File._sysan['url'].astext.contains("/%s/" % self.project)).all()
+            for target_file in target_dcc_file_iter:
+                if 'url' in target_file.sysan:
+                    data = {}
+                    data['delete'] = True
+                    data['id'] = target_file.node_id
+                    target_dcc_files[target_file.sysan['url']] = data
+
+        return target_dcc_files
 
     def file_links(self):
         """A generator for links to files in this project"""
-        for toplevel in ["Discovery", "Validation"]:
-            url = urljoin(self.base_url, toplevel)
-            for file in tree_walk(url, auth=self.dcc_auth):
-                yield file
+
+        # We're looking for a URL in the form
+        # [base_url]/[Public/Controlled]/[Project Code]/[Discovery/Validation]
+        # However, right now, "Validation is only present in the old base
+        # url. Since there's a chance it could finally migrate, the code 
+        # gracefully skips it if it 404s.
+        for access_level in ["Public", "Controlled"]:
+            url_part = access_level + "/" + self.project
+            for toplevel in ["Discovery", "Validation"]:
+                url_full = url_part + "/" + toplevel + "/"
+                url = urljoin(self.base_url, url_full)
+                self.log.info(url)
+                resp = requests.head(url, auth=self.dcc_auth)
+                if resp.status_code != 404:
+                    return tree_walk(url, auth=self.dcc_auth)
+                else:
+                    self.log.warn("%s not present, skipping" % url)
+
+    def check_if_missing(self, url, dcc_auth_info):
+
+        if self.verify_missing:
+            resp = requests.head(url, auth=dcc_auth_info)
+        else:
+            resp = requests.Response
+            resp.status_code = 404
+
+        if resp.status_code == 200:
+            is_missing = False
+        else:
+            self.log.info("Status code: %d" % resp.status_code)
+            is_missing = True
+
+        return is_missing
+
+    def cull(self, target_dcc_files, dcc_auth_info):
+        """Set files to_delete to True based on dict passed"""
+        with self.graph.session_scope():
+            files_to_delete = 0
+            for key, values in target_dcc_files.iteritems():
+                if values['delete'] == True:
+                    # try and get the file
+                    print "Checking", key
+                    if check_if_missing(key, dcc_auth_info):
+                        files_to_delete += 1
+                        if 'id' not in values:
+                            self.log.warn("Warning, unable to delete %s, id missing." % key)
+                        else:
+                            node_to_delete = self.graph.nodes(File).get(values['id'])
+                            node_to_delete.system_annotations['to_delete'] = True
+                            self.log.info("Setting %s(%s) to be deleted" % (
+                                node_to_delete.system_annotations['url'],
+                                node_to_delete.node_id
+                            ))
+                            self.graph.current_session().merge(node_to_delete)
+                    else:
+                        self.log.warn("Warning, %s found, not deleting" % key)
+
+            self.log.info("%d total files, %d marked for deletion" % (
+                len(target_dcc_files), files_to_delete))
 
     def sync(self):
         self.log.info("running prelude")
@@ -192,6 +268,9 @@ class TARGETDCCProjectSyncer(object):
             "storage_info": self.storage_info,
             "dcc_auth": self.dcc_auth,
         }
+
+        file_dict = self.get_target_dcc_dict()
+
         if self.pool:
             self.log.info("syncing files using process pool")
             async_result = self.pool.map_async(partial(process_url, kwargs), self.file_links())
@@ -199,7 +278,17 @@ class TARGETDCCProjectSyncer(object):
         else:
             self.log.info("syncing files serially")
             for url in self.file_links():
-                process_url(kwargs, url)
+                node_id = process_url(kwargs, url)
+                # mark url as found
+                if url in file_dict:
+                    file_dict[url]['delete'] = False
+                else:
+                    data = {}
+                    data['delete'] = False
+                    data['id'] = node_id
+                    file_dict[url] = data
+
+            self.cull(file_dict, self.dcc_auth)
 
 
 class TARGETDCCFileSyncer(object):
@@ -209,7 +298,7 @@ class TARGETDCCFileSyncer(object):
                  storage_info=None):
         assert url.startswith("https://target-data.nci.nih.gov")
         self.url = url
-        self.project = url.split("/")[3]
+        self.project = url.split("/")[4]
         self.filename = self.url.split("/")[-1]
         assert self.project in PROJECTS
         self.signpost = SignpostClient(signpost_url, version="v0")
@@ -218,12 +307,13 @@ class TARGETDCCFileSyncer(object):
         self.dcc_auth = dcc_auth
         self.storage_client = storage_info["driver"](storage_info["access_key"],
                                                      **storage_info["kwargs"])
-        self.log = get_logger("taget_dcc_file_sync_" +
+        self.log = get_logger("target_dcc_file_sync_" +
                               str(os.getpid()) +
                               "_" + self.filename)
 
     @property
     def acl(self):
+        # TODO: This will have to be intelligent
         return []
 
     @property
@@ -284,3 +374,5 @@ class TARGETDCCFileSyncer(object):
                 builder.build()
             except Exception:
                 self.log.exception("failed to classify %s", file_node)
+
+        return file_node.node_id
