@@ -1,6 +1,4 @@
 from sqlalchemy import func, BigInteger
-from sqlalchemy.orm.query import Query
-
 from queries import rnaseq
 
 from zug.binutils import NoMoreWorkException
@@ -28,7 +26,7 @@ class TCGARNASeqAligner(STARAligner):
 
     @property
     def alignable_files(self):
-        centers = Center.short_name.astext.in_(['UNC', 'BCGSC'])
+        centers = Center.short_name.astext == 'UNC'
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.fastq_files\
             .props(state='live')\
