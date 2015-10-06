@@ -1,34 +1,40 @@
 from sqlalchemy import func, BigInteger
+from sqlalchemy.orm.query import Query
+
 from queries import rnaseq
 
 from zug.binutils import NoMoreWorkException
-from gdcdatamodel.models import File
+from gdcdatamodel.models import (
+    File, Center,
+)
 
 from zug.harmonize.star_aligner import STARAligner
 
 
-class TCGARNASeqAligner(STARAligner):
+class TARGETRNASeqAligner(STARAligner):
 
     @property
     def name(self):
-        return "tcga_rnaseq_aligner"
+        return "target_rnaseq_aligner"
 
 
     @property
     def source(self):
-        return "tcga_rnaseq_alignment"
+        return "target_rnaseq_alignment"
 
     @property
     def fastq_files(self):
-        return rnaseq(self.graph, 'tcga_cghub')
+        return rnaseq(self.graph, 'target_cghub')
 
     @property
     def alignable_files(self):
+        centers = Center.short_name.astext.in_(['UNC', 'BCGSC'])
         currently_being_aligned = self.consul.list_locked_keys()
         alignable = self.fastq_files\
             .props(state='live')\
             .filter(~File.derived_files.any())\
-            .filter(~File.node_id.in_(currently_being_aligned))
+            .filter(~File.node_id.in_(currently_being_aligned))\
+            .filter(File.centers.any(centers))
         
         size_limit = self.config.get('size_limit', False)
         if size_limit:
@@ -46,7 +52,7 @@ class TCGARNASeqAligner(STARAligner):
 
     def choose_fastq_at_random(self):
         '''
-        Return a PSQLGraph node representing a 'randomly' chosen TCGA RNA-Seq
+        Return a PSQLGraph node representing a 'randomly' chosen TARGET RNA-Seq
         FASTQ File node.
         '''
         fastq = self.alignable_files.from_self(File).order_by(func.random()).first()
@@ -57,7 +63,7 @@ class TCGARNASeqAligner(STARAligner):
 
     def choose_fastq_by_forced_id(self):
         '''
-        Return a PSQLGraph node representing the TCGA RNA-Seq FASTQ File node
+        Return a PSQLGraph node representing the TARGET RNA-Seq FASTQ File node
         represented by the specified id.
         '''
         forced_id = self.config.get('force_input_id')
@@ -68,7 +74,7 @@ class TCGARNASeqAligner(STARAligner):
         if tar is None:
             raise ValueError('could not find File node with id %s' % forced_id)
         
-        assert tar.sysan['source'] == 'tcga_cghub'
+        assert tar.sysan['source'] == 'target_cghub'
         assert any(x.name in ['TAR', 'TARGZ'] for x in tar.data_formats)
         assert any(x.name == 'RNA-Seq' for x in tar.experimental_strategies)
         # TODO add additional constraint checks as necessary
