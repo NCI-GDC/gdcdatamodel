@@ -16,6 +16,10 @@ def has_fixmate_failure(logs):
     return "FixMateInformation" in logs
 
 
+def has_markdups_failure(logs):
+    return "MarkDuplicatesWithMateCigar" in logs
+
+
 class BWAAligner(AbstractHarmonizer):
 
     def get_config(self, kwargs):
@@ -57,7 +61,8 @@ class BWAAligner(AbstractHarmonizer):
     @property
     def docker_log_flag_funcs(self):
         return {
-            "fixmate_failure": has_fixmate_failure
+            "fixmate_failure": has_fixmate_failure,
+            "markdups_failure": has_markdups_failure
         }
 
     def docker_failure_cleanup(self):
@@ -67,12 +72,17 @@ class BWAAligner(AbstractHarmonizer):
                 session.add(self.inputs["bam"])
                 self.inputs["bam"].sysan["alignment_data_problem"] = True
                 self.inputs["bam"].sysan["alignment_fixmate_failure"] = True
-        
+        if self.docker_log_flags["markdups_failure"]:
+            # mark the file as having fixmate failure
+            with self.graph.session_scope() as session:
+                session.add(self.inputs["bam"])
+                self.inputs["bam"].sysan["alignment_markdups_failure"] = True
+
         tags = [
             'alignment_type:{}'.format(self.name),
             'alignment_host:{}'.format(socket.gethostname()),
         ]
-        
+
         statsd.event(
             'Alignment Failure',
             'alignment of %s has failed' % self.inputs['bam'].node_id,
@@ -80,7 +90,7 @@ class BWAAligner(AbstractHarmonizer):
             alert_type='error',
             tags=tags,
         )
-        
+
         return super(BWAAligner, self).docker_failure_cleanup()
 
     @property

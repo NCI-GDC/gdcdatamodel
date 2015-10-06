@@ -102,7 +102,8 @@ class AlignmentReporter(object):
             "analysis_ids_complete.txt": self.generate_aligned_analysis_ids_file(),
             "analysis_ids_in_progres.txt": self.generate_in_progress_analysis_ids_file(),
             "wgs_timings.txt": self.generate_timings_file(),
-            "analysis_ids_fixmate_problem.txt": self.generate_fixmate_problem_analysis_ids_file()
+            "analysis_ids_fixmate_problem.txt": self.generate_fixmate_problem_analysis_ids_file(),
+            "analysis_ids_markdups_failure.txt": self.generate_markdups_failure_analysis_ids_file(),
         }
 
     def generate_numbers_file(self):
@@ -177,6 +178,15 @@ class AlignmentReporter(object):
         self.log.info("Generating file with in FixMateInformation failure analysis ids")
         problem_files = self.graph.nodes(File)\
                                   .sysan(alignment_fixmate_failure=True)\
+                                  .all()
+        analysis_ids = [f.sysan["analysis_id"] for f in problem_files]
+        attachment = "\n".join(analysis_ids)
+        return attachment
+
+    def generate_markdups_failure_analysis_ids_file(self):
+        self.log.info("Generating file with in MarkDuplicates failure analysis ids")
+        problem_files = self.graph.nodes(File)\
+                                  .sysan(alignment_markdups_failure=True)\
                                   .all()
         analysis_ids = [f.sysan["analysis_id"] for f in problem_files]
         attachment = "\n".join(analysis_ids)
