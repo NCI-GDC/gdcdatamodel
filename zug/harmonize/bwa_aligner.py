@@ -189,8 +189,21 @@ class BWAAligner(AbstractHarmonizer):
             cores=self.config["cores"],
             log_dir=self.container_abspath(self.config["scratch_dir"]),
         )
+        # all these conditionals should really be done by inheritance
+        # but this is easier for now; forgive me gods of object
+        # orientation
         if "exome" in self.name:
             cmd += " -x"
+            if self.name == "target_exome_aligner":
+                # session scope is needed to load the center
+                with self.graph.session_scope() as session:
+                    session.add(self.inputs["bam"])
+                    center_name = self.inputs["bam"].sysan["cghub_center_name"]
+                # this specifies that we are doing target
+                # alignment and what the center is
+                cmd += " -g -q {center_name}".format(
+                    center_name=center_name
+                )
         return cmd
 
     @property
