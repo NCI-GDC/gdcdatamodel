@@ -222,6 +222,14 @@ class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
             for key in ["last_modified", "upload_date", "published_date"]:
                 self.assertIn("cghub_"+key, f.sysan)
 
+    def test_center_name_system_annotation(self):
+        graph = self.converter.graph
+        self.insert_test_files()
+        self.run_convert()
+        with graph.session_scope():
+            f = graph.nodes().props(file_name=bamA).one()
+            self.assertEqual(f.sysan["cghub_center_name"], "UNC-LCCC")
+
     def test_target_file_with_cgi_center(self):
         graph = self.converter.graph
         self.converter.parse('file', etree.fromstring(TARGET_CGI_XML))
