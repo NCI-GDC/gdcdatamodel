@@ -76,58 +76,60 @@ class FakeDockerClient(object):
         del self.containers[cont["Id"]]
 
 
-def fake_build_docker_cmd(self):
+def fake_build_docker_cmd(output_dir="md"):
     """
     Simulate the action of running the actual docker container.
     """
-    assert self.config["cores"] > 0
-    todo = [
-        "set -e",
-        # assert that input bam exists
-        "test -e {bam_path}",
-        "test -e {bai_path}",
-        # create fake outputs
-        "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
-        "mkfile {output_bam_path}",
-        "echo -n fake_output_bam > {output_bam_path}",
-        "mkfile {output_bai_path}",
-        "echo -n fake_output_bai > {output_bai_path}",
-        "mkfile {output_log_path}",
-        "echo -n fake_logs > {output_log_path}",
-        "mkfile {output_db_path}",
-        "echo -n fake_db > {output_db_path}",
-    ]
-    # yes i know this is kind of gross but it works just work with me
-    # here ok
-    template = "bash -c '" + "; ".join(todo) + "'"
-    if os.environ.get("TRAVIS"):
-        # we have to use the host path on travis because we don't have
-        # real docker there, so we use FakeDockerClient, which just
-        # executes the command on the host, so we need host relative
-        # paths as opposed to container relative paths
-        get_path = self.host_abspath
-    else:
-        get_path = self.container_abspath
-    output_bam_path = get_path(os.path.join(
-        self.config["scratch_dir"], "realn", "md",
-        self.inputs["bam"].file_name)
-    )
-    output_bai_path = output_bam_path.replace(".bam", ".bai")
-    output_log_path = get_path(os.path.join(
-        self.config["scratch_dir"], "aln_"+self.inputs["bam"].node_id+".log")
-    )
-    output_db_path = get_path(os.path.join(
-        self.config["scratch_dir"], self.inputs["bam"].node_id+"_harmonize.db")
-    )
-    return template.format(
-        reference_path=get_path(self.config["reference"]),
-        bam_path=get_path(self.input_paths["bam"]),
-        bai_path=get_path(self.input_paths["bam"]),
-        output_bam_path=output_bam_path,
-        output_bai_path=output_bai_path,
-        output_log_path=output_log_path,
-        output_db_path=output_db_path,
-    )
+    def inner_fake_build_docker_cmd(self):
+        assert self.config["cores"] > 0
+        todo = [
+            "set -e",
+            # assert that input bam exists
+            "test -e {bam_path}",
+            "test -e {bai_path}",
+            # create fake outputs
+            "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
+            "mkfile {output_bam_path}",
+            "echo -n fake_output_bam > {output_bam_path}",
+            "mkfile {output_bai_path}",
+            "echo -n fake_output_bai > {output_bai_path}",
+            "mkfile {output_log_path}",
+            "echo -n fake_logs > {output_log_path}",
+            "mkfile {output_db_path}",
+            "echo -n fake_db > {output_db_path}",
+        ]
+        # yes i know this is kind of gross but it works just work with me
+        # here ok
+        template = "bash -c '" + "; ".join(todo) + "'"
+        if os.environ.get("TRAVIS"):
+            # we have to use the host path on travis because we don't have
+            # real docker there, so we use FakeDockerClient, which just
+            # executes the command on the host, so we need host relative
+            # paths as opposed to container relative paths
+            get_path = self.host_abspath
+        else:
+            get_path = self.container_abspath
+        output_bam_path = get_path(os.path.join(
+            self.config["scratch_dir"], "realn", output_dir,
+            self.inputs["bam"].file_name)
+        )
+        output_bai_path = output_bam_path.replace(".bam", ".bai")
+        output_log_path = get_path(os.path.join(
+            self.config["scratch_dir"], "aln_"+self.inputs["bam"].node_id+".log")
+        )
+        output_db_path = get_path(os.path.join(
+            self.config["scratch_dir"], self.inputs["bam"].node_id+"_harmonize.db")
+        )
+        return template.format(
+            reference_path=get_path(self.config["reference"]),
+            bam_path=get_path(self.input_paths["bam"]),
+            bai_path=get_path(self.input_paths["bam"]),
+            output_bam_path=output_bam_path,
+            output_bai_path=output_bai_path,
+            output_log_path=output_log_path,
+            output_db_path=output_db_path,
+        )
+    return inner_fake_build_docker_cmd
 
 
 class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
@@ -244,12 +246,12 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         bai_doc.patch()
         return bam_file
 
-    def monkey_patches(self):
+    def monkey_patches(self, output_dir="md"):
         aligner_patches = patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
             download_inputs=self.with_fake_s3(TCGAExomeAligner.download_inputs),
             upload_file=self.with_fake_s3(TCGAExomeAligner.upload_file),
-            build_docker_cmd=fake_build_docker_cmd
+            build_docker_cmd=fake_build_docker_cmd(output_dir=output_dir)
         )
         if not os.environ.get("TRAVIS"):
             return aligner_patches
@@ -450,3 +452,47 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             with self.graph.session_scope(), aligner.consul.consul_session_scope():
                 lock_id, inputs = aligner.find_inputs()
                 self.assertEqual(inputs["bam"].node_id, file.node_id)
+
+    def test_works_if_output_in_other_directory(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(output_dir="fixmate"):
+            aligner = self.get_aligner()
+            aligner.go()
+        # query for new node and verify pull down from s3
+        with self.graph.session_scope():
+            new_bam = self.graph.nodes(File)\
+                                .filter(File.file_name.astext.endswith(".bam"))\
+                                .sysan(source="tcga_exome_alignment")\
+                                .one()
+            new_bai = self.graph.nodes(File)\
+                                .filter(File.file_name.astext.endswith(".bam.bai"))\
+                                .sysan(source="tcga_exome_alignment")\
+                                .one()
+            self.assertEqual(len(new_bam.source_files), 1)
+            self.assertEqual(new_bam.related_files, [new_bai])
+            new_bam_doc = self.signpost_client.get(new_bam.node_id)
+            self.assertEqual(
+                new_bam_doc.urls,
+                ['s3://s3.amazonaws.com/'
+                 'tcga_exome_alignments/{}/test1_gdc_realn.bam'
+                 .format(new_bam.node_id)]
+            )
+            self.assertEqual(new_bam.data_formats[0].name, "BAM")
+            self.assertEqual(new_bam.platforms[0].name, "Illumina GA")
+            self.assertEqual(new_bam.experimental_strategies[0].name, "WXS")
+            edge = self.graph.edges(FileDataFromFile).dst(new_bam.node_id).one()
+            self.assertEqual(
+                edge.sysan["alignment_docker_image_id"],
+                "6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6",
+            )
+            self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
+            self.assertEqual(edge.sysan["alignment_hostname"], socket.gethostname())
+            self.assertEqual(edge.sysan["alignment_last_step"], "fixmate")
+            self.fake_s3.start()
+            bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
+            self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
+            # assert that we remove the scratch dir
+            self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+            self.fake_s3.stop()

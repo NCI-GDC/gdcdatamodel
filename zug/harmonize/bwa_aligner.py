@@ -195,17 +195,24 @@ class BWAAligner(AbstractHarmonizer):
 
     @property
     def output_paths(self):
-        return {
-            "bam": self.host_abspath(
+        bam_path = None
+        # important that this list is in our order of preference.  if
+        # markduplicates has been run we want that, if fixmate has
+        # been run we want that, etc.
+        for possible_dir in ["md", "fixmate", "reheader"]:
+            possible_path = self.host_abspath(
                 self.config["scratch_dir"],
-                "realn", "md",
+                "realn", possible_dir,
                 self.inputs["bam"].file_name
-            ),
-            "bai": self.host_abspath(
-                self.config["scratch_dir"],
-                "realn", "md",
-                re.sub("\.bam$", ".bai", self.inputs["bam"].file_name)
-            ),
+            )
+            if os.path.exists(possible_path):
+                bam_path = possible_path
+                break
+        if not bam_path:
+            raise RuntimeError("Can't find output bam file")
+        return {
+            "bam": bam_path,
+            "bai": re.sub("\.bam$", ".bai", bam_path),
             "log": self.host_abspath(
                 self.config["scratch_dir"],
                 "aln_" + self.inputs["bam"].node_id + ".log"
@@ -291,6 +298,7 @@ class BWAAligner(AbstractHarmonizer):
                 "alignment_reference_name": os.path.basename(self.config["reference"]),
                 "alignment_hostname": socket.gethostname(),
                 "alignment_host_openstack_uuid": self.openstack_uuid,
+                "alignment_last_step": self.output_paths["bam"].split("/")[-2],
             }
         )
         with self.graph.session_scope() as session:
