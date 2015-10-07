@@ -14,9 +14,9 @@ from gdcdatamodel.models import (
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 
 
-class TCGASTARAligner(AbstractHarmonizer):
+class STARAligner(AbstractHarmonizer):
     '''
-    STAR specialization of the AbstractHarmonizer for processing of TCGA
+    STAR specialization of the AbstractHarmonizer for processing of
     RNA-Seq data.
     '''
     __metaclass__ = abc.ABCMeta
@@ -233,6 +233,8 @@ class TCGASTARAligner(AbstractHarmonizer):
                 "alignment_docker_image_tag": docker_tag,
                 "alignment_docker_cmd": self.docker_cmd,
                 "alignment_reference_name": os.path.basename(self.config["genome_ref"]),
+                "alignment_hostname": socket.gethostname(),
+                "alignment_host_openstack_uuid": self.openstack_uuid,
             }
         )
         with self.graph.session_scope() as session:
@@ -306,7 +308,7 @@ class TCGASTARAligner(AbstractHarmonizer):
             tags=tags,
         )
         
-        return super(TCGASTARAligner, self).docker_failure_cleanup()
+        return super(STARAligner, self).docker_failure_cleanup()
 
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):

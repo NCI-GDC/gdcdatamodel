@@ -65,7 +65,8 @@ class AlignmentReporter(object):
         return {
             "WGS (>= 320 GB)": 364,
             "WGS (< 320 GB)": 4435,
-            "WXS": 24189,
+            "WXS (TCGA)": 22561,
+            "WXS (TARGET)": 1630,
             "miRNA-Seq": 11914,
             "RNA-Seq (TARGET)": 721,
             "RNA-Seq (TCGA)": 11293,
@@ -79,7 +80,8 @@ class AlignmentReporter(object):
             self._aligned = {
                 "WGS (>= 320 GB)": [f for f in wgs_files if f.file_size >= 320000000000],
                 "WGS (< 320 GB)": [f for f in wgs_files if f.file_size < 320000000000],
-                "WXS": with_derived(exome(self.graph, "tcga_cghub")).all() + with_derived(exome(self.graph, "target_cghub")).all(),
+                "WXS (TCGA)": with_derived(exome(self.graph, "tcga_cghub")).all(),
+                "WXS (TARGET)": with_derived(exome(self.graph, "target_cghub")).all(),
                 "miRNA-Seq": with_derived(mirnaseq(self.graph, "tcga_cghub")).all() + with_derived(mirnaseq(self.graph, "target_cghub")).all(),
                 "RNA-Seq (TARGET)": with_derived(rnaseq(self.graph, "target_cghub")).all(),
                 "RNA-Seq (TCGA)": with_derived(rnaseq(self.graph, "tcga_cghub")).all(),
@@ -89,6 +91,10 @@ class AlignmentReporter(object):
     def aligned_file_counts(self):
         return {key: len(val) for key, val in self.aligned_files.iteritems()}
 
+    def aligned_file_sizes(self):
+        return {key: sum([f.file_size for f in val])
+                for key, val in self.aligned_files.iteritems()}
+
     def generate_files_to_attach(self):
         self.log.info("Generating files to attach")
         return {
@@ -96,13 +102,15 @@ class AlignmentReporter(object):
             "analysis_ids_complete.txt": self.generate_aligned_analysis_ids_file(),
             "analysis_ids_in_progres.txt": self.generate_in_progress_analysis_ids_file(),
             "wgs_timings.txt": self.generate_timings_file(),
-            "analysis_ids_fixmate_problem.txt": self.generate_fixmate_problem_analysis_ids_file()
+            "analysis_ids_fixmate_problem.txt": self.generate_fixmate_problem_analysis_ids_file(),
+            "analysis_ids_markdups_failure.txt": self.generate_markdups_failure_analysis_ids_file(),
         }
 
     def generate_numbers_file(self):
         self.log.info("Generating file with aligned numbers")
         aligned_counts = self.aligned_file_counts()
-        attachment = "Aligned Files\n"
+        aligned_sizes = self.aligned_file_sizes()
+        attachment = "Aligned Files (counts)\n"
         attachment += "=============\n\n"
         attachment += "\n".join(["{key}: {aligned} / {total} ({percent:.2f}%)"
                                  .format(key=key,
@@ -110,6 +118,12 @@ class AlignmentReporter(object):
                                          total=total,
                                          percent=100*(float(aligned_counts[key])/total))
                                  for key, total in iter(sorted(self.totals.iteritems()))])
+        attachment += "\n\n"
+        attachment += "Total sizes aligned\n"
+        attachment += "=============\n\n"
+        attachment += "\n".join(["{key}: {aligned:.2f} TB"
+                                 .format(key=key, aligned=float(size)/1e12)
+                                 for key, size in iter(sorted(aligned_sizes.iteritems()))])
         return attachment
 
     def generate_aligned_analysis_ids_file(self):
@@ -169,6 +183,15 @@ class AlignmentReporter(object):
         attachment = "\n".join(analysis_ids)
         return attachment
 
+    def generate_markdups_failure_analysis_ids_file(self):
+        self.log.info("Generating file with in MarkDuplicates failure analysis ids")
+        problem_files = self.graph.nodes(File)\
+                                  .sysan(alignment_markdups_failure=True)\
+                                  .all()
+        analysis_ids = [f.sysan["analysis_id"] for f in problem_files]
+        attachment = "\n".join(analysis_ids)
+        return attachment
+
     def attach_files(self, msg, files):
         for name, contents in files.iteritems():
             part = MIMEBase('application', 'octet-stream')
@@ -197,7 +220,6 @@ class AlignmentReporter(object):
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # first the numbers file
         with self.graph.session_scope():
             files = self.generate_files_to_attach()
         self.attach_files(msg, files)

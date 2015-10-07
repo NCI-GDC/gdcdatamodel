@@ -382,6 +382,20 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         with self.graph.session_scope():
             file = self.graph.nodes(File).ids(file.node_id).one()
             self.assertTrue(file.sysan["alignment_data_problem"])
+            self.assertTrue(file.sysan["alignment_fixmate_failure"])
+
+    def test_marks_file_on_markdups_failure(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.docker._logs = ["foo", "bar", "MarkDuplicatesWithMateCigar"]
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertTrue(file.sysan["alignment_markdups_failure"])
 
     def test_doesnt_align_data_problem_files(self):
         with self.graph.session_scope():

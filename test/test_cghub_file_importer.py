@@ -127,6 +127,7 @@ class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
                                  .count(), 1)
             bam = graph.nodes().props({'file_name': bamA}).one()
             bai = graph.nodes().props({'file_name': baiA}).one()
+            self.assertEqual(bam.sysan["cghub_state"], "live")
             self.converter.graph.nodes().ids('b9aec23b-5d6a-585f-aa04-80e86962f097').one()
             # there are two files uploaded on this date, the bam and the bai
             self.assertEqual(self.converter.graph.nodes()
@@ -220,6 +221,14 @@ class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
             f = graph.nodes().props(file_name=bamA).one()
             for key in ["last_modified", "upload_date", "published_date"]:
                 self.assertIn("cghub_"+key, f.sysan)
+
+    def test_center_name_system_annotation(self):
+        graph = self.converter.graph
+        self.insert_test_files()
+        self.run_convert()
+        with graph.session_scope():
+            f = graph.nodes().props(file_name=bamA).one()
+            self.assertEqual(f.sysan["cghub_center_name"], "UNC-LCCC")
 
     def test_target_file_with_cgi_center(self):
         graph = self.converter.graph

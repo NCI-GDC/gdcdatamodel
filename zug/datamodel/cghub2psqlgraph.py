@@ -295,6 +295,8 @@ class cghub2psqlgraph(object):
             node = self.save_file_node(file_key, node_type, props, acl)
             self.copy_result_key_to_sysan(root, node, "disease_abbr")
             self.copy_result_key_to_sysan(root, node, "legacy_sample_id")
+            self.copy_result_key_to_sysan(root, node, "state")
+            self.copy_result_key_to_sysan(root, node, "center_name")
             self.add_datetime_system_annotations(root, node)
             self.add_edges(root, node_type, params, file_key)
         else:
