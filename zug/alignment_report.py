@@ -10,6 +10,7 @@ from email.MIMEBase import MIMEBase
 from email import encoders
 
 from consulate import Consul
+import salt.client
 from gdcdatamodel.models import File, FileDataFromFile
 
 from zug.harmonize.queries import exome, wgs, mirnaseq, rnaseq
@@ -30,6 +31,16 @@ def alignment_time(file):
             file._FileDataFromFile_out[0].sysan["alignment_started"])
 
 
+ALIGNER_NAMES = {
+    "tcga_wgs_aligner": "TCGA WGS",
+    "tcga_exome_aligner": "TCGA Exome",
+    "tcga_rnaseq_aligner": "TCGA RNA-Seq",
+    "tcga_mirnaseq_aligner": "TCGA miRNA-Seq",
+    "target_exome_aligner": "TARGET Exome",
+    "target_rnaseq_aligner": "TARGET RNA-Seq",
+}
+
+
 class AlignmentReporter(object):
 
     def __init__(self, graph=None, os_mysql=None, mailserver=None, toaddrs=None):
@@ -44,6 +55,7 @@ class AlignmentReporter(object):
                 poolclass=NullPool,
             )
         self.consul = Consul()
+        self.salt_caller = salt.client.Caller()
         if os_mysql:
             self.os_mysql = os_mysql
         else:
@@ -124,6 +136,23 @@ class AlignmentReporter(object):
         attachment += "\n".join(["{key}: {aligned:.2f} TB"
                                  .format(key=key, aligned=float(size)/1e12)
                                  for key, size in iter(sorted(aligned_sizes.iteritems()))])
+        attachment += "\n\n"
+        # now add running alignment counts
+        attachment += "Currently running aligners\n"
+        attachment += "==========================\n"
+        consul_keys = self.consul.kv.keys()
+        mine_results = self.salt_caller.sminion.functions["mine.get"](
+            "service:aligner", "grains.items", "grain"
+        )
+        for prefix, name in ALIGNER_NAMES.items():
+            running = len([k for k in consul_keys if prefix in k])
+            # this is true for now, let's keep it the case
+            alignment_type_grain = prefix.replace("_aligner", "")
+            allocated = len({k: v for k, v in mine_results.items()
+                             if v["alignment_type"] == alignment_type_grain})
+            attachment += "{name}: {running} currently running / {allocated} allocated\n".format(
+                name=name, running=running, allocated=allocated
+            )
         return attachment
 
     def generate_aligned_analysis_ids_file(self):
