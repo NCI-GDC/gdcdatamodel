@@ -30,6 +30,16 @@ def alignment_time(file):
             file._FileDataFromFile_out[0].sysan["alignment_started"])
 
 
+ALIGNER_NAMES = {
+    "tcga_wgs_aligner": "TCGA WGS",
+    "tcga_exome_aligner": "TCGA Exome",
+    "tcga_rnaseq_aligner": "TCGA RNA-Seq",
+    "tcga_mirnaseq_aligner": "TCGA miRNA-Seq",
+    "target_exome_aligner": "TARGET Exome",
+    "target_rnaseq_aligner": "TARGET RNA-Seq",
+}
+
+
 class AlignmentReporter(object):
 
     def __init__(self, graph=None, os_mysql=None, mailserver=None, toaddrs=None):
@@ -124,6 +134,14 @@ class AlignmentReporter(object):
         attachment += "\n".join(["{key}: {aligned:.2f} TB"
                                  .format(key=key, aligned=float(size)/1e12)
                                  for key, size in iter(sorted(aligned_sizes.iteritems()))])
+        attachment += "\n\n"
+        # now add running alignment counts
+        attachment += "Currently running aligners\n"
+        attachment += "==========================\n"
+        consul_keys = self.consul.kv.keys()
+        for prefix, name in ALIGNER_NAMES.items():
+            n = len([k for k in consul_keys if prefix in k])
+            attachment += "{name}: {n}\n".format(name=name, n=n)
         return attachment
 
     def generate_aligned_analysis_ids_file(self):
