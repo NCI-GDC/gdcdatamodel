@@ -6,7 +6,8 @@ import re
 from gdcdictionary import gdcdictionary
 from misc import *
 from psqlgraph import Node, Edge, pg_property
-from utils import validate
+
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 
 excluded_props = ['id', 'type', 'alias']
 dictionary = gdcdictionary
@@ -130,6 +131,47 @@ def NodeFactory(title, schema):
         ts = target.get_session()._flush_timestamp.isoformat('T')
         if 'updated_datetime' in target.props:
             target._props['updated_datetime'] = ts
+
+    unique_keys = schema.get('uniqueKeys')
+
+    if unique_keys:
+
+        for unique_key in unique_keys:
+            if unique_key == ['id']:
+                continue
+
+            class CaseInsensitiveComparator(Comparator):
+                def __eq__(self, other):
+                    cls = self.__clause_element__()
+                    other = {
+                        key: val
+                        for key, val
+                        in zip(getattr(cls, '__pg_secondary_keys'), other)
+                    }
+                    return cls._props.contains(other)
+
+            @hybrid_property
+            def _secondary_key(self):
+                return tuple(getattr(self, key) for key in unique_key)
+
+            @_secondary_key.setter
+            def _secondary_key(self, values):
+                assert hasattr(values, '__iter__'),\
+                    'secondary key values must be iterable'
+                assert len(values) == len(unique_key),\
+                    'secondary key has wrong length to populate {}'.format(
+                        unique_key)
+                for key, val in zip(unique_key, values):
+                    self.props[key] = val
+
+            @_secondary_key.comparator
+            def _secondary_key(cls):
+                return CaseInsensitiveComparator(cls)
+
+            cls._secondary_key = _secondary_key
+            cls.__pg_secondary_keys = unique_key
+
+            break
 
     return cls
 
