@@ -18,7 +18,7 @@ setup(
         ]
     },
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@b4bb4ea9ae8631b245d61621093eb5702d33fbb7#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@8a351a1ff7cf029ef0da17658d5833d0b8fe9de2#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@1c4a5616108c5716c1998ef6ff425379ddeb886d#egg=gdcdictionary',
     ],
 )

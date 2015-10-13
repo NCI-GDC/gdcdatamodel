@@ -153,6 +153,16 @@ def NodeFactory(title, schema):
                 filters.append(cls._props.contains(other))
             return and_(*filters)
 
+    @property
+    def _secondary_keys_dicts(self):
+        vals = []
+        secondary_keys = getattr(self, '__pg_secondary_keys', [])
+        for keys in secondary_keys:
+            if 'id' in keys:
+                continue
+            vals.append({key: getattr(self, key, None) for key in keys})
+        return vals
+
     @hybrid_property
     def _secondary_keys(self):
         vals = []
@@ -164,7 +174,10 @@ def NodeFactory(title, schema):
     def _secondary_keys(cls):
         return SecondaryKeyComparator(cls)
 
+    # Set this attribute so psqlgraph doesn't treat it as a property
+    _secondary_keys._is_pg_property = False
     cls._secondary_keys = _secondary_keys
+    cls._secondary_keys_dicts = _secondary_keys_dicts
 
     return cls
 
