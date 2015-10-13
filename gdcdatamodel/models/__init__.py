@@ -1,12 +1,13 @@
 from datetime import datetime
 from sqlalchemy.orm import configure_mappers
-from sqlalchemy import event
+from sqlalchemy import event, and_
 import re
 
 from gdcdictionary import gdcdictionary
 from misc import *
 from psqlgraph import Node, Edge, pg_property
-from utils import validate
+
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 
 excluded_props = ['id', 'type', 'alias']
 dictionary = gdcdictionary
@@ -130,6 +131,40 @@ def NodeFactory(title, schema):
         ts = target.get_session()._flush_timestamp.isoformat('T')
         if 'updated_datetime' in target.props:
             target._props['updated_datetime'] = ts
+
+    unique_keys = schema.get('uniqueKeys', [])
+    cls.__pg_secondary_keys = [
+        keys for keys in unique_keys if 'id' not in keys
+    ]
+
+    class SecondaryKeyComparator(Comparator):
+        def __eq__(self, other):
+            filters = []
+            cls = self.__clause_element__()
+            secondary_keys = getattr(cls, '__pg_secondary_keys', [])
+            for keys, values in zip(secondary_keys, other):
+                if 'id' in keys:
+                    continue
+                other = {
+                    key: val
+                    for key, val
+                    in zip(keys, values)
+                }
+                filters.append(cls._props.contains(other))
+            return and_(*filters)
+
+    @hybrid_property
+    def _secondary_keys(self):
+        vals = []
+        for keys in getattr(self, '__pg_secondary_keys', []):
+            vals.append(tuple(getattr(self, key) for key in keys))
+        return tuple(vals)
+
+    @_secondary_keys.comparator
+    def _secondary_keys(cls):
+        return SecondaryKeyComparator(cls)
+
+    cls._secondary_keys = _secondary_keys
 
     return cls
 
