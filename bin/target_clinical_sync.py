@@ -14,8 +14,6 @@ from cdisutils.log import get_logger
 from zug.datamodel.target.clinical import TARGETClinicalSyncer, process_tree, find_clinical, PROJECTS_TO_SYNC
 from psqlgraph import PsqlGraphDriver
 
-# this disables the warnings from requests about verify=False
-urllib3.disable_warnings()
 logging.captureWarnings(True)
 
 def main():
