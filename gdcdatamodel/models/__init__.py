@@ -2,10 +2,14 @@ from datetime import datetime
 from sqlalchemy.orm import configure_mappers
 from sqlalchemy import event, and_
 import re
+import hashlib
 
 from gdcdictionary import gdcdictionary
 from misc import *
 from psqlgraph import Node, Edge, pg_property
+from cdisutils import log
+
+logger = log.get_logger('gdcdatamodel')
 
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 
@@ -71,6 +75,7 @@ def PropertyFactory(name, schema, key=None):
         'float': [float],
         'null': [str],
         'boolean': [bool],
+        'array': [list],
         None: [str],
     }[t]]
     enum = schema.get('enum')
@@ -85,9 +90,9 @@ def PropertyFactory(name, schema, key=None):
     return setter
 
 
-def NodeFactory(title, schema):
+def NodeFactory(_id, title, schema):
     name = remove_spaces(title)
-    label = to_camel_case(name)
+    label = to_camel_case(_id)
     links = get_links(schema)
 
     @property
@@ -113,6 +118,7 @@ def NodeFactory(title, schema):
                                for name, l in links.iteritems()}
 
     cls = type(name, (Node,), dict(
+        __tablename__='node_{}'.format(name.lower()),
         __label__=label,
         id=node_id,
         **properties
@@ -182,18 +188,43 @@ def NodeFactory(title, schema):
     return cls
 
 
-def EdgeFactory(name, label, src_class, dst_class, src_dst_assoc,
-                dst_src_assoc):
-    name, label, src_class, dst_class, src_dst_assoc, dst_src_assoc = map(
-        remove_spaces, [name, label, src_class, dst_class,
-                        src_dst_assoc, dst_src_assoc])
+def EdgeFactory(name, label, src_title, dst_title, src_label,
+                dst_label, src_dst_assoc, dst_src_assoc):
+    (name, label, src_title, dst_title, src_label, dst_label,
+     src_dst_assoc, dst_src_assoc) = map(remove_spaces, [
+         name, label, src_title, dst_title, src_label, dst_label,
+         src_dst_assoc, dst_src_assoc
+     ])
+
+    tablename = 'edge_{}{}{}'.format(
+        src_label.replace('_', ''),
+        label.replace('_', ''),
+        dst_label.replace('_', ''))
+
+    # If the name is too long, prepend it with the first 8 hex of it's hash
+    # truncate the name
+    if len(tablename) > 40:
+        oldname = tablename
+        logger.debug('Edge tablename {} too long, shortening'.format(oldname))
+        tablename = 'edge_{}_{}'.format(
+            str(hashlib.md5(tablename).hexdigest())[:8],
+            "{}{}{}".format(
+                ''.join([a[:2] for a in src_label.split('_')])[:10],
+                ''.join([a[:2] for a in label.split('_')])[:7],
+                ''.join([a[:2] for a in dst_label.split('_')])[:10],
+            )
+        )
+        logger.debug('Shortening {} -> {}'.format(oldname, tablename))
+
     cls = type(name, (Edge,), {
         '__label__': label,
-        '__table_name': '{}_{}_{}'.format(src_class, label, dst_class),
-        '__src_class__': src_class,
-        '__dst_class__': dst_class,
+        '__tablename__': tablename,
+        '__src_class__': src_title,
+        '__dst_class__': dst_title,
         '__src_dst_assoc__': src_dst_assoc,
         '__dst_src_assoc__': dst_src_assoc,
+        '__src_table__': Node.get_subclass(src_label).__tablename__,
+        '__dst_table__': Node.get_subclass(dst_label).__tablename__,
     })
     return cls
 
@@ -201,16 +232,29 @@ def EdgeFactory(name, label, src_class, dst_class, src_dst_assoc,
 def load_nodes():
     for entity, subschema in dictionary.schema.iteritems():
         name = subschema['title']
+        _id = subschema['id']
         if name not in loaded_nodes:
-            register_class(NodeFactory(name, subschema))
+            try:
+                register_class(NodeFactory(_id, name, subschema))
+            except Exception:
+                print 'Unable to load {}'.format(name)
+                raise
 
 
 def parse_edge(src_label, name, edge_label, subschema, link):
     dst_label = link['target_type']
     backref = link['backref']
 
+    src_label = subschema['id']
     src_title = subschema['title']
+    if dst_label not in dictionary.schema:
+        raise RuntimeError(
+            "Destination '{}' for edge '{}' from '{}' not defined"
+            .format(dst_label, name, src_label))
+
+    dst_label = dictionary.schema[dst_label]['id']
     dst_title = dictionary.schema[dst_label]['title']
+
     edge_name = ''.join(map(to_mixed_case, [
         src_label, edge_label, dst_label]))
 
@@ -218,15 +262,19 @@ def parse_edge(src_label, name, edge_label, subschema, link):
         (src_label, edge_label, dst_label),
         (dst_label+'s', src_label+'s'))
 
-    register_class(EdgeFactory(
-        edge_name, edge_label, src_title, dst_title, name, backref))
+    register_class(EdgeFactory(edge_name, edge_label, src_title,
+                               dst_title, src_label, dst_label, name,
+                               backref))
 
     return '_{}_out'.format(edge_name)
 
 
 def load_edges():
     for src_label, subschema in dictionary.schema.iteritems():
+
         src_cls = Node.get_subclass(src_label)
+        if not src_cls:
+            raise RuntimeError('No class labeled {}'.format(src_label))
         src_cls._pg_links = {}
         for name, link in get_links(subschema).iteritems():
             edge_label = link['label']

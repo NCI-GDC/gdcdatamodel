@@ -23,7 +23,7 @@ class GDCJSONValidator(object):
     def __init__(self):
         self.schemas = gdcdictionary
         self.resolver = RefResolver(
-            'definitions.yaml#', self.schemas.definitions)
+            '_definitions.yaml#', self.schemas.definitions)
 
     def iter_errors(self, doc):
         # Note whenever gdcdictionary use a newer version of jsonschema

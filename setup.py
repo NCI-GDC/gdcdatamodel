@@ -9,6 +9,7 @@ setup(
         'addict==0.2.7',
         'psqlgraph',
         'gdcdictionary',
+        'cdisutils',
         'python-dateutil==2.4.2',
     ],
     package_data={
@@ -18,6 +19,7 @@ setup(
         ]
     },
     dependency_links=[
+        'git+ssh://git@github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@8a351a1ff7cf029ef0da17658d5833d0b8fe9de2#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@1c4a5616108c5716c1998ef6ff425379ddeb886d#egg=gdcdictionary',
     ],
