@@ -3,7 +3,7 @@ from sqlalchemy.orm import configure_mappers
 from sqlalchemy import event, and_
 import re
 import hashlib
-
+import jsonschema
 from gdcdictionary import gdcdictionary
 from misc import *
 from psqlgraph import Node, Edge, pg_property
@@ -15,6 +15,8 @@ from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 
 excluded_props = ['id', 'type', 'alias']
 dictionary = gdcdictionary
+resolver = jsonschema.RefResolver(
+    '_definitions.yaml#', gdcdictionary.definitions)
 
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
@@ -65,11 +67,14 @@ def PropertyFactory(name, schema, key=None):
     key = name if key is None else key
 
     # Lookup and translate types
+    if '$ref' in schema.keys():
+        reference, schema = resolver.resolve(schema['$ref'])
+
     types = schema.get('type')
     types = [types] if not isinstance(types, list) else types
+
     python_types = [a for t in types for a in {
         'string': [str],
-        'date-time': [str],
         'number': [float, int, long],
         'integer': [int, long],
         'float': [float],
