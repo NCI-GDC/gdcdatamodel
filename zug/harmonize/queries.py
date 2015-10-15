@@ -2,7 +2,13 @@ from gdcdatamodel.models import (
     File, ExperimentalStrategy,
     Platform, DataFormat,
 )
-from sqlalchemy import desc, BigInteger
+from sqlalchemy import desc, func, Boolean, BigInteger
+
+
+SORT_ORDER = (
+    File._sysan["alignment_seen_docker_error"].cast(Boolean).nullsfirst(),
+    func.random()
+)
 
 
 def exome(graph, source):
