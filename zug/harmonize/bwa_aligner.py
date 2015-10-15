@@ -11,6 +11,8 @@ from gdcdatamodel.models import (
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 from zug.harmonize.queries import SORT_ORDER
 
+import gzip
+
 
 def has_fixmate_failure(logs):
     return "FixMateInformation" in logs
@@ -18,6 +20,16 @@ def has_fixmate_failure(logs):
 
 def has_markdups_failure(logs):
     return "MarkDuplicatesWithMateCigar" in logs
+
+
+def gzip_compress(input_path):
+    """Given a path, gzip compress it at the same path but with .gz on
+    the end and return the path of the gzip compressed file
+    """
+    output_path = input_path + ".gz"
+    with open(input_path, "rb") as input, gzip.open(output_path, "wb") as output:
+        output.writelines(input)
+    return output_path
 
 
 class BWAAligner(AbstractHarmonizer):
@@ -223,13 +235,24 @@ class BWAAligner(AbstractHarmonizer):
         """
         Upload the log file and sqlite db to the relevant bucket
         """
-        for key in ["log", "db"]:
-            path = os.path.normpath(self.host_abspath(self.output_paths[key]))
-            self.upload_file(
-                path,
-                self.config["output_buckets"][key],
-                os.path.basename(path),
-            )
+        # upload db
+        db_path = os.path.normpath(self.host_abspath(self.output_paths["db"]))
+        self.upload_file(
+            db_path,
+            self.config["output_buckets"]["db"],
+            os.path.basename(db_path),
+        )
+        # compress and upload log
+        log_path = os.path.normpath(self.host_abspath(self.output_paths["log"]))
+        self.log.info("Compressing log file at %s", log_path)
+        compressed_log_path = gzip_compress(log_path)
+        self.log.info("Compressed log file to %s", compressed_log_path)
+        self.upload_file(
+            compressed_log_path,
+            self.config["output_buckets"]["log"],
+            os.path.basename(compressed_log_path),
+        )
+
 
     def submit_metrics(self):
         """

@@ -6,6 +6,8 @@ import string
 import subprocess
 from contextlib import nested
 import time
+import gzip
+from cStringIO import StringIO
 import socket
 
 from mock import patch, Mock
@@ -310,6 +312,15 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
             # assert that we remove the scratch dir
             self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+            # logs are uploaded compressed
+            logs_url = "s3://s3.amazonaws.com/tcga_exome_alignment_logs/aln_{}.log.gz".format(
+                file.node_id
+            )
+            logs_key = self.boto_manager.get_url(logs_url)
+            temp_file = StringIO()
+            logs_key.get_file(temp_file)
+            temp_file.seek(0)
+            self.assertEqual(gzip.GzipFile(fileobj=temp_file, mode="rb").read(), "fake_logs")
             self.fake_s3.stop()
 
     def test_raises_if_no_work(self):
