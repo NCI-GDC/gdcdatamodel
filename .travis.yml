@@ -6,4 +6,5 @@ addons:
 before_script:
     - yes | python setup.py install
     - python bin/setup_psqlgraph.py
+    - pip freeze
 script: "nosetests -v"

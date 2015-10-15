@@ -7,6 +7,7 @@ setup(
         'avro==1.7.7',
         'graphviz==0.4.2',
         'addict==0.2.7',
+        'jsonschema==2.5.1',
         'psqlgraph',
         'gdcdictionary',
         'cdisutils',

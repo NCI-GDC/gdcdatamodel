@@ -119,8 +119,12 @@ def NodeFactory(_id, title, schema):
         properties['submitter_id'] = PropertyFactory(
             'alias', schema['properties']['alias'], 'submitter_id')
 
-    properties['_pg_links'] = {name: Node.get_subclass(l['target_type'])
-                               for name, l in links.iteritems()}
+    # _pg_links are out_edges, links TO other types
+    properties['_pg_links'] = {}
+    # _pg_backrefs are in_edges, links FROM other types
+    properties['_pg_backrefs'] = {}
+    # _pg_edges are all edges, links to AND from other types
+    properties['_pg_edges'] = {}
 
     cls = type(name, (Node,), dict(
         __tablename__='node_{}'.format(name.lower()),
@@ -280,7 +284,6 @@ def load_edges():
         src_cls = Node.get_subclass(src_label)
         if not src_cls:
             raise RuntimeError('No class labeled {}'.format(src_label))
-        src_cls._pg_links = {}
         for name, link in get_links(subschema).iteritems():
             edge_label = link['label']
             edge_name = parse_edge(
@@ -290,6 +293,37 @@ def load_edges():
                 'dst_type': Node.get_subclass(link['target_type'])
             }
 
+
+def load_pg_backrefs():
+    for src_label, subschema in dictionary.schema.iteritems():
+        for name, link in get_links(subschema).iteritems():
+            cls = Node.get_subclass(link['target_type'])
+            cls._pg_backrefs[link['backref']] = {
+                'name': link['name'],
+                'src_type': Node.get_subclass(src_label)
+            }
+
+
+def load_pg_edges():
+    for cls in Node.get_subclasses():
+        for name, link in cls._pg_links.iteritems():
+            backref = None
+            for prop, br in link['dst_type']._pg_backrefs.iteritems():
+                if br['src_type'] == cls:
+                    backref = prop
+            cls._pg_edges[name] = {
+                'backref': backref,
+                'type': link['dst_type'],
+            }
+        for name, backref in cls._pg_backrefs.iteritems():
+            cls._pg_edges[name] = {
+                'backref': backref['name'],
+                'type': backref['src_type'],
+            }
+
+
 load_nodes()
 load_edges()
+load_pg_backrefs()
+load_pg_edges()
 configure_mappers()
