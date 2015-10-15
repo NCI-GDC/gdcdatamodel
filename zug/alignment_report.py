@@ -137,6 +137,26 @@ class AlignmentReporter(object):
                                  .format(key=key, aligned=float(size)/1e12)
                                  for key, size in iter(sorted(aligned_sizes.iteritems()))])
         attachment += "\n\n"
+        # breakdown WGS by step completed
+        attachment += "WGS Aligned files breakdown by step completed\n"
+        attachment += "=============\n\n"
+        for key in ["WGS (< 320 GB)", "WGS (>= 320 GB)"]:
+            all_of_key = self.aligned_files[key]
+            edges = [self.graph.edges(FileDataFromFile).src(f.node_id)
+                     .order_by(desc(FileDataFromFile.created))
+                     .first() for f in all_of_key]
+            fully_complete = [e for e in edges
+                              if e.sysan.get("alignment_last_step") in [None, "md"]]
+            fixmate_finished = [e for e in edges
+                                if e.sysan.get("alignment_last_step") == "fixmate"]
+            merge_finished = [e for e in edges
+                              if e.sysan.get("alignment_last_step") == "merge"]
+            attachment += (key + "\n")
+            attachment += ("=" * len(key)) + "\n"
+            attachment += "Fully Complete: {}".format(len(fully_complete)) + "\n"
+            attachment += "Fixmate finished: {}".format(len(fixmate_finished)) + "\n"
+            attachment += "Merge finished: {}".format(len(merge_finished)) + "\n"
+            attachment += "\n"
         # now add running alignment counts
         attachment += "Currently running aligners\n"
         attachment += "==========================\n"
