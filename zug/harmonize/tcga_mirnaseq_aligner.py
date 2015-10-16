@@ -309,6 +309,11 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
         for root, _, files in tree:
             for f in files:
                 host_f = os.path.normpath(os.path.join(root, f))
+                
+                if not os.path.getsize(host_f):
+                    # Skip any zero-byte files, as S3 does not support them.
+                    continue
+                
                 key = os.path.join(
                     prefix,
                     os.path.relpath(
