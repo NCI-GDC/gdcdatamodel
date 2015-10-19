@@ -14,6 +14,12 @@ from gdcdatamodel.models import (
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 
 
+# N.B. it would be better to derive this information from the host
+# where the code is running but that's apparently difficult to do
+# using the stdlib >_<
+STAR_RAM_LIMIT_BYTES = '42000000000'
+
+
 class STARAligner(AbstractHarmonizer):
     '''
     STAR specialization of the AbstractHarmonizer for processing of
@@ -124,6 +130,7 @@ class STARAligner(AbstractHarmonizer):
             '--rna_seq_qc_annotation {rnaseq_qc_annotations}',
             '--sample {sample}',
             '--library {library}',
+            '--limitBAMsortRAM {ram_limit_bytes}'
         ]).format(
             scratch_dir = self.container_abspath(self.config['scratch_dir']),
             genome_dir = self.container_abspath(self.config['genome_dir']),
@@ -140,6 +147,7 @@ class STARAligner(AbstractHarmonizer):
             nthreads = self.config['cores'],
             sample = self.inputs['fastq_tarball'].sysan['cghub_legacy_sample_id'],
             library = 'unknown', # TODO FIXME this information needs indexing
+            ram_limit_bytes=STAR_RAM_LIMIT_BYTES
         )
 
     @property
