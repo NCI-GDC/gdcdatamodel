@@ -193,11 +193,14 @@ if __name__ == '__main__':
                         default='', help="Users to grant all to on new tables.")
 
     args = parser.parse_args()
+    grant_users = [u for u in args.grant_users.split(',') if u]
+
     force_create_graph_tables(
         args.delay,
         args.retries, args.host, args.user, args.password, args.database)
-    create_indexes(
-        args.host, args.user, args.password, args.database)
-    grant_users = [u for u in args.grant_users.split(',') if u]
+
     grant_permissions_to_all(
         grant_users, args.host, args.user, args.password, args.database)
+
+    create_indexes(
+        args.host, args.user, args.password, args.database)
