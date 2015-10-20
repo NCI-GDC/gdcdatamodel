@@ -1,7 +1,5 @@
-from datetime import datetime
 from sqlalchemy.orm import configure_mappers
 from sqlalchemy import event, and_
-import re
 import hashlib
 import jsonschema
 from gdcdictionary import gdcdictionary
@@ -36,14 +34,6 @@ special_links = {
 }
 
 
-def to_camel_case(val):
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', val).lower()
-
-
-def to_mixed_case(val):
-    return ''.join([x.title() for x in val.split('_')])
-
-
 def remove_spaces(self):
     return self.replace(' ', '')
 
@@ -64,6 +54,9 @@ def get_links(schema):
 
 
 def PropertyFactory(name, schema, key=None):
+    """Returns a pg_property (psqlgraph specific type of hybrid_property)
+
+    """
     key = name if key is None else key
 
     # Lookup and translate types
@@ -95,9 +88,19 @@ def PropertyFactory(name, schema, key=None):
     return setter
 
 
-def NodeFactory(_id, title, schema):
-    name = remove_spaces(title)
-    label = to_camel_case(_id)
+def get_class_name_from_id(_id):
+    return ''.join([a.capitalize() for a in _id.split('_')])
+
+
+def get_class_tablename_from_id(_id):
+    return 'node_{}'.format(_id.replace('_', ''))
+
+
+def NodeFactory(_id, schema):
+    """Returns a node class
+
+    """
+    name = get_class_name_from_id(_id)
     links = get_links(schema)
 
     @property
@@ -115,10 +118,6 @@ def NodeFactory(_id, title, schema):
         and key not in excluded_props
     }
 
-    if 'alias' in schema.get('properties', {}):
-        properties['submitter_id'] = PropertyFactory(
-            'alias', schema['properties']['alias'], 'submitter_id')
-
     # _pg_links are out_edges, links TO other types
     properties['_pg_links'] = {}
     # _pg_backrefs are in_edges, links FROM other types
@@ -127,8 +126,8 @@ def NodeFactory(_id, title, schema):
     properties['_pg_edges'] = {}
 
     cls = type(name, (Node,), dict(
-        __tablename__='node_{}'.format(name.lower()),
-        __label__=label,
+        __tablename__=get_class_tablename_from_id(_id),
+        __label__=_id,
         id=node_id,
         **properties
     ))
@@ -197,13 +196,14 @@ def NodeFactory(_id, title, schema):
     return cls
 
 
-def EdgeFactory(name, label, src_title, dst_title, src_label,
-                dst_label, src_dst_assoc, dst_src_assoc):
-    (name, label, src_title, dst_title, src_label, dst_label,
-     src_dst_assoc, dst_src_assoc) = map(remove_spaces, [
-         name, label, src_title, dst_title, src_label, dst_label,
-         src_dst_assoc, dst_src_assoc
-     ])
+def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
+                dst_src_assoc):
+    """Returns an edge class
+
+    """
+    (name, label, src_label, dst_label, src_dst_assoc, dst_src_assoc) = map(
+        remove_spaces, [name, label, src_label, dst_label, src_dst_assoc,
+                        dst_src_assoc])
 
     tablename = 'edge_{}{}{}'.format(
         src_label.replace('_', ''),
@@ -228,8 +228,8 @@ def EdgeFactory(name, label, src_title, dst_title, src_label,
     cls = type(name, (Edge,), {
         '__label__': label,
         '__tablename__': tablename,
-        '__src_class__': src_title,
-        '__dst_class__': dst_title,
+        '__src_class__': get_class_name_from_id(src_label),
+        '__dst_class__': get_class_name_from_id(dst_label),
         '__src_dst_assoc__': src_dst_assoc,
         '__dst_src_assoc__': dst_src_assoc,
         '__src_table__': Node.get_subclass(src_label).__tablename__,
@@ -239,46 +239,54 @@ def EdgeFactory(name, label, src_title, dst_title, src_label,
 
 
 def load_nodes():
+    """Parse all nodes from dictionary and create Node subclasses
+
+    """
     for entity, subschema in dictionary.schema.iteritems():
         name = subschema['title']
         _id = subschema['id']
         if name not in loaded_nodes:
             try:
-                register_class(NodeFactory(_id, name, subschema))
+                register_class(NodeFactory(_id, subschema))
             except Exception:
                 print 'Unable to load {}'.format(name)
                 raise
 
 
 def parse_edge(src_label, name, edge_label, subschema, link):
+    """Parse an edge from the dictionary and create and Edge subclass
+
+    """
     dst_label = link['target_type']
     backref = link['backref']
 
     src_label = subschema['id']
-    src_title = subschema['title']
     if dst_label not in dictionary.schema:
         raise RuntimeError(
             "Destination '{}' for edge '{}' from '{}' not defined"
             .format(dst_label, name, src_label))
 
     dst_label = dictionary.schema[dst_label]['id']
-    dst_title = dictionary.schema[dst_label]['title']
-
-    edge_name = ''.join(map(to_mixed_case, [
+    edge_name = ''.join(map(get_class_tablename_from_id, [
         src_label, edge_label, dst_label]))
 
     src_dst_assoc, dst_src_assoc = special_links.get(
         (src_label, edge_label, dst_label),
         (dst_label+'s', src_label+'s'))
 
-    register_class(EdgeFactory(edge_name, edge_label, src_title,
-                               dst_title, src_label, dst_label, name,
-                               backref))
+    register_class(EdgeFactory(edge_name, edge_label, src_label,
+                               dst_label, name, backref))
 
     return '_{}_out'.format(edge_name)
 
 
 def load_edges():
+    """Add a dictionry of links from this class
+
+    { <link name>: {'backref': <backref name>, 'type': <source type> } }
+
+    """
+
     for src_label, subschema in dictionary.schema.iteritems():
 
         src_cls = Node.get_subclass(src_label)
@@ -295,6 +303,11 @@ def load_edges():
 
 
 def load_pg_backrefs():
+    """Add a dictionry of links to this class
+
+    { <link name>: {'name': <backref name>, 'src_type': <source type> } }
+
+    """
     for src_label, subschema in dictionary.schema.iteritems():
         for name, link in get_links(subschema).iteritems():
             cls = Node.get_subclass(link['target_type'])
@@ -305,6 +318,11 @@ def load_pg_backrefs():
 
 
 def load_pg_edges():
+    """Add a dictionry of ALL the links, to and from, this class
+
+    { <link name>: {'backref': <backref name>, 'type': <target type> } }
+
+    """
     for cls in Node.get_subclasses():
         for name, link in cls._pg_links.iteritems():
             backref = None
