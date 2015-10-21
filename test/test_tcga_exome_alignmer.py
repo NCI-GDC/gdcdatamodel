@@ -5,7 +5,6 @@ import random
 import string
 import subprocess
 from contextlib import nested
-import time
 import gzip
 from cStringIO import StringIO
 import socket
@@ -20,12 +19,17 @@ from zug.binutils import NoMoreWorkException
 from zug.downloaders import md5sum_with_size
 from cdisutils.net import BotoManager
 from gdcdatamodel.models import (
-    File, Aliquot, ExperimentalStrategy,
+    File, ExperimentalStrategy,
     DataFormat, Platform, Center,
     FileDataFromFile
 )
-
 from boto.s3.connection import OrdinaryCallingFormat
+
+from base import TEST_DIR
+
+FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "alignment")
+FAKE_LOGS_PATH = os.path.join(FIXTURES_DIR, "fake_log.txt")
+FAKE_LOGS_CONTENT = open(FAKE_LOGS_PATH).read()
 
 
 class FakeDockerClient(object):
@@ -96,7 +100,7 @@ def fake_build_docker_cmd(output_dir="md"):
             "mkfile {output_bai_path}",
             "echo -n fake_output_bai > {output_bai_path}",
             "mkfile {output_log_path}",
-            "echo -n fake_logs > {output_log_path}",
+            "cp {FAKE_LOGS_PATH} {output_log_path}",
             "mkfile {output_db_path}",
             "echo -n fake_db > {output_db_path}",
         ]
@@ -130,6 +134,7 @@ def fake_build_docker_cmd(output_dir="md"):
             output_bai_path=output_bai_path,
             output_log_path=output_log_path,
             output_db_path=output_db_path,
+            FAKE_LOGS_PATH=FAKE_LOGS_PATH,
         )
     return inner_fake_build_docker_cmd
 
@@ -320,7 +325,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             temp_file = StringIO()
             logs_key.get_file(temp_file)
             temp_file.seek(0)
-            self.assertEqual(gzip.GzipFile(fileobj=temp_file, mode="rb").read(), "fake_logs")
+            self.assertEqual(gzip.GzipFile(fileobj=temp_file, mode="rb").read(), FAKE_LOGS_CONTENT)
             self.fake_s3.stop()
 
     def test_raises_if_no_work(self):
@@ -567,3 +572,22 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             # assert that we remove the scratch dir
             self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
             self.fake_s3.stop()
+
+    def test_tracks_last_step_on_error(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_step"],
+                "picard CollectWgsMetrics"
+            )
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_filename"],
+                "/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam"
+            )
