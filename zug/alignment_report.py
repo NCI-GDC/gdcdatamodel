@@ -85,6 +85,19 @@ class AlignmentReporter(object):
         }
 
     @property
+    def total_sizes(self):
+        "total sizes (in bytes) per zhenyu"
+        return {
+            "WGS (>= 320 GB)": 161761091978632,
+            "WGS (< 320 GB)": 374688980736024,
+            "WXS (TCGA)": 315891670201207,
+            "WXS (TARGET)": 21382957729925,
+            "miRNA-Seq": 236939308278 + 2791773509555,
+            "RNA-Seq (TARGET)": 7760649861120,
+            "RNA-Seq (TCGA)": 74780058034896,
+        }
+
+    @property
     def aligned_files(self):
         if not self._aligned:
             self.log.info("Querying for aligned files")
@@ -133,9 +146,12 @@ class AlignmentReporter(object):
         attachment += "\n\n"
         attachment += "Total sizes aligned\n"
         attachment += "=============\n\n"
-        attachment += "\n".join(["{key}: {aligned:.2f} TB"
-                                 .format(key=key, aligned=float(size)/1e12)
-                                 for key, size in iter(sorted(aligned_sizes.iteritems()))])
+        attachment += "\n".join(["{key}: {aligned:.2f} TB / {total:.2f} TB ({percent:.2f}%)"
+                                 .format(key=key,
+                                         aligned=float(aligned_sizes[key])/1e12,
+                                         total=float(total_size)/1e12,
+                                         percent=100*(float(aligned_sizes[key])/total_size))
+                                 for key, total_size in iter(sorted(self.total_sizes.iteritems()))])
         attachment += "\n\n"
         # breakdown WGS by step completed
         attachment += "WGS Aligned files breakdown by step completed\n"
@@ -150,12 +166,18 @@ class AlignmentReporter(object):
             fixmate_finished = [e for e in edges
                                 if e.sysan.get("alignment_last_step") == "fixmate"]
             merge_finished = [e for e in edges
-                              if e.sysan.get("alignment_last_step") == "merge"]
+                              if e.sysan.get("alignment_last_step") == "reheader"]
             attachment += (key + "\n")
             attachment += ("=" * len(key)) + "\n"
-            attachment += "Fully Complete: {}".format(len(fully_complete)) + "\n"
-            attachment += "Fixmate finished: {}".format(len(fixmate_finished)) + "\n"
-            attachment += "Merge finished: {}".format(len(merge_finished)) + "\n"
+            attachment += "Merge finished: {count} ({size:.2f} TB)".format(
+                count=len(merge_finished), size=float(sum([e.src.file_size for f in merge_finished]))/1e12
+            ) + "\n"
+            attachment += "Fixmate finished: {count} ({size:.2f} TB)".format(
+                count=len(fixmate_finished), size=float(sum([e.src.file_size for f in fixmate_finished]))/1e12
+            ) + "\n"
+            attachment += "Fully Complete: {count} ({size:.2f} TB)".format(
+                count=len(fully_complete), size=float(sum([e.src.file_size for f in fully_complete]))/1e12
+            ) + "\n"
             attachment += "\n"
         # now add running alignment counts
         attachment += "Currently running aligners\n"
@@ -169,7 +191,7 @@ class AlignmentReporter(object):
             # this is true for now, let's keep it the case
             alignment_type_grain = prefix.replace("_aligner", "")
             allocated = len({k: v for k, v in mine_results.items()
-                             if v["alignment_type"] == alignment_type_grain})
+                             if v.get("alignment_type") == alignment_type_grain})
             attachment += "{name}: {running} currently running / {allocated} allocated\n".format(
                 name=name, running=running, allocated=allocated
             )
