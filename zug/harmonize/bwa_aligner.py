@@ -14,6 +14,44 @@ from zug.harmonize.queries import SORT_ORDER
 import gzip
 
 
+# these next two are from http://stackoverflow.com/a/260433/1663558
+
+def reversed_lines(file):
+    "Generate the lines of file in reverse order."
+    part = ''
+    for block in reversed_blocks(file):
+        for c in reversed(block):
+            if c == '\n' and part:
+                yield part[::-1]
+                part = ''
+            part += c
+    if part:
+        yield part[::-1]
+
+
+def reversed_blocks(file, blocksize=4096):
+    "Generate blocks of file's contents in reverse order."
+    file.seek(0, os.SEEK_END)
+    here = file.tell()
+    while 0 < here:
+        delta = min(blocksize, here)
+        here -= delta
+        file.seek(here, os.SEEK_SET)
+        yield file.read(delta)
+
+
+def parse_last_step(logfile):
+    for line in reversed_lines(logfile):
+        if "running step" in line and "completed" not in line:
+            match = re.match(".*running step (.*) of: (.*)", line)
+            step, name = match.group(1), match.group(2)
+            step = step.strip()
+            step = step.strip("`")  # some step names are wrapped in backticks
+            name = name.strip()
+            return step, name
+    raise RuntimeError("Couldn't find last step in {}".format(logfile))
+
+
 def has_fixmate_failure(logs):
     return "FixMateInformation" in logs
 
@@ -86,6 +124,19 @@ class BWAAligner(AbstractHarmonizer):
             with self.graph.session_scope() as session:
                 session.add(self.inputs["bam"])
                 self.inputs["bam"].sysan["alignment_markdups_failure"] = True
+        try:
+            # attempt to parse last failing step from logs
+            log_path = self.host_abspath(
+                self.config["scratch_dir"],
+                "aln_" + self.inputs["bam"].node_id + ".log"
+            )
+            step, name = parse_last_step(open(log_path))
+            with self.graph.session_scope() as session:
+                session.add(self.inputs["bam"])
+                self.inputs["bam"].sysan["alignment_last_docker_error_step"] = step
+                self.inputs["bam"].sysan["alignment_last_docker_error_filename"] = name
+        except:
+            self.log.exception("caught exception while parsing log file")
         return super(BWAAligner, self).docker_failure_cleanup(logs)
 
     @property
