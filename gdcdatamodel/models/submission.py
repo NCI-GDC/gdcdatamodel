@@ -4,6 +4,7 @@ from sqlalchemy import Column, Text, DateTime, text, event
 from sqlalchemy.dialects.postgres import ARRAY, JSONB
 from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.hybrid import hybrid_property
 from json import loads, dumps
 from datetime import datetime
 import pytz
@@ -87,6 +88,15 @@ class TransactionLog(Base):
         Text,
         nullable=False,
     )
+
+    project = Column(
+        Text,
+        nullable=False,
+    )
+
+    @hybrid_property
+    def project_id(self):
+        return self.program + '-' + self.project
 
     created_datetime = Column(
         DateTime(timezone=True),
