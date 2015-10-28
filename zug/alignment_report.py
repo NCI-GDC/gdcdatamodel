@@ -170,13 +170,13 @@ class AlignmentReporter(object):
             attachment += (key + "\n")
             attachment += ("=" * len(key)) + "\n"
             attachment += "Merge finished: {count} ({size:.2f} TB)".format(
-                count=len(merge_finished), size=float(sum([e.src.file_size for f in merge_finished]))/1e12
+                count=len(merge_finished), size=float(sum([e.src.file_size for e in merge_finished]))/1e12
             ) + "\n"
             attachment += "Fixmate finished: {count} ({size:.2f} TB)".format(
-                count=len(fixmate_finished), size=float(sum([e.src.file_size for f in fixmate_finished]))/1e12
+                count=len(fixmate_finished), size=float(sum([e.src.file_size for e in fixmate_finished]))/1e12
             ) + "\n"
             attachment += "Fully Complete: {count} ({size:.2f} TB)".format(
-                count=len(fully_complete), size=float(sum([e.src.file_size for f in fully_complete]))/1e12
+                count=len(fully_complete), size=float(sum([e.src.file_size for e in fully_complete]))/1e12
             ) + "\n"
             attachment += "\n"
         # now add running alignment counts
