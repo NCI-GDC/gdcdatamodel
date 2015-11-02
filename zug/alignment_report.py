@@ -93,7 +93,7 @@ class AlignmentReporter(object):
             "WXS (TCGA)": 315891670201207,
             "WXS (TARGET)": 21382957729925,
             "miRNA-Seq": 236939308278 + 2791773509555,
-            "RNA-Seq (TARGET)": 7760649861120,
+            "RNA-Seq (TARGET)": 10099756185600,
             "RNA-Seq (TCGA)": 74780058034896,
         }
 
