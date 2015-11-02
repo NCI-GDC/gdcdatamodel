@@ -72,6 +72,7 @@ def _munge_properties(source, nested=True):
 
     # Get properties from schema
     cls = Node.get_subclass(source)
+    assert cls, 'No model for {}'.format(source)
     properties = cls.get_pg_properties()
     fields = properties.keys()
 
