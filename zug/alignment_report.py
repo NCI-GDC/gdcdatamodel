@@ -76,7 +76,7 @@ class AlignmentReporter(object):
         "totals per zhenyu"
         return {
             "WGS (>= 320 GB)": 364,
-            "WGS (< 320 GB)": 4435,
+            "WGS (< 320 GB)": 4355,
             "WXS (TCGA)": 22561,
             "WXS (TARGET)": 1630,
             "miRNA-Seq": 11914,
@@ -89,7 +89,7 @@ class AlignmentReporter(object):
         "total sizes (in bytes) per zhenyu"
         return {
             "WGS (>= 320 GB)": 161761091978632,
-            "WGS (< 320 GB)": 374688980736024,
+            "WGS (< 320 GB)": 365747226114438,
             "WXS (TCGA)": 315891670201207,
             "WXS (TARGET)": 21382957729925,
             "miRNA-Seq": 236939308278 + 2791773509555,
@@ -156,7 +156,7 @@ class AlignmentReporter(object):
         # breakdown WGS by step completed
         attachment += "WGS Aligned files breakdown by step completed\n"
         attachment += "=============\n\n"
-        for key in ["WGS (< 320 GB)", "WGS (>= 320 GB)"]:
+        for key in ["WGS (< 320 GB)", "WGS (>= 320 GB)", "WXS (TCGA)", "WXS (TARGET)"]:
             all_of_key = self.aligned_files[key]
             edges = [self.graph.edges(FileDataFromFile).src(f.node_id)
                      .order_by(desc(FileDataFromFile.created))
