@@ -704,6 +704,7 @@ class TCGADCCArchiveSyncer(object):
         archive_doc = self.signpost.get(self.archive_node.node_id)
         if archive_doc and archive_doc.urls:
             self.log.info("archive already has signpost url")
+            self.archive_node.sysan["uploaded"] = True
         else:
             self.log.info("storing archive url %s in signpost", archive_url)
             doc = self.signpost.get(self.archive_node.node_id)
