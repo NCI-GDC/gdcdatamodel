@@ -49,9 +49,9 @@ setup(
         'datadog==0.9.0',
     ],
     dependency_links=[
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@621d7d157fad91bd0834280b8d2c39be384dcb1a#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@a00afd31a665420c5a5edd8b51fc2c7eb2889eb4#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@99c87f23c6f955fed5971f987dbe36c92c9e4596#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@61c2040cc51120f813d380f817ac3b32da8e812a#egg=gdcdatamodel',
+        'git+ssh://git@github.com/NCI-GDC/gdcdatamodel.git@3b9b55adee28893641d224f31fb3716ec0975d89#egg=gdcdatamodel',
         'git+ssh://git@github.com/NCI-GDC/python-signpostclient.git@ebc91a5f8343e8f4cb2caefc523b9ad3a1eb7c6c#egg=signpostclient',
         'git+ssh://git@github.com/NCI-GDC/python-ds3-sdk.git@6a3382b3766d7e0898e9b70221d7e43f767acb8f#egg=ds3client',
     ]

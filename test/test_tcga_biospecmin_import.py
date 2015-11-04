@@ -62,13 +62,27 @@ class TestTCGABiospeceminImport(PreludeMixin, ZugTestBase):
             self.assertTrue(node_id in v2)
             self.assertTrue(v1[node_id].system_annotations == {
                 'group_id': 'group1', 'version': 1})
-            self.assertEqual(v1[node_id].properties, v2[node_id].properties)
+            v1_props = dict(v1[node_id].properties)
+            del v1_props['updated_datetime']
+            del v1_props['created_datetime']
+            v2_props = dict(v2[node_id].properties)
+            del v2_props['updated_datetime']
+            del v2_props['created_datetime']
+            self.assertEqual(v1_props, v2_props)
+
 
         for node_id, node in v2.iteritems():
             self.assertTrue(node_id in v1)
             self.assertTrue(v2[node_id].system_annotations == {
                 'group_id': 'group1', 'version': 2.5})
-            self.assertEqual(v2[node_id].properties, v1[node_id].properties)
+            v1_props = dict(v1[node_id].properties)
+            del v1_props['updated_datetime']
+            del v1_props['created_datetime']
+            v2_props = dict(v2[node_id].properties)
+            del v2_props['updated_datetime']
+            del v2_props['created_datetime']
+            self.assertEqual(v1_props, v2_props)
+
 
     def test_versioned_import(self):
         self.converter.export_nodes()
@@ -101,8 +115,14 @@ class TestTCGABiospeceminImport(PreludeMixin, ZugTestBase):
             self.assertTrue(v2[node_id].system_annotations == {
                 'group_id': 'group1', 'version': 2.5})
             if v1[node_id].node_id != '5fa9998b-deff-493e-8a8e-dc2422192a48':
-                self.assertEqual(
-                    v1[node_id].properties, v2[node_id].properties)
+                v1_props = dict(v1[node_id].properties)
+                del v1_props['updated_datetime']
+                del v1_props['created_datetime']
+                v2_props = dict(v2[node_id].properties)
+                del v2_props['updated_datetime']
+                del v2_props['created_datetime']
+                self.assertEqual(v1_props, v2_props)
+
             else:
                 self.assertFalse(v1[node_id]['is_ffpe'])
                 self.assertTrue(v2[node_id]['is_ffpe'])

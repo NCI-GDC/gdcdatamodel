@@ -8,8 +8,8 @@ import es_fixtures
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
-sample_props = {'sample_type_id',
-                'time_between_clamping_and_freezing',
+sample_props = {'sample_type_id', 'project_id', 'created_datetime',
+                'time_between_clamping_and_freezing', 'updated_datetime',
                 'time_between_excision_and_freezing',
                 'shortest_dimension', 'oct_embedded', 'submitter_id',
                 'intermediate_dimension', 'sample_id',
@@ -19,28 +19,33 @@ sample_props = {'sample_type_id',
                 'current_weight', 'annotations', 'longest_dimension',
                 'tumor_code_id', 'tumor_code', 'aliquots'}
 project_props = {'name', 'state', 'program', 'primary_site',
-                 'project_id', 'disease_type'}
+                 'project_id', 'disease_type', 'dbgap_accession_number'}
 summary_props = {'data_types', 'file_count',
                  'experimental_strategies', 'file_size'}
 tss_props = {'project', 'bcr_id', 'code', 'tissue_source_site_id',
              'name'}
 portion_props = {'slides', 'portion_id',
+                 'project_id', 'created_datetime', 'updated_datetime',
                  'creation_datetime', 'is_ffpe',
                  'weight', 'portion_number',
                  'annotations', 'center',
                  'analytes', 'submitter_id'}
 analyte_props = {'well_number', 'analyte_type', 'submitter_id',
+                 'project_id', 'created_datetime', 'updated_datetime',
                  'analyte_id', 'amount', 'aliquots',
                  'a260_a280_ratio', 'concentration',
                  'spectrophotometer_method', 'analyte_type_id',
                  'annotations'}
 aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
+                 'project_id', 'created_datetime', 'updated_datetime',
                  'concentration', 'source_center', 'annotations'}
 annotation_props = {'category', 'status', 'classification',
+                    'project_id', 'created_datetime', 'updated_datetime',
                     'creator', 'created_datetime', 'notes',
                     'submitter_id', 'annotation_id', 'entity_id',
                     'entity_type', 'case_id', 'case_submitter_id'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
+              'project_id', 'created_datetime', 'updated_datetime',
               'file_name', 'md5sum', 'cases', 'submitter_id',
               'access', 'platform', 'state', 'data_subtype',
               'file_id', 'file_size', 'experimental_strategy',
@@ -114,6 +119,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
     def add_file_nodes(self):
         self.live_file = File(
             node_id='file1',
+            project_id='TCGA-BRCA',
             file_name='TCGA-WR-A838-01A-12R-A406-31_rnaseq_fastq.tar',
             file_size=12916551680,
             md5sum='d7e6cbd40ef2f5b6607cb4af982280a9',
@@ -123,6 +129,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         )
         self.to_delete_file = File(
             node_id='file2',
+            project_id='TCGA-BRCA',
             file_name='a_file_to_be_deleted.txt',
             file_size=5,
             md5sum='foobar',
