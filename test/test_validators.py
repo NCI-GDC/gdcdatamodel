@@ -245,3 +245,26 @@ class TestValidators(unittest.TestCase):
             self.entities[0].node = node
             self.graph_validator.record_errors(g, self.entities)
             self.assertEquals(['name'], self.entities[0].errors[0]['keys'])
+
+
+    def test_graph_validator_with_existing_submiter_id(self):
+        with g.session_scope() as session:
+            analyte = self.create_node(
+                    {'type': 'analyte',
+                     'props': {'submitter_id': 'test',
+                               'analyte_type_id': 'D',
+                               'analyte_type': 'DNA'},
+                     'edges': {}}, session)
+
+            node = self.create_node({'type': 'aliquot',
+                                     'props': {'submitter_id': 'test', 'project_id': 'test'},
+                                     'edges': {'analytes': [analyte.node_id]}},
+                                    session)
+            node = self.create_node({'type': 'aliquot',
+                                     'props': {'submitter_id': 'test', 'project_id': 'test'},
+                                     'edges': {'analytes': [analyte.node_id]}},
+                                    session)
+            self.update_schema('aliquot', 'uniqueKeys', [['submitter_id', 'project_id']])
+            self.entities[0].node = node
+            self.graph_validator.record_errors(g, self.entities)
+            self.assertEquals(['project_id', 'submitter_id'], self.entities[0].errors[0]['keys'])

@@ -110,11 +110,9 @@ class GDCUniqueKeysValidator(object):
         node = entity.node
         for keys in schema['uniqueKeys']:
             props = {}
-            if keys in [['id'], ['project_id', 'alias']]:
+            if keys == ['id']:
                 # uuid uniqueness should be checked during node creation
-                # by psqlgraph,
-                # [project_id, alias] need to be checked after we
-                # decide on where to put project_id
+                # by psqlgraph
                 continue
             for key in keys:
                 prop = schema['properties'][key].get('systemAlias')
