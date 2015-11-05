@@ -267,7 +267,7 @@ def parse_edge(src_label, name, edge_label, subschema, link):
             .format(dst_label, name, src_label))
 
     dst_label = dictionary.schema[dst_label]['id']
-    edge_name = ''.join(map(get_class_tablename_from_id, [
+    edge_name = ''.join(map(get_class_name_from_id, [
         src_label, edge_label, dst_label]))
 
     src_dst_assoc, dst_src_assoc = special_links.get(
