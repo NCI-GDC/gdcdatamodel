@@ -11,7 +11,7 @@ from cdisutils.log import get_logger
 
 log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
-all_phsids = '(phs000218 OR phs0004* OR phs000178)'
+all_phsids = '(phs000218 OR phs0004* OR phs000515 OR phs000178)'
 
 args = None
 
