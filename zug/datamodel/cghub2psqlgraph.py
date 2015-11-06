@@ -39,7 +39,7 @@ def to_bool(val):
         raise ValueError("Cannot convert {} to boolean".format(val))
 
 
-TARGET_STUDY_RE = re.compile('(phs000218|phs0004\d\d)')
+TARGET_STUDY_RE = re.compile('(phs000218|phs000515|phs0004\d\d)')
 TCGA_STUDY_RE = re.compile('phs000178')
 
 
