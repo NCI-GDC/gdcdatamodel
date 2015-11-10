@@ -14,6 +14,12 @@ from gdcdatamodel.models import (
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 
 
+# N.B. it would be better to derive this information from the host
+# where the code is running but that's apparently difficult to do
+# using the stdlib >_<
+STAR_RAM_LIMIT_BYTES = '42000000000'
+
+
 class STARAligner(AbstractHarmonizer):
     '''
     STAR specialization of the AbstractHarmonizer for processing of
@@ -22,18 +28,18 @@ class STARAligner(AbstractHarmonizer):
     __metaclass__ = abc.ABCMeta
 
     def get_config(self, kwargs):
-        
+
         if os.environ.get("ALIGNMENT_SIZE_LIMIT"):
             size_limit = int(os.environ["ALIGNMENT_SIZE_LIMIT"])
         else:
             size_limit = None
-        
+
         genome_dir = os.environ['GENOME_DIR']
         genome_ref = os.environ['GENOME_REF']
         genome_ref_flat = os.environ['GENOME_REF_FLAT']
         genome_annotations = os.environ['GENOME_ANNOTATIONS']
         rnaseq_qc_annotations = os.environ['RNASEQ_QC_ANNOTATIONS']
-        
+
         return {
             "output_buckets": {
                 "bam": os.environ["BAM_S3_BUCKET"],
@@ -41,7 +47,7 @@ class STARAligner(AbstractHarmonizer):
                 "log": os.environ["LOGS_S3_BUCKET"],
                 "meta": os.environ["META_S3_BUCKET"],
             },
-            
+
             'paths': {
                 'genome_dir': genome_dir,
                 'genome_ref': genome_ref,
@@ -49,7 +55,7 @@ class STARAligner(AbstractHarmonizer):
                 'genome_annotations': genome_annotations,
                 'rnaseq_qc_annotations': rnaseq_qc_annotations,
             },
-            
+
             "size_limit": size_limit,
             "cores": int(os.environ.get("ALIGNMENT_CORES", "8")),
             "force_input_id": kwargs.get("force_input_id"),
@@ -94,12 +100,12 @@ class STARAligner(AbstractHarmonizer):
         else:
             input_fastq_tarball = self.choose_fastq_at_random()
         self.log.info('Selected %s for alignment.', input_fastq_tarball)
-        
+
         # we expunge from this session so we can merge into another
         # session later and load up it's classifiction nodes to
         # classify the newly produced bam
         self.graph.current_session().expunge(input_fastq_tarball)
-        
+
         return input_fastq_tarball.node_id, {
             'fastq_tarball': input_fastq_tarball,
         }
@@ -124,6 +130,7 @@ class STARAligner(AbstractHarmonizer):
             '--rna_seq_qc_annotation {rnaseq_qc_annotations}',
             '--sample {sample}',
             '--library {library}',
+            '--limitBAMsortRAM {ram_limit_bytes}'
         ]).format(
             scratch_dir = self.container_abspath(self.config['scratch_dir']),
             genome_dir = self.container_abspath(self.config['genome_dir']),
@@ -140,12 +147,13 @@ class STARAligner(AbstractHarmonizer):
             nthreads = self.config['cores'],
             sample = self.inputs['fastq_tarball'].sysan['cghub_legacy_sample_id'],
             library = 'unknown', # TODO FIXME this information needs indexing
+            ram_limit_bytes=STAR_RAM_LIMIT_BYTES
         )
 
     @property
     def output_paths(self):
         uuid = self.inputs['fastq_tarball'].node_id
-        
+
         return {
             'bam': self.host_abspath(
                 self.config['scratch_dir'],
@@ -180,14 +188,14 @@ class STARAligner(AbstractHarmonizer):
         Upload any remaining files.
         '''
         scratch = self.host_abspath(self.config['scratch_dir'])
-        
+
         for root, _, files in os.walk(scratch):
-            
+
             if not any([
                 'pre_alignment_qc' in root,
                 'post_alignment_qc' in root,
             ]): continue
-            
+
             for f in files:
                 host_f = os.path.normpath(os.path.join(root, f))
                 key = os.path.join(
@@ -197,7 +205,7 @@ class STARAligner(AbstractHarmonizer):
                         self.host_abspath(self.config['scratch_dir']),
                     ),
                 )
-                
+
                 self.upload_file(
                     host_f,
                     self.config['output_buckets']['meta'],
@@ -247,7 +255,7 @@ class STARAligner(AbstractHarmonizer):
             output_nodes["bam"].platforms = self.inputs["fastq_tarball"].platforms
             # this line implicitly merges the new bam and new bai
             session.merge(edge)
-        
+
         return output_nodes['bam'].node_id
 
     def handle_output(self):
@@ -262,12 +270,12 @@ class STARAligner(AbstractHarmonizer):
         self.log.info('Submitting metrics')
         took = int(time.time()) - self.start_time
         input_id = self.inputs['fastq_tarball'].node_id
-        
+
         tags = [
             'alignment_type:{}'.format(self.name),
             'alignment_host:{}'.format(socket.gethostname()),
         ]
-        
+
         statsd.event(
             '{} aligned'.format(input_id),
             'successfully aligned {} in {} minutes'.format(input_id, took / 60),
@@ -275,11 +283,11 @@ class STARAligner(AbstractHarmonizer):
             alert_type='success',
             tags=tags
         )
-        
+
         with self.graph.session_scope():
             total = self.fastq_files.count()
             done = self.fastq_files.filter(File.derived_files.any()).count()
-        
+
         self.log.info('%s bams aligned out of %s', done, total)
         statsd.gauge('harmonization.completed_fastqs',
                      done,
@@ -293,22 +301,6 @@ class STARAligner(AbstractHarmonizer):
         statsd.histogram('harmonization.seconds_per_byte',
                          float(took) / self.inputs['fastq_tarball'].file_size,
                          tags=tags)
-
-    def docker_failure_cleanup(self):
-        tags = [
-            'alignment_type:{}'.format(self.name),
-            'alignment_host:{}'.format(socket.gethostname()),
-        ]
-        
-        statsd.event(
-            'Alignment Failure',
-            'alignment of %s has failed' % self.inputs['fastq_tarball'].node_id,
-            source_type_name='harmonization',
-            alert_type='error',
-            tags=tags,
-        )
-        
-        return super(STARAligner, self).docker_failure_cleanup()
 
     @abc.abstractmethod
     def choose_fastq_by_forced_id(self):

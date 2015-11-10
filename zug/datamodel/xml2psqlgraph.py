@@ -154,7 +154,7 @@ class xml2psqlgraph(object):
                 "Class xml2psqlgraph is not the right function "
                 "to export files from. Try calling cghub2psqlgraph().")
 
-        with self.graph.session_scope():
+        with self.graph.session_scope() as session:
 
             old_node = self.graph.node_lookup_one(node.node_id)
 
@@ -169,16 +169,8 @@ class xml2psqlgraph(object):
                 system_annotations.update(
                     {'group_id': group_id, 'version': version})
 
-            if old_node:
-                node.system_annotations.update(system_annotations)
-                self.graph.node_clobber(
-                    node_id=node.node_id, properties=node.properties,
-                    system_annotations=node.system_annotations)
-
-            else:
-                node.system_annotations.update(system_annotations)
-                node.merge(system_annotations=system_annotations)
-                self.graph.node_insert(node)
+            node.system_annotations.update(system_annotations)
+            session.merge(node)
 
     def export_nodes(self, **kwargs):
         for node_id, node in self.nodes.iteritems():

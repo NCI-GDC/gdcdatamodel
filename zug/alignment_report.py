@@ -10,6 +10,7 @@ from email.MIMEBase import MIMEBase
 from email import encoders
 
 from consulate import Consul
+import salt.client
 from gdcdatamodel.models import File, FileDataFromFile
 
 from zug.harmonize.queries import exome, wgs, mirnaseq, rnaseq
@@ -30,6 +31,16 @@ def alignment_time(file):
             file._FileDataFromFile_out[0].sysan["alignment_started"])
 
 
+ALIGNER_NAMES = {
+    "tcga_wgs_aligner": "TCGA WGS",
+    "tcga_exome_aligner": "TCGA Exome",
+    "tcga_rnaseq_aligner": "TCGA RNA-Seq",
+    "tcga_mirnaseq_aligner": "TCGA miRNA-Seq",
+    "target_exome_aligner": "TARGET Exome",
+    "target_rnaseq_aligner": "TARGET RNA-Seq",
+}
+
+
 class AlignmentReporter(object):
 
     def __init__(self, graph=None, os_mysql=None, mailserver=None, toaddrs=None):
@@ -44,6 +55,7 @@ class AlignmentReporter(object):
                 poolclass=NullPool,
             )
         self.consul = Consul()
+        self.salt_caller = salt.client.Caller()
         if os_mysql:
             self.os_mysql = os_mysql
         else:
@@ -64,12 +76,25 @@ class AlignmentReporter(object):
         "totals per zhenyu"
         return {
             "WGS (>= 320 GB)": 364,
-            "WGS (< 320 GB)": 4435,
+            "WGS (< 320 GB)": 4355,
             "WXS (TCGA)": 22561,
             "WXS (TARGET)": 1630,
             "miRNA-Seq": 11914,
             "RNA-Seq (TARGET)": 721,
             "RNA-Seq (TCGA)": 11293,
+        }
+
+    @property
+    def total_sizes(self):
+        "total sizes (in bytes) per zhenyu"
+        return {
+            "WGS (>= 320 GB)": 161761091978632,
+            "WGS (< 320 GB)": 365747226114438,
+            "WXS (TCGA)": 315891670201207,
+            "WXS (TARGET)": 21382957729925,
+            "miRNA-Seq": 236939308278 + 2791773509555,
+            "RNA-Seq (TARGET)": 10099756185600,
+            "RNA-Seq (TCGA)": 74780058034896,
         }
 
     @property
@@ -121,9 +146,55 @@ class AlignmentReporter(object):
         attachment += "\n\n"
         attachment += "Total sizes aligned\n"
         attachment += "=============\n\n"
-        attachment += "\n".join(["{key}: {aligned:.2f} TB"
-                                 .format(key=key, aligned=float(size)/1e12)
-                                 for key, size in iter(sorted(aligned_sizes.iteritems()))])
+        attachment += "\n".join(["{key}: {aligned:.2f} TB / {total:.2f} TB ({percent:.2f}%)"
+                                 .format(key=key,
+                                         aligned=float(aligned_sizes[key])/1e12,
+                                         total=float(total_size)/1e12,
+                                         percent=100*(float(aligned_sizes[key])/total_size))
+                                 for key, total_size in iter(sorted(self.total_sizes.iteritems()))])
+        attachment += "\n\n"
+        # breakdown WGS by step completed
+        attachment += "WGS Aligned files breakdown by step completed\n"
+        attachment += "=============\n\n"
+        for key in ["WGS (< 320 GB)", "WGS (>= 320 GB)", "WXS (TCGA)", "WXS (TARGET)"]:
+            all_of_key = self.aligned_files[key]
+            edges = [self.graph.edges(FileDataFromFile).src(f.node_id)
+                     .order_by(desc(FileDataFromFile.created))
+                     .first() for f in all_of_key]
+            fully_complete = [e for e in edges
+                              if e.sysan.get("alignment_last_step") in [None, "md"]]
+            fixmate_finished = [e for e in edges
+                                if e.sysan.get("alignment_last_step") == "fixmate"]
+            merge_finished = [e for e in edges
+                              if e.sysan.get("alignment_last_step") == "reheader"]
+            attachment += (key + "\n")
+            attachment += ("=" * len(key)) + "\n"
+            attachment += "Merge finished: {count} ({size:.2f} TB)".format(
+                count=len(merge_finished), size=float(sum([e.src.file_size for e in merge_finished]))/1e12
+            ) + "\n"
+            attachment += "Fixmate finished: {count} ({size:.2f} TB)".format(
+                count=len(fixmate_finished), size=float(sum([e.src.file_size for e in fixmate_finished]))/1e12
+            ) + "\n"
+            attachment += "Fully Complete: {count} ({size:.2f} TB)".format(
+                count=len(fully_complete), size=float(sum([e.src.file_size for e in fully_complete]))/1e12
+            ) + "\n"
+            attachment += "\n"
+        # now add running alignment counts
+        attachment += "Currently running aligners\n"
+        attachment += "==========================\n"
+        consul_keys = self.consul.kv.keys()
+        mine_results = self.salt_caller.sminion.functions["mine.get"](
+            "service:aligner", "grains.items", "grain"
+        )
+        for prefix, name in ALIGNER_NAMES.items():
+            running = len([k for k in consul_keys if prefix in k])
+            # this is true for now, let's keep it the case
+            alignment_type_grain = prefix.replace("_aligner", "")
+            allocated = len({k: v for k, v in mine_results.items()
+                             if v.get("alignment_type") == alignment_type_grain})
+            attachment += "{name}: {running} currently running / {allocated} allocated\n".format(
+                name=name, running=running, allocated=allocated
+            )
         return attachment
 
     def generate_aligned_analysis_ids_file(self):

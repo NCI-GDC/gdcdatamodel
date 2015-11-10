@@ -23,11 +23,6 @@ DATE_RE = re.compile('(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(-\d{1,2}:\d{2})')
 ANNOTATION_NAMESPACE = UUID('e61d5a88-7f5c-488e-9c42-a5f32b4d1c50')
 
 
-def unix_time(dt):
-    epoch = datetime.utcfromtimestamp(0)
-    delta = dt - epoch
-    return long(delta.total_seconds())
-
 
 class TCGAAnnotationSyncer(object):
 
@@ -133,8 +128,8 @@ class TCGAAnnotationSyncer(object):
         return notes
 
     def parse_datetime(self, text):
-        return unix_time(datetime.fromtimestamp(mktime(strptime(
-            text, '%Y-%m-%dT%H:%M:%S'))))
+        return datetime.fromtimestamp(mktime(strptime(
+            text, '%Y-%m-%dT%H:%M:%S'))).isoformat('T')
 
     def lookup_item_node(self, item):
         """Lookup node by barcode under it's supposed label.  If we can't find

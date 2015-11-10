@@ -2,7 +2,6 @@ import os
 import re
 import time
 from datadog import statsd
-from sqlalchemy import func
 import socket
 from zug.binutils import NoMoreWorkException
 from gdcdatamodel.models import (
@@ -10,6 +9,47 @@ from gdcdatamodel.models import (
 )
 
 from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
+from zug.harmonize.queries import SORT_ORDER
+
+import gzip
+
+
+# these next two are from http://stackoverflow.com/a/260433/1663558
+
+def reversed_lines(file):
+    "Generate the lines of file in reverse order."
+    part = ''
+    for block in reversed_blocks(file):
+        for c in reversed(block):
+            if c == '\n' and part:
+                yield part[::-1]
+                part = ''
+            part += c
+    if part:
+        yield part[::-1]
+
+
+def reversed_blocks(file, blocksize=4096):
+    "Generate blocks of file's contents in reverse order."
+    file.seek(0, os.SEEK_END)
+    here = file.tell()
+    while 0 < here:
+        delta = min(blocksize, here)
+        here -= delta
+        file.seek(here, os.SEEK_SET)
+        yield file.read(delta)
+
+
+def parse_last_step(logfile):
+    for line in reversed_lines(logfile):
+        if "running step" in line and "completed" not in line:
+            match = re.match(".*running step (.*) of: (.*)", line)
+            step, name = match.group(1), match.group(2)
+            step = step.strip()
+            step = step.strip("`")  # some step names are wrapped in backticks
+            name = name.strip()
+            return step, name
+    raise RuntimeError("Couldn't find last step in {}".format(logfile))
 
 
 def has_fixmate_failure(logs):
@@ -18,6 +58,16 @@ def has_fixmate_failure(logs):
 
 def has_markdups_failure(logs):
     return "MarkDuplicatesWithMateCigar" in logs
+
+
+def gzip_compress(input_path):
+    """Given a path, gzip compress it at the same path but with .gz on
+    the end and return the path of the gzip compressed file
+    """
+    output_path = input_path + ".gz"
+    with open(input_path, "rb") as input, gzip.open(output_path, "wb") as output:
+        output.writelines(input)
+    return output_path
 
 
 class BWAAligner(AbstractHarmonizer):
@@ -65,33 +115,29 @@ class BWAAligner(AbstractHarmonizer):
             "markdups_failure": has_markdups_failure
         }
 
-    def docker_failure_cleanup(self):
+    def docker_failure_cleanup(self, logs):
         if self.docker_log_flags["fixmate_failure"]:
-            # mark the file as not to do in the future
             with self.graph.session_scope() as session:
                 session.add(self.inputs["bam"])
-                self.inputs["bam"].sysan["alignment_data_problem"] = True
                 self.inputs["bam"].sysan["alignment_fixmate_failure"] = True
         if self.docker_log_flags["markdups_failure"]:
-            # mark the file as having fixmate failure
             with self.graph.session_scope() as session:
                 session.add(self.inputs["bam"])
                 self.inputs["bam"].sysan["alignment_markdups_failure"] = True
-
-        tags = [
-            'alignment_type:{}'.format(self.name),
-            'alignment_host:{}'.format(socket.gethostname()),
-        ]
-
-        statsd.event(
-            'Alignment Failure',
-            'alignment of %s has failed' % self.inputs['bam'].node_id,
-            source_type_name='harmonization',
-            alert_type='error',
-            tags=tags,
-        )
-
-        return super(BWAAligner, self).docker_failure_cleanup()
+        try:
+            # attempt to parse last failing step from logs
+            log_path = self.host_abspath(
+                self.config["scratch_dir"],
+                "aln_" + self.inputs["bam"].node_id + ".log"
+            )
+            step, name = parse_last_step(open(log_path))
+            with self.graph.session_scope() as session:
+                session.add(self.inputs["bam"])
+                self.inputs["bam"].sysan["alignment_last_docker_error_step"] = step
+                self.inputs["bam"].sysan["alignment_last_docker_error_filename"] = name
+        except:
+            self.log.exception("caught exception while parsing log file")
+        return super(BWAAligner, self).docker_failure_cleanup(logs)
 
     @property
     def valid_extra_kwargs(self):
@@ -129,7 +175,7 @@ class BWAAligner(AbstractHarmonizer):
         total_bams = self.bam_files.count()
         aligned = self.bam_files.filter(File.derived_files.any()).count()
         self.log.info("Aligned %s out of %s files", aligned, total_bams)
-        input_bam = self.alignable_files.from_self(File).order_by(func.random()).first()
+        input_bam = self.alignable_files.from_self(File).order_by(*SORT_ORDER).first()
         if not input_bam:
             raise NoMoreWorkException("We appear to have aligned all bam files")
         else:
@@ -189,23 +235,43 @@ class BWAAligner(AbstractHarmonizer):
             cores=self.config["cores"],
             log_dir=self.container_abspath(self.config["scratch_dir"]),
         )
+        # all these conditionals should really be done by inheritance
+        # but this is easier for now; forgive me gods of object
+        # orientation
         if "exome" in self.name:
             cmd += " -x"
+            if self.name == "target_exome_aligner":
+                # session scope is needed to load the center
+                with self.graph.session_scope() as session:
+                    session.add(self.inputs["bam"])
+                    center_name = self.inputs["bam"].sysan["cghub_center_name"]
+                # this specifies that we are doing target
+                # alignment and what the center is
+                cmd += " -g -q {center_name}".format(
+                    center_name=center_name
+                )
         return cmd
 
     @property
     def output_paths(self):
-        return {
-            "bam": self.host_abspath(
+        bam_path = None
+        # important that this list is in our order of preference.  if
+        # markduplicates has been run we want that, if fixmate has
+        # been run we want that, etc.
+        for possible_dir in ["md", "fixmate", "reheader"]:
+            possible_path = self.host_abspath(
                 self.config["scratch_dir"],
-                "realn", "md",
+                "realn", possible_dir,
                 self.inputs["bam"].file_name
-            ),
-            "bai": self.host_abspath(
-                self.config["scratch_dir"],
-                "realn", "md",
-                re.sub("\.bam$", ".bai", self.inputs["bam"].file_name)
-            ),
+            )
+            if os.path.exists(possible_path):
+                bam_path = possible_path
+                break
+        if not bam_path:
+            raise RuntimeError("Can't find output bam file")
+        return {
+            "bam": bam_path,
+            "bai": re.sub("\.bam$", ".bai", bam_path),
             "log": self.host_abspath(
                 self.config["scratch_dir"],
                 "aln_" + self.inputs["bam"].node_id + ".log"
@@ -220,13 +286,24 @@ class BWAAligner(AbstractHarmonizer):
         """
         Upload the log file and sqlite db to the relevant bucket
         """
-        for key in ["log", "db"]:
-            path = os.path.normpath(self.host_abspath(self.output_paths[key]))
-            self.upload_file(
-                path,
-                self.config["output_buckets"][key],
-                os.path.basename(path),
-            )
+        # upload db
+        db_path = os.path.normpath(self.host_abspath(self.output_paths["db"]))
+        self.upload_file(
+            db_path,
+            self.config["output_buckets"]["db"],
+            os.path.basename(db_path),
+        )
+        # compress and upload log
+        log_path = os.path.normpath(self.host_abspath(self.output_paths["log"]))
+        self.log.info("Compressing log file at %s", log_path)
+        compressed_log_path = gzip_compress(log_path)
+        self.log.info("Compressed log file to %s", compressed_log_path)
+        self.upload_file(
+            compressed_log_path,
+            self.config["output_buckets"]["log"],
+            os.path.basename(compressed_log_path),
+        )
+
 
     def submit_metrics(self):
         """
@@ -291,6 +368,7 @@ class BWAAligner(AbstractHarmonizer):
                 "alignment_reference_name": os.path.basename(self.config["reference"]),
                 "alignment_hostname": socket.gethostname(),
                 "alignment_host_openstack_uuid": self.openstack_uuid,
+                "alignment_last_step": self.output_paths["bam"].split("/")[-2],
             }
         )
         with self.graph.session_scope() as session:

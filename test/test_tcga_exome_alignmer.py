@@ -5,7 +5,8 @@ import random
 import string
 import subprocess
 from contextlib import nested
-from uuid import uuid4
+import gzip
+from cStringIO import StringIO
 import socket
 
 from mock import patch, Mock
@@ -18,12 +19,17 @@ from zug.binutils import NoMoreWorkException
 from zug.downloaders import md5sum_with_size
 from cdisutils.net import BotoManager
 from gdcdatamodel.models import (
-    File, Aliquot, ExperimentalStrategy,
+    File, ExperimentalStrategy,
     DataFormat, Platform, Center,
     FileDataFromFile
 )
-
 from boto.s3.connection import OrdinaryCallingFormat
+
+from base import TEST_DIR
+
+FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "alignment")
+FAKE_LOGS_PATH = os.path.join(FIXTURES_DIR, "fake_log.txt")
+FAKE_LOGS_CONTENT = open(FAKE_LOGS_PATH).read()
 
 
 class FakeDockerClient(object):
@@ -76,58 +82,61 @@ class FakeDockerClient(object):
         del self.containers[cont["Id"]]
 
 
-def fake_build_docker_cmd(self):
+def fake_build_docker_cmd(output_dir="md"):
     """
     Simulate the action of running the actual docker container.
     """
-    assert self.config["cores"] > 0
-    todo = [
-        "set -e",
-        # assert that input bam exists
-        "test -e {bam_path}",
-        "test -e {bai_path}",
-        # create fake outputs
-        "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
-        "mkfile {output_bam_path}",
-        "echo -n fake_output_bam > {output_bam_path}",
-        "mkfile {output_bai_path}",
-        "echo -n fake_output_bai > {output_bai_path}",
-        "mkfile {output_log_path}",
-        "echo -n fake_logs > {output_log_path}",
-        "mkfile {output_db_path}",
-        "echo -n fake_db > {output_db_path}",
-    ]
-    # yes i know this is kind of gross but it works just work with me
-    # here ok
-    template = "bash -c '" + "; ".join(todo) + "'"
-    if os.environ.get("TRAVIS"):
-        # we have to use the host path on travis because we don't have
-        # real docker there, so we use FakeDockerClient, which just
-        # executes the command on the host, so we need host relative
-        # paths as opposed to container relative paths
-        get_path = self.host_abspath
-    else:
-        get_path = self.container_abspath
-    output_bam_path = get_path(os.path.join(
-        self.config["scratch_dir"], "realn", "md",
-        self.inputs["bam"].file_name)
-    )
-    output_bai_path = output_bam_path.replace(".bam", ".bai")
-    output_log_path = get_path(os.path.join(
-        self.config["scratch_dir"], "aln_"+self.inputs["bam"].node_id+".log")
-    )
-    output_db_path = get_path(os.path.join(
-        self.config["scratch_dir"], self.inputs["bam"].node_id+"_harmonize.db")
-    )
-    return template.format(
-        reference_path=get_path(self.config["reference"]),
-        bam_path=get_path(self.input_paths["bam"]),
-        bai_path=get_path(self.input_paths["bam"]),
-        output_bam_path=output_bam_path,
-        output_bai_path=output_bai_path,
-        output_log_path=output_log_path,
-        output_db_path=output_db_path,
-    )
+    def inner_fake_build_docker_cmd(self):
+        assert self.config["cores"] > 0
+        todo = [
+            "set -e",
+            # assert that input bam exists
+            "test -e {bam_path}",
+            "test -e {bai_path}",
+            # create fake outputs
+            "mkfile() {{ mkdir -p $( dirname $1) && touch $1; }}",
+            "mkfile {output_bam_path}",
+            "echo -n fake_output_bam > {output_bam_path}",
+            "mkfile {output_bai_path}",
+            "echo -n fake_output_bai > {output_bai_path}",
+            "mkfile {output_log_path}",
+            "cp {FAKE_LOGS_PATH} {output_log_path}",
+            "mkfile {output_db_path}",
+            "echo -n fake_db > {output_db_path}",
+        ]
+        # yes i know this is kind of gross but it works just work with me
+        # here ok
+        template = "bash -c '" + "; ".join(todo) + "'"
+        if os.environ.get("TRAVIS"):
+            # we have to use the host path on travis because we don't have
+            # real docker there, so we use FakeDockerClient, which just
+            # executes the command on the host, so we need host relative
+            # paths as opposed to container relative paths
+            get_path = self.host_abspath
+        else:
+            get_path = self.container_abspath
+        output_bam_path = get_path(os.path.join(
+            self.config["scratch_dir"], "realn", output_dir,
+            self.inputs["bam"].file_name)
+        )
+        output_bai_path = output_bam_path.replace(".bam", ".bai")
+        output_log_path = get_path(os.path.join(
+            self.config["scratch_dir"], "aln_"+self.inputs["bam"].node_id+".log")
+        )
+        output_db_path = get_path(os.path.join(
+            self.config["scratch_dir"], self.inputs["bam"].node_id+"_harmonize.db")
+        )
+        return template.format(
+            reference_path=get_path(self.config["reference"]),
+            bam_path=get_path(self.input_paths["bam"]),
+            bai_path=get_path(self.input_paths["bam"]),
+            output_bam_path=output_bam_path,
+            output_bai_path=output_bai_path,
+            output_log_path=output_log_path,
+            output_db_path=output_db_path,
+            FAKE_LOGS_PATH=FAKE_LOGS_PATH,
+        )
+    return inner_fake_build_docker_cmd
 
 
 class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
@@ -244,12 +253,13 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         bai_doc.patch()
         return bam_file
 
-    def monkey_patches(self):
+    def monkey_patches(self, output_dir="md"):
         aligner_patches = patch.multiple(
             "zug.harmonize.tcga_exome_aligner.TCGAExomeAligner",
             download_inputs=self.with_fake_s3(TCGAExomeAligner.download_inputs),
             upload_file=self.with_fake_s3(TCGAExomeAligner.upload_file),
-            build_docker_cmd=fake_build_docker_cmd
+            build_docker_cmd=fake_build_docker_cmd(output_dir=output_dir),
+            get_openstack_uuid=lambda self: None,
         )
         if not os.environ.get("TRAVIS"):
             return aligner_patches
@@ -299,11 +309,23 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             )
             self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
             self.assertEqual(edge.sysan["alignment_hostname"], socket.gethostname())
+            # shouldn't have failure indicators
+            self.assertIsNone(new_bam.source_files[0].sysan.get("alignment_seen_docker_error"))
+            self.assertIsNone(new_bam.source_files[0].sysan.get("alignment_last_docker_error_image"))
             self.fake_s3.start()
             bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
             self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
             # assert that we remove the scratch dir
             self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+            # logs are uploaded compressed
+            logs_url = "s3://s3.amazonaws.com/tcga_exome_alignment_logs/aln_{}.log.gz".format(
+                file.node_id
+            )
+            logs_key = self.boto_manager.get_url(logs_url)
+            temp_file = StringIO()
+            logs_key.get_file(temp_file)
+            temp_file.seek(0)
+            self.assertEqual(gzip.GzipFile(fileobj=temp_file, mode="rb").read(), FAKE_LOGS_CONTENT)
             self.fake_s3.stop()
 
     def test_raises_if_no_work(self):
@@ -356,7 +378,9 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                                     aliquot="foo")
         aligner = self.get_aligner()
         aligner.inputs = {'bam': file}
-        aligner.docker_failure_cleanup()
+        aligner.lock_id = file.node_id
+        aligner.docker_image = {"Id": "fake_image_id"}
+        aligner.docker_failure_cleanup("fake error logs")
         mock_statsd.event.assert_called_once()
 
     def test_error_report_on_docker_error(self):
@@ -381,7 +405,6 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.go()
         with self.graph.session_scope():
             file = self.graph.nodes(File).ids(file.node_id).one()
-            self.assertTrue(file.sysan["alignment_data_problem"])
             self.assertTrue(file.sysan["alignment_fixmate_failure"])
 
     def test_marks_file_on_markdups_failure(self):
@@ -396,6 +419,28 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         with self.graph.session_scope():
             file = self.graph.nodes(File).ids(file.node_id).one()
             self.assertTrue(file.sysan["alignment_markdups_failure"])
+
+    def test_marks_file_on_general_failure(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        fake_error_logs = ["fake", "error", "logs"] * 500
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.docker._logs = fake_error_logs
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertTrue(file.sysan["alignment_seen_docker_error"])
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_image"],
+                '6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6',
+            )
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_logs"],
+                "".join(fake_error_logs)[-1000:]
+            )
 
     def test_doesnt_align_data_problem_files(self):
         with self.graph.session_scope():
@@ -441,6 +486,39 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                     with self.graph.session_scope():
                         aligner.find_inputs()
 
+    def test_chooses_unerrored_files_over_errored(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            errored_file = self.create_file(
+                "test2.bam",
+                "more_fake_test_content",
+                aliquot="bar"
+            )
+            errored_file.sysan["alignment_last_docker_error_image"] = "fake_image_id"
+            errored_file.sysan["alignment_last_docker_error_logs"] = "fake error logs"
+            errored_file.sysan["alignment_seen_docker_error"] = True
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
+                    lock_id, inputs = aligner.find_inputs()
+                    self.assertEqual(lock_id, file.node_id)
+
+    def test_chooses_errored_file_if_no_unerrored(self):
+        with self.graph.session_scope():
+            file1 = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            file1.sysan["alignment_last_docker_error_image"] = "fake_image_id"
+            file1.sysan["alignment_last_docker_error_logs"] = "some fake logs"
+            file1.sysan["alignment_seen_docker_error"] = True
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
+                    lock_id, inputs = aligner.find_inputs()
+                    self.assertEqual(lock_id, file1.node_id)
+
     def test_force_input_id(self):
         with self.graph.session_scope():
             file = self.create_file("test1.bam", "fake_test_content",
@@ -450,3 +528,66 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             with self.graph.session_scope(), aligner.consul.consul_session_scope():
                 lock_id, inputs = aligner.find_inputs()
                 self.assertEqual(inputs["bam"].node_id, file.node_id)
+
+    def test_works_if_output_in_other_directory(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(output_dir="fixmate"):
+            aligner = self.get_aligner()
+            aligner.go()
+        # query for new node and verify pull down from s3
+        with self.graph.session_scope():
+            new_bam = self.graph.nodes(File)\
+                                .filter(File.file_name.astext.endswith(".bam"))\
+                                .sysan(source="tcga_exome_alignment")\
+                                .one()
+            new_bai = self.graph.nodes(File)\
+                                .filter(File.file_name.astext.endswith(".bam.bai"))\
+                                .sysan(source="tcga_exome_alignment")\
+                                .one()
+            self.assertEqual(len(new_bam.source_files), 1)
+            self.assertEqual(new_bam.related_files, [new_bai])
+            new_bam_doc = self.signpost_client.get(new_bam.node_id)
+            self.assertEqual(
+                new_bam_doc.urls,
+                ['s3://s3.amazonaws.com/'
+                 'tcga_exome_alignments/{}/test1_gdc_realn.bam'
+                 .format(new_bam.node_id)]
+            )
+            self.assertEqual(new_bam.data_formats[0].name, "BAM")
+            self.assertEqual(new_bam.platforms[0].name, "Illumina GA")
+            self.assertEqual(new_bam.experimental_strategies[0].name, "WXS")
+            edge = self.graph.edges(FileDataFromFile).dst(new_bam.node_id).one()
+            self.assertEqual(
+                edge.sysan["alignment_docker_image_id"],
+                "6d4946999d4fb403f40e151ecbd13cb866da125431eb1df0cdfd4dc72674e3c6",
+            )
+            self.assertEqual(edge.sysan["alignment_reference_name"], "GRCh38.d1.vd1.fa")
+            self.assertEqual(edge.sysan["alignment_hostname"], socket.gethostname())
+            self.assertEqual(edge.sysan["alignment_last_step"], "fixmate")
+            self.fake_s3.start()
+            bam_key = self.boto_manager.get_url(new_bam_doc.urls[0])
+            self.assertEqual(bam_key.get_contents_as_string(), "fake_output_bam")
+            # assert that we remove the scratch dir
+            self.assertFalse(os.path.isdir(aligner.host_abspath(aligner.config["scratch_dir"])))
+            self.fake_s3.stop()
+
+    def test_tracks_last_step_on_error(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+        with self.monkey_patches(), self.assertRaises(RuntimeError):
+            aligner = self.get_aligner()
+            aligner.docker._fail = True
+            aligner.go()
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(file.node_id).one()
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_step"],
+                "picard CollectWgsMetrics"
+            )
+            self.assertEqual(
+                file.sysan["alignment_last_docker_error_filename"],
+                "/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam"
+            )

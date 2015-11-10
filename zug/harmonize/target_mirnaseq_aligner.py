@@ -14,15 +14,15 @@ from zug.harmonize.abstract_harmonizer import AbstractHarmonizer
 from zug.harmonize.queries import SORT_ORDER
 
 
-class TCGAMIRNASeqAligner(AbstractHarmonizer):
+class TARGETMIRNASeqAligner(AbstractHarmonizer):
 
     @property
     def name(self):
-        return 'tcga_mirnaseq_aligner'
+        return 'target_mirnaseq_aligner'
 
     @property
     def source(self):
-        return 'tcga_mirnaseq_alignment'
+        return 'target_mirnaseq_alignment'
 
     def get_config(self, kwargs):
 
@@ -69,14 +69,14 @@ class TCGAMIRNASeqAligner(AbstractHarmonizer):
 
     def choose_bam_by_forced_id(self):
         input_bam = self.graph.nodes(File).ids(self.config['force_input_id']).one()
-        assert input_bam.sysan['source'] == 'tcga_cghub'
+        assert input_bam.sysan['source'] == 'target_cghub'
         assert input_bam.data_formats[0].name == 'BAM'
         assert input_bam.experimental_strategies[0].name == 'miRNA-Seq'
         return input_bam
 
     @property
     def bam_files(self):
-        return mirnaseq(self.graph, 'tcga_cghub')
+        return mirnaseq(self.graph, 'target_cghub')
 
     @property
     def alignable_files(self):

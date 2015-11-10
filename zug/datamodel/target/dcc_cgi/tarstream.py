@@ -9,7 +9,6 @@ import logging
 import md5
 from cdisutils.log import get_logger
 
-urllib3.disable_warnings()
 logging.captureWarnings(True)
 
 class Stream(object):

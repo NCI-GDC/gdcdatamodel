@@ -307,7 +307,7 @@ class AbstractHarmonizer(object):
         if retcode != 0:
             self.docker.remove_container(self.docker_container, v=True)
             self.docker_container = None
-            self.docker_failure_cleanup()
+            self.docker_failure_cleanup(all_docker_logs)
             if self.config["stop_on_docker_error"]:
                 raise DockerFailedException("Docker container failed with exit code {}".format(retcode))
             else:
@@ -441,9 +441,9 @@ class AbstractHarmonizer(object):
             self.submit_event("Aligner start", "")
             self.consul.start_consul_session()
             with self.graph.session_scope():
-                lock_id, inputs = self.find_inputs()
+                self.lock_id, inputs = self.find_inputs()
             self.validate_inputs(inputs)
-            self.try_lock(lock_id)
+            self.try_lock(self.lock_id)
             self.inputs = inputs
             self.input_paths = self.download_inputs()
             self.run_docker()
@@ -456,12 +456,31 @@ class AbstractHarmonizer(object):
         finally:
             self.cleanup(delete_scratch=delete_scratch)
 
-    def docker_failure_cleanup(self):
+    def docker_failure_cleanup(self, logs):
         """Subclasses can override to do something special when the docker
         container fails
 
         """
-        pass
+        # send failure event to dd
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+
+        statsd.event(
+            'Alignment Failure',
+            'alignment of %s has failed' % self.lock_id,
+            source_type_name='harmonization',
+            alert_type='error',
+            tags=tags,
+        )
+        # also mark the file as having errored
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(self.lock_id).one()
+            file.sysan["alignment_seen_docker_error"] = True
+            file.sysan["alignment_last_docker_error_image"] = self.docker_image["Id"]
+            # save last kilobyte of logs, just as a totally arbitrary cutoff
+            file.sysan["alignment_last_docker_error_logs"] = logs[-1000:]
 
     @property
     def docker_log_flag_funcs(self):
@@ -476,8 +495,6 @@ class AbstractHarmonizer(object):
         """
         return {}
 
-    # interface methods / properties that subclasses must implement
-
     def submit_event(self, name, description, alert_type='info'):
         self.log.info("[datadog] submit event {}".format(name))
         tags=["alignment_type:{}".format(self.name),
@@ -486,6 +503,9 @@ class AbstractHarmonizer(object):
         statsd.event(name, description, source_type_name='harmonization',
                      alert_type=alert_type,
                      tags=tags)
+
+    # interface methods / properties that subclasses must implement
+
     @abstractmethod
     def get_config(self):
         raise NotImplementedError()
