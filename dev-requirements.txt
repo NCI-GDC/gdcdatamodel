@@ -2,6 +2,6 @@ lockfile
 mock
 httmock
 Flask-PyMongo==0.3.1
--e git+git@github.com:NCI-GDC/signpost.git@f642c09f2c394e2a8713f7baad74ea643640154b#egg=signpost
+-e git+git@github.com:NCI-GDC/signpost.git@71ec99c56826775bd55c43cac58d87371ca922e9#egg=signpost
 httpretty==0.8.3
 moto==0.4.1

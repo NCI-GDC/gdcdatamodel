@@ -110,6 +110,7 @@ class TCGAAnnotationTest(ZugTestBase):
             for annotation in self.graph.nodes(Annotation):
                 annotation.acl = []
 
+
         # Re-sync and make sure changes are written
         with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):
             syncer = TCGAAnnotationSyncer()
