@@ -16,6 +16,8 @@ from elasticsearch import NotFoundError, Elasticsearch
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from psqlgraph import PsqlGraphDriver
 
+from datadog import statsd
+
 # TODO this could probably be bumped now that the number of bulk
 # threads in the config is higher, c.f.
 # https://github.com/NCI-GDC/tungsten/commit/3ac690d19dd49f8ad2f30bf55ca6fe70ff2cc51d
@@ -99,8 +101,8 @@ class GDCElasticsearch(object):
         self.log.info("Validating docs produced")
         self.converter.validate_docs(case_docs, file_docs, ann_docs, project_docs)
         self.log.info("Deploying new ES index with new docs and bumping alias")
-        self.deploy(case_docs, file_docs, ann_docs, project_docs,
-                    roll_alias=roll_alias)
+        new_index = self.deploy(case_docs, file_docs, ann_docs, project_docs,
+                                roll_alias=roll_alias)
         with self.graph.session_scope() as session:
             for expired_node in to_delete:
                 node = self.graph.nodes(expired_node.__class__)\
@@ -109,6 +111,13 @@ class GDCElasticsearch(object):
                 if node:
                     self.log.info("Deleting %s", node)
                     session.delete(node)
+        statsd.event(
+            "esbuild finished",
+            "successfully built index {}".format(new_index),
+            source_type_name="esbuild",
+            alert_type="success",
+            tags=["es_index:{}".format(new_index)],
+        )
 
     def pbar(self, title, maxval):
         """Create and initialize a custom progressbar
@@ -307,3 +316,4 @@ class GDCElasticsearch(object):
             self.delete_old_indices()
         else:
             self.log.info("Skipping alias roll / old index deletion")
+        return new_index

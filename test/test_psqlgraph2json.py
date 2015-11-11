@@ -1,10 +1,16 @@
 import unittest
 import os
 from gdcdatamodel import get_case_es_mapping
-from gdcdatamodel.models import File, Aliquot, Case, Annotation, Project, Portion
+from gdcdatamodel.models import (
+    File, Aliquot, Case,
+    Annotation, Project, Portion,
+    ExperimentalStrategy
+)
 from zug.datamodel.psqlgraph2json import PsqlGraph2JSON
 from base import ZugTestBase, PreludeMixin
 import es_fixtures
+
+from mock import patch
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -343,3 +349,18 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.assertIn(case.node_id, [c["case_id"] for c in self.case_docs])
         # the file should be there
         self.assertIn("file1", [f["file_id"] for f in self.file_docs])
+
+    @patch("zug.datamodel.psqlgraph2json.statsd")
+    def test_duplicate_classification_only_results_in_warning(self, mock_statsd):
+        with self.g.session_scope() as s:
+            s.add(self.live_file)
+            wxs = self.g.nodes(ExperimentalStrategy)\
+                        .props(name="WXS").one()
+            validation = self.g.nodes(ExperimentalStrategy)\
+                               .props(name="VALIDATION").one()
+            self.live_file.experimental_strategies = [wxs, validation]
+        self.convert_documents()
+        # the file should be there
+        self.assertIn(self.live_file.node_id,
+                      [f["file_id"] for f in self.file_docs])
+        mock_statsd.event.assert_called_once()

@@ -16,6 +16,8 @@ from copy import copy, deepcopy
 from collections import defaultdict
 from math import ceil
 
+from datadog import statsd
+
 log = get_logger("psqlgraph2json")
 log.setLevel(level=logging.INFO)
 
@@ -518,8 +520,20 @@ class PsqlGraph2JSON(object):
             else:
                 base = self._get_base_doc(neighbor)
             if corr == ONE_TO_ONE:
-                assert label not in doc
-                doc[label] = base
+                if label in doc:
+                    log.warning(
+                        "File %s has more than one %s, this is unexpected.",
+                        node, label
+                    )
+                    statsd.event(
+                        "duplicate edge on {}".format(node.node_id),
+                        "{} has duplicate {}".format(node.node_id, label),
+                        source_type_name="esbuild",
+                        alert_type="error",
+                        tags=["file_id:{}".format(node.node_id)],
+                    )
+                else:
+                    doc[label] = base
             else:
                 if label not in doc:
                     doc[label] = []
