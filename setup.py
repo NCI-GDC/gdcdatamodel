@@ -24,4 +24,7 @@ setup(
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@f0f198c2d7978fea311b0bc311c6db61732de261#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@ccc99bb8371456df1e72b622f1428ce8d6dff2b6#egg=gdcdictionary',
     ],
+    scripts=[
+        'bin/setup_psqlgraph.py',
+    ]
 )
