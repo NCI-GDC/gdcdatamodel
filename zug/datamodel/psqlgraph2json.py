@@ -124,6 +124,7 @@ class PsqlGraph2JSON(object):
             ('archive', 'member_of', 'file'),
             ('file', 'describes', 'case'),
             ('case', 'describes', 'file'),
+            ('file', 'related_to', 'file'),
         ]
 
         self.case_to_file_paths = [
@@ -131,6 +132,9 @@ class PsqlGraph2JSON(object):
             ['sample', 'aliquot', 'file'],
             ['sample', 'portion', 'file'],
             ['sample', 'portion', 'analyte', 'aliquot', 'file'],
+            # we don't need a special path for harmonized files
+            # because they get tied to the relevant aliquots
+            # during cache_database
         ]
 
         self.possible_associated_entites = [
@@ -512,7 +516,7 @@ class PsqlGraph2JSON(object):
         """
 
         auto_neighbors = [n for n in dict(file_tree).keys()
-                          if n not in ['archive', 'portion']]
+                          if n not in ['archive', 'portion', 'file']]
         for neighbor in set(self.neighbors_labeled(node, auto_neighbors)):
             corr, label = file_tree[neighbor.label]['corr']
             if neighbor.label in self.flatten:
@@ -544,31 +548,33 @@ class PsqlGraph2JSON(object):
         doc['uploaded_datetime'] = 1425340539
 
     def add_related_files(self, node, doc):
-        """Given a file, walk to any neighboring files and add them to the
-        related_files section of the document.
+        """Given a file, walk to any (non data-from) neighboring files and add
+        them to the related_files section of the document.
 
         """
 
         # Get related_files
-        related_files = list(self.neighbors_labeled(node, 'file'))
+        neighbor_files = list(self.neighbors_labeled(node, 'file'))
         rf_docs = []
-        for related_file in related_files:
-            rf_doc = self._get_base_doc(related_file)
-            for dst in self.neighbors_labeled(related_file, 'data_subtype'):
-                rf_doc['data_subtype'] = dst['name']
-                self.add_data_type(related_file, rf_doc)
-            self.patch_file_datetimes(rf_doc)
-            if related_file['file_name'].endswith('.bai'):
-                rf_doc['type'] = 'bai'
-            elif related_file['file_name'].endswith('.sdrf.txt'):
-                rf_doc['type'] = 'magetab'
-            else:
-                rf_doc['type'] = None
-            if related_file.acl == ["open"]:
-                rf_doc['access'] = 'open'
-            else:
-                rf_doc['access'] = 'controlled'
-            rf_docs.append(rf_doc)
+        for maybe_related in neighbor_files:
+            if self.G[node][maybe_related].get("label") == "related_to":
+                related_file = maybe_related
+                rf_doc = self._get_base_doc(related_file)
+                for dst in self.neighbors_labeled(related_file, 'data_subtype'):
+                    rf_doc['data_subtype'] = dst['name']
+                    self.add_data_type(related_file, rf_doc)
+                self.patch_file_datetimes(rf_doc)
+                if related_file['file_name'].endswith('.bai'):
+                    rf_doc['type'] = 'bai'
+                elif related_file['file_name'].endswith('.sdrf.txt'):
+                    rf_doc['type'] = 'magetab'
+                else:
+                    rf_doc['type'] = None
+                if related_file.acl == ["open"]:
+                    rf_doc['access'] = 'open'
+                else:
+                    rf_doc['access'] = 'controlled'
+                rf_docs.append(rf_doc)
 
         for archive in set(self.neighbors_labeled(node, 'archive')):
             if self.G[node][archive].get('label') != 'member_of':
@@ -674,7 +680,11 @@ class PsqlGraph2JSON(object):
             doc['associated_entities'] = docs
 
     def add_file_origin(self, node, doc):
-        doc['origin'] = 'migrated'
+        source = node._sysan.get('source')
+        if source and "alignment" in source:
+            doc["origin"] = "harmonized"
+        else:
+            doc["origin"] = "migrated"
 
     def upsert_file_into_dict(self, files, file_doc):
         did = file_doc['file_id']
@@ -1099,12 +1109,21 @@ class PsqlGraph2JSON(object):
         will need to distinguish later.
 
         """
+
         with self.g.session_scope():
             pbar = self.pbar('Caching Database: ', self.g.edges().count())
             for e in self.g.edges().yield_per(int(1e5)):
                 pbar.update(pbar.currval+1)
-                needs_differentiation = ((e.src.label, e.label, e.dst.label)
-                                         in self.differentiated_edges)
+                triple = (e.src.label, e.label, e.dst.label)
+                needs_differentiation = (triple in self.differentiated_edges)
+                if triple == ("file", "data_from", "file"):
+                    # for files that are "data_from" other files, the
+                    # centers and aliquots of the source files count
+                    # as neighbors of the dst files
+                    for center in e.src.centers:
+                        self.G.add_edge(e.dst, center)
+                    for aliquot in e.src.aliquots:
+                        self.G.add_edge(e.dst, aliquot)
                 if needs_differentiation and e._props:
                     self.G.add_edge(
                         e.src, e.dst, label=e.label, props=e._props)
@@ -1122,6 +1141,7 @@ class PsqlGraph2JSON(object):
 
         # Aggressively cache relationships, nodes by type, traversals, etc.
         self._cache_all()
+
 
     def _cache_all(self):
         """Create key value maps to cache nodes by label, by path, etc.
