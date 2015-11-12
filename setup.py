@@ -22,7 +22,7 @@ setup(
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@f0f198c2d7978fea311b0bc311c6db61732de261#egg=psqlgraph',
-        'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@ccc99bb8371456df1e72b622f1428ce8d6dff2b6#egg=gdcdictionary',
+        'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@49b49629b3588b3ef65b8857ba54c354b49e3b2c#egg=gdcdictionary',
     ],
     scripts=[
         'bin/setup_psqlgraph.py',
