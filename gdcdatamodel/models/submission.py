@@ -119,7 +119,8 @@ class TransactionSnapshot(Base):
     __tablename__ = 'transaction_snapshots'
 
     def __repr__(self):
-        return "<TransactionSnapshot({}, {})>".format(self.node_id, self.tid)
+        return "<TransactionSnapshot({}, {})>".format(
+            self.id, self.transaction_id)
 
     def to_json(self, fields=set()):
         fields = set(fields)

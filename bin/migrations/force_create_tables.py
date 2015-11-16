@@ -1,12 +1,18 @@
 import argparse
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
-from gdcdatamodel.models import *
+from gdcdatamodel import models as md  # noqa
 from psqlgraph import create_all, Node, Edge
 import random
 from multiprocessing import Process
 import time
-from gdcdatamodel.models.submission import Base as TransactionBase
+
+
+from gdcdatamodel.models import (
+    reports,
+    submission,
+)
+
 
 ID = random.randint(1000, 9999)
 name_root = "table_creator_"
@@ -38,79 +44,54 @@ JOIN pg_catalog.pg_locks         blocking_locks
     AND blocking_locks.pid != blocked_locks.pid
 
 JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
-WHERE NOT blocked_locks.GRANTED AND blocked_activity.application_name = '{}';
+WHERE NOT blocked_locks.GRANTED AND blocked_activity.application_name = :name;
 
 """
 
 
-def grant_permissions_to_all(grant_users, host, user, password, database):
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database
-    ), connect_args=connect_args)
-
+def grant_graph_permissions(engine, roles, grant_users):
     for grant_user in grant_users:
-
-        for cls in Node.get_subclasses():
-            print 'Granting roles to "{}" on "{}"'.format(
-                grant_user, cls.__tablename__)
-            engine.execute("""BEGIN;
-            GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE {} TO {};
-            COMMIT;""".format(cls.__tablename__, grant_user))
-        for cls in Edge.get_subclasses():
-            print 'Granting roles to "{}" on "{}"'.format(
-                grant_user, cls.__tablename__)
-            engine.execute("""BEGIN;
-            GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE {} TO {};
-            COMMIT;""".format(cls.__tablename__, grant_user))
+        for cls in Node.get_subclasses() + Edge.get_subclasses():
+            stmt = "GRANT {roles} ON TABLE {table} TO {user};".format(
+                roles=roles, table=cls.__tablename__, user=grant_user)
+            print stmt.strip()
+            engine.execute(text("BEGIN;" + stmt + "COMMIT;"))
 
 
-def create_graph_tables(timeout, host, user, password, database):
+def grant_graph_write_permissions(engine, grant_users):
+    grant_graph_permissions(engine, 'SELECT,INSERT,UPDATE,DELETE', grant_users)
+
+
+def grant_graph_read_permissions(engine, grant_users):
+    grant_graph_permissions(engine, 'SELECT', grant_users)
+
+
+def create_graph_tables(engine, timeout):
     """
     create a table
     """
     print('Creating tables in database')
 
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database
-    ), connect_args=connect_args)
     connection = engine.connect()
     trans = connection.begin()
     try:
-        connection.execute("SET LOCAL lock_timeout = '{}s';".format(timeout))
+        connection.execute(text("SET LOCAL lock_timeout = :timeout ;"),
+                           timeout='{}s'.format(timeout*1000))
         create_all(connection)
         trans.commit()
     except Exception as e:
         trans.rollback()
         if 'timeout' in str(e):
-            print 'Attempt timed out'
+            print 'Attempt timed out', str(e)
         else:
             raise
 
 
-def create_indexes(host, user, password, database):
-    print('Creating indexes')
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database
-    ), connect_args=connect_args)
-    index = lambda t, c: ["CREATE INDEX ON {} ({})".format(t, x) for x in c]
-    for scls in Node.get_subclasses():
-        tablename = scls.__tablename__
-        map(engine.execute, index(
-            tablename, [
-                'node_id',
-            ]))
-        map(engine.execute, [
-            "CREATE INDEX ON {} USING gin (_sysan)".format(tablename),
-            "CREATE INDEX ON {} USING gin (_props)".format(tablename),
-            "CREATE INDEX ON {} USING gin (_sysan, _props)".format(tablename),
-        ])
-    for scls in Edge.get_subclasses():
-        map(engine.execute, index(
-            scls.__tablename__, [
-                'src_id',
-                'dst_id',
-                'dst_id, src_id',
-            ]))
+def create_misc_tables(engine):
+    print 'Creating submission transaction tables...'
+    submission.Base.metadata.create_all(engine)
+    print 'Creating reporting tables...'
+    reports.Base.metadata.create_all(engine)
 
 
 def is_blocked_by_no_kill(blocking):
@@ -123,18 +104,22 @@ def is_blocked_by_no_kill(blocking):
     return False
 
 
-def force_create_graph_tables(delay, retries, host, user, password, database):
+def force_create_graph_tables(engine, delay, retries):
 
     print 'Running table creator named', name
-    p = Process(target=create_graph_tables, args=(
-        delay*2, host, user, password, database))
+    p = Process(target=create_graph_tables, args=(engine, delay*2))
     p.start()
 
+    time.sleep(1)
+
     if not p.is_alive():
+        print('Process not blocked.')
         return p.join()
 
-    print('Process is blocked, waiting {} seconds for unlock'.format(delay))
-    time.sleep(delay)
+    else:
+        print('Process is blocked, waiting {} seconds for unlock'
+              .format(delay))
+        time.sleep(delay)
 
     # If p has ended, the block was cleared without intervention
     if not p.is_alive():
@@ -142,11 +127,7 @@ def force_create_graph_tables(delay, retries, host, user, password, database):
         return p.join()
 
     # Lookup blocking processes
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=args.user, host=args.host, pwd=args.password, db=args.database
-    ), connect_args={
-        'application_name': 'table_creator_terminator_{}'.format(ID)})
-    blocking = list(engine.execute(blocking_SQL.format(name)))
+    blocking = list(engine.execute(text(blocking_SQL), name=name))
 
     # Check if any high importance process is blocking us
     if is_blocked_by_no_kill(blocking):
@@ -155,8 +136,7 @@ def force_create_graph_tables(delay, retries, host, user, password, database):
         print('Trying again in {} seconds ({} retries remaining)'.format(
             delay, retries))
         time.sleep(delay)
-        return force_create_tables(
-            delay, retries-1, host, user, password, database)
+        return force_create_graph_tables(engine, delay, retries-1)
 
     # Kill blocking processes
     for proc in blocking:
@@ -169,38 +149,59 @@ def force_create_graph_tables(delay, retries, host, user, password, database):
         # Kill anything in the way, it was deemed of low importance
         print('Killing blocking backend process: name({})\tpid({}): {}'
               .format(bing_appname, bing_pid, query))
-        engine.execute('select pg_terminate_backend({});'.format(bing_pid))
+        engine.execute(text('select pg_terminate_backend(:bing_pid);'),
+                       bing_pid=bing_pid)
 
     return p.join()
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, action="store",
+
+    # Driver config
+    parser.add_argument("-i", "--host", type=str, action="store",
                         default='localhost', help="psql-server host")
-    parser.add_argument("--user", type=str, action="store",
+    parser.add_argument("-u", "--user", type=str, action="store",
                         default='test', help="psql test user")
-    parser.add_argument("--password", type=str, action="store",
+    parser.add_argument("-p", "--password", type=str, action="store",
                         default='test', help="psql test password")
-    parser.add_argument("--database", type=str, action="store",
-                        default='automated_test', help="psql test database")
+    parser.add_argument("-d", "--database", type=str, action="store",
+                        default='automated_test', help="psql database")
+
+    # Graph creation config
     parser.add_argument("--delay", type=int, action="store",
                         default=600, help="How many seconds to wait for blocking processes to finish before hard killing them.")
     parser.add_argument("--retries", type=int, action="store",
                         default=10, help="If blocked by important process, how many times to retry after waiting `delay` seconds.")
-    parser.add_argument("--grant-users", type=str, action="store",
-                        default='', help="Users to grant all to on new tables.")
+
+    # Table creation directives
+    parser.add_argument("--no-graph-tables", action="store_true",
+                        help="Do not create graph tables.")
+    parser.add_argument("--no-misc-tables", action="store_true",
+                        help="Do not create misc tables.")
+
+    # Grant privs on graph to users
+    parser.add_argument("--graph-write-users", type=str, action="store",
+                        default='', help="Users to grant write privs to on new graph tables.")
+    parser.add_argument("--graph-read-users", type=str, action="store",
+                        default='', help="Users to grant read privs to on new graph tables.")
 
     args = parser.parse_args()
-    grant_users = [u for u in args.grant_users.split(',') if u]
 
-    force_create_graph_tables(
-        args.delay,
-        args.retries, args.host, args.user, args.password, args.database)
+    graph_write_users = [u for u in args.graph_write_users.split(',') if u]
+    graph_read_users = [u for u in args.graph_read_users.split(',') if u]
+    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
+        user=args.user, host=args.host, pwd=args.password, db=args.database
+    ), connect_args=connect_args)
 
-    grant_permissions_to_all(
-        grant_users, args.host, args.user, args.password, args.database)
+    # Graph tables
+    if not args.no_graph_tables:
+        force_create_graph_tables(engine, args.delay, args.retries)
+    if args.graph_write_users:
+        grant_graph_write_permissions(engine, graph_write_users)
+    if args.graph_read_users:
+        grant_graph_read_permissions(engine, graph_read_users)
 
-    create_indexes(
-        args.host, args.user, args.password, args.database)
+    # Misc tables
+    if not args.no_misc_tables:
+        create_misc_tables(engine)
