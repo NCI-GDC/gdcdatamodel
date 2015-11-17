@@ -49,7 +49,9 @@ def grant_permissions_to_all(grant_users, host, user, password, database):
     ), connect_args=connect_args)
 
     for grant_user in grant_users:
-
+        engine.execute("""BEGIN;
+            GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {};
+            COMMIT;""".format(grant_user))
         for cls in Node.get_subclasses():
             print 'Granting roles to "{}" on "{}"'.format(
                 grant_user, cls.__tablename__)
