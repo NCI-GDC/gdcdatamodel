@@ -110,11 +110,7 @@ class GDCUniqueKeysValidator(object):
         node = entity.node
         for keys in schema['uniqueKeys']:
             props = {}
-            if keys in [['id'], ['project_id', 'alias']]:
-                # uuid uniqueness should be checked during node creation
-                # by psqlgraph,
-                # [project_id, alias] need to be checked after we
-                # decide on where to put project_id
+            if keys == ["id"]:
                 continue
             for key in keys:
                 prop = schema['properties'][key].get('systemAlias')
@@ -122,7 +118,7 @@ class GDCUniqueKeysValidator(object):
                     props[prop] = node[prop]
                 else:
                     props[key] = node[key]
-            if graph.nodes(type(node)).props(props).count() > 1:
+            if graph.nodes().props(props).count() > 1:
                 entity.record_error(
                     "{} with {} already exists in the GDC"
                     .format(node.label, props), keys=props.keys())
