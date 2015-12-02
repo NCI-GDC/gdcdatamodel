@@ -54,7 +54,7 @@ class TCGAExomeAligner(BWAAligner):
         aligned with the current pipeline.
         '''
         pipeline_filter = lambda q: q.join(File._FileDataFromFile_in).not_sysan(
-            alignment_docker_image_tag=self.config['DOCKER_IMAGE_ID']
+            alignment_docker_image_tag=self.config['docker_image_id']
         )
         
         return q.subq_path('derived_files', pipeline_filter)
