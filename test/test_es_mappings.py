@@ -37,8 +37,7 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'md5sum', 'data_format', 'acl', 'origin',
                       'associated_entities', 'project_id',
                       'created_datetime', 'updated_datetime',
-                      'release_state', 'release_state_lock',
-                      'release_state_datetime'}
+                      'release_state', 'release_state_datetime'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_case_mapping_top_level(self):
@@ -55,7 +54,7 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'slide_ids', 'submitter_slide_ids',
                       'project_id', 'created_datetime',
                       'updated_datetime', 'release_state',
-                      'release_state_lock', 'release_state_datetime'}
+                      'release_state_datetime'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_project_mapping_top_level(self):
@@ -74,5 +73,5 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'entity_submitter_id', 'case_submitter_id',
                       'project_id', 'created_datetime',
                       'updated_datetime', 'release_state',
-                      'release_state_lock', 'release_state_datetime'}
+                      'release_state_datetime'}
         self.assertEqual(properties, set(m.keys()))
