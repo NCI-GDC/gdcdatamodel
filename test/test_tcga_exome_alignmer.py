@@ -622,6 +622,8 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         # Verify the presence of a second, realigned derived file.
         with self.graph.session_scope() as sess:
             f_realigned = self.graph.nodes(File).ids(f.node_id).one()
+            assert(f_realigned.derived_files)
+            assert(o in f_realigned.derived_files)
             assert(len(f_realigned.derived_files) == 2)
 
     def test_chooses_unerrored_files_over_errored(self):
