@@ -602,11 +602,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             f = self.create_file('some.bam', 'some_content', aliquot='foo')
             o = self.create_file('other.bam', 'other_content', aliquot='foo')
 
-            f.derived_files = [o]
-
-            # Label it such that it should be realigned.
-            f.sysan['qc_failed'] = True
-
+            # Associated the two using an older pipeline.
             FileDataFromFile(
                 src=f,
                 dst=o,
@@ -614,6 +610,9 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                     'alignment_docker_image_tag': 'pipeline:gdc0.000',
                 },
             )
+
+            # Label the source file such that it needs to be realigned.
+            f.sysan['qc_failed'] = True
 
         # Run the mocked aligner to check that it realigns the file.
         with self.monkey_patches():
