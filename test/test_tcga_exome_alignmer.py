@@ -647,15 +647,15 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             f.sysan['qc_failed'] = False
 
         # Run the mocked aligner to check that it realigns the file.
-        with self.monkey_patches():
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
             aligner = self.get_aligner()
             aligner.go()
 
-        # Verify the presence of a second, realigned derived file.
+        # Verify that no additional derived files were created.
         with self.graph.session_scope() as sess:
             f_realigned = self.graph.nodes(File).ids(f.node_id).one()
             assert(f_realigned.derived_files)
-            assert(o not in f_realigned.derived_files)
+            assert(o in f_realigned.derived_files)
             assert(len(f_realigned.derived_files) == 1)
 
     def test_chooses_unerrored_files_over_errored(self):
