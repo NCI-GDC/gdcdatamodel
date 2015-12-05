@@ -1,6 +1,7 @@
 from queries import exome
 from sqlalchemy import BigInteger
 from gdcdatamodel.models import File
+from gdcdatamodel.models import FileDataFromFile
 
 
 from zug.harmonize.bwa_aligner import BWAAligner
