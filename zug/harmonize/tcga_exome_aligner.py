@@ -53,8 +53,9 @@ class TCGAExomeAligner(BWAAligner):
         Apply a filter for selecting only those nodes that have not been
         aligned with the current pipeline.
         '''
-        pipeline_filter = lambda q: q.join(File._FileDataFromFile_in).not_sysan(
-            alignment_docker_image_tag=self.config['docker_image_id']
+        pipeline_filter = lambda q: q.join(File._FileDataFromFile_out).filter(
+            # NOTE this should be pulled from input
+            FileDataFromFile._sysan['alignment_docker_image_tag'].astext < 'pipeline:gdc0.244'
         )
         
         return q.subq_path('derived_files', pipeline_filter)
