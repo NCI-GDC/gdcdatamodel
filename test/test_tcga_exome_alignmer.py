@@ -591,3 +591,88 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                 file.sysan["alignment_last_docker_error_filename"],
                 "/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam"
             )
+
+    def test_will_select_realignment_files(self):
+        '''
+        Test that files flagged for realignment will be selected.
+        '''
+        # Create a source and derived bam file that needs realignment.
+        with self.graph.session_scope() as sess:
+            f = self.create_file('some.bam', 'some_content', aliquot='foo')
+            o = self.create_file('other.bam', 'other_content', aliquot='foo')
+
+            # Associated the two using an older pipeline.
+            FileDataFromFile(
+                src=f,
+                dst=o,
+                system_annotations={
+                    'alignment_docker_image_tag': 'pipeline:gdc0.000',
+                },
+            )
+
+            # Label the source file such that it needs to be realigned.
+            f.sysan['qc_failed'] = True
+
+        # Run the mocked aligner to check that it realigns the file.
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            aligner.go()
+
+        # Verify the presence of a second, realigned derived file.
+        with self.graph.session_scope() as sess:
+            f_realigned = self.graph.nodes(File).ids(f.node_id).one()
+            assert(f_realigned.derived_files)
+            assert(o in f_realigned.derived_files)
+            assert(len(f_realigned.derived_files) == 2)
+
+    def test_old_qc_passed_files_not_realigned(self):
+        '''
+        Test that old pipeline files that passed qc will not be selected.
+        '''
+        # Create a source and derived bam file that needs realignment.
+        with self.graph.session_scope() as sess:
+            f = self.create_file('some.bam', 'some_content', aliquot='foo')
+            o = self.create_file('other.bam', 'other_content', aliquot='foo')
+
+            # Associated the two using an older pipeline.
+            FileDataFromFile(
+                src=f,
+                dst=o,
+                system_annotations={
+                    'alignment_docker_image_tag': 'pipeline:gdc0.000',
+                },
+            )
+
+            # Label the source file such that it does not need to be realigned.
+            f.sysan['qc_failed'] = False
+
+        # Run the mocked aligner to check that it realigns the file.
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.go()
+
+        # Verify that no additional derived files were created.
+        with self.graph.session_scope() as sess:
+            f_realigned = self.graph.nodes(File).ids(f.node_id).one()
+            assert(f_realigned.derived_files)
+            assert(o in f_realigned.derived_files)
+            assert(len(f_realigned.derived_files) == 1)
+
+    def test_chooses_unerrored_files_over_errored(self):
+        with self.graph.session_scope():
+            file = self.create_file("test1.bam", "fake_test_content",
+                                    aliquot="foo")
+            errored_file = self.create_file(
+                "test2.bam",
+                "more_fake_test_content",
+                aliquot="bar"
+            )
+            errored_file.sysan["alignment_last_docker_error_image"] = "fake_image_id"
+            errored_file.sysan["alignment_last_docker_error_logs"] = "fake error logs"
+            errored_file.sysan["alignment_seen_docker_error"] = True
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            with aligner.consul.consul_session_scope():
+                with self.graph.session_scope():
+                    lock_id, inputs = aligner.find_inputs()
+                    self.assertEqual(lock_id, file.node_id)
