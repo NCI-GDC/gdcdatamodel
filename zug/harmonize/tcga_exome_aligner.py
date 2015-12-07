@@ -49,10 +49,10 @@ class TCGAExomeAligner(BWAAligner):
         
         return alignable
 
-    def without_current_pipeline(self, q):
+    def with_out_of_date_pipeline(self, q):
         '''
         Apply a filter for selecting only those nodes that have not been
-        aligned with the current pipeline.
+        aligned with an updated pipeline.
         '''
         pipeline_filter = lambda q: q.join(File._FileDataFromFile_out).filter(
             # NOTE this should be pulled from input
@@ -90,7 +90,7 @@ class TCGAExomeAligner(BWAAligner):
             )
         
         alignable = self.with_qc_failures(alignable)
-        alignable = self.without_current_pipeline(alignable)
+        alignable = self.with_out_of_date_pipeline(alignable)
         
         return alignable
 
