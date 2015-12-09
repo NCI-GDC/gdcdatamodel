@@ -601,6 +601,9 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             f = self.create_file('some.bam', 'some_content', aliquot='foo')
             o = self.create_file('other.bam', 'other_content', aliquot='foo')
 
+            # Override source sysan to indicate alignment.
+            o.sysan['source'] = 'tcga_exome_alignment'
+
             # Associated the two using an older pipeline.
             FileDataFromFile(
                 src=f,
@@ -634,6 +637,9 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             f = self.create_file('some.bam', 'some_content', aliquot='foo')
             o = self.create_file('other.bam', 'other_content', aliquot='foo')
 
+            # Override source sysan to indicate alignment.
+            o.sysan['source'] = 'tcga_exome_alignment'
+
             # Associated the two using an older pipeline.
             FileDataFromFile(
                 src=f,
@@ -657,6 +663,46 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             assert(f_realigned.derived_files)
             assert(o in f_realigned.derived_files)
             assert(len(f_realigned.derived_files) == 1)
+
+    def test_realignment_happens_only_once(self):
+        '''
+        Test that realignment won't happen multiple times.
+        '''
+        # Create a source and derived bam file that needs realignment.
+        with self.graph.session_scope() as sess:
+            f = self.create_file('some.bam', 'some_content', aliquot='foo')
+            o = self.create_file('other.bam', 'other_content', aliquot='foo')
+
+            # Override source sysan to indicate alignment.
+            o.sysan['source'] = 'tcga_exome_alignment'
+
+            # Associated the two using an older pipeline.
+            FileDataFromFile(
+                src=f,
+                dst=o,
+                system_annotations={
+                    'alignment_docker_image_tag': 'pipeline:gdc0.000',
+                },
+            )
+
+            # Label the source file such that it needs to be realigned.
+            f.sysan['qc_failed'] = True
+
+        # Run the mocked aligner twice to check that it realigns the file once.
+        with self.monkey_patches():
+            aligner = self.get_aligner()
+            aligner.go()
+
+        with self.monkey_patches(), self.assertRaises(NoMoreWorkException):
+            aligner = self.get_aligner()
+            aligner.go()
+
+        # Verify the presence of a second, realigned derived file.
+        with self.graph.session_scope() as sess:
+            f_realigned = self.graph.nodes(File).ids(f.node_id).one()
+            assert(f_realigned.derived_files)
+            assert(o in f_realigned.derived_files)
+            assert(len(f_realigned.derived_files) == 2)
 
     def test_chooses_unerrored_files_over_errored(self):
         with self.graph.session_scope():

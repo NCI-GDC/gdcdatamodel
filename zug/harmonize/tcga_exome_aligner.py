@@ -77,6 +77,7 @@ class TCGAExomeAligner(BWAAligner):
         
         alignable = self.bam_files\
                         .props(state="live")\
+                        .filter(~File.source_files.any())\
                         .filter(~File.node_id.in_(currently_being_aligned))
         
         if self.config["size_limit"]:
