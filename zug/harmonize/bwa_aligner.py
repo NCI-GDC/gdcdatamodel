@@ -371,6 +371,9 @@ class BWAAligner(AbstractHarmonizer):
                 "alignment_last_step": self.output_paths["bam"].split("/")[-2],
             }
         )
+
+        realigned = input_nodes['bam'].sysan.get('qc_failed', False)
+
         with self.graph.session_scope() as session:
             # merge old bam file so we can get its classification
             session.add(self.inputs["bam"])
@@ -379,5 +382,9 @@ class BWAAligner(AbstractHarmonizer):
             output_nodes["bam"].data_formats =  self.inputs["bam"].data_formats
             output_nodes["bam"].data_subtypes = self.inputs["bam"].data_subtypes
             output_nodes["bam"].platforms = self.inputs["bam"].platforms
+
+            # If the input had qc errors, then this is a realignment.
+            input_nodes['bam'].sysan['qc_realigned'] = realigned
+
             # this line implicitly merges the new bam and new bai
             session.merge(edge)
