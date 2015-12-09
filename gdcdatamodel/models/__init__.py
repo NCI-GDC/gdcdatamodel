@@ -118,6 +118,10 @@ def NodeFactory(_id, schema):
         and key not in excluded_props
     }
 
+    properties['_dictionary'] = {
+        'category': schema.get('category'),
+        'title': schema.get('title'),
+    }
     # _pg_links are out_edges, links TO other types
     properties['_pg_links'] = {}
     # _pg_backrefs are in_edges, links FROM other types
