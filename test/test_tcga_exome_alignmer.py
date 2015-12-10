@@ -164,7 +164,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
                                    "Please create this directory so we can create temporary files in it. "
                                    "The reason we need a temporary directory in your home "
                                    "directory is because boot2docker mounting only"
-                                   "works for dirctories under /Users".format(prefix))
+                                   "works for dirctories under /Users".format(dir))
         else:
             dir = None
         os.environ["ALIGNMENT_WORKDIR"] = tempfile.mkdtemp(dir=dir)
