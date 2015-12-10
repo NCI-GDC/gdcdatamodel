@@ -703,22 +703,3 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             assert(f_realigned.derived_files)
             assert(o in f_realigned.derived_files)
             assert(len(f_realigned.derived_files) == 2)
-
-    def test_chooses_unerrored_files_over_errored(self):
-        with self.graph.session_scope():
-            file = self.create_file("test1.bam", "fake_test_content",
-                                    aliquot="foo")
-            errored_file = self.create_file(
-                "test2.bam",
-                "more_fake_test_content",
-                aliquot="bar"
-            )
-            errored_file.sysan["alignment_last_docker_error_image"] = "fake_image_id"
-            errored_file.sysan["alignment_last_docker_error_logs"] = "fake error logs"
-            errored_file.sysan["alignment_seen_docker_error"] = True
-        with self.monkey_patches():
-            aligner = self.get_aligner()
-            with aligner.consul.consul_session_scope():
-                with self.graph.session_scope():
-                    lock_id, inputs = aligner.find_inputs()
-                    self.assertEqual(lock_id, file.node_id)
