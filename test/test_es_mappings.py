@@ -35,7 +35,7 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'uploaded_datetime', 'file_id', 'related_files',
                       'state_comment', 'published_datetime', 'center',
                       'md5sum', 'data_format', 'acl', 'origin',
-                      'associated_entities', 'project_id',
+                      'associated_entities', 'project_id', 'error_type',
                       'created_datetime', 'updated_datetime',
                       'release_state', 'release_state_datetime'}
         self.assertEqual(properties, set(m.keys()))
