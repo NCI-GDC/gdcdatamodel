@@ -148,6 +148,26 @@ class PsqlGraph2JSON(object):
             for l in self.case_to_file_paths
         ]
 
+    def warning(self, title, text, tags=[], *args, **kwargs):
+        log.warning("{}: {}".format(title, text))
+        statsd.event(
+            title,
+            text,
+            source_type_name="esbuild",
+            alert_type="warning",
+            tags=tags,
+        )
+
+    def error(self, title, text, tags=[], *args, **kwargs):
+        log.error("{}: {}".format(title, text))
+        statsd.event(
+            title,
+            text,
+            source_type_name="esbuild",
+            alert_type="error",
+            tags=tags,
+        )
+
     def pbar(self, title, maxval):
         """Create and initialize a custom progressbar
 
@@ -525,15 +545,10 @@ class PsqlGraph2JSON(object):
                 base = self._get_base_doc(neighbor)
             if corr == ONE_TO_ONE:
                 if label in doc:
-                    log.warning(
-                        "File %s has more than one %s, this is unexpected.",
-                        node, label
-                    )
-                    statsd.event(
-                        "duplicate edge on {}".format(node.node_id),
-                        "{} has duplicate {}".format(node.node_id, label),
-                        source_type_name="esbuild",
-                        alert_type="error",
+                    self.warning(
+                        "Duplicate edge on {}".format(node.node_id),
+                        ("File {} has more than one {}, this is unexpected."
+                         .format(node, label)),
                         tags=["file_id:{}".format(node.node_id)],
                     )
                 else:
@@ -560,7 +575,8 @@ class PsqlGraph2JSON(object):
             if self.G[node][maybe_related].get("label") == "related_to":
                 related_file = maybe_related
                 rf_doc = self._get_base_doc(related_file)
-                for dst in self.neighbors_labeled(related_file, 'data_subtype'):
+                for dst in self.neighbors_labeled(
+                        related_file, 'data_subtype'):
                     rf_doc['data_subtype'] = dst['name']
                     self.add_data_type(related_file, rf_doc)
                 self.patch_file_datetimes(rf_doc)
@@ -836,7 +852,29 @@ class PsqlGraph2JSON(object):
         """
         ann_doc = self._get_base_doc(node)
         entities = self.G.neighbors(node)
-        assert len(entities) == 1, 'Annotation has multiple entities'
+        if len(entities) == 0:
+            self.error(
+                'Annotation has no entities',
+                "{} has zero entity associated.".format(node.node_id),
+                tags=["annotation_id:{}".format(node.node_id)],
+            )
+            # There are no entities! We cannot proceed.
+            ann_doc.update(dict(
+                entity_type=None,
+                entity_id=None,
+                entity_submitter_id=None,
+            ))
+            return ann_doc
+
+        if len(entities) > 1:
+            self.warning(
+                'Annotation has multiple entities',
+                "{} has more than one entity associated.".format(node.node_id),
+                tags=["annotation_id:{}".format(node.node_id)],
+            )
+            # There are too many entities! proceed with only the first
+            # entity
+
         entity = entities[0]
         ann_doc['entity_type'] = entity.label
         ann_doc['entity_id'] = entity.node_id
@@ -923,9 +961,13 @@ class PsqlGraph2JSON(object):
                       in {p['project']['project_id']
                           for p in f['cases']}])
         expected = project_doc['summary']['file_count']
-        assert actual == expected,\
-            '{} file count mismatch: {} != {}'.format(
-                project_doc['project_id'], actual, expected)
+        if actual != expected:
+            self.error(
+                'Annotation has multiple entities',
+                '{} file count mismatch: {} != {}'.format(
+                    project_doc['project_id'], actual, expected),
+                tags=["project_id:{}".format(project_doc['project_id'])],
+            )
 
     def validate_docs(self, case_docs, file_docs, ann_docs, project_docs):
         for project_doc in project_docs:
@@ -938,7 +980,14 @@ class PsqlGraph2JSON(object):
     def validate_annotations(self, ann_docs):
         for ann_doc in ann_docs:
             if ann_doc['entity_type'] == 'case':
-                assert ann_doc['entity_id'] == ann_doc['case_id']
+                if ann_doc['entity_id'] != ann_doc['case_id']:
+                    self.error(
+                        'Annotation case_id does not match entity_id',
+                        'case_id/entity_id mismatch: {} != {}'.format(
+                            ann_doc['entity_id'], ann_doc['case_id']),
+                        tags=["annotation_id:{}".format(
+                            ann_doc.get("annotation_id", "?"))],
+                    )
 
     def verify_data_type_count(self, case):
         for data_type in DATA_TYPES.keys():
@@ -946,7 +995,12 @@ class PsqlGraph2JSON(object):
                         if f.get('data_type') == data_type])
             act = ([d['file_count'] for d in case['summary']['data_types']
                     if d['data_type'] == data_type][:1] or [0])[0]
-            assert act == calc, '{}: {} != {}'.format(data_type, act, calc)
+            if act != calc:
+                self.error(
+                    'Inconsistent data_type count',
+                    '{}: {} != {}'.format(data_type, act, calc),
+                    tags=["case_id:{}".format(case.get("case_id", "?"))],
+                )
 
     def validate_against_mapping(self, doc, mapping):
         """Recursively verify that all keys in the document are in the
@@ -955,12 +1009,20 @@ class PsqlGraph2JSON(object):
         """
         if isinstance(doc, dict):
             # Recurse through all keys in dictionary
-            for doc_key, child in doc.iteritems():
-                assert doc_key in mapping['properties'].keys(),\
-                    "Key '{}' was not found in mapping keys {}".format(
-                        doc_key, mapping['properties'].keys())
-                self.validate_against_mapping(
-                    child, mapping['properties'][doc_key])
+            for doc_key in doc.keys():
+                if doc_key not in mapping['properties']:
+                    self.error(
+                        'Key not in mapping',
+                        "Key '{}' was not found in mapping keys {}".format(
+                            doc_key, mapping['properties'].keys()),
+                        tags=["key:{}".format(doc_key)],
+                    )
+                    # Remove so there is not an error when populating index
+                    doc.pop(doc_key, None)
+                else:
+                    self.validate_against_mapping(
+                        doc[doc_key], mapping['properties'][doc_key])
+
         elif isinstance(doc, list):
             # Loop over all all items in the list. Note that ES
             # mappings do not distinguish between lists of subdocs and
@@ -969,15 +1031,17 @@ class PsqlGraph2JSON(object):
                 self.validate_against_mapping(list_entry, mapping)
 
     def validate_case(self, node, case):
-        # Assert file count = summary.file_count
-        assert len(case['files'])\
-            == case['summary']['file_count'],\
-            '{}: {} != {}'.format(node.node_id, len(case['files']),
-                                  case['summary']['file_count'])
+        # Check that file count = summary.file_count
+        if len(case['files']) != case['summary']['file_count']:
+            self.error(
+                'Inconsistent case file count',
+                '{}: {} != {}'.format(node.node_id, len(case['files']),
+                                      case['summary']['file_count']),
+                tags=["case_id:{}".format(node.node_id)],
+            )
 
         # Check for keys that are in the doc but not in the mapping
-        self.validate_against_mapping(
-            case, get_case_es_mapping())
+        self.validate_against_mapping(case, get_case_es_mapping())
 
     ###################################################################
     #                       Caching functions
@@ -1058,6 +1122,27 @@ class PsqlGraph2JSON(object):
                 return path[i+1:]
         return []
 
+    def get_suppressed_children(self, redacted):
+        """Get the children of a redacted node.
+
+        """
+        to_suppress = []
+        if redacted.label == "case":
+            paths = self.case_to_file_paths
+        else:
+            paths = [self.truncate_path(p, redacted.label)
+                     for p in self.case_to_file_paths]
+            # filter empty paths
+            paths = [p for p in paths if p]
+        log.info("suppressing %s, which is redacted directly.", redacted)
+        to_suppress.append(redacted)
+        log.info("Walking down towards file with paths %s", paths)
+        extra = self.walk_paths(redacted, paths, whole=True)
+        log.info("Found %s other things to suppress by walking from %s",
+                 extra, redacted)
+        to_suppress.extend(extra)
+        return to_suppress
+
     def suppressed_nodes(self):
         """
         Find all nodes that need to be suppressed due to redactions.
@@ -1068,29 +1153,39 @@ class PsqlGraph2JSON(object):
         to_suppress = []
         for redaction in redactions:
             redacted_list = self.G.neighbors(redaction)
-            # an annotation should only ever annotate one thing
-            assert len(redacted_list) == 1
-            redacted = redacted_list[0]
-            if redacted.label == "case":
-                paths = self.case_to_file_paths
-            else:
-                paths = [self.truncate_path(p, redacted.label)
-                         for p in self.case_to_file_paths]
-                # filter empty paths
-                paths = [p for p in paths if p]
-            log.info("suppressing %s, which is redacted directly.", redacted)
-            to_suppress.append(redacted)
+
+            if len(redacted_list) == 0:
+                # If there is no entity, then we have to move on to
+                # the next annotation
+                self.error(
+                    'Redaction annotation no entities',
+                    "Redaction {} has zero entities associated.".format(
+                        redaction),
+                    tags=["annotation:{}".format(redaction)],
+                )
+                continue
+
+            if len(redacted_list) > 1:
+                # an annotation should only ever annotate one thing,
+                # however, proceed to redact them all
+                self.warning(
+                    'Redaction annotation has multiple entities',
+                    ("{} has more than one entity associated. "
+                     "For security reasons, removing all from index!")
+                    .format(redaction),
+                    tags=["annotation:{}".format(redaction)],
+                )
+
+            for redacted in redacted_list:
+                to_suppress += self.get_suppressed_children(redacted)
+
             # returning the redaction annotations themselves here might
             # seem weird, but including the redaction annotations
             # themselves without the things they point to won't work, so
             # we have to remove them.
             log.info("suppressing %s, the redaction annotation.", redaction)
             to_suppress.append(redaction)
-            log.info("Walking down towards file with paths %s", paths)
-            extra = self.walk_paths(redacted, paths, whole=True)
-            log.info("Found %s other things to suppress by walking from %s",
-                     extra, redacted)
-            to_suppress.extend(extra)
+
         return to_suppress
 
     def remove_unindexed_nodes_from_graph(self):
@@ -1142,7 +1237,6 @@ class PsqlGraph2JSON(object):
         # Aggressively cache relationships, nodes by type, traversals, etc.
         self._cache_all()
 
-
     def _cache_all(self):
         """Create key value maps to cache nodes by label, by path, etc.
 
@@ -1180,8 +1274,15 @@ class PsqlGraph2JSON(object):
                 continue
             paths = [p[1:] for p in self.file_to_case_paths if p[0] == e.label]
             cases = self.walk_paths(e, paths)
-            assert len(cases) <= 1,\
-                '{}: Found {} cases'.format(e, len(cases))
+
+            if len(cases) > 1:
+                self.warning(
+                    'Entity associated with > 1 case',
+                    '{}: Found {} cases'.format(e, len(cases)),
+                    tags=["entity:{}".format(e)],
+                )
+                return
+
             if len(cases) != 0:
                 self.entity_cases[e] = cases.pop()
             pbar.update(pbar.currval+1)
