@@ -597,7 +597,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         Test that files flagged for realignment will be selected.
         '''
         # Create a source and derived bam file that needs realignment.
-        with self.graph.session_scope() as sess:
+        with self.graph.session_scope():
             f = self.create_file('some.bam', 'some_content', aliquot='foo')
             o = self.create_file('other.bam', 'other_content', aliquot='foo')
 
@@ -622,7 +622,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.go()
 
         # Verify the presence of a second, realigned derived file.
-        with self.graph.session_scope() as sess:
+        with self.graph.session_scope():
             f_realigned = self.graph.nodes(File).ids(f.node_id).one()
             assert(f_realigned.derived_files)
             assert(o in f_realigned.derived_files)
@@ -633,7 +633,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         Test that old pipeline files that passed qc will not be selected.
         '''
         # Create a source and derived bam file that needs realignment.
-        with self.graph.session_scope() as sess:
+        with self.graph.session_scope():
             f = self.create_file('some.bam', 'some_content', aliquot='foo')
             o = self.create_file('other.bam', 'other_content', aliquot='foo')
 
@@ -658,7 +658,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.go()
 
         # Verify that no additional derived files were created.
-        with self.graph.session_scope() as sess:
+        with self.graph.session_scope():
             f_realigned = self.graph.nodes(File).ids(f.node_id).one()
             assert(f_realigned.derived_files)
             assert(o in f_realigned.derived_files)
@@ -669,7 +669,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
         Test that realignment won't happen multiple times.
         '''
         # Create a source and derived bam file that needs realignment.
-        with self.graph.session_scope() as sess:
+        with self.graph.session_scope():
             f = self.create_file('some.bam', 'some_content', aliquot='foo')
             o = self.create_file('other.bam', 'other_content', aliquot='foo')
 
@@ -698,7 +698,7 @@ class TCGAExomeAlignerTest(FakeS3Mixin, SignpostMixin, PreludeMixin,
             aligner.go()
 
         # Verify the presence of a second, realigned derived file.
-        with self.graph.session_scope() as sess:
+        with self.graph.session_scope():
             f_realigned = self.graph.nodes(File).ids(f.node_id).one()
             assert(f_realigned.derived_files)
             assert(o in f_realigned.derived_files)
