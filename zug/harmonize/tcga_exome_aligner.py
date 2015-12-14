@@ -49,24 +49,19 @@ class TCGAExomeAligner(BWAAligner):
         
         return alignable
 
-    def with_out_of_date_pipeline(self, q):
-        '''
-        Apply a filter for selecting only those nodes that have not been
-        aligned with an updated pipeline.
-        '''
-        pipeline_filter = lambda q: q.join(File._FileDataFromFile_in).filter(
-            # NOTE this should be pulled from input
-            FileDataFromFile._sysan['alignment_docker_image_tag'].astext < 'pipeline:gdc0.244'
-        )
-        
-        return q.subq_path('derived_files', pipeline_filter)
-
     @staticmethod
     def with_qc_failures(q):
         '''
         Apply a filter for selecting only those nodes that have qc failures.
         '''
         return q.sysan(qc_failed=True)
+
+    @staticmethod
+    def without_realignment(q):
+        '''
+        Apply a filter for selecting only non-realigned nodes.
+        '''
+        return q.not_sysan(qc_realigned=True)
 
     @property
     def realignable_files(self):
@@ -77,6 +72,7 @@ class TCGAExomeAligner(BWAAligner):
         
         alignable = self.bam_files\
                         .props(state="live")\
+                        .filter(~File.source_files.any())\
                         .filter(~File.node_id.in_(currently_being_aligned))
         
         if self.config["size_limit"]:
@@ -90,7 +86,7 @@ class TCGAExomeAligner(BWAAligner):
             )
         
         alignable = self.with_qc_failures(alignable)
-        alignable = self.with_out_of_date_pipeline(alignable)
+        alignable = self.without_realignment(alignable)
         
         return alignable
 
