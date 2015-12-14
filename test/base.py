@@ -1,4 +1,5 @@
 from unittest import TestCase
+from gdcdictionary import gdcdictionary
 import os
 import random
 import tempfile
@@ -110,6 +111,8 @@ class ZugTestBase(TestCase):
             node_id = str(uuid.uuid4())
         for key, types in node_class.get_pg_properties().iteritems():
             if key in kwargs:
+                continue
+            elif key not in gdcdictionary.schema[node_class.label]['required']:
                 continue
             elif not types or str in types:
                 kwargs[key] = cls.random_string()
