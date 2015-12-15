@@ -21,7 +21,7 @@ from datadog import statsd
 # TODO this could probably be bumped now that the number of bulk
 # threads in the config is higher, c.f.
 # https://github.com/NCI-GDC/tungsten/commit/3ac690d19dd49f8ad2f30bf55ca6fe70ff2cc51d
-BATCH_SIZE = 16
+BATCH_SIZE = 4
 
 
 INDEX_PATTERN = '{base}_{n}'
