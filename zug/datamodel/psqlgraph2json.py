@@ -104,6 +104,11 @@ class PsqlGraph2JSON(object):
         self.omitted_projects = {
             ('TCGA', 'CNTL'),
             ('TCGA', 'MISC'),
+            ('TCGA', 'TEST'),
+            ('TCGA', 'DEV1'),
+            ('TCGA', 'DEV2'),
+            ('TCGA', 'DEV3'),
+            ('CGCI', 'BLGSP'),
         }
 
         # The body of these nested documents will be flattened into
