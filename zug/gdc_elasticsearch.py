@@ -286,11 +286,15 @@ class GDCElasticsearch(object):
                 self.log.info("Closing %s", index)
                 try:
                     self.es.indices.flush(index=index)
-                except AuthorizationException:
+                except AuthorizationException as e:
                     # authorization exception will be raised if it's already closed
-                    self.log.info("%s is already closed" % index)
+                    if "IndexClosedException" in e.error:
+                        self.log.info("%s is already closed" % index)
+                        continue
+                    else:
+                        self.log.exception("Fail to flush %s" % index)
                 except:
-                    self.log.error("Can't flush index %s" % index)
+                    self.log.exception("Can't flush index %s" % index)
                 try:
                     self.es.indices.close(index=index)
                 except:
