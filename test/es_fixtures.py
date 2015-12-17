@@ -9,6 +9,8 @@ NODES = [
         node_id='3239e85f-6be7-417b-b8e9-073c4d9c311c',
         project_id='TCGA-BRCA',
         age_at_diagnosis=34,
+        release_state = None,
+        release_state_datetime = None
     ),
     Sample(
         node_id='5fa9998b-deff-493e-8a8e-dc2422192a48',
@@ -30,7 +32,9 @@ NODES = [
         time_between_clamping_and_freezing=None,
         time_between_excision_and_freezing=None,
         tumor_code=None,
-        tumor_code_id=None
+        tumor_code_id=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='84df0f82-69c4-4cd3-a4bd-f40d2d6ef916',
@@ -38,7 +42,9 @@ NODES = [
         amount=13.0,
         concentration=0.18,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-10A-01D-A133-02'
+        submitter_id='TCGA-AR-A1AR-10A-01D-A133-02',
+        release_state = None,
+        release_state_datetime = None
     ),
     Analyte(
         node_id='344dffb3-2d2b-479d-8be5-9ead2728541b',
@@ -50,7 +56,9 @@ NODES = [
         concentration=None,
         spectrophotometer_method=None,
         submitter_id='TCGA-AR-A1AR-01A-31W',
-        well_number=None
+        well_number=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Analyte(
         node_id='07c974b3-3286-4c4f-8b67-6f8e425936f4',
@@ -62,7 +70,9 @@ NODES = [
         concentration=0.18,
         spectrophotometer_method='UV Spec',
         submitter_id='TCGA-AR-A1AR-10A-01D',
-        well_number=None
+        well_number=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Analyte(
         node_id='a58e8309-8346-4648-945d-e48efdc1a635',
@@ -74,13 +84,17 @@ NODES = [
         concentration=None,
         spectrophotometer_method=None,
         submitter_id='TCGA-AR-A1AR-10A-01W',
-        well_number=None
+        well_number=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Case(
         node_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         project_id='TCGA-BRCA',
         days_to_index=0,
-        submitter_id='TCGA-AR-A1AR'
+        submitter_id='TCGA-AR-A1AR',
+        release_state = None,
+        release_state_datetime = None
     ),
     Portion(
         node_id='5b2a99b7-e1a8-4739-acaf-d5f75cc47021',
@@ -89,7 +103,9 @@ NODES = [
         is_ffpe=False,
         portion_number='01',
         submitter_id='TCGA-AR-A1AR-10A-01',
-        weight=None
+        weight=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='2708315c-d58a-42d7-a914-d6299aa74936',
@@ -97,7 +113,9 @@ NODES = [
         amount=6.67,
         concentration=0.18,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-10A-01D-A134-01'
+        submitter_id='TCGA-AR-A1AR-10A-01D-A134-01',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='c7976361-e689-44f1-9e5a-2a07064f2f95',
@@ -105,7 +123,9 @@ NODES = [
         amount=6.67,
         concentration=0.16,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31D-A134-01'
+        submitter_id='TCGA-AR-A1AR-01A-31D-A134-01',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='0ffb3f3d-f20e-43d1-9867-7dc75ac24f3b',
@@ -113,7 +133,9 @@ NODES = [
         amount=20.0,
         concentration=0.16,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31R-A136-13'
+        submitter_id='TCGA-AR-A1AR-01A-31R-A136-13',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='05c45162-6c94-4a15-accc-b6239451064c',
@@ -121,7 +143,9 @@ NODES = [
         amount=13.0,
         concentration=0.16,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31D-A133-02'
+        submitter_id='TCGA-AR-A1AR-01A-31D-A133-02',
+        release_state = None,
+        release_state_datetime = None
     ),
     Analyte(
         node_id='3febc6c8-85ae-4d38-ba55-c959959846db',
@@ -133,7 +157,9 @@ NODES = [
         concentration=0.16,
         spectrophotometer_method='UV Spec',
         submitter_id='TCGA-AR-A1AR-01A-31D',
-        well_number=None
+        well_number=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='281bfaa0-3f3c-412f-a3f8-76f1aa6e53ed',
@@ -141,7 +167,9 @@ NODES = [
         amount=80.0,
         concentration=0.5,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-10A-01W-A14P-09'
+        submitter_id='TCGA-AR-A1AR-10A-01W-A14P-09',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='0395a62f-3f37-4068-bab6-4c1d29cef2d5',
@@ -149,7 +177,9 @@ NODES = [
         amount=40.0,
         concentration=0.09,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-10A-01D-A135-09'
+        submitter_id='TCGA-AR-A1AR-10A-01D-A135-09',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='6d066a72-f59f-45a8-ab90-216000b36da4',
@@ -157,7 +187,9 @@ NODES = [
         amount=26.7,
         concentration=0.16,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31R-A137-07'
+        submitter_id='TCGA-AR-A1AR-01A-31R-A137-07',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='008ba655-a0a3-42c4-8c72-f1341365ef02',
@@ -165,7 +197,9 @@ NODES = [
         amount=40.0,
         concentration=0.08,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31D-A135-09'
+        submitter_id='TCGA-AR-A1AR-01A-31D-A135-09',
+        release_state = None,
+        release_state_datetime = None
     ),
     Slide(
         node_id='3013e9be-aa3e-4986-990c-559982f00e36',
@@ -183,7 +217,9 @@ NODES = [
         percent_tumor_cells=80.0,
         percent_tumor_nuclei=90.0,
         section_location='TOP',
-        submitter_id='TCGA-AR-A1AR-01A-03-TSC'
+        submitter_id='TCGA-AR-A1AR-01A-03-TSC',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='7b017050-97d4-45bb-bf83-c89dab812e44',
@@ -191,7 +227,9 @@ NODES = [
         amount=26.7,
         concentration=0.16,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31D-A138-05'
+        submitter_id='TCGA-AR-A1AR-01A-31D-A138-05',
+        release_state = None,
+        release_state_datetime = None
     ),
     Aliquot(
         node_id='c1fd82a9-f75f-4297-b2c2-ec91c40a57f4',
@@ -199,7 +237,9 @@ NODES = [
         amount=80.0,
         concentration=0.5,
         source_center='23',
-        submitter_id='TCGA-AR-A1AR-01A-31W-A14P-09'
+        submitter_id='TCGA-AR-A1AR-01A-31W-A14P-09',
+        release_state = None,
+        release_state_datetime = None
     ),
     Portion(
         node_id='40407260-e805-4c2e-b2a7-13862bc5e494',
@@ -208,7 +248,9 @@ NODES = [
         is_ffpe=False,
         portion_number='31',
         submitter_id='TCGA-AR-A1AR-01A-31',
-        weight=30.0
+        weight=30.0,
+        release_state = None,
+        release_state_datetime = None
     ),
     Analyte(
         node_id='5f5b9bb2-3278-424f-9cf2-e26f0c3b0fd5',
@@ -220,7 +262,9 @@ NODES = [
         concentration=0.16,
         spectrophotometer_method='UV Spec',
         submitter_id='TCGA-AR-A1AR-01A-31R',
-        well_number=None
+        well_number=None,
+        release_state = None,
+        release_state_datetime = None
     ),
     Sample(
         node_id='c1e5beaa-6103-409d-bdd4-a86c0f210014',
@@ -242,7 +286,9 @@ NODES = [
         time_between_clamping_and_freezing=None,
         time_between_excision_and_freezing=None,
         tumor_code=None,
-        tumor_code_id=None
+        tumor_code_id=None,
+        release_state = None,
+        release_state_datetime = None
     )
 ]
 
