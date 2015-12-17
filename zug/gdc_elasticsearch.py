@@ -5,6 +5,7 @@ from gdcdatamodel.mappings import (
     get_case_es_mapping,
     get_file_es_mapping,
 )
+from elasticsearch.exceptions import AuthorizationException
 from gdcdatamodel.models import File
 import os
 import re
@@ -263,19 +264,42 @@ class GDCElasticsearch(object):
         except NotFoundError:
             return None
 
-    def delete_old_indices(self):
+    def cleanup_old_indices(self, kept):
         self.log.info("Deleting old indices")
         numbers = self.get_index_numbers()
+        indices = [INDEX_PATTERN.format(base=self.index_base, n=n)
+                     for n in numbers]
         if len(numbers) <= 5:
             self.log.info("less than 5 matching indices found, not deleting anything")
-            return
-        # everything before the last 5, as a string
-        to_delete = [INDEX_PATTERN.format(base=self.index_base, n=n)
-                     for n in numbers[0:-5]]
+            to_close = indices
+            to_delete = []
+        else:        
+            to_delete = indices[0:-5]
+            to_close = indices[-5:]
+
         self.log.info("Deleting indices %s", to_delete)
         for index in to_delete:
             self.log.info("Deleting %s", index)
             self.es.indices.delete(index=index)
+        for index in to_close:
+            if index not in kept:
+                self.log.info("Closing %s", index)
+                try:
+                    self.es.indices.flush(index=index)
+                except AuthorizationException as e:
+                    # authorization exception will be raised if it's already closed
+                    if "IndexClosedException" in e.error:
+                        self.log.info("%s is already closed" % index)
+                        continue
+                    else:
+                        self.log.exception("Fail to flush %s" % index)
+                except:
+                    self.log.exception("Can't flush index %s" % index)
+                try:
+                    self.es.indices.close(index=index)
+                except:
+                    self.log.error("Can't close index %s" % index)
+                
 
     def deploy(self, case_docs, file_docs, ann_docs,
                project_docs, roll_alias=True,
@@ -313,7 +337,7 @@ class GDCElasticsearch(object):
                 self.swap_index(old_index, new_index)
             else:
                 self.es.indices.put_alias(index=new_index, name=self.index_base)
-            self.delete_old_indices()
+            self.cleanup_old_indices([old_index, new_index])
         else:
             self.log.info("Skipping alias roll / old index deletion")
         return new_index
