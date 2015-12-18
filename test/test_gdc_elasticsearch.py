@@ -1,6 +1,7 @@
 from base import ZugTestBase, PreludeMixin
 from elasticsearch import Elasticsearch
 from gdcdatamodel.models import File, Aliquot
+from elasticsearch.exceptions import AuthorizationException
 from zug.gdc_elasticsearch import GDCElasticsearch
 import es_fixtures
 import os
@@ -80,7 +81,7 @@ class GDCElasticsearchTest(PreludeMixin, ZugTestBase):
             self.assertEqual(self.graph.nodes(File).get('file2').file_name,
                              "a_file_to_be_deleted.txt")
 
-    def test_old_index_deletion(self):
+    def test_old_index_cleanup(self):
         for i in range(7):
             gdces = self.make_gdc_es()
             gdces.go()
@@ -91,3 +92,6 @@ class GDCElasticsearchTest(PreludeMixin, ZugTestBase):
                                         "gdc_es_test_5",
                                         "gdc_es_test_6",
                                         "gdc_es_test_7"})
+        for i in xrange(3, 6):
+            with self.assertRaises(AuthorizationException):
+                self.es.indices.stats('gdc_es_test_'+str(i))
