@@ -1,25 +1,64 @@
-from sqlalchemy.orm import configure_mappers
+# -*- coding: utf-8 -*-
+
+"""gdcdatamodel.models
+----------------------------------
+
+This module defines all of the ORM classes for the GDC datamodel
+python layer.  Classes are produced by a factory, and required
+attributes are injected into them before they are registered into the
+modules globals map.
+
+::WARNING:: This code is the heart of the GDC.  Changes here will
+propogate to all code that imports this package and MAY BREAK THINGS.
+
+- jsm
+
+"""
+
+from cdisutils import log
+from gdcdictionary import gdcdictionary
+from misc import *  # noqa
 from sqlalchemy import event, and_
+from sqlalchemy.orm import configure_mappers
+
 import hashlib
 import jsonschema
-from gdcdictionary import gdcdictionary
-from misc import *
-from psqlgraph import Node, Edge, pg_property
-from cdisutils import log
+
+from psqlgraph import (
+    Node,
+    Edge,
+    pg_property
+)
+
+from sqlalchemy.ext.hybrid import (
+    Comparator,
+    hybrid_property,
+)
 
 logger = log.get_logger('gdcdatamodel')
 
-from sqlalchemy.ext.hybrid import Comparator, hybrid_property
+# These are properties that are defined outside of the JSONB column in
+# the database, inform later code to skip these
+excluded_props = ['id', 'type']
 
-excluded_props = ['id', 'type', 'alias']
+
+# Load the GDC dictionary and create a resolver for references to definitions
+DEF_ID = '_definitions.yaml#'
 dictionary = gdcdictionary
-resolver = jsonschema.RefResolver(
-    '_definitions.yaml#', gdcdictionary.definitions)
+resolver = jsonschema.RefResolver(DEF_ID, gdcdictionary.definitions)
 
+
+# At module load time, evaluate which classes have already been
+# registered as subclasses of the abstract bases Node and Edge to
+# prevent double-registering
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
 
+# These special links are custom for LEGACY projects and backwards
+# compatibility only.  If you are editing this, there is probably
+# something wrong, new additions to the dictionary should be made such
+# that no conflicts are introduced.
 special_links = {
     ('file', 'related_to', 'file'): (
         'related_files', 'parent_files'),
@@ -34,15 +73,34 @@ special_links = {
 }
 
 
-def remove_spaces(self):
-    return self.replace(' ', '')
+def remove_spaces(s):
+    """Returns a stripped string with all of the spaces removed.
+
+    :param str s: String to remove spaces from
+
+    """
+    return s.replace(' ', '')
 
 
 def register_class(cls):
+    """Register a class in `globals`.  This allows us to import the ORM
+    classes from :mod:`gdcdatamodel.models`
+
+    :param cls: Any class object
+    :returns: None
+
+    """
+
     globals()[cls.__name__] = cls
 
 
 def get_links(schema):
+    """Given a schema, pull out all of the ``links`` that this type can
+    have an edge to.
+
+    :returns: a ``dict`` of format ``{<name>: <link>}``
+
+    """
     links = {}
     for entry in schema.get('links') or []:
         if 'subgroup' in entry:
@@ -51,6 +109,19 @@ def get_links(schema):
         else:
             links[entry['name']] = entry
     return links
+
+
+def types_from_str(types):
+    return [a for type_ in types for a in {
+        'string': [str],
+        'number': [float, int, long],
+        'integer': [int, long],
+        'float': [float],
+        'null': [str],
+        'boolean': [bool],
+        'array': [list],
+        None: [str],
+    }[type_]]
 
 
 def PropertyFactory(name, schema, key=None):
@@ -63,19 +134,14 @@ def PropertyFactory(name, schema, key=None):
     if '$ref' in schema.keys():
         reference, schema = resolver.resolve(schema['$ref'])
 
+    # Lookup property type and coerce to list
     types = schema.get('type')
     types = [types] if not isinstance(types, list) else types
 
-    python_types = [a for t in types for a in {
-        'string': [str],
-        'number': [float, int, long],
-        'integer': [int, long],
-        'float': [float],
-        'null': [str],
-        'boolean': [bool],
-        'array': [list],
-        None: [str],
-    }[t]]
+    # Convert the list of string type identifiers to Python types
+    python_types = types_from_str(types)
+
+    # If there is an enum defined, grab it for pg_property validation
     enum = schema.get('enum')
 
     # Create pg_property setter
@@ -96,59 +162,55 @@ def get_class_tablename_from_id(_id):
     return 'node_{}'.format(_id.replace('_', ''))
 
 
-def NodeFactory(_id, schema):
-    """Returns a node class
+def cls_inject_created_datetime_hook(cls,
+                                     updated_key="updated_datetime",
+                                     created_key="created_key"):
+    """Given a class, inject a SQLAlchemy hook that will write the
+    timestamp of the last session flush to the :param:`updated_key`
+    and :param:`created_key` properties.
 
     """
-    name = get_class_name_from_id(_id)
-    links = get_links(schema)
-
-    @property
-    def node_id(self, value):
-        return self.node_id
-
-    @node_id.setter
-    def node_id(self, value):
-        self.node_id = value
-
-    properties = {
-        key: PropertyFactory(key, schema)
-        for key, schema in schema.get('properties', {}).iteritems()
-        if key not in links
-        and key not in excluded_props
-    }
-
-    properties['_dictionary'] = {
-        'category': schema.get('category'),
-        'title': schema.get('title'),
-    }
-    # _pg_links are out_edges, links TO other types
-    properties['_pg_links'] = {}
-    # _pg_backrefs are in_edges, links FROM other types
-    properties['_pg_backrefs'] = {}
-    # _pg_edges are all edges, links to AND from other types
-    properties['_pg_edges'] = {}
-
-    cls = type(name, (Node,), dict(
-        __tablename__=get_class_tablename_from_id(_id),
-        __label__=_id,
-        id=node_id,
-        **properties
-    ))
 
     @event.listens_for(cls, 'before_insert')
     def set_created_updated_datetimes(mapper, connection, target):
         ts = target.get_session()._flush_timestamp.isoformat('T')
-        if 'updated_datetime' in target.props:
-            target._props['updated_datetime'] = ts
-        if 'created_datetime' in target.props:
-            target._props['created_datetime'] = ts
+        if updated_key in target.props:
+            target._props[updated_key] = ts
+        if created_key in target.props:
+            target._props[created_key] = ts
+
+
+def cls_inject_updated_datetime_hook(cls, updated_key="updated_datetime"):
+    """Given a class, inject a SQLAlchemy hook that will write the
+    timestamp of the last session flush to the :param:`updated_key`
+    property.
+
+    """
 
     @event.listens_for(cls, 'before_update')
     def set_updated_datetimes(mapper, connection, target):
         ts = target.get_session()._flush_timestamp.isoformat('T')
         if 'updated_datetime' in target.props:
             target._props['updated_datetime'] = ts
+
+
+def cls_inject_secondary_keys(cls, schema):
+    """The dictionary defines a list of ``unique`` keys.  If there are
+    keys (possibly tuples of keys) in addition to the canonical `id`
+    column, then we want to be able to query the database against
+    these keys.
+
+    This function injects:
+        0. a list of ``str`` keys that should be unique to
+           ``_pg_secondary_keys``
+        0. ``_secondary_keys_dict`` which is a dictionary of str key
+           to :class:`sqlalchemy.dialects.postgresql.json.JSONElement`
+           values
+        0. ``_secondary_keys``, a tuple of
+           :class:`sqlalchemy.dialects.postgresql.json.JSONElement`
+           objects
+
+    """
 
     unique_keys = schema.get('uniqueKeys', [])
     cls.__pg_secondary_keys = [
@@ -197,25 +259,84 @@ def NodeFactory(_id, schema):
     cls._secondary_keys = _secondary_keys
     cls._secondary_keys_dicts = _secondary_keys_dicts
 
+
+def NodeFactory(_id, schema):
+    """Returns a node class given a schema.
+
+    """
+
+    name = get_class_name_from_id(_id)
+    links = get_links(schema)
+
+    @property
+    def node_id(self, value):
+        return self.node_id
+
+    @node_id.setter
+    def node_id(self, value):
+        self.node_id = value
+
+    # Pull the JSONB properties from the `properties` key
+    attributes = {
+        key: PropertyFactory(key, schema)
+        for key, schema in schema.get('properties', {}).iteritems()
+        if key not in links
+        and key not in excluded_props
+    }
+
+    # Store for the programmer
+    attributes['_dictionary'] = {
+        'category': schema.get('category'),
+        'title': schema.get('title'),
+    }
+
+    # _pg_links are out_edges, links TO other types
+    attributes['_pg_links'] = {}
+
+    # _pg_backrefs are in_edges, links FROM other types
+    attributes['_pg_backrefs'] = {}
+
+    # _pg_edges are all edges, links to AND from other types
+    attributes['_pg_edges'] = {}
+
+    # Create the Node subclass!
+    cls = type(name, (Node,), dict(
+        __tablename__=get_class_tablename_from_id(_id),
+        __label__=_id,
+        id=node_id,
+        **attributes
+    ))
+
+    cls_inject_created_datetime_hook(cls)
+    cls_inject_updated_datetime_hook(cls)
+    cls_inject_secondary_keys(cls, schema)
+
     return cls
 
 
-def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
-                dst_src_assoc):
-    """Returns an edge class
+def generate_edge_tablename(src_label, label, dst_label):
+    """Generate a name for the edge table.
+
+    Because of the limit on table name length on PostgreSQL, we have
+    to truncate some of the longer names.  To do this we concatenate
+    the first 2 characters of each word in each of the input arguments
+    up to 10 characters (per argument).  However, this strategy would
+    very likely lead to collisions in naming.  Therefore, we take the
+    first 8 characters of a hash of the full, un-truncated name
+    *before* we truncate and prepend this to the truncation.  This
+    gets us a name like ``edge_721d393f_LaLeSeqDaFrLaLeSeBu``.  This
+    is rather an undesirable workaround. - jsm
 
     """
-    (name, label, src_label, dst_label, src_dst_assoc, dst_src_assoc) = map(
-        remove_spaces, [name, label, src_label, dst_label, src_dst_assoc,
-                        dst_src_assoc])
 
     tablename = 'edge_{}{}{}'.format(
         src_label.replace('_', ''),
         label.replace('_', ''),
-        dst_label.replace('_', ''))
+        dst_label.replace('_', ''),
+    )
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
-    # truncate the name
+    # truncate the each part of the name
     if len(tablename) > 40:
         oldname = tablename
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
@@ -229,6 +350,31 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
         )
         logger.debug('Shortening {} -> {}'.format(oldname, tablename))
 
+    return tablename
+
+
+def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
+                dst_src_assoc):
+    """Returns an edge class.
+
+    """
+
+    # Correctly format all of the names
+    name = remove_spaces(name)
+    label = remove_spaces(label)
+    src_label = remove_spaces(src_label)
+    dst_label = remove_spaces(dst_label)
+    src_dst_assoc = remove_spaces(src_dst_assoc)
+    dst_src_assoc = remove_spaces(dst_src_assoc)
+
+    # Generate the tablename. If it is too long, it will be hashed and
+    # truncated.
+    tablename = generate_edge_tablename(src_label, label, dst_label)
+
+    # Lookup the tablenames for the source and destination classes
+    src_cls = Node.get_subclass(src_label)
+    dst_cls = Node.get_subclass(dst_label)
+
     cls = type(name, (Edge,), {
         '__label__': label,
         '__tablename__': tablename,
@@ -236,9 +382,10 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
         '__dst_class__': get_class_name_from_id(dst_label),
         '__src_dst_assoc__': src_dst_assoc,
         '__dst_src_assoc__': dst_src_assoc,
-        '__src_table__': Node.get_subclass(src_label).__tablename__,
-        '__dst_table__': Node.get_subclass(dst_label).__tablename__,
+        '__src_table__': src_cls.__tablename__,
+        '__dst_table__': dst_cls.__tablename__,
     })
+
     return cls
 
 
@@ -246,21 +393,27 @@ def load_nodes():
     """Parse all nodes from dictionary and create Node subclasses
 
     """
+
     for entity, subschema in dictionary.schema.iteritems():
         name = subschema['title']
         _id = subschema['id']
         if name not in loaded_nodes:
             try:
-                register_class(NodeFactory(_id, subschema))
+                cls = NodeFactory(_id, subschema)
             except Exception:
-                print 'Unable to load {}'.format(name)
+                print('Unable to load {}'.format(name))
                 raise
+            else:
+                register_class(cls)
 
 
 def parse_edge(src_label, name, edge_label, subschema, link):
     """Parse an edge from the dictionary and create and Edge subclass
 
+    :returns: The outbound name of the edge
+
     """
+
     dst_label = link['target_type']
     backref = link['backref']
 
@@ -278,8 +431,16 @@ def parse_edge(src_label, name, edge_label, subschema, link):
         (src_label, edge_label, dst_label),
         (dst_label+'s', src_label+'s'))
 
-    register_class(EdgeFactory(edge_name, edge_label, src_label,
-                               dst_label, name, backref))
+    edge = EdgeFactory(
+        edge_name,
+        edge_label,
+        src_label,
+        dst_label,
+        name,
+        backref,
+    )
+
+    register_class(edge)
 
     return '_{}_out'.format(edge_name)
 
@@ -295,7 +456,8 @@ def load_edges():
 
         src_cls = Node.get_subclass(src_label)
         if not src_cls:
-            raise RuntimeError('No class labeled {}'.format(src_label))
+            raise RuntimeError('No source class labeled {}'.format(src_label))
+
         for name, link in get_links(subschema).iteritems():
             edge_label = link['label']
             edge_name = parse_edge(
@@ -306,46 +468,76 @@ def load_edges():
             }
 
 
-def load_pg_backrefs():
-    """Add a dictionry of links to this class
+def inject_pg_backrefs():
+    """Add a dict of links to this class.  Backrefs look like:
 
-    { <link name>: {'name': <backref name>, 'src_type': <source type> } }
+    .. code-block::
+        { <link name>: {'name': <backref name>, 'src_type': <source type> } }
 
     """
+
     for src_label, subschema in dictionary.schema.iteritems():
         for name, link in get_links(subschema).iteritems():
-            cls = Node.get_subclass(link['target_type'])
-            cls._pg_backrefs[link['backref']] = {
+            dst_cls = Node.get_subclass(link['target_type'])
+            dst_cls._pg_backrefs[link['backref']] = {
                 'name': link['name'],
                 'src_type': Node.get_subclass(src_label)
             }
 
 
-def load_pg_edges():
-    """Add a dictionry of ALL the links, to and from, this class
+def inject_pg_edges():
+    """Add a dict of ALL the links, to and from, each class
 
-    { <link name>: {'backref': <backref name>, 'type': <target type> } }
+    .. code-block::
+        { <link name>: {'backref': <backref name>, 'type': <target type> } }
 
     """
-    for cls in Node.get_subclasses():
+
+    def find_backref(link, src_cls):
+        """Given the JSON link definition and a source class :param:`src_cls`,
+        return the name of the backref
+
+        """
+
+        for prop, backref in link['dst_type']._pg_backrefs.iteritems():
+            if backref['src_type'] == cls:
+                return prop
+
+    def cls_inject_forward_edges(cls):
+        """We should have already added the links that go OUT from this class,
+        so let's add them to `_pg_edges`
+
+        :returns: None, cls is mutated
+
+        """
+
         for name, link in cls._pg_links.iteritems():
-            backref = None
-            for prop, br in link['dst_type']._pg_backrefs.iteritems():
-                if br['src_type'] == cls:
-                    backref = prop
             cls._pg_edges[name] = {
-                'backref': backref,
+                'backref': find_backref(link, cls),
                 'type': link['dst_type'],
             }
+
+    def cls_inject_backward_edges(cls):
+        """We should have already added the links that go INTO this class,
+        so let's add them to `_pg_edges`
+
+        :returns: None, cls is mutated
+
+        """
+
         for name, backref in cls._pg_backrefs.iteritems():
             cls._pg_edges[name] = {
                 'backref': backref['name'],
                 'type': backref['src_type'],
             }
 
+    for cls in Node.get_subclasses():
+        cls_inject_forward_edges(cls)
+        cls_inject_backward_edges(cls)
+
 
 load_nodes()
 load_edges()
-load_pg_backrefs()
-load_pg_edges()
+inject_pg_backrefs()
+inject_pg_edges()
 configure_mappers()
