@@ -164,7 +164,7 @@ def get_class_tablename_from_id(_id):
 
 def cls_inject_created_datetime_hook(cls,
                                      updated_key="updated_datetime",
-                                     created_key="created_key"):
+                                     created_key="created_datetime"):
     """Given a class, inject a SQLAlchemy hook that will write the
     timestamp of the last session flush to the :param:`updated_key`
     and :param:`created_key` properties.
