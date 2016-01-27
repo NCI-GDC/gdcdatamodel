@@ -113,6 +113,11 @@ if __name__ == '__main__':
                         default=False, help="do not create user")
 
     args = parser.parse_args()
+
+    assert args.host == 'localhost', (
+        "Refusing to run on a host that is not localhost! "
+        "(This script deletes all the data in the database!)")
+
     setup_database(args.user, args.password, args.database,
                    no_drop=args.no_drop, no_user=args.no_user)
     create_tables(args.host, args.user, args.password, args.database)

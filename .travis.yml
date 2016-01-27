@@ -5,6 +5,6 @@ addons:
   postgresql: '9.4'
 before_script:
     - yes | python setup.py install
-    - python bin/setup_psqlgraph.py
+    - python bin/destroy_and_setup_psqlgraph.py
     - pip freeze
 script: "nosetests -v"
