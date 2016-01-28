@@ -94,7 +94,11 @@ class DownloadStatsIndexBuilder(object):
         if es:
             self.es = es
         else:
-            self.es = Elasticsearch([os.environ["ELASTICSEARCH_HOST"]])
+            self.es = Elasticsearch(
+                hosts=[os.environ["ELASTICSEARCH_HOST"]],
+                http_auth=(os.environ.get("ES_USER", ""),
+                           os.environ.get("ES_PASSWORD", "")))
+            
         self.index_name = index_name
         self.doc_type = doc_type
         self.log = get_logger("download_stats_index_build")

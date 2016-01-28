@@ -67,8 +67,11 @@ class GDCElasticsearch(object):
             self.es = es
         else:
             # TODO sniff_on_start here?
-            self.es = Elasticsearch(hosts=[os.environ["ELASTICSEARCH_HOST"]],
-                                    timeout=9999)
+            self.es = Elasticsearch(
+                hosts=[os.environ["ELASTICSEARCH_HOST"]],
+                http_auth=(os.environ.get("ES_USER", ""),
+                           os.environ.get("ES_PASSWORD", "")),
+                timeout=9999)
         if converter:
             self.converter = converter
         else:

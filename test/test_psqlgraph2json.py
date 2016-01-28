@@ -16,6 +16,7 @@ data_dir = os.path.dirname(os.path.realpath(__file__))
 
 sample_props = {'sample_type_id', 'project_id', 'created_datetime',
                 'time_between_clamping_and_freezing', 'updated_datetime',
+                'release_state', 'release_state_datetime',
                 'time_between_excision_and_freezing',
                 'shortest_dimension', 'oct_embedded', 'submitter_id',
                 'intermediate_dimension', 'sample_id',
@@ -33,25 +34,30 @@ tss_props = {'project', 'bcr_id', 'code', 'tissue_source_site_id',
 portion_props = {'slides', 'portion_id',
                  'project_id', 'created_datetime', 'updated_datetime',
                  'creation_datetime', 'is_ffpe',
+                 'release_state', 'release_state_datetime',
                  'weight', 'portion_number',
                  'annotations', 'center',
                  'analytes', 'submitter_id'}
 analyte_props = {'well_number', 'analyte_type', 'submitter_id',
                  'project_id', 'created_datetime', 'updated_datetime',
+                 'release_state', 'release_state_datetime',
                  'analyte_id', 'amount', 'aliquots',
                  'a260_a280_ratio', 'concentration',
                  'spectrophotometer_method', 'analyte_type_id',
                  'annotations'}
 aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
                  'project_id', 'created_datetime', 'updated_datetime',
+                 'release_state', 'release_state_datetime',
                  'concentration', 'source_center', 'annotations'}
 annotation_props = {'category', 'status', 'classification',
                     'project_id', 'created_datetime', 'updated_datetime',
+                    'release_state', 'release_state_datetime',
                     'creator', 'created_datetime', 'notes',
                     'submitter_id', 'annotation_id', 'entity_id',
                     'entity_type', 'case_id', 'case_submitter_id'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
               'project_id', 'created_datetime', 'updated_datetime',
+              'release_state', 'release_state_datetime', 'error_type',
               'file_name', 'md5sum', 'cases', 'submitter_id',
               'access', 'platform', 'state', 'data_subtype',
               'file_id', 'file_size', 'experimental_strategy',
@@ -131,7 +137,10 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             md5sum='d7e6cbd40ef2f5b6607cb4af982280a9',
             state='live',
             state_comment=None,
-            submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906'
+            submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906',
+            release_state = None,
+            release_state_datetime = None,
+            error_type = None
         )
         self.to_delete_file = File(
             node_id='file2',
@@ -141,7 +150,10 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             md5sum='foobar',
             state='live',
             state_comment=None,
-            submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906'
+            submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906',
+            release_state = None,
+            release_state_datetime = None,
+            error_type = None
         )
         self.to_delete_file.system_annotations["to_delete"] = True
         self.non_live_file = self.get_fuzzed_node(File, state='uploaded')
