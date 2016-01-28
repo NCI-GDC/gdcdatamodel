@@ -117,7 +117,7 @@ class TARGETDCCEdgeBuilder(object):
             "platform": "generated_from",
             "data_subtype": "member_of",
             "data_format": "member_of",
-            "tag": "member_of",
+            "tag": "memeber_of",
             "experimental_strategy": "member_of"
         }
         if not isinstance(value, list):
@@ -168,7 +168,7 @@ class TARGETDCCProjectSyncer(object):
 
     def __init__(self, project, signpost_url=None,
                  graph_info=None, dcc_auth=None,
-                 storage_info=None, pool=None, verify_missing=True):
+                 storage_info=None, pool=None, bucket=None, verify_missing=True):
         self.project = project
         self.dcc_auth = dcc_auth
         self.signpost_url = signpost_url
@@ -261,6 +261,7 @@ class TARGETDCCProjectSyncer(object):
 
     def sync(self):
         self.log.info("running prelude")
+        self.log.info("bucket is %s" % self.storage_info["bucket"])
         kwargs = {
             "signpost_url": self.signpost_url,
             "graph_info": self.graph_info,
@@ -294,7 +295,7 @@ class TARGETDCCFileSyncer(object):
 
     def __init__(self, url, signpost_url=None,
                  graph_info=None, dcc_auth=None,
-                 storage_info=None):
+                 storage_info=None, bucket=None):
         assert url.startswith("https://target-data.nci.nih.gov")
         self.url = url
         self.project = url.split("/")[4]
@@ -304,6 +305,7 @@ class TARGETDCCFileSyncer(object):
         self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
                                      graph_info["pass"], graph_info["database"])
         self.dcc_auth = dcc_auth
+        self.bucket = storage_info["bucket"]
         self.storage_client = storage_info["driver"](storage_info["access_key"],
                                                      **storage_info["kwargs"])
         self.log = get_logger("target_dcc_file_sync_" +
@@ -317,7 +319,8 @@ class TARGETDCCFileSyncer(object):
 
     @property
     def container(self):
-            return self.storage_client.get_container("target_dcc_protected")
+            self.log.info(self.bucket)
+            return self.storage_client.get_container(self.bucket)
 
     def sync(self):
         """Process a url to a target file, allocating an id for it, inserting

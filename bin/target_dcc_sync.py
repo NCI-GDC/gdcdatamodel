@@ -44,13 +44,14 @@ def main():
     parser.add_argument("--signpost_url", help="hostname for signpost_url", default=environ.get("SIGNPOST_URL"))
     parser.add_argument("--dcc_user", help="username for DCC", default=environ.get("DCC_USER"))
     parser.add_argument("--dcc_pass", help="password for DCC", default=environ.get("DCC_PASS"))
+    parser.add_argument("--bucket", help="bucket to save files to", default=environ.get("TARGET_PROTECTED_BUCKET"))
     parser.add_argument("--verify_missing", 
         dest="verify_missing",
         help="verify URLs of files before flagging for deletion", 
         action="store_true"
         )
 
-    parser.add_argument("--project", 
+    parser.add_argument("--projects",
         nargs="*", 
         choices=VALID_PROJECTS_TO_SYNC,
         help="project code to sync", 
@@ -63,7 +64,7 @@ def main():
                             args.pg_pass, args.pg_name)
     create_prelude_nodes(graph)
 
-    for project in args.project:
+    for project in args.projects:
         syncer = TARGETDCCProjectSyncer(
             project,
             graph_info={
@@ -75,6 +76,7 @@ def main():
             storage_info={
                 "driver": Local if args.local else S3,
                 "access_key": args.s3_access,
+                "bucket": args.bucket,
                 "kwargs": {
                     "secret": args.s3_secret,
                     "host": args.s3_host,

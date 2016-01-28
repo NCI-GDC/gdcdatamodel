@@ -52,12 +52,13 @@ PROJECTS_TO_SYNC = {
     # "ALL-P2",
     #"ALL/Phase_I" : "/Discovery/clinical/harmonized/",  # temp
     #"ALL/Phase_II" : "/Discovery/clinical/harmonized/", # temp
+    "ALL" : "Discovery/clinical/harmonized/",
     "AML" : "Discovery/clinical/harmonized/",
-    #"AML-IF" : "/Discovery/clinical/",                  # temp
-    #"CCSK" : "/Discovery/clinical/harmonized/",         # temp
+    "AML-IF" : "Discovery/clinical/",
+    "CCSK" : "Discovery/clinical/harmonized/",
     "NBL" : "Discovery/clinical/harmonized/",
-    #"OS" : "/Discovery/clinical/",                      # temp
-    #"RT" : "/Discovery/clinical/harmonized/",           # temp
+    "OS" : "Discovery/clinical/",
+    "RT" : "Discovery/clinical/harmonized/",
     "WT" : "Discovery/clinical/harmonized/"
 }
 
@@ -162,6 +163,10 @@ class TARGETClinicalSyncer(object):
             if url.startswith(url_str):
                 url_verified = True
                 break
+            else:
+                self.log.warning("URL incorrect")
+                self.log.warning("Expected %s" % url_str)
+                self.log.warning("We have  %s" % url)
 
         assert url_verified
         self.project = project
