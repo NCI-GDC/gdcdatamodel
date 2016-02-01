@@ -24,7 +24,9 @@ setup(
         'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@f0f198c2d7978fea311b0bc311c6db61732de261#egg=psqlgraph',
         'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@05a25651affbebd7f0eab9b03758645b4c20047a#egg=gdcdictionary',
     ],
-    scripts=[
-        'bin/setup_psqlgraph.py',
-    ]
+    entry_points={
+        'console_scripts': [
+            'gdc_postgres_admin=gdcdatamodel.gdc_postgres_admin:main'
+        ]
+    },
 )
