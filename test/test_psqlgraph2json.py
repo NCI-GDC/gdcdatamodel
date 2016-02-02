@@ -16,8 +16,7 @@ data_dir = os.path.dirname(os.path.realpath(__file__))
 
 sample_props = {'sample_type_id', 'project_id', 'created_datetime',
                 'time_between_clamping_and_freezing', 'updated_datetime',
-                'release_state', 'release_state_datetime',
-                'time_between_excision_and_freezing',
+                'time_between_excision_and_freezing', 'state',
                 'shortest_dimension', 'oct_embedded', 'submitter_id',
                 'intermediate_dimension', 'sample_id',
                 'days_to_sample_procurement', 'freezing_method',
@@ -34,36 +33,31 @@ tss_props = {'project', 'bcr_id', 'code', 'tissue_source_site_id',
 portion_props = {'slides', 'portion_id',
                  'project_id', 'created_datetime', 'updated_datetime',
                  'creation_datetime', 'is_ffpe',
-                 'release_state', 'release_state_datetime',
-                 'weight', 'portion_number',
+                 'weight', 'portion_number', 'state',
                  'annotations', 'center',
                  'analytes', 'submitter_id'}
 analyte_props = {'well_number', 'analyte_type', 'submitter_id',
                  'project_id', 'created_datetime', 'updated_datetime',
-                 'release_state', 'release_state_datetime',
-                 'analyte_id', 'amount', 'aliquots',
+                 'analyte_id', 'amount', 'aliquots', 'state',
                  'a260_a280_ratio', 'concentration',
                  'spectrophotometer_method', 'analyte_type_id',
                  'annotations'}
 aliquot_props = {'center', 'submitter_id', 'amount', 'aliquot_id',
                  'project_id', 'created_datetime', 'updated_datetime',
-                 'release_state', 'release_state_datetime',
-                 'concentration', 'source_center', 'annotations'}
+                 'concentration', 'source_center', 'annotations', 'state'}
 annotation_props = {'category', 'status', 'classification',
                     'project_id', 'created_datetime', 'updated_datetime',
-                    'release_state', 'release_state_datetime',
                     'creator', 'created_datetime', 'notes',
                     'submitter_id', 'annotation_id', 'entity_id',
                     'entity_type', 'case_id', 'case_submitter_id'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
               'project_id', 'created_datetime', 'updated_datetime',
-              'release_state', 'release_state_datetime', 'error_type',
               'file_name', 'md5sum', 'cases', 'submitter_id',
               'access', 'platform', 'state', 'data_subtype',
               'file_id', 'file_size', 'experimental_strategy',
               'state_comment', 'annotations', 'data_type',
               'uploaded_datetime', 'published_datetime', 'acl',
-              'associated_entities', 'archive'}
+              'associated_entities', 'archive', 'error_type', 'file_state'}
 
 
 # TODO move these to gdcdatamodel, they don't belong here
@@ -136,10 +130,9 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             file_size=12916551680,
             md5sum='d7e6cbd40ef2f5b6607cb4af982280a9',
             state='live',
+            file_state='submitted',
             state_comment=None,
             submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906',
-            release_state = None,
-            release_state_datetime = None,
             error_type = None
         )
         self.to_delete_file = File(
@@ -149,10 +142,9 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
             file_size=5,
             md5sum='foobar',
             state='live',
+            file_state='submitted',
             state_comment=None,
             submitter_id='5cb6bc65-9cd5-45ac-9078-551bc7408906',
-            release_state = None,
-            release_state_datetime = None,
             error_type = None
         )
         self.to_delete_file.system_annotations["to_delete"] = True
@@ -160,6 +152,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         self.live_file.related_files.append(self.get_fuzzed_node(
             File,
             state="live",
+            file_state='submitted',
             file_name="a_related_file.bai"
         ))
         with self.g.session_scope():
@@ -246,6 +239,7 @@ class TestPsqlgraph2JSON(PreludeMixin, ZugTestBase):
         props = self.case_doc
         self.assertTrue('samples' in props)
         actual = set(props['samples'][0].keys())
+        print actual
         self.assertEqual(sample_props, actual.union(
             {'annotations', 'aliquots'}))
 
