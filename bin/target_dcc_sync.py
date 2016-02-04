@@ -89,6 +89,7 @@ def main():
             verify_missing=args.verify_missing
         )
         syncer.sync()
+        print "Project complete, %d unclassified files" % syncer.unclassified_files
 
 if __name__ == "__main__":
     main()

@@ -16,7 +16,7 @@ from psqlgraph import PsqlGraphDriver
 
 logging.captureWarnings(True)
 
-def main():
+def parse_cmd_args():
     # parse args, if any
     parser = ArgumentParser()
     parser.add_argument("--pg_host", help="hostname of psqlgraph", default=environ.get("PG_HOST"))
@@ -32,6 +32,11 @@ def main():
         default=environ.get("DCC_PROJECT", [PROJECTS_TO_SYNC.keys()[-1]])
     )
     args = parser.parse_args()
+
+    return args
+
+def main():
+    args = parse_cmd_args()
     log = get_logger("target_clinical_sync_bin_{}".format(os.getpid()))
 
     # connect to psqlgraph

@@ -11,6 +11,7 @@ from collections import defaultdict
 from cdisutils.log import get_logger
 from uuid import UUID, uuid5
 from datetime import datetime
+from bs4 import BeautifulSoup
 
 from sqlalchemy import Integer
 from psqlgraph import PsqlGraphDriver
@@ -18,6 +19,9 @@ from gdcdatamodel.models import Aliquot, Case, Sample, Project
 
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
+
+#urllib3.disable_warnings()
+requests.packages.urllib3.disable_warnings()
 
 NAMESPACE_CASES = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
 NAMESPACE_SAMPLES = UUID('90383d9f-5124-4087-8d13-5548da118d68')
@@ -81,6 +85,7 @@ IGNORE_BARCODES = [
 ]
 
 
+
 def split_seq(iterable, size):
     it = iter(iterable)
     item = list(itertools.islice(it, size))
@@ -109,6 +114,16 @@ def filter_pending(aliquots):
     """
     return [aliquot for aliquot in aliquots
             if not re.search("\[P-[A-Z]{2}\]", aliquot)]
+
+def convert_index_to_row_name(index):
+    row_name = ""
+
+    while index:
+        row_name += chr((index % 26) + ord('A'))
+        index /= 26
+
+    row_name = row_name[::-1]
+    return row_name
 
 
 def is_potential_aliquot_col(col):
@@ -166,6 +181,28 @@ class TARGETSampleMatrixSyncer(object):
         else:
             self.dcc_auth = (os.environ["DCC_USER"], os.environ["DCC_PASS"])
         self.log = get_logger("target_sample_matrix_import_{}".format(self.project))
+        self.ROW_CLASSES = [ "even", "odd" ]
+
+    def find_sample_matrix_directories(self, url, url_list):
+        """Walk the given url and recursively find all the sample matrix directories."""
+        self.log.info("Walking %s" % url)
+        r = requests.get(url, auth=self.dcc_auth, verify=False)
+        if not r.raise_for_status():
+            soup = BeautifulSoup(r.text, "lxml")
+            file_table = soup.find('table', attrs={'id':'indexlist'})
+            rows = file_table.find_all('tr')
+            for row in rows:
+                if row['class'][0] in self.ROW_CLASSES:
+                    image = row.find('img')
+                    # directory
+                    if "[DIR]" in image['alt']:
+                        dir_name = row.find('td', class_="indexcolname").get_text().strip()
+                        # don't walk too deep
+                        if (dir_name != "SAMPLE_MATRIX/") & (len(url.split('/')) < 7):
+                            self.find_sample_matrix_directories(url + dir_name, url_list)
+                        else:
+                            if "SAMPLE_MATRIX" in dir_name:
+                                url_list.append(url + dir_name)
 
     def locate_sample_matrices(self):
         """Given a project, set self.urls to a list of urls for it's sample
@@ -173,23 +210,31 @@ class TARGETSampleMatrixSyncer(object):
         Discovery and one in Validation.
         """
         self.urls = []
+        url_list = []
         self.version = 0
-        for dir in ["Discovery", "Validation"]:
-            if self.project == "ALL-P1":
-                search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/{dir}/SAMPLE_MATRIX/".format(
-                    dir=dir,
-                )
-            elif self.project == "ALL-P2":
-                search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/{dir}/SAMPLE_MATRIX/".format(
-                    dir=dir,
-                )
-            elif self.project in PROJECTS:
-                search_url = "https://target-data.nci.nih.gov/{proj}/{dir}/SAMPLE_MATRIX/".format(
-                    proj=self.project,
-                    dir=dir,
-                )
-            else:
-                raise RuntimeError("project {} is not known".format(self.project))
+
+        base_url = "https://target-data.nci.nih.gov/{proj}/".format(proj=self.project)
+        self.find_sample_matrix_directories(base_url, url_list)
+        self.log.info("%s: Found %d directories" % (self.project, len(url_list)))
+
+        #for dir in ["Discovery", "Validation"]:
+        for dir in url_list:
+            search_url = dir
+            #if self.project == "ALL-P1":
+            #    search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/{dir}/SAMPLE_MATRIX/".format(
+            #        dir=dir,
+            #    )
+            #elif self.project == "ALL-P2":
+            #    search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/{dir}/SAMPLE_MATRIX/".format(
+            #        dir=dir,
+            #    )
+            #elif self.project in PROJECTS:
+            #    search_url = "https://target-data.nci.nih.gov/{proj}/{dir}/SAMPLE_MATRIX/".format(
+            #        proj=self.project,
+            #        dir=dir,
+            #    )
+            #else:
+            #    raise RuntimeError("project {} is not known".format(self.project))
             resp = requests.get(search_url, auth=self.dcc_auth)
             if resp.status_code == 404:
                 self.log.info("No sample matrix found at %s", search_url)
@@ -201,6 +246,7 @@ class TARGETSampleMatrixSyncer(object):
                 maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
                 if maybe_match:
                     url = urljoin(search_url, link.attrib["href"])
+                    #self.log.info("Found potential file: %s" % url)
                     version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
                     self.urls.append(url)
                     if version > self.version:
@@ -246,7 +292,7 @@ class TARGETSampleMatrixSyncer(object):
             info["tissue_desc"] = SAMPLE_TYPE_TO_DESCRIPTION[info["tissue_code"]]
         return dict(res)
 
-    def case_mapping(self, case_id, row):
+    def case_mapping(self, case_id, row, row_index):
         """Given a row, extract all the aliquots from it, group them into
         samples, add metadata, and assert various sanity checks"""
 
@@ -264,21 +310,35 @@ class TARGETSampleMatrixSyncer(object):
         aliquots = [aliquot.strip() for aliquot in aliquots if aliquot.strip()]
         aliquots = filter_pending(aliquots)
         aliquots = [fix_suprious_dash(a) for a in aliquots]
+        row_ok = True
         for aliquot in aliquots:
             assert len(aliquot.split("-")) == 5
-            assert aliquot.startswith(case_id)
-        aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
-        sample_groups = self.group_by_sample(aliquots)
-        for sample in sample_groups:
-            assert sample.startswith(case_id)
-        return sample_groups
+            if not aliquot.startswith(case_id):
+                # adding two here because that's the header offset
+                self.log.warning("In Row %s: Aliquot: %s, case_id: %s" %
+                    (row_index + 2, aliquot, case_id)
+                )
+                #self.log.warning(row)
+                row_ok = False
+                #self.log.error(aliquots)
+                #self.log.error(aliquot_lists)
+            #assert aliquot.startswith(case_id)
+        if row_ok:
+            aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
+            sample_groups = self.group_by_sample(aliquots)
+            for sample in sample_groups:
+                assert sample.startswith(case_id)
+        else:
+            sample_groups = {}
+        return sample_groups, row_ok
 
     def compute_mapping_from_df(self, df):
         """Computes a dict of the information we need to put in the database
         from a dataframe of the project's sample matrix"""
         CASE_USI = "Case USI"
         mapping = {}
-        for _, row in df.iterrows():
+        errors_found = False
+        for i, row in df.iterrows():
             case_id = row[CASE_USI]
             # TODO filter the row if the "TARGET Case" column is "N".
             # we're not sure this is actually the right column, which
@@ -288,16 +348,21 @@ class TARGETSampleMatrixSyncer(object):
                 if not case_id.startswith("TARGET"):
                     self.log.info("Skipping Case USI: %s because it doesn't start with 'TARGET-'", case_id)
                     continue
+                # cursory check of format of ID
                 assert len(case_id.split("-")) == 3
             else:
                 continue
             if mapping.get(case_id):
-                raise RuntimeError("{} is duplicated in this sample matrix".format(case_id))
+                errors_found = True
+                self.log.warning("{} is duplicated in this sample matrix".format(case_id))
+                #raise RuntimeError("{} is duplicated in this sample matrix".format(case_id))
             else:
-                mapping[case_id] = self.case_mapping(case_id, row)
-                if not mapping[case_id]:
-                    self.log.warning("mapping for case %s is empty", case_id)
-        return mapping
+                mapping[case_id], row_ok = self.case_mapping(case_id, row, i)
+                #if not mapping[case_id]:
+                #    self.log.warning("mapping for case %s is empty", case_id)
+                if not row_ok:
+                    errors_found = True
+        return mapping, errors_found
 
     def sanity_check(self, mapping):
         """Sanity check the data: all samples derived from a case should
@@ -338,11 +403,20 @@ class TARGETSampleMatrixSyncer(object):
     def compute_mapping(self):
         self.locate_sample_matrices()
         mappings = []
+        spreadsheet_errors = False
         for url in self.urls:
+            self.log.info("Retrieving %s" % url)
             resp = requests.get(url, auth=self.dcc_auth)
             df = self.load_sample_matrix(resp.content)
-            mapping = self.compute_mapping_from_df(df)
+            mapping, errors = self.compute_mapping_from_df(df)
+            if errors:
+                self.log.warning("Errors found in %s" % url)
+                spreadsheet_errors = True
             mappings.append(mapping)
+        if spreadsheet_errors:
+            self.log.error("Errors found in spreadsheets, aborting merge")
+            raise RuntimeError("Errors found in spreadsheets, aborting merge")
+
         final_mapping = self.merge_mappings(mappings)
         self.sanity_check(final_mapping)
         return final_mapping
