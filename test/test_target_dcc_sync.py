@@ -24,7 +24,8 @@ class TARGETDCCSyncTest(PreludeMixin, StorageMixin,
 
     def setUp(self):
         super(TARGETDCCSyncTest, self).setUp()
-        self.storage_client.create_container("target_dcc_protected")
+        self.bucket_name = "target_dcc_protected"
+        self.storage_client.create_container(self.bucket_name)
 
     @patch("zug.datamodel.target.dcc_sync.tree_walk", fake_tree_walk)
     def test_basic_sync(self):
@@ -33,6 +34,7 @@ class TARGETDCCSyncTest(PreludeMixin, StorageMixin,
             "WT",
             signpost_url=self.signpost_url,
             graph_info=self.graph_info,
+            bucket=self.bucket_name,
             storage_info=self.storage_info,
         )
         with HTTMock(target_file_mock):
