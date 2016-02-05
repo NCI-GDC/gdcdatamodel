@@ -70,6 +70,7 @@ def create_tables(host, user, password, database):
     engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
         user=user, host=host, pwd=password, db=database))
     create_all(engine)
+    versioned_nodes.Base.metadata.create_all(engine)
 
 
 def create_indexes(host, user, password, database):

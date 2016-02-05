@@ -17,15 +17,16 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 from cdisutils import log
 from gdcdictionary import gdcdictionary
-from misc import FileReport  # noqa
+from misc import FileReport                      # noqa
 from sqlalchemy.orm import configure_mappers
-from sqlalchemy.dialects.postgres import JSONB
+from versioned_nodes import VersionedNode        # noqa
 
 import hashlib
 import jsonschema
 
+import versioned_nodes                           # noqa
+
 from sqlalchemy import (
-    Column,
     event,
     and_
 )
@@ -166,10 +167,6 @@ def get_class_name_from_id(_id):
 
 def get_class_tablename_from_id(_id):
     return 'node_{}'.format(_id.replace('_', ''))
-
-
-def cls_inject_submitted_props_column(cls):
-    cls._submitted_props = Column(JSONB, default={})
 
 
 def cls_inject_created_datetime_hook(cls,
@@ -317,7 +314,6 @@ def NodeFactory(_id, schema):
         **attributes
     ))
 
-    cls_inject_submitted_props_column(cls)
     cls_inject_created_datetime_hook(cls)
     cls_inject_updated_datetime_hook(cls)
     cls_inject_secondary_keys(cls, schema)
