@@ -98,7 +98,7 @@ class DownloadStatsIndexBuilder(object):
                 hosts=[os.environ["ELASTICSEARCH_HOST"]],
                 http_auth=(os.environ.get("ES_USER", ""),
                            os.environ.get("ES_PASSWORD", "")))
-            
+
         self.index_name = index_name
         self.doc_type = doc_type
         self.log = get_logger("download_stats_index_build")
@@ -120,6 +120,7 @@ class DownloadStatsIndexBuilder(object):
         )
 
     def go(self, projects=None):
+            self.create_es_index()
             self.log.info("Loading all projects from database")
             with self.graph.session_scope():
                 if not projects:
