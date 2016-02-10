@@ -69,7 +69,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
     def create_all_tables(cls):
         parser = pgadmin.get_parser()
         args = parser.parse_args([
-            'create', '--delay', '1', '--retries', '0', '--force'
+            'graph-create', '--delay', '1', '--retries', '0', '--force'
         ] + cls.base_args)
         pgadmin.main(args)
 
@@ -86,13 +86,13 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_args(self):
         parser = pgadmin.get_parser()
-        parser.parse_args(['create'] + self.base_args)
+        parser.parse_args(['graph-create'] + self.base_args)
 
     def test_create_single(self):
         """Test simple table creation"""
 
         pgadmin.main(pgadmin.get_parser().parse_args([
-            'create', '--delay', '1', '--retries', '0'
+            'graph-create', '--delay', '1', '--retries', '0'
         ] + self.base_args))
 
         self.engine.execute('SELECT * from node_case')
@@ -101,7 +101,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test idempotency of table creation"""
 
         pgadmin.main(pgadmin.get_parser().parse_args([
-            'create', '--delay', '1', '--retries', '0'
+            'graph-create', '--delay', '1', '--retries', '0'
         ] + self.base_args))
 
         self.engine.execute('SELECT * from node_case')
@@ -112,7 +112,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         q = Queue()  # to communicate with blocking process
 
         args = pgadmin.get_parser().parse_args([
-            'create', '--delay', '1', '--retries', '1'
+            'graph-create', '--delay', '1', '--retries', '1'
         ] + self.base_args)
         pgadmin.main(args)
 
@@ -141,7 +141,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         q = Queue()  # to communicate with blocking process
 
         args = pgadmin.get_parser().parse_args([
-            'create', '--delay', '1', '--retries', '1', '--force'
+            'graph-create', '--delay', '1', '--retries', '1', '--force'
         ] + self.base_args)
         pgadmin.main(args)
 

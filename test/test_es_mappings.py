@@ -59,7 +59,7 @@ class TestElasticsearchMappings(unittest.TestCase):
         m = get_project_es_mapping()['properties']
         properties = {'name', 'summary', 'state', 'program',
                       'primary_site', 'project_id', 'disease_type',
-                      'dbgap_accession_number'}
+                      'dbgap_accession_number', 'released'}
         self.assertEqual(properties, set(m.keys()))
 
     def test_annotation_mapping_top_level(self):
@@ -70,5 +70,5 @@ class TestElasticsearchMappings(unittest.TestCase):
                       'entity_id', 'annotation_id', 'case_id',
                       'entity_submitter_id', 'case_submitter_id',
                       'project_id', 'created_datetime',
-                      'updated_datetime'}
+                      'updated_datetime', 'state'}
         self.assertEqual(properties, set(m.keys()))

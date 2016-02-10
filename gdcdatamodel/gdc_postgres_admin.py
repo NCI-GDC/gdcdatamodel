@@ -370,7 +370,7 @@ def add_base_args(subparser):
 
 def add_subcommand_create(subparsers):
     parser = add_base_args(subparsers.add_parser(
-        'create',
+        'graph-create',
         help=subcommand_create.__doc__
     ))
     parser.add_argument(
@@ -435,7 +435,7 @@ def main(args=None):
     logger.info("[ USER     : %-10s ]", args.user)
 
     return_value = {
-        'create': subcommand_create,
+        'graph-create': subcommand_create,
         'graph-grant': subcommand_grant,
         'graph-revoke': subcommand_revoke,
     }[args.subcommand](args)

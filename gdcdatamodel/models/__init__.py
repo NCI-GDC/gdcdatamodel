@@ -17,12 +17,19 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 from cdisutils import log
 from gdcdictionary import gdcdictionary
-from misc import *  # noqa
-from sqlalchemy import event, and_
+from misc import FileReport                      # noqa
 from sqlalchemy.orm import configure_mappers
+from versioned_nodes import VersionedNode        # noqa
 
 import hashlib
 import jsonschema
+
+import versioned_nodes                           # noqa
+
+from sqlalchemy import (
+    event,
+    and_
+)
 
 from psqlgraph import (
     Node,
