@@ -9,7 +9,7 @@ from zug.datamodel import xml2psqlgraph, latest_urls,\
 from cdisutils.log import get_logger
 
 log = get_logger("dcc_bio_importer")
-logging.root.setLevel(level=logging.ERROR)
+logging.root.setLevel(level=logging.INFO)
 
 re_biospecimen = re.compile(".*(biospecimen|control).*\\.xml")
 re_clinical = re.compile(".*(clinical).*\\.xml")
