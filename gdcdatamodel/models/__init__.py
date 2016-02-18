@@ -169,6 +169,42 @@ def get_class_tablename_from_id(_id):
     return 'node_{}'.format(_id.replace('_', ''))
 
 
+def cls_inject_versioned_nodes_lookup(cls):
+    """Injects a property and a method into the class to retrieve node
+    versions.
+
+    """
+
+    @property
+    def _versions(self):
+        """Returns a query if the node is bound to a session. Raises an
+          exception if the node is not bound to a session.
+
+        :returns: A SQLAlchemy query for node versions.
+
+        """
+
+        session = self.get_session()
+        if not session:
+            raise RuntimeError(
+                '{} not bound to a session. Try .get_versions(session).'
+                .format(self))
+        return self.get_versions(session)
+
+    def get_versions(self, session):
+        """Returns a query for node versions given a session.
+
+        """
+
+        return session.query(VersionedNode)\
+                      .filter(VersionedNode.node_id == self.node_id)\
+                      .filter(VersionedNode.label == self.label)\
+                      .order_by(VersionedNode.key.desc())
+
+    cls._versions = _versions
+    cls.get_versions = get_versions
+
+
 def cls_inject_created_datetime_hook(cls,
                                      updated_key="updated_datetime",
                                      created_key="created_datetime"):
@@ -316,6 +352,7 @@ def NodeFactory(_id, schema):
 
     cls_inject_created_datetime_hook(cls)
     cls_inject_updated_datetime_hook(cls)
+    cls_inject_versioned_nodes_lookup(cls)
     cls_inject_secondary_keys(cls, schema)
 
     return cls
