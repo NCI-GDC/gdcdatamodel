@@ -104,7 +104,7 @@ def import_files(xml):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', default='gdc_datamodel', type=str,
-                        help='to odatabase to import to')
+                        help='the database to import to')
     parser.add_argument('-i', '--host', default='localhost', type=str,
                         help='host of the postgres server')
     parser.add_argument('-u', '--user', default='test', type=str,
