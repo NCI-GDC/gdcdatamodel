@@ -44,14 +44,14 @@ def setup():
 
 def process(roots):
     converter = setup()
-    with converter.graph.session_scope() as session:
-        for root in roots:
-            root = etree.fromstring(root)
-            converter.parse('file', root)
-        converter.rebase()
-        if args.dry_run:
-            log.warn('Rolling back session as requested.')
-            session.rollback()
+    #with converter.graph.session_scope() as session:
+    for root in roots:
+        root = etree.fromstring(root)
+        converter.parse('file', root)
+    converter.rebase()
+    if args.dry_run:
+        log.warn('Rolling back session as requested.')
+        session.rollback()
 
 
 def open_xml():
