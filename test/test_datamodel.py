@@ -28,3 +28,25 @@ class TestDataModel(unittest.TestCase):
         with self.assertRaises(ValidationError):
             s.percent_necrosis = '0.0'
         s.percent_necrosis = 0.0
+
+    def test_link_clobber_prevention(self):
+        with self.assertRaises(AssertionError):
+            md.EdgeFactory(
+                'Testedge',
+                'test',
+                'sample',
+                'aliquot',
+                'aliquots',
+                '_uncontended_backref',
+            )
+
+    def test_backref_clobber_prevention(self):
+        with self.assertRaises(AssertionError):
+            md.EdgeFactory(
+                'Testedge',
+                'test',
+                'sample',
+                'aliquot',
+                '_uncontended_link',
+                'samples',
+            )
