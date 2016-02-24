@@ -63,24 +63,6 @@ loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
 
-# These special links are custom for LEGACY projects and backwards
-# compatibility only.  If you are editing this, there is probably
-# something wrong, new additions to the dictionary should be made such
-# that no conflicts are introduced.
-special_links = {
-    ('file', 'related_to', 'file'): (
-        'related_files', 'parent_files'),
-    ('file', 'data_from', 'file'): (
-        'derived_files', 'source_files'),
-    ('file', 'describes', 'case'): (
-        'described_cases', 'describing_files'),
-    ('archive', 'related_to', 'file'): (
-        'related_to_files', 'related_archives'),
-    ('file', 'member_of', 'experimental_strategy'): (
-        'experimental_strategies', 'files'),
-}
-
-
 def remove_spaces(s):
     """Returns a stripped string with all of the spaces removed.
 
@@ -504,10 +486,6 @@ def parse_edge(src_label, name, edge_label, subschema, link):
     dst_label = dictionary.schema[dst_label]['id']
     edge_name = ''.join(map(get_class_name_from_id, [
         src_label, edge_label, dst_label]))
-
-    src_dst_assoc, dst_src_assoc = special_links.get(
-        (src_label, edge_label, dst_label),
-        (dst_label+'s', src_label+'s'))
 
     edge = EdgeFactory(
         edge_name,
