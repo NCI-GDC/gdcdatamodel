@@ -17,14 +17,12 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 from cdisutils import log
 from collections import defaultdict
-from gdcdictionary import gdcdictionary
+from gdcdictionary import gdcdictionary as dictionary
 from misc import FileReport                      # noqa
 from sqlalchemy.orm import configure_mappers
 from versioned_nodes import VersionedNode        # noqa
 
 import hashlib
-import jsonschema
-
 import versioned_nodes                           # noqa
 
 from sqlalchemy import (
@@ -48,12 +46,6 @@ logger = log.get_logger('gdcdatamodel')
 # These are properties that are defined outside of the JSONB column in
 # the database, inform later code to skip these
 excluded_props = ['id', 'type']
-
-
-# Load the GDC dictionary and create a resolver for references to definitions
-DEF_ID = '_definitions.yaml#'
-dictionary = gdcdictionary
-resolver = jsonschema.RefResolver(DEF_ID, gdcdictionary.definitions)
 
 
 # At module load time, evaluate which classes have already been
@@ -120,9 +112,10 @@ def PropertyFactory(name, schema, key=None):
     """
     key = name if key is None else key
 
-    # Lookup and translate types
-    if '$ref' in schema.keys():
-        reference, schema = resolver.resolve(schema['$ref'])
+    # Assert the dictionary has no references for properties
+    assert '$ref' not in schema.keys(), (
+        "Found a JSON reference in dictionary.  These should be resolved "
+        "at gdcdictionary module load time as of 2016-02-24")
 
     # Lookup property type and coerce to list
     types = schema.get('type')
