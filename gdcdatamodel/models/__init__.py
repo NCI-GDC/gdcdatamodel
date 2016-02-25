@@ -16,14 +16,13 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 """
 
 from cdisutils import log
-from gdcdictionary import gdcdictionary
+from collections import defaultdict
+from gdcdictionary import gdcdictionary as dictionary
 from misc import FileReport                      # noqa
 from sqlalchemy.orm import configure_mappers
 from versioned_nodes import VersionedNode        # noqa
 
 import hashlib
-import jsonschema
-
 import versioned_nodes                           # noqa
 
 from sqlalchemy import (
@@ -49,35 +48,11 @@ logger = log.get_logger('gdcdatamodel')
 excluded_props = ['id', 'type']
 
 
-# Load the GDC dictionary and create a resolver for references to definitions
-DEF_ID = '_definitions.yaml#'
-dictionary = gdcdictionary
-resolver = jsonschema.RefResolver(DEF_ID, gdcdictionary.definitions)
-
-
 # At module load time, evaluate which classes have already been
 # registered as subclasses of the abstract bases Node and Edge to
 # prevent double-registering
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
-
-
-# These special links are custom for LEGACY projects and backwards
-# compatibility only.  If you are editing this, there is probably
-# something wrong, new additions to the dictionary should be made such
-# that no conflicts are introduced.
-special_links = {
-    ('file', 'related_to', 'file'): (
-        'related_files', 'parent_files'),
-    ('file', 'data_from', 'file'): (
-        'derived_files', 'source_files'),
-    ('file', 'describes', 'case'): (
-        'described_cases', 'describing_files'),
-    ('archive', 'related_to', 'file'): (
-        'related_to_files', 'related_archives'),
-    ('file', 'member_of', 'experimental_strategy'): (
-        'experimental_strategies', 'files'),
-}
 
 
 def remove_spaces(s):
@@ -137,9 +112,10 @@ def PropertyFactory(name, schema, key=None):
     """
     key = name if key is None else key
 
-    # Lookup and translate types
-    if '$ref' in schema.keys():
-        reference, schema = resolver.resolve(schema['$ref'])
+    # Assert the dictionary has no references for properties
+    assert '$ref' not in schema.keys(), (
+        "Found a JSON reference in dictionary.  These should be resolved "
+        "at gdcdictionary module load time as of 2016-02-24")
 
     # Lookup property type and coerce to list
     types = schema.get('type')
@@ -398,8 +374,27 @@ def generate_edge_tablename(src_label, label, dst_label):
 
 
 def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
-                dst_src_assoc):
+                dst_src_assoc,
+                _assigned_association_proxies=defaultdict(set)):
     """Returns an edge class.
+
+    :param name: The name of the edge class.
+    :param label: Assigned to ``edge.label``
+    :param src_label: The label of the source edge
+    :param dst_label: The label of the destination edge
+    :param src_dst_assoc:
+        The link name i.e. ``src.src_dst_assoc`` returns a list of
+        destination type nodes
+    :param dst_src_assoc:
+        The backref name i.e. ``dst.dst_src_assoc`` returns a list of
+        source type nodes
+    :param _assigned_association_proxies:
+        Don't pass this parameter. This will be used to store what
+        links and backrefs have been assigned to the source and
+        destination nodes.  This prevents clobbering a backref with a
+        link or a link with a backref, as they would be from different
+        nodes, should be different relationships, and would have
+        different semantic meanings.
 
     """
 
@@ -418,6 +413,20 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     # Lookup the tablenames for the source and destination classes
     src_cls = Node.get_subclass(src_label)
     dst_cls = Node.get_subclass(dst_label)
+
+    # Assert that we're not clobbering link names
+    assert dst_src_assoc not in _assigned_association_proxies[dst_label], (
+        "Attempted to assign backref '{link}' to node '{node}' but "
+        "the node already has an attribute called '{link}'"
+        .format(link=dst_src_assoc, node=dst_label))
+    assert src_dst_assoc not in _assigned_association_proxies[src_label], (
+        "Attempted to assign link '{link}' to node '{node}' but "
+        "the node already has an attribute called '{link}'"
+        .format(link=src_dst_assoc, node=src_label))
+
+    # Remember that we're adding this link and this backref
+    _assigned_association_proxies[dst_label].add(dst_src_assoc)
+    _assigned_association_proxies[src_label].add(src_dst_assoc)
 
     cls = type(name, (Edge,), {
         '__label__': label,
@@ -470,10 +479,6 @@ def parse_edge(src_label, name, edge_label, subschema, link):
     dst_label = dictionary.schema[dst_label]['id']
     edge_name = ''.join(map(get_class_name_from_id, [
         src_label, edge_label, dst_label]))
-
-    src_dst_assoc, dst_src_assoc = special_links.get(
-        (src_label, edge_label, dst_label),
-        (dst_label+'s', src_label+'s'))
 
     edge = EdgeFactory(
         edge_name,
