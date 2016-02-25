@@ -22,14 +22,11 @@ def get_keys(error_msg):
 class GDCJSONValidator(object):
     def __init__(self):
         self.schemas = gdcdictionary
-        self.resolver = RefResolver(
-            '_definitions.yaml#', self.schemas.definitions)
 
     def iter_errors(self, doc):
         # Note whenever gdcdictionary use a newer version of jsonschema
         # we need to update the Validator
-        validator = Draft4Validator(self.schemas.schema[doc['type']],
-                                    resolver=self.resolver)
+        validator = Draft4Validator(self.schemas.schema[doc['type']])
         return validator.iter_errors(doc)
 
     def record_errors(self, entities):
