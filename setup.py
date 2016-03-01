@@ -21,10 +21,12 @@ setup(
     },
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@f0f198c2d7978fea311b0bc311c6db61732de261#egg=psqlgraph',
-        'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@05a25651affbebd7f0eab9b03758645b4c20047a#egg=gdcdictionary',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@c71ff0b804b81dde01d4a8eb743ada45540650c5#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@e3bd0932da1722b926c75db57a1df4527cdc27fa#egg=gdcdictionary',
     ],
-    scripts=[
-        'bin/setup_psqlgraph.py',
-    ]
+    entry_points={
+        'console_scripts': [
+            'gdc_postgres_admin=gdcdatamodel.gdc_postgres_admin:main'
+        ]
+    },
 )
