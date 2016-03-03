@@ -85,7 +85,6 @@ NODES = [
         node_id='eda6d2d5-4199-4f76-a45b-1d0401b4e54c',
         project_id='TCGA-BRCA',
         state='submitted',
-        days_to_index=0,
         submitter_id='TCGA-AR-A1AR',
     ),
     Portion(
