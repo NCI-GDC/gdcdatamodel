@@ -269,7 +269,10 @@ class PsqlGraph2JSON(object):
         """
 
         base = {'{}_id'.format(node.label): node.node_id}
-        base.update(node._props)
+        base.update({
+            k: v for k, v in node._props.iteritems()
+            if k in node.__pg_properties__
+        })
         return base
 
     ###################################################################
