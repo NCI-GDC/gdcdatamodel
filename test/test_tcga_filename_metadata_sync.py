@@ -96,8 +96,7 @@ class TCGAFilenameMetadataSyncerTest(StorageMixin, SignpostMixin, ZugTestBase):
         self.create_file("nationwidechildrens.org_clinical.TCGA-DH-5140.xml",
                          sys_ann={"_case_barcode": barcode})
         self.fake_biospecimen(barcode,
-                              {'submitter_id': barcode,
-                               'days_to_index': 0},
+                              {'submitter_id': barcode},
                               'case')
         with self.pg_driver.session_scope():
             file_node = self.pg_driver.node_lookup(

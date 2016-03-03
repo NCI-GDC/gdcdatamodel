@@ -25,7 +25,8 @@ sample_props = {'sample_type_id', 'project_id', 'created_datetime',
                 'current_weight', 'annotations', 'longest_dimension',
                 'tumor_code_id', 'tumor_code', 'aliquots'}
 project_props = {'name', 'state', 'program', 'primary_site',
-                 'project_id', 'disease_type', 'dbgap_accession_number'}
+                 'project_id', 'disease_type', 'dbgap_accession_number',
+                 'released'}
 summary_props = {'data_types', 'file_count',
                  'experimental_strategies', 'file_size'}
 tss_props = {'project', 'bcr_id', 'code', 'tissue_source_site_id',
@@ -49,7 +50,7 @@ annotation_props = {'category', 'status', 'classification',
                     'project_id', 'created_datetime', 'updated_datetime',
                     'creator', 'created_datetime', 'notes',
                     'submitter_id', 'annotation_id', 'entity_id',
-                    'entity_type', 'case_id', 'case_submitter_id'}
+                    'entity_type', 'case_id', 'case_submitter_id', 'state'}
 file_props = {'data_format', 'related_files', 'center', 'tags',
               'project_id', 'created_datetime', 'updated_datetime',
               'file_name', 'md5sum', 'cases', 'submitter_id',

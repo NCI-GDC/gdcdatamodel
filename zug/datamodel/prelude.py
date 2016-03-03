@@ -182,6 +182,7 @@ def insert_project_nodes(driver, path):
                     'disease_type': disease_type,
                     'primary_site': primary_site,
                     'dbgap_accession_number': accession_number or None,
+                    'released': True,
                 }
                 session.merge(Project(node_id, properties=properties))
                 program_id = programs[program]
