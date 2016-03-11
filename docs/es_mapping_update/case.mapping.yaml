@@ -179,44 +179,121 @@ case:
         search: 
           type: "string"
           analyzer: "id_search"
-    clinical: 
+    demographic: 
       properties: 
-        age_at_diagnosis: 
-          type: "integer"
-        clinical_id: 
-          type: "string"
-          index: "not_analyzed"
-        created_datetime: 
-          type: "string"
-          index: "not_analyzed"
-        days_to_death: 
-          type: "integer"
-        ethnicity: 
-          type: "string"
-          index: "not_analyzed"
         gender: 
-          type: "string"
-          index: "not_analyzed"
-        icd_10: 
-          type: "string"
-          index: "not_analyzed"
-        project_id: 
           type: "string"
           index: "not_analyzed"
         race: 
           type: "string"
           index: "not_analyzed"
-        state: 
+        ethnicity: 
           type: "string"
           index: "not_analyzed"
-        updated_datetime: 
-          type: "string"
-          index: "not_analyzed"
+        year_of_birth: 
+          type: "integer"
+        year_of_death: 
+          type: "integer"
+    diagnosis: 
+      type: "nested"
+      properties:
+        age_at_diagnosis: 
+          type: "integer"
         vital_status: 
           type: "string"
           index: "not_analyzed"
+        days_to_death: 
+          type: "integer"
         year_of_diagnosis: 
-          type: "long"
+          type: "integer"
+        primary_diagnosis: 
+          type: "string"
+          index: "not_analyzed"
+        days_to_birth: 
+          type: "integer"
+        days_to_last_follow_up: 
+          type: "integer"
+        morphology: 
+          type: "string"
+          index: "not_analyzed"
+        tissue_or_organ_of_origin: 
+          type: "string"
+          index: "not_analyzed"
+        site_of_resection_or_biopsy: 
+          type: "string"
+          index: "not_analyzed"
+        classification_of_tumor: 
+          type: "string"
+          index: "not_analyzed"
+        prior_malignancy: 
+          type: "string"
+          index: "not_analyzed"
+        tumor_stage: 
+          type: "string"
+          index: "not_analyzed"
+        tumor_grade: 
+          type: "string"
+          index: "not_analyzed"
+        progression_or_recurrence: 
+          type: "string"
+          index: "not_analyzed"
+        days_to_recurrence: 
+          type: "integer"
+        last_known_disease_status: 
+          type: "string"
+          index: "not_analyzed"
+        days_to_last_known_disease_status: 
+          type: "integer"
+        treaments: 
+          type: "nested"
+          properties: 
+            treatment_or_therapy: 
+              type: "string"
+              index: "not_analyzed"
+            treatment_intent_type: 
+              type: "string"
+              index: "not_analyzed"
+            therapeutic_agents: 
+              type: "string"
+              index: "not_analyzed"
+            days_to_treatment: 
+              type: "integer"
+    family_history: 
+      type: "nested"
+      properties: 
+        relative_with_cancer_history: 
+          type: "string"
+          index: "not_analyzed"
+        relationship_type: 
+          type: "string"
+          index: "not_analyzed"
+        relationship_gender: 
+          type: "string"
+          index: "not_analyzed"
+        relationship_age_at_diagnosis: 
+          type: "integer"
+        relationship_primary_diagnosis: 
+          type: "string"
+          index: "not_analyzed"
+    exposure: 
+      type: "nested"
+      properties: 
+        years_smoked: 
+          type: "integer"
+        cigarettes_per_day: 
+          type: "integer"
+        alcohol_history: 
+          type: "string"
+          index: "not_analyzed"
+        alcohol_intensity: 
+          type: "string"
+          index: "not_analyzed"
+        height: 
+          type: "float"
+        weight: 
+          type: "float"
+        bmi: 
+          type: "float"
     created_datetime: 
       type: "string"
       index: "not_analyzed"
@@ -425,44 +502,121 @@ case:
                 search: 
                   type: "string"
                   analyzer: "id_search"
-            clinical: 
+            demographic: 
               properties: 
-                age_at_diagnosis: 
-                  type: "integer"
-                clinical_id: 
-                  type: "string"
-                  index: "not_analyzed"
-                created_datetime: 
-                  type: "string"
-                  index: "not_analyzed"
-                days_to_death: 
-                  type: "integer"
-                ethnicity: 
-                  type: "string"
-                  index: "not_analyzed"
                 gender: 
-                  type: "string"
-                  index: "not_analyzed"
-                icd_10: 
-                  type: "string"
-                  index: "not_analyzed"
-                project_id: 
                   type: "string"
                   index: "not_analyzed"
                 race: 
                   type: "string"
                   index: "not_analyzed"
-                state: 
+                ethnicity: 
                   type: "string"
                   index: "not_analyzed"
-                updated_datetime: 
-                  type: "string"
-                  index: "not_analyzed"
+                year_of_birth: 
+                  type: "integer"
+                year_of_death: 
+                  type: "integer"
+            diagnosis: 
+              type: "nested"
+              properties:
+                age_at_diagnosis: 
+                  type: "integer"
                 vital_status: 
                   type: "string"
                   index: "not_analyzed"
+                days_to_death: 
+                  type: "integer"
                 year_of_diagnosis: 
-                  type: "long"
+                  type: "integer"
+                primary_diagnosis: 
+                  type: "string"
+                  index: "not_analyzed"
+                days_to_birth: 
+                  type: "integer"
+                days_to_last_follow_up: 
+                  type: "integer"
+                morphology: 
+                  type: "string"
+                  index: "not_analyzed"
+                tissue_or_organ_of_origin: 
+                  type: "string"
+                  index: "not_analyzed"
+                site_of_resection_or_biopsy: 
+                  type: "string"
+                  index: "not_analyzed"
+                classification_of_tumor: 
+                  type: "string"
+                  index: "not_analyzed"
+                prior_malignancy: 
+                  type: "string"
+                  index: "not_analyzed"
+                tumor_stage: 
+                  type: "string"
+                  index: "not_analyzed"
+                tumor_grade: 
+                  type: "string"
+                  index: "not_analyzed"
+                progression_or_recurrence: 
+                  type: "string"
+                  index: "not_analyzed"
+                days_to_recurrence: 
+                  type: "integer"
+                last_known_disease_status: 
+                  type: "string"
+                  index: "not_analyzed"
+                days_to_last_known_disease_status: 
+                  type: "integer"
+                treaments: 
+                  type: "nested"
+                  properties: 
+                    treatment_or_therapy: 
+                      type: "string"
+                      index: "not_analyzed"
+                    treatment_intent_type: 
+                      type: "string"
+                      index: "not_analyzed"
+                    therapeutic_agents: 
+                      type: "string"
+                      index: "not_analyzed"
+                    days_to_treatment: 
+                      type: "integer"
+            family_history: 
+              type: "nested"
+              properties: 
+                relative_with_cancer_history: 
+                  type: "string"
+                  index: "not_analyzed"
+                relationship_type: 
+                  type: "string"
+                  index: "not_analyzed"
+                relationship_gender: 
+                  type: "string"
+                  index: "not_analyzed"
+                relationship_age_at_diagnosis: 
+                  type: "integer"
+                relationship_primary_diagnosis: 
+                  type: "string"
+                  index: "not_analyzed"
+            exposure: 
+              type: "nested"
+              properties: 
+                years_smoked: 
+                  type: "integer"
+                cigarettes_per_day: 
+                  type: "integer"
+                alcohol_history: 
+                  type: "string"
+                  index: "not_analyzed"
+                alcohol_intensity: 
+                  type: "string"
+                  index: "not_analyzed"
+                height: 
+                  type: "float"
+                weight: 
+                  type: "float"
+                bmi: 
+                  type: "float"
             created_datetime: 
               type: "string"
               index: "not_analyzed"
@@ -515,10 +669,10 @@ case:
                 created_datetime: 
                   type: "string"
                   index: "not_analyzed"
-                data_subtype: 
+                data_type: 
                   type: "string"
                   index: "not_analyzed"
-                data_type: 
+                data_category: 
                   type: "string"
                   index: "not_analyzed"
                 error_type: 
@@ -1241,10 +1395,10 @@ case:
               index: "not_analyzed"
             summary: 
               properties: 
-                data_types: 
+                data_categories: 
                   type: "nested"
                   properties: 
-                    data_type: 
+                    data_category: 
                       type: "string"
                       index: "not_analyzed"
                     file_count: 
@@ -1307,10 +1461,10 @@ case:
         data_format: 
           type: "string"
           index: "not_analyzed"
-        data_subtype: 
+        data_type: 
           type: "string"
           index: "not_analyzed"
-        data_type: 
+        data_category: 
           type: "string"
           index: "not_analyzed"
         error_type: 
@@ -1319,6 +1473,31 @@ case:
         experimental_strategy: 
           type: "string"
           index: "not_analyzed"
+        analysis: 
+          properties: 
+            analysis_id: 
+              type: "string"
+              index: "not_analyzed"
+            analysis_workflow: 
+              type: "string"
+              index: "not_analyzed"
+            analysis_workflow_version: 
+              type: "string"
+              index: "not_analyzed"
+            analysis_datetime: 
+              type: "string"
+              index: "not_analyzed"
+        reference_genome: 
+          properties: 
+            genome_id: 
+              type: "string"
+              index: "not_analyzed"
+            genome_build: 
+              type: "string"
+              index: "not_analyzed"
+            genome_name: 
+              type: "string"
+              index: "not_analyzed"
         file_id: 
           type: "string"
           fields: 
@@ -1349,13 +1528,48 @@ case:
               analyzer: "id_search"
         file_size: 
           type: "long"
+        index_file: 
+          properties: 
+            access: 
+              type: "string"
+              index: "not_analyzed"
+            created_datetime: 
+              type: "string"
+              index: "not_analyzed"
+            file_id: 
+              type: "string"
+              index: "not_analyzed"
+            file_name: 
+              type: "string"
+              index: "not_analyzed"
+            file_size: 
+              type: "long"
+            md5sum: 
+              type: "string"
+              index: "not_analyzed"
+            published_datetime: 
+              type: "long"
+            release_state: 
+              type: "string"
+              index: "not_analyzed"
+            release_state_datetime: 
+              type: "string"
+              index: "not_analyzed"
+            state: 
+              type: "string"
+              index: "not_analyzed"
+            state_comment: 
+              type: "string"
+              index: "not_analyzed"
+            updated_datetime: 
+              type: "string"
+              index: "not_analyzed"
+            uploaded_datetime: 
+              type: "long"
         file_state: 
           type: "string"
           index: "not_analyzed"
         md5sum: 
-          type: "string"
-          index: "not_analyzed"
-        origin: 
           type: "string"
           index: "not_analyzed"
         platform: 
@@ -1375,10 +1589,10 @@ case:
             created_datetime: 
               type: "string"
               index: "not_analyzed"
-            data_subtype: 
+            data_type: 
               type: "string"
               index: "not_analyzed"
-            data_type: 
+            data_category: 
               type: "string"
               index: "not_analyzed"
             error_type: 
@@ -1446,10 +1660,10 @@ case:
         created_datetime: 
           type: "string"
           index: "not_analyzed"
-        data_subtype: 
+        data_type: 
           type: "string"
           index: "not_analyzed"
-        data_type: 
+        data_category: 
           type: "string"
           index: "not_analyzed"
         error_type: 
@@ -2172,10 +2386,10 @@ case:
       index: "not_analyzed"
     summary: 
       properties: 
-        data_types: 
+        data_categories: 
           type: "nested"
           properties: 
-            data_type: 
+            data_category: 
               type: "string"
               index: "not_analyzed"
             file_count: 

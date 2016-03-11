@@ -89,12 +89,12 @@ project:
       properties: 
         case_count: 
           type: "long"
-        data_types: 
+        data_categories: 
           type: "nested"
           properties: 
             case_count: 
               type: "long"
-            data_type: 
+            data_category: 
               type: "string"
               index: "not_analyzed"
             file_count: 

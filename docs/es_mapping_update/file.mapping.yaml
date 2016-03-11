@@ -274,44 +274,121 @@ file:
             search: 
               type: "string"
               analyzer: "id_search"
-        clinical: 
+        demographic: 
           properties: 
-            age_at_diagnosis: 
-              type: "integer"
-            clinical_id: 
-              type: "string"
-              index: "not_analyzed"
-            created_datetime: 
-              type: "string"
-              index: "not_analyzed"
-            days_to_death: 
-              type: "integer"
-            ethnicity: 
-              type: "string"
-              index: "not_analyzed"
             gender: 
-              type: "string"
-              index: "not_analyzed"
-            icd_10: 
-              type: "string"
-              index: "not_analyzed"
-            project_id: 
               type: "string"
               index: "not_analyzed"
             race: 
               type: "string"
               index: "not_analyzed"
-            state: 
+            ethnicity: 
               type: "string"
               index: "not_analyzed"
-            updated_datetime: 
-              type: "string"
-              index: "not_analyzed"
+            year_of_birth: 
+              type: "integer"
+            year_of_death: 
+              type: "integer"
+        diagnosis: 
+          type: "nested"
+          properties:
+            age_at_diagnosis: 
+              type: "integer"
             vital_status: 
               type: "string"
               index: "not_analyzed"
+            days_to_death: 
+              type: "integer"
             year_of_diagnosis: 
-              type: "long"
+              type: "integer"
+            primary_diagnosis: 
+              type: "string"
+              index: "not_analyzed"
+            days_to_birth: 
+              type: "integer"
+            days_to_last_follow_up: 
+              type: "integer"
+            morphology: 
+              type: "string"
+              index: "not_analyzed"
+            tissue_or_organ_of_origin: 
+              type: "string"
+              index: "not_analyzed"
+            site_of_resection_or_biopsy: 
+              type: "string"
+              index: "not_analyzed"
+            classification_of_tumor: 
+              type: "string"
+              index: "not_analyzed"
+            prior_malignancy: 
+              type: "string"
+              index: "not_analyzed"
+            tumor_stage: 
+              type: "string"
+              index: "not_analyzed"
+            tumor_grade: 
+              type: "string"
+              index: "not_analyzed"
+            progression_or_recurrence: 
+              type: "string"
+              index: "not_analyzed"
+            days_to_recurrence: 
+              type: "integer"
+            last_known_disease_status: 
+              type: "string"
+              index: "not_analyzed"
+            days_to_last_known_disease_status: 
+              type: "integer"
+            treaments: 
+              type: "nested"
+              properties: 
+                treatment_or_therapy: 
+                  type: "string"
+                  index: "not_analyzed"
+                treatment_intent_type: 
+                  type: "string"
+                  index: "not_analyzed"
+                therapeutic_agents: 
+                  type: "string"
+                  index: "not_analyzed"
+                days_to_treatment: 
+                  type: "integer"
+        family_history: 
+          type: "nested"
+          properties: 
+            relative_with_cancer_history: 
+              type: "string"
+              index: "not_analyzed"
+            relationship_type: 
+              type: "string"
+              index: "not_analyzed"
+            relationship_gender: 
+              type: "string"
+              index: "not_analyzed"
+            relationship_age_at_diagnosis: 
+              type: "integer"
+            relationship_primary_diagnosis: 
+              type: "string"
+              index: "not_analyzed"
+        exposure: 
+          type: "nested"
+          properties: 
+            years_smoked: 
+              type: "integer"
+            cigarettes_per_day: 
+              type: "integer"
+            alcohol_history: 
+              type: "string"
+              index: "not_analyzed"
+            alcohol_intensity: 
+              type: "string"
+              index: "not_analyzed"
+            height: 
+              type: "float"
+            weight: 
+              type: "float"
+            bmi: 
+              type: "float"
         created_datetime: 
           type: "string"
           index: "not_analyzed"
@@ -364,10 +441,10 @@ file:
             created_datetime: 
               type: "string"
               index: "not_analyzed"
-            data_subtype: 
+            data_type: 
               type: "string"
               index: "not_analyzed"
-            data_type: 
+            data_category: 
               type: "string"
               index: "not_analyzed"
             error_type: 
@@ -1090,10 +1167,10 @@ file:
           index: "not_analyzed"
         summary: 
           properties: 
-            data_types: 
+            data_categories: 
               type: "nested"
               properties: 
-                data_type: 
+                data_category: 
                   type: "string"
                   index: "not_analyzed"
                 file_count: 
@@ -1156,10 +1233,10 @@ file:
     data_format: 
       type: "string"
       index: "not_analyzed"
-    data_subtype: 
+    data_type: 
       type: "string"
       index: "not_analyzed"
-    data_type: 
+    data_category: 
       type: "string"
       index: "not_analyzed"
     error_type: 
@@ -1168,6 +1245,114 @@ file:
     experimental_strategy: 
       type: "string"
       index: "not_analyzed"
+    analysis:
+      # This is the analysis produced that the current file.
+      # Broadlly speaking, analysis can be experimental analysis that produces
+      # low level data, such as, an Illumina sequencing experiment generates
+      # read group level unaligned sequencing reads. In this case, SRA's experiment
+      # XML, run XML can be included under analysis.metadata_files
+      properties: 
+        analysis_id: 
+          type: "string"
+          index: "not_analyzed"
+        analysis_workflow: 
+          type: "string"
+          index: "not_analyzed"
+        analysis_workflow_version: 
+          type: "string"
+          index: "not_analyzed"
+        analysis_datetime: 
+          type: "string"
+          index: "not_analyzed"
+        input_files:
+          # these are input files for the analysis that produced the current file
+          # when embed 'file' doc under 'case' doc, this 'file.analysis.input_files'
+          # doc does not need to be embedded, the reason is we don't need to search
+          # cases using information here
+          type: nested
+          properties: 
+            data_type: 
+              type: "string"
+              index: "not_analyzed"
+            data_category: 
+              type: "string"
+              index: "not_analyzed"
+            file_id: 
+              type: "string"
+              index: "not_analyzed"
+            file_name: 
+              type: "string"
+              index: "not_analyzed"
+            file_size: 
+              type: "long"
+        metadata_files:
+          # this is for externally generated metadata files, eg, SRA XML, MAGE-Tab etc.
+          # when embed 'file' doc under 'case' doc, this 'file.analysis.metadata_files'
+          # doc does not need to be embedded, the reason is we don't need to search
+          # cases using information here
+          type: nested
+          properties: 
+            data_type: 
+              type: "string"
+              index: "not_analyzed"
+            data_category: 
+              type: "string"
+              index: "not_analyzed"
+            file_id: 
+              type: "string"
+              index: "not_analyzed"
+            file_name: 
+              type: "string"
+              index: "not_analyzed"
+            file_size: 
+              type: "long"
+        downstream_analyses:
+          # this is the analysis (or analyses) used the current file as input
+          # when embed 'file' doc under 'case' doc, this 'file.analysis.downstream_analyses'
+          # doc does not need to be embedded, the reason is we don't need to search
+          # cases using information here
+          type: nested
+          properties: 
+            analysis_id: 
+              type: "string"
+              index: "not_analyzed"
+            analysis_workflow: 
+              type: "string"
+              index: "not_analyzed"
+            analysis_workflow_version: 
+              type: "string"
+              index: "not_analyzed"
+            analysis_datetime: 
+              type: "string"
+              index: "not_analyzed"
+            output_files: # these are output files produced by the downstream analysis
+              type: nested
+              properties: 
+                data_type: 
+                  type: "string"
+                  index: "not_analyzed"
+                data_category: 
+                  type: "string"
+                  index: "not_analyzed"
+                file_id: 
+                  type: "string"
+                  index: "not_analyzed"
+                file_name: 
+                  type: "string"
+                  index: "not_analyzed"
+                file_size: 
+                  type: "long"
+    reference_genome: 
+      properties: 
+        genome_id: 
+          type: "string"
+          index: "not_analyzed"
+        genome_build: 
+          type: "string"
+          index: "not_analyzed"
+        genome_name: 
+          type: "string"
+          index: "not_analyzed"
     file_id: 
       type: "string"
       fields: 
@@ -1201,6 +1386,44 @@ file:
     file_state: 
       type: "string"
       index: "not_analyzed"
+    index_file: 
+      properties: 
+        access: 
+          type: "string"
+          index: "not_analyzed"
+        created_datetime: 
+          type: "string"
+          index: "not_analyzed"
+        file_id: 
+          type: "string"
+          index: "not_analyzed"
+        file_name: 
+          type: "string"
+          index: "not_analyzed"
+        file_size: 
+          type: "long"
+        md5sum: 
+          type: "string"
+          index: "not_analyzed"
+        published_datetime: 
+          type: "long"
+        release_state: 
+          type: "string"
+          index: "not_analyzed"
+        release_state_datetime: 
+          type: "string"
+          index: "not_analyzed"
+        state: 
+          type: "string"
+          index: "not_analyzed"
+        state_comment: 
+          type: "string"
+          index: "not_analyzed"
+        updated_datetime: 
+          type: "string"
+          index: "not_analyzed"
+        uploaded_datetime: 
+          type: "long"
     md5sum: 
       type: "string"
       index: "not_analyzed"
@@ -1215,7 +1438,7 @@ file:
       index: "not_analyzed"
     published_datetime: 
       type: "long"
-    related_files: 
+    related_files: # index file is not here any more, metadata files are under analysis.metadata_files, this should be removed
       type: "nested"
       properties: 
         access: 
@@ -1224,10 +1447,10 @@ file:
         created_datetime: 
           type: "string"
           index: "not_analyzed"
-        data_subtype: 
+        data_type: 
           type: "string"
           index: "not_analyzed"
-        data_type: 
+        data_category: 
           type: "string"
           index: "not_analyzed"
         error_type: 
