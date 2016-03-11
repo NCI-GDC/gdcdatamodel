@@ -1,0 +1,25 @@
+logging: 
+  properties: 
+    date: 
+      type: "date"
+      format: "dateOptionalTime"
+    entity: 
+      type: "string"
+    expand: 
+      type: "string"
+    facets: 
+      type: "string"
+    fields: 
+      type: "string"
+    filters: 
+      type: "string"
+    from: 
+      type: "string"
+    id: 
+      type: "string"
+    size: 
+      type: "string"
+    sort: 
+      type: "string"
+    user_agent: 
+      type: "string"
