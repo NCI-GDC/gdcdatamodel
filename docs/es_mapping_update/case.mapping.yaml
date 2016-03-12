@@ -623,6 +623,8 @@ case:
             days_to_index: 
               type: "long"
             files: 
+              # this seems to be an error, there shouldn't be 'case.files.cases.files',
+              # it should only be 'case.files.cases'
               type: "nested"
               properties: 
                 created_datetime: 
@@ -661,6 +663,10 @@ case:
                   type: "string"
                   index: "not_analyzed"
             metadata_files: 
+              # same comment as in 'case.metadata_files', 
+              # we probably just need 'case.files' then make a data type for metadata,
+              # also, if 'case' has metadata_files and 'biospecimen' has it, and
+              # something also has it, should there be 'metadata_files' everywhere?
               type: "nested"
               properties: 
                 acl: 
@@ -1487,6 +1493,29 @@ case:
             analysis_datetime: 
               type: "string"
               index: "not_analyzed"
+            metadata:
+              # I am not very sure about whether this is a good option, but here we go:
+              # this is for GDC harmonized/generated metadata for all kinds of analyses.
+              # when embed 'file' doc under 'case' doc, this 'file.analysis.metadata'
+              # doc may need to be embedded as well.
+              properties: 
+                read_groups: 
+                  # this is only applicable to unaliged reads and aligned reads
+                  type: "nested"
+                  properties: 
+                    read_group_id: 
+                      type: "string"
+                      index: "not_analyzed"
+                    is_paired_end: 
+                      type: "boolean"
+                    read_length: 
+                      type: "integer"
+                    base_caller_name: 
+                      type: "string"
+                      index: "not_analyzed"
+                    library_name: 
+                      type: "string"
+                      index: "not_analyzed"
         reference_genome: 
           properties: 
             genome_id: 
@@ -1652,6 +1681,9 @@ case:
         uploaded_datetime: 
           type: "long"
     metadata_files: 
+      # this seems not used in the current portal, should we have this 'metadata_files'
+      # in parallel with 'files', or should metadatea file be still file but with data
+      # type be metadaeta?
       type: "nested"
       properties: 
         acl: 

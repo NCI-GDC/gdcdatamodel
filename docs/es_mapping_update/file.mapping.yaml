@@ -394,7 +394,7 @@ file:
           index: "not_analyzed"
         days_to_index: 
           type: "long"
-        files: 
+        files: # this seems not really used in the current ES index
           type: "nested"
           properties: 
             created_datetime: 
@@ -432,7 +432,7 @@ file:
             updated_datetime: 
               type: "string"
               index: "not_analyzed"
-        metadata_files: 
+        metadata_files: # this seems not really used in the current ES index
           type: "nested"
           properties: 
             acl: 
@@ -1285,8 +1285,33 @@ file:
               index: "not_analyzed"
             file_size: 
               type: "long"
+        metadata:
+          # I am not very sure about whether this is a good option, but here we go:
+          # this is for GDC harmonized/generated metadata for all kinds of analyses.
+          # when embed 'file' doc under 'case' doc, this 'file.analysis.metadata'
+          # doc may need to be embedded as well.
+          properties: 
+            read_groups: 
+              # this is only applicable to unaliged reads and aligned reads
+              type: "nested"
+              properties: 
+                read_group_id: 
+                  type: "string"
+                  index: "not_analyzed"
+                is_paired_end: 
+                  type: "boolean"
+                read_length: 
+                  type: "integer"
+                base_caller_name: 
+                  type: "string"
+                  index: "not_analyzed"
+                library_name: 
+                  type: "string"
+                  index: "not_analyzed"
+            # there can be other type of metadata here
         metadata_files:
-          # this is for externally generated metadata files, eg, SRA XML, MAGE-Tab etc.
+          # this is for externally generated metadata files, eg, SRA XML (including
+          # all three: analysis.xml, experiment.xml and run.xml), MAGE-Tab etc.
           # when embed 'file' doc under 'case' doc, this 'file.analysis.metadata_files'
           # doc does not need to be embedded, the reason is we don't need to search
           # cases using information here
