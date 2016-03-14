@@ -59,11 +59,12 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     @classmethod
     def drop_all_tables(cls):
-        for scls in Edge.__subclasses__() + Node.__subclasses__():
+        for scls in Node.__subclasses__():
             try:
-                cls.engine.execute("DROP TABLE {}".format(scls.__tablename__))
+                cls.engine.execute("DROP TABLE {} CASCADE"
+                                   .format(scls.__tablename__))
             except Exception as e:
-                cls.logger.debug(e)
+                cls.logger.warning(e)
 
     @classmethod
     def create_all_tables(cls):

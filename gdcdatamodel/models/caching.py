@@ -16,15 +16,34 @@ GDC datamodel.
 """
 
 from cdisutils.log import get_logger
-from psqlgraph import Node, Edge
-from sqlalchemy.orm.session import make_transient
+from psqlgraph import Node
 
 logger = get_logger('gdcdatamodel')
 
+#: This variable contains the link name for the case shortcut
+#: association proxy
+RELATED_CASES_LINK_NAME = '_related_cases'
 
-# This variable specifies the key under which the node_id of related
-# cases is cached.
-CASE_CACHE_KEY = 'cache.related.case.id'
+#: This variable specifies the categories for which to create short cut
+#: edges to case
+RELATED_CASES_CATEGORIES = [
+    'biospecimen',
+    'notation',
+    'data_bundle',
+    'clinical',
+    'data_file',
+]
+
+
+def get_related_case_edge_cls_name(node):
+    """Standard generation of shortcut edge class name
+
+    :param node: The source node (or type(node)) of the edge
+    :returns: String name
+
+    """
+
+    return '{}RelatesToCase'.format(node._dictionary['title'])
 
 
 def get_edge_src(edge):
@@ -66,42 +85,50 @@ def get_edge_dst(edge, allow_query=False):
 
 
 def related_cases_from_cache(node):
-    """Get the cached related case ids from this node's sysan
+    """Get the cached related case ids from this node's case shortcut
+    edges
 
     :param node: The Node instance
-    :returns: List of str ids
+    :returns: List of Case nodes
 
     """
 
-    return node.sysan.get(CASE_CACHE_KEY, [])
+    return filter(None, getattr(node, RELATED_CASES_LINK_NAME, []))
 
 
 def related_cases_from_parents(node):
     """Get the cached related case ids from the parents of this node from
 
-    1. The sysan of any parent nodes
+    1. The shortcut edges of any parent nodes
     2. If any parents are cases, include those ids
 
     :param node: The Node instance
-    :returns: List of str ids
+    :returns: List of Case nodes
 
     """
 
+    skip_edges_named = [
+        get_related_case_edge_cls_name(node)
+    ]
+
     # Get the cached ids from parents
     cases = {
-        case_id
+        case
         for edge in node.edges_out
         if edge.dst
-        for case_id in edge.dst._related_cases_from_cache
+        for case in edge.dst._related_cases_from_cache
+        if edge.__class__.__name__ not in skip_edges_named
     }
 
     # Are any parents cases?
     for edge in node.edges_out:
+        if edge.__class__.__name__ in skip_edges_named:
+            continue
         dst_class = Node.get_subclass_named(edge.__dst_class__)
         if dst_class.label == 'case' and edge.dst:
-            cases.add(edge.dst.node_id)
+            cases.add(edge.dst)
 
-    return list(cases)
+    return filter(None, cases)
 
 
 def cache_related_cases_recursive(node,
@@ -111,7 +138,7 @@ def cache_related_cases_recursive(node,
                                   visited_nodes=None):
     """Update the related case cache on source node and its children
     recursively iff the this update changes the related case source
-    node's cache.
+    node's shortcut edges.
 
     :param session: The target Session.
     :param flush_context:
@@ -124,22 +151,38 @@ def cache_related_cases_recursive(node,
 
     """
 
+    visited_nodes = set() if visited_nodes is None else visited_nodes
+
+    # Check preconditions for updating shortcut edge
     if not node:
+        return
+
+    if not hasattr(node, RELATED_CASES_LINK_NAME):
         return
 
     if visited_nodes and node.node_id in visited_nodes:
         return
 
-    visited_nodes = (visited_nodes or set()).union({node.node_id})
+    visited_nodes.add(node.node_id)
 
-    current_cases = related_cases_from_cache(node)
-    updated_cases = related_cases_from_parents(node)
-    diff = set(current_cases).symmetric_difference(updated_cases)
+    # These are the cases that are currently connected by a shortcut edge
+    current_cases = {c.node_id: c for c in related_cases_from_cache(node)}
 
+    # These are the cases are currently connected by a shortcut edge
+    # to this node's parents
+    updated_cases = {c.node_id: c for c in related_cases_from_parents(node)}
+
+    current_case_ids = set(current_cases.keys())
+    updated_case_ids = set(updated_cases.keys())
+    diff = current_case_ids.symmetric_difference(updated_case_ids)
+
+    # If nothing has changed, we don't need to update or recurse
     if not diff:
         return
 
-    node.sysan[CASE_CACHE_KEY] = updated_cases
+    # Set the updated case association_proxy
+    setattr(node, RELATED_CASES_LINK_NAME, updated_cases.values())
+
     to_recurse = [e for e in node.edges_in if e.src]
     for edge in to_recurse:
         cache_related_cases_recursive(
@@ -150,12 +193,13 @@ def cache_related_cases_recursive(node,
             visited_nodes,
         )
 
+    return
+
 
 def cache_related_cases_on_insert(target,
                                   session,
                                   flush_context,
-                                  instances,
-                                  visited_nodes=None):
+                                  instances):
     """Hook on updated edges.  Update the related case cache on source
     node and its children iff the this update changes the related case
     source node's cache.
@@ -185,15 +229,13 @@ def cache_related_cases_on_insert(target,
         session,
         flush_context,
         instances,
-        visited_nodes,
     )
 
 
 def cache_related_cases_on_update(target,
                                   session,
                                   flush_context,
-                                  instances,
-                                  visited_nodes=None):
+                                  instances):
     """Hook on deleted edges.  Update the related case cache on source
     node and its children.
 
@@ -216,15 +258,13 @@ def cache_related_cases_on_update(target,
         session,
         flush_context,
         instances,
-        visited_nodes,
     )
 
 
 def cache_related_cases_on_delete(target,
                                   session,
                                   flush_context,
-                                  instances,
-                                  visited_nodes=None):
+                                  instances):
     """Hook on deleted edges.  Update the related case cache on source
     node and its children.
 
@@ -251,5 +291,4 @@ def cache_related_cases_on_delete(target,
         session,
         flush_context,
         instances,
-        visited_nodes,
     )

@@ -41,7 +41,7 @@ class TestCacheRelatedCases(unittest.TestCase):
 
         with g.session_scope() as s:
             sample = g.nodes(md.Sample).subq_path('cases').one()
-            assert sample.sysan[md.CASE_CACHE_KEY] == ['case_id_1']
+            assert sample._related_cases_from_cache == [case]
 
     def test_insert_single_edge(self):
         with g.session_scope() as s:
@@ -52,7 +52,7 @@ class TestCacheRelatedCases(unittest.TestCase):
 
         with g.session_scope() as s:
             sample = g.nodes(md.Sample).subq_path('cases').one()
-            assert sample.sysan[md.CASE_CACHE_KEY] == ['case_id_1']
+            assert sample._related_cases_from_cache == [case]
 
     def test_insert_double_edge_in(self):
         with g.session_scope() as s:
@@ -66,7 +66,7 @@ class TestCacheRelatedCases(unittest.TestCase):
             samples = g.nodes(md.Sample).subq_path('cases').all()
             self.assertEqual(len(samples), 2)
             for sample in samples:
-                assert sample.sysan[md.CASE_CACHE_KEY] == ['case_id_1']
+                assert sample._related_cases_from_cache == [case]
 
     def test_insert_double_edge_out(self):
         with g.session_scope() as s:
@@ -78,10 +78,7 @@ class TestCacheRelatedCases(unittest.TestCase):
 
         with g.session_scope() as s:
             sample = g.nodes(md.Sample).subq_path('cases').one()
-            assert sample.sysan[md.CASE_CACHE_KEY] == [
-                'case_id_1',
-                'case_id_2',
-            ]
+            assert sample._related_cases == [case1, case2]
 
     def test_insert_multiple_edges(self):
         with g.session_scope() as s:
@@ -103,8 +100,8 @@ class TestCacheRelatedCases(unittest.TestCase):
             nodes = g.nodes(Node).all()
             nodes = [n for n in nodes if n.label not in ['case']]
 
-        for node in nodes:
-            assert node.sysan == {md.CASE_CACHE_KEY: ['case_id_1']}, node
+            for node in nodes:
+                assert node._related_cases == [case]
 
     def test_insert_update_children(self):
         with g.session_scope() as s:
@@ -122,8 +119,8 @@ class TestCacheRelatedCases(unittest.TestCase):
             aliquot = g.nodes(md.Aliquot).one()
             sample = g.nodes(md.Sample).one()
 
-        assert sample.sysan == {md.CASE_CACHE_KEY: ['case_id_1']}
-        assert aliquot.sysan == {md.CASE_CACHE_KEY: ['case_id_1']}
+            assert sample._related_cases == [case]
+            assert aliquot._related_cases == [case]
 
     def test_delete_dst_association_proxy(self):
         with g.session_scope() as s:
@@ -145,8 +142,8 @@ class TestCacheRelatedCases(unittest.TestCase):
             sample = g.nodes(md.Sample).one()
             aliquot = g.nodes(md.Aliquot).one()
 
-            assert sample.sysan == {md.CASE_CACHE_KEY: []}
-            assert aliquot.sysan == {md.CASE_CACHE_KEY: []}
+            sample._related_cases = []
+            aliquot._related_cases = []
 
     def test_delete_src_association_proxy(self):
         with g.session_scope() as s:
@@ -168,8 +165,8 @@ class TestCacheRelatedCases(unittest.TestCase):
             sample = g.nodes(md.Sample).one()
             aliquot = g.nodes(md.Aliquot).one()
 
-            assert sample.sysan == {md.CASE_CACHE_KEY: []}
-            assert aliquot.sysan == {md.CASE_CACHE_KEY: []}
+            assert sample._related_cases == []
+            assert aliquot._related_cases == []
 
     def test_delete_edge(self):
         with g.session_scope() as s:
@@ -192,8 +189,8 @@ class TestCacheRelatedCases(unittest.TestCase):
             sample = g.nodes(md.Sample).one()
             aliquot = g.nodes(md.Aliquot).one()
 
-            assert sample.sysan == {md.CASE_CACHE_KEY: []}
-            assert aliquot.sysan == {md.CASE_CACHE_KEY: []}
+            sample._related_cases == []
+            aliquot._related_cases == []
 
     def test_delete_parent(self):
         with g.session_scope() as s:
@@ -209,4 +206,4 @@ class TestCacheRelatedCases(unittest.TestCase):
         with g.session_scope() as s:
             sample = g.nodes(md.Sample).one()
 
-            assert sample.sysan == {md.CASE_CACHE_KEY: []}
+            assert sample._related_cases == []
