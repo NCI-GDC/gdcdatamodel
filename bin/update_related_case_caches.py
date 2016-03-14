@@ -29,7 +29,7 @@ def recursive_update_related_case_caches(node, case, visited_ids=set()):
     logger.info("{}: | case: {} | project: {}".format(
         node, case, node._props.get('project_id', '?')))
 
-    visited_ids.add({node.node_id})
+    visited_ids.add(node.node_id)
 
     for edge in node.edges_in:
         if edge.src is None:
