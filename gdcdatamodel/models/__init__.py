@@ -41,8 +41,9 @@ from sqlalchemy.ext.hybrid import (
     hybrid_property,
 )
 
-from caching import (                            # noqa
-    CASE_CACHE_KEY,
+from caching import (
+    RELATED_CASES_CATEGORIES,
+    RELATED_CASES_LINK_NAME,
     cache_related_cases_on_update,
     cache_related_cases_on_insert,
     cache_related_cases_on_delete,
@@ -551,6 +552,32 @@ def load_edges():
                 'edge_out': edge_name,
                 'dst_type': Node.get_subclass(link['target_type'])
             }
+
+    for src_cls in Node.get_subclasses():
+        cache_case = (
+            src_cls._dictionary['category'] in RELATED_CASES_CATEGORIES
+            or src_cls.label in ['annotation']
+        )
+
+        if not cache_case:
+            continue
+
+        link = {
+            'name': RELATED_CASES_LINK_NAME,
+            'multiplicity': 'many_to_one',
+            'required': False,
+            'target_type': 'case',
+            'label': 'relates_to',
+            'backref': '_related_{}'.format(src_cls.label),
+        }
+
+        edge_name = parse_edge(
+            src_cls.label,
+            link['name'],
+            'relates_to',
+            {'id': src_cls.label},
+            link,
+        )
 
 
 def inject_pg_backrefs():
