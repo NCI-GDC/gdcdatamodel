@@ -1,0 +1,227 @@
+# Demographic
+demographic:
+  - root: //*[local-name()='patient']
+    generated_id:
+      # random uuid4
+      namespace: 7fdd5f16-188e-4dae-89bb-c207427db3a7
+      name: ./shared:bcr_patient_uuid
+    edges:
+      describes:
+        case:
+          path: ./shared:bcr_patient_uuid
+    properties:
+      submitter_id:
+        # xpath support concat too, but it will return the suffix
+        # if no path is found instead of not found
+        path: ./shared:bcr_patient_barcode
+        suffix: _demographic
+        type: str
+
+      gender:
+        path: ./shared:gender
+        type: str.lower
+        default: unknown
+
+      race:
+        path: ./shared:race
+        type: str.lower
+        default: other
+
+      ethnicity:
+        path: ./shared:ethnicity
+        type: str.lower
+        default: not reported
+
+      year_of_birth:
+        path: ./shared:year_of_initial_pathologic_diagnosis - ./shared:age_at_initial_pathologic_diagnosis
+        type: int
+
+      year_of_death:
+        path: ./shared:year_of_initial_pathologic_diagnosis + floor(./shared:days_to_death div 365)
+        type: int
+
+diagnosis:
+  - root: //*[local-name()='patient']
+    # roots to lookup property
+    additional_property_roots:
+      - //*[local-name()='follow_up']
+    generated_id:
+      namespace: 0e34df64-b3ab-4b07-b750-e8690ee28eaf
+      name: ./shared:bcr_patient_uuid
+    edges:
+      describes:
+        case:
+          path: ./shared:bcr_patient_uuid
+    properties:
+      submitter_id:
+        path: ./shared:bcr_patient_barcode
+        suffix: _diagnosis
+        type: str
+
+      age_at_diagnosis:
+        path: ./shared:age_at_initial_pathologic_diagnosis
+        type: int
+        term:
+
+      days_to_birth:
+        path: ./shared:days_to_birth
+        type: float
+
+      days_to_death:
+        path: ./shared:days_to_death
+        type: float
+
+      days_to_last_follow_up:
+        path: ./shared:days_to_last_followup
+        type: float
+
+      vital_status:
+        path: ./shared:vital_status
+        type: str.lower
+        default: unknown
+
+      primary_diagnosis:
+        path: ./shared:icd_10
+        type: str.lower
+        default: not reported
+
+      morphology:
+        path: ./shared:icd_o_3_histology
+        type: str.lower
+        default: not reported
+
+      tissue_or_organ_of_origin:
+        path: ./shared:icd_o_3_site # is this right?
+        type: str.lower
+        default: not reported
+
+      site_of_resection_or_biopsy:
+        path: ./shared:icd_o_3_site # is this right?
+        type: str.lower
+        default: not reported
+
+      classification_of_tumor:
+        path: "primary"
+        type: str.lower
+        default: other
+
+      prior_malignancy:
+        path: ./shared:prior_dx
+        default: unknown
+        type: str.lower
+
+      tumor_stage:
+        path: ./shared_stage:stage_event/shared_stage:pathologic_stage
+        type: str.lower
+        default: not reported
+
+      tumor_grade:
+        path: ./shared_stage:gleason_grading/shared_stage:gleason_score
+        type: str.lower
+        default: not reported
+
+      progression_or_recurrence:
+        path: "unknown"
+        type: str.lower
+        default: unknown
+
+      days_to_recurrence:
+        path: "unknown"
+        type: int
+
+      last_known_disease_status:
+        path: "unknown"
+        type: str
+        default: Unknown tumor status
+
+      days_to_last_known_disease_status:
+        path: "unknown"
+        type: int
+
+exposure:
+  - root: //*[local-name()='patient']
+    generated_id:
+      namespace: 4950f39b-2f3d-48c5-8e98-04178697ff13
+      name: ./shared:bcr_patient_uuid
+
+    edges:
+      describes:
+        case:
+          path: ./shared:bcr_patient_uuid
+
+    properties:
+      submitter_id:
+        path: ./shared:bcr_patient_barcode
+        suffix: _exposure
+        type: str
+
+      years_smoked:
+        path: ./shared:stopped_smoking_year - ./shared:year_of_tobacco_smoking_onset
+        type: float
+
+      cigarettes_per_day:
+        path: ./shared:float_pack_years_smoked * 20 div 365
+        type: float
+
+      alcohol_history:
+        path: "unknown"
+        type: str.lower
+
+      alcohol_intensity:
+        path: "unknown"
+        type: str.lower
+
+      height:
+        path: "unknown"
+        type: float
+
+      weight:
+        path: "unknown"
+        type: float
+
+      bmi:
+        path: "unknown"
+        type: float
+
+treatment:
+  - root: //*[local-name()='patient']
+    generated_id:
+      namespace: 68222794-8b3b-4d1b-a944-49b7d9a0443e
+      name: ./shared:bcr_patient_uuid
+
+    edges_by_property:
+      describes:
+        diagnosis: 
+          submitter_id: 
+            path: ./shared:bcr_patient_barcode
+            suffix: _diagnosis
+
+    properties:
+      submitter_id:
+        path: ./shared:bcr_patient_barcode
+        suffix: _treatment
+        type: str
+
+      treatment_or_therapy:
+        path: "unknown"
+        term: TBD
+        enum:
+          - yes
+          - no
+          - unknown
+        type: str
+
+      treatment_intent_type:
+        path: "unknown"
+        term: TBD
+        type: str
+
+      therapeutic_agents:
+        path: "unknown"
+        term: TBD
+        type: str
+
+      days_to_treatment:
+        path: "unknown"
+        term: TBD
+        type: float
