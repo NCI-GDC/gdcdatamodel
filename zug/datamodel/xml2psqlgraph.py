@@ -2,6 +2,7 @@ import json
 import datetime
 import psqlgraph
 import pprint
+import math
 from uuid import uuid5, UUID
 from sqlalchemy.exc import IntegrityError
 from psqlgraph import PolyNode as PsqlNode
@@ -87,7 +88,7 @@ class xml2psqlgraph(object):
                     self.graph.node_delete(node=node, session=s)
 
     def xpath(self, path, root=None, single=False, nullable=True,
-              expected=True, text=True, label=''):
+              expected=True, text=True, label='', suffix=''):
         """Wrapper to perform the xpath queries on the xml
 
         :param str path: The xpath location path
@@ -101,6 +102,7 @@ class xml2psqlgraph(object):
             Raise exception if the expected result does not exist
         :param bool text: whether the return value is the .text str value
         :param str label: label for logging
+        :param str suffix: suffix to append to the text
 
         """
 
@@ -112,6 +114,12 @@ class xml2psqlgraph(object):
             result = []
         except:
             raise
+
+        # xpath will return a primitive if the path is an expression
+        is_primitive = not hasattr(result, '__iter__')
+        if is_primitive:
+            result = [result]
+
         rlen = len(result)
 
         if rlen < 1 and expected:
@@ -128,10 +136,13 @@ class xml2psqlgraph(object):
             raise Exception('{}: Expected 1 result for {}, found {}'.format(
                 label, path, result))
 
-        if text:
+        if text and not is_primitive:
             result = [r.text for r in result]
             if not nullable and None in result:
                 raise Exception('{}: Null result for {}'.format(label, result))
+
+        if text and suffix:
+            result = [str(r)+suffix for r in result]
 
         if single:
             result = result[0]
@@ -203,7 +214,6 @@ class xml2psqlgraph(object):
         :param str data: xml string to convert and insert
 
         """
-
         if not data:
             return None
         self.xml_root = etree.fromstring(str(data)).getroottree()
@@ -211,6 +221,9 @@ class xml2psqlgraph(object):
         for node_type, param_list in self.xml_mapping.items():
             for params in param_list:
                 self.parse_node(node_type, params)
+        for node_type, param_list in self.xml_mapping.items():
+            for params in param_list:
+                self.parse_edge(node_type, params)
 
     def parse_node(self, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
@@ -221,7 +234,7 @@ class xml2psqlgraph(object):
             from the translation yaml file
 
         """
-        roots = self.get_node_roots(node_type, params)
+        roots = self.get_node_roots(node_type, params.get('root'))
         for root in roots:
             # Get node and node properties
             node_id = self.get_node_id(root, node_type, params)
@@ -231,6 +244,19 @@ class xml2psqlgraph(object):
             props.update(self.get_node_const_properties(*args))
             acl = self.get_node_acl(root, node_type, params)
             self.save_node(node_id, node_type, props, acl)
+
+    def parse_edge(self, node_type, params):
+        """Build edges from subsection of the xml
+
+        :param str node_type: the type of node to be used as a label
+        :param dict params:
+            the parameters that govern xpath queries and translation
+            from the translation yaml file
+
+        """
+        roots = self.get_node_roots(node_type, params.get('root'))
+        for root in roots:
+            node_id = self.get_node_id(root, node_type, params)
 
             # Get edges to and from this node
             edges = self.get_node_edges(root, node_type, params, node_id)
@@ -281,7 +307,7 @@ class xml2psqlgraph(object):
                 properties=properties
             )
 
-    def get_node_roots(self, node_type, params, root=None):
+    def get_node_roots(self, node_type, root_path, root=None):
         """returns a list of xml node root elements for a given node_type
 
         :param str node_type:
@@ -291,13 +317,13 @@ class xml2psqlgraph(object):
             from the translation yaml file
 
         """
-        if not params.root:
+        if not root_path:
             log.warn('No root xpath for {}'.format(node_type))
             return
-        xml_nodes = self.xpath(
-            params.root, root=root, expected=False,
+
+        return self.xpath(
+            root_path, root=root, expected=False,
             text=False, label='get_node_roots')
-        return xml_nodes
 
     def get_node_acl(self, root, node_type, params):
         """lookup the id for the node
@@ -339,7 +365,22 @@ class xml2psqlgraph(object):
             raise LookupError('Unable to find id mapping in xml_mapping')
         return node_id.lower()
 
-    def munge_property(self, prop, _type):
+    def munge_property(self, props, key, prop, _type, default=None):
+        if prop is None:
+            # if key in properties, don't overwrite with default value
+            if key not in props:
+                if default:
+                    props[key] = default
+                elif _type in ['int', 'float', 'long']:
+                    props[key] = -1
+                else:
+                    props[key] = ""
+            return
+
+        if type(prop) == float and math.isnan(prop):
+            props[key] = -1
+            return
+
         types = {
             'int': int,
             'long': long,
@@ -348,10 +389,9 @@ class xml2psqlgraph(object):
             'str.lower': lambda x: str(x).lower(),
         }
         if _type == 'bool':
-            prop = to_bool(prop)
+            props[key] = to_bool(prop)
         else:
-            prop = types[_type](prop) if prop else prop
-        return prop
+            props[key] = types[_type](prop) if prop else prop
 
     def get_node_properties(self, root, node_type, params, node_id=''):
         """for each parameter in the setting file, try and look it up, and add
@@ -371,18 +411,24 @@ class xml2psqlgraph(object):
             return {}
 
         props = {}
-        for prop, args in params.properties.items():
-            if args is None:
-                props[prop] = None
-                continue
-            path, _type = args['path'], args['type']
-            if not path:
-                continue
-            result = self.xpath(
-                path, root, single=True, text=True,
-                expected=(not self.ignore_missing_properties),
-                label='{}: {}'.format(node_type, node_id))
-            props[prop] = self.munge_property(result, _type)
+        roots = [root]
+        if 'additional_property_roots' in params:
+            for root in params.additional_property_roots:
+                roots += self.get_node_roots(node_type, root)
+        for root in roots:
+            for prop, args in params.properties.items():
+                if args is None:
+                    props[prop] = None
+                    continue
+                path, _type = args['path'], args['type']
+                if not path:
+                    continue
+                result = self.xpath(
+                    path, root, single=True, text=True,
+                    expected=(not self.ignore_missing_properties),
+                    label='{}: {}'.format(node_type, node_id),
+                    suffix=args.get('suffix', ''))
+                self.munge_property(props, prop, result, _type, default=args.get('default'))
         return props
 
     def get_node_const_properties(self, root, node_type, params, node_id=''):
@@ -404,7 +450,7 @@ class xml2psqlgraph(object):
 
         props = {}
         for prop, args in params.const_properties.items():
-            props[prop] = self.munge_property(args['value'], args['type'])
+            self.munge_property(props, prop, args['value'], args['type'])
         return props
 
     def get_node_datetime_properties(
@@ -485,9 +531,21 @@ class xml2psqlgraph(object):
             return edges
         for edge_type, paths in params.edges.items():
             for dst_label, path in paths.items():
-                results = self.xpath(
-                    path, root, expected=False, text=True,
-                    label='{}: {}'.format(node_type, node_id))
+                if hasattr(path, 'iteritems'):
+                    """
+                    Example:
+                    diagnosis:
+                      - path: ./shared:bcr_patient_uuid
+                      - suffix: _diagnosis
+                    """
+                    results = self.xpath(
+                        root=root, expected=False, text=True,
+                        label='{}: {}'.format(node_type, node_id),
+                        **path)
+                else:
+                    results = self.xpath(
+                        path, root, expected=False, text=True,
+                        label='{}: {}'.format(node_type, node_id))
                 if not results:
                     log.warn('No {} edge for {} {} to {}'.format(
                         edge_type, node_type, node_id, dst_label))
@@ -516,23 +574,48 @@ class xml2psqlgraph(object):
 
         for edge_type, dst_params in params.edges_by_property.items():
             for dst_label, dst_kv in dst_params.items():
-                dst_matches = {
-                    key: self.xpath(
-                        val, root, expected=False, text=True, single=True,
-                        label='{}: {}'.format(node_type, node_id))
-                    for key, val in dst_kv.items()}
+                dst_matches = {}
+                for key, val in dst_kv.items():
+                    if hasattr(val, 'iteritems'):
+                        """
+                        Example:
+                        submitter_id:
+                          - path: ./shared:bcr_patient_uuid
+                          - suffix: _diagnosis
+                        """
+                        dst_matches[key] = self.xpath(
+                            root=root, expected=False,
+                            text=True, single=True,
+                            label='{}: {}'.format(node_type, node_id),
+                            **val)
+                    else:
+                        """
+                        Example:
+                        submitter_id: ./shared:bcr_patient_uuid
+                        """
+                        dst_matches[key] = self.xpath(
+                            val, root, expected=False, text=True, single=True,
+                            label='{}: {}'.format(node_type, node_id))
+
+
                 with self.graph.session_scope() as session:
-                    dsts = list(self.graph.node_lookup(
+                    dsts = {node.node_id for node in self.graph.node_lookup(
                         label=dst_label, property_matches=dst_matches,
-                        session=session))
+                        session=session)}
+
+                    for node_id, node in self.nodes.iteritems():
+                        if set(dst_matches.items()).issubset(node.props.items()):
+                            dsts.add(node_id)
+
                     if not dsts:
                         log.warn('No {} edge for {} {} to {} with {}'.format(
                             edge_type, node_type, node_id,
                             dst_label, dst_matches))
                     session.expunge_all()
                 for dst in dsts:
-                    edges[dst.node_id] = (dst.label, edge_type)
+                    edges[dst] = (dst_label, edge_type)
         return edges
+    
 
     def get_node_edge_properties(self, root, edge_type, params, node_id=''):
         if 'edge_properties' not in params or not params.edge_properties or \
@@ -548,7 +631,7 @@ class xml2psqlgraph(object):
                 path, root, single=True, text=True,
                 expected=(not self.ignore_missing_properties),
                 label='{}: {}'.format(edge_type, node_id))
-            props[prop] = self.munge_property(result, _type)
+            self.munge_property(props, prop, result, _type, default=args.get('default'))
         return props
 
     def get_node_edge_datetime_properties(
