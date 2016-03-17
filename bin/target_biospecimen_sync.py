@@ -7,9 +7,6 @@ from psqlgraph import PsqlGraphDriver
 from argparse import ArgumentParser
 
 PROJECTS_TO_IMPORT = [
-    # we are only doing WT for now
-    # "ALL-P1",
-    # "ALL-P2",
     "ALL",
     "AML",
     "AML-IF",
@@ -48,7 +45,6 @@ def main():
         syncer = TARGETSampleMatrixSyncer(project, graph=graph,
                                           dcc_auth=(args.dcc_user, args.dcc_pass))
         syncer.sync()
-
 
 if __name__ == "__main__":
     main()

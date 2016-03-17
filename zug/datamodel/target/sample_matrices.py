@@ -20,7 +20,6 @@ from gdcdatamodel.models import Aliquot, Case, Sample, Project
 from zug.datamodel.target import barcode_to_aliquot_id_dict
 from zug.datamodel.target import PROJECTS
 
-#urllib3.disable_warnings()
 requests.packages.urllib3.disable_warnings()
 
 NAMESPACE_CASES = UUID('6e201b2f-d528-411c-bc21-d5ffb6aa8edb')
@@ -83,7 +82,6 @@ SAMPLE_TYPE_TO_DESCRIPTION = {
 IGNORE_BARCODES = [
     "TARGET-50-PAJLUJ-01A-01D",  # this appears to be an old name for TARGET-50-PAJLUJ-06A-01D
 ]
-
 
 
 def split_seq(iterable, size):
@@ -217,24 +215,8 @@ class TARGETSampleMatrixSyncer(object):
         self.find_sample_matrix_directories(base_url, url_list)
         self.log.info("%s: Found %d directories" % (self.project, len(url_list)))
 
-        #for dir in ["Discovery", "Validation"]:
         for dir in url_list:
             search_url = dir
-            #if self.project == "ALL-P1":
-            #    search_url = "https://target-data.nci.nih.gov/ALL/Phase_I/{dir}/SAMPLE_MATRIX/".format(
-            #        dir=dir,
-            #    )
-            #elif self.project == "ALL-P2":
-            #    search_url = "https://target-data.nci.nih.gov/ALL/Phase_II/{dir}/SAMPLE_MATRIX/".format(
-            #        dir=dir,
-            #    )
-            #elif self.project in PROJECTS:
-            #    search_url = "https://target-data.nci.nih.gov/{proj}/{dir}/SAMPLE_MATRIX/".format(
-            #        proj=self.project,
-            #        dir=dir,
-            #    )
-            #else:
-            #    raise RuntimeError("project {} is not known".format(self.project))
             resp = requests.get(search_url, auth=self.dcc_auth)
             if resp.status_code == 404:
                 self.log.info("No sample matrix found at %s", search_url)
@@ -246,7 +228,6 @@ class TARGETSampleMatrixSyncer(object):
                 maybe_match = re.search("SampleMatrix_([0-9]{8})", link.attrib["href"])
                 if maybe_match:
                     url = urljoin(search_url, link.attrib["href"])
-                    #self.log.info("Found potential file: %s" % url)
                     version = datetime.strptime(maybe_match.group(1), "%Y%m%d").toordinal()
                     self.urls.append(url)
                     if version > self.version:
@@ -318,11 +299,7 @@ class TARGETSampleMatrixSyncer(object):
                 self.log.warning("In Row %s: Aliquot: %s, case_id: %s" %
                     (row_index + 2, aliquot, case_id)
                 )
-                #self.log.warning(row)
                 row_ok = False
-                #self.log.error(aliquots)
-                #self.log.error(aliquot_lists)
-            #assert aliquot.startswith(case_id)
         if row_ok:
             aliquots = [a for a in aliquots if a not in IGNORE_BARCODES]
             sample_groups = self.group_by_sample(aliquots)
@@ -355,11 +332,8 @@ class TARGETSampleMatrixSyncer(object):
             if mapping.get(case_id):
                 errors_found = True
                 self.log.warning("{} is duplicated in this sample matrix".format(case_id))
-                #raise RuntimeError("{} is duplicated in this sample matrix".format(case_id))
             else:
                 mapping[case_id], row_ok = self.case_mapping(case_id, row, i)
-                #if not mapping[case_id]:
-                #    self.log.warning("mapping for case %s is empty", case_id)
                 if not row_ok:
                     errors_found = True
         return mapping, errors_found

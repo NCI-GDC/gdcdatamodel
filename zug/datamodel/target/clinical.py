@@ -13,6 +13,7 @@ from gdcdatamodel.models import File, Case
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
 
+# NOTE: "Latinoispanic" etc is not a typo, that's the actual column name
 ETHNICITY_MAP = {
     "Hispanic or Latino": "hispanic or latino",
     "Not Hispanic or Latinoispanic or Latino": "not hispanic or latino",
@@ -28,7 +29,6 @@ TITLE_STRINGS_TO_CHECK = [
     "vital_status",
     "age_at_diagnosis",
 ]
-
 
 GENDER_TITLE_STRINGS = [
     "Gender",
@@ -111,7 +111,6 @@ BASE_TITLE_STRING_TYPES = {
     "icd_10" : ICD_10_TITLE_STRINGS
 }
 
-
 VITAL_STATUS_MAP = {
     "Alive": "alive",
     "Dead": "dead",
@@ -133,13 +132,7 @@ ACCESS_LEVELS = [
     "Public"
 ]
 
-# NB: projects commented out now that haven't been tested, but should
-# be run eventually
 PROJECTS_TO_SYNC = { 
-    # "ALL-P1",
-    # "ALL-P2",
-    #"ALL/Phase_I" : "/Discovery/clinical/harmonized/",  # temp
-    #"ALL/Phase_II" : "/Discovery/clinical/harmonized/", # temp
     "ALL" : "Discovery/clinical/harmonized/",
     "AML" : "Discovery/clinical/harmonized/",
     "AML-IF" : "Discovery/clinical/",
@@ -153,7 +146,6 @@ PROJECTS_TO_SYNC = {
 ROW_CLASSES = [ "even", "odd" ]
 
 log = get_logger("target_clinical_sync_{}".format(os.getpid()))
-
 
 def normalize_gender(value):
     """Parse the gender into a canonical form."""
@@ -229,7 +221,6 @@ NORMALIZE_MAP = {
     "icd_10" : normalize_icd_10
 }
 
-
 def parse_header_strings(row, category):
     """Parse the header strings and best guess each."""
 
@@ -264,17 +255,6 @@ def parse_row_into_props(row):
         else:
             output_dict[string] = NORMALIZE_MAP[string](row[row_strings[string]])
 
-    #return {
-    #    "gender": row["Gender"].lower().strip(),
-    #    "race": parse_race(row["Race"]),
-    #    "ethnicity": ETHNICITY_MAP[row["Ethnicity"].strip()],
-    #    "vital_status": parse_vital_status(row[vital_status_row_string]),
-    #    "year_of_diagnosis": None,
-    #    "age_at_diagnosis": int(row[age_row_string]),
-    #    "days_to_death": None,
-    #    "icd_10": None,
-    #}
-    #print output_dict
     return output_dict
 
 def match_date(string_to_check):
@@ -358,7 +338,6 @@ class TARGETClinicalSyncer(object):
         self.graph = graph
         self.dcc_auth = dcc_auth
 
-
     def load_df(self):
         """Load the dataframe from a spreadsheet."""
         self.log.info("downloading clinical xlsx from target dcc")
@@ -372,13 +351,6 @@ class TARGETClinicalSyncer(object):
                 SHEET = sheet_str
                 break
 
-        #if "Final " in sheet_names:
-        #    SHEET = "Final "
-        #elif "Sheet1" in sheet_names:
-        #    SHEET = "Sheet1"
-        #elif "Clinical Data" in sheet_names:
-        #    SHEET = "Clinical Data"
-        #else:
         if not SHEET:
             error_str = "Unknown sheet names:", sheet_names
             self.log.error(error_str)
