@@ -307,12 +307,8 @@ class TARGETDCCFileSyncer(object):
                                      graph_info["pass"], graph_info["database"])
         self.dcc_auth = dcc_auth
         self.bucket = storage_info["bucket"]
-        if storage_info["kwargs"]:
-            self.storage_client = storage_info["driver"](storage_info["access_key"],
+        self.storage_client = storage_info["driver"](storage_info["access_key"],
                                                          **storage_info["kwargs"])
-        else:
-            self.storage_client = storage_info["driver"](storage_info["access_key"],
-                                                         None)
         self.log = get_logger("target_dcc_file_sync_" +
                               str(os.getpid()) +
                               "_" + self.filename)

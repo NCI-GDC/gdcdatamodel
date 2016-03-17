@@ -27,10 +27,10 @@ class TARGETDCCSyncTest(PreludeMixin, StorageMixin,
         self.bucket_name = "target_dcc_protected"
         self.storage_client.create_container(self.bucket_name)
         self.storage_info = {
-            'driver': None,
+            'driver': Local,
             'bucket': self.bucket_name,
-            'access_key': None,
-            'kwargs': None
+            'access_key': self.scratch_dir,
+            'kwargs': {}
         }
 
     @patch("zug.datamodel.target.dcc_sync.tree_walk", fake_tree_walk)
