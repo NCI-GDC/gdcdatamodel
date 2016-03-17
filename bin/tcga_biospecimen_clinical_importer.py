@@ -9,7 +9,7 @@ from zug.datamodel import xml2psqlgraph, latest_urls,\
 from cdisutils.log import get_logger
 
 log = get_logger("dcc_bio_importer")
-logging.root.setLevel(level=logging.INFO)
+logging.root.setLevel(level=logging.ERROR)
 
 re_biospecimen = re.compile(".*(biospecimen|control).*\\.xml")
 re_clinical = re.compile(".*(clinical).*\\.xml")
@@ -44,14 +44,11 @@ def process(archive):
     for xml, name in extractor(url, return_name=True):
         # multiplex on clinical or biospecimen
         if not args.no_biospecimen and re_biospecimen.match(name):
-            log.info("Biospecimen XML")
             converter = biospecimen_converter
         elif not args.no_clinical and re_clinical.match(name):
-            log.info("Clinical XML")
             converter = clinical_converter
         else:
             continue
-        log.info(xml)
         converter.xml2psqlgraph(xml)
 
     # export
