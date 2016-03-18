@@ -218,6 +218,9 @@ class xml2psqlgraph(object):
             return None
         self.xml_root = etree.fromstring(str(data)).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
+        if 'clin_shared' not in self.namespaces:
+            # version 2.6 doesn't have clin_shared namespace
+            self.namespaces['clin_shared'] = 'NA'
         for node_type, param_list in self.xml_mapping.items():
             for params in param_list:
                 self.parse_node(node_type, params)
@@ -366,20 +369,12 @@ class xml2psqlgraph(object):
         return node_id.lower()
 
     def munge_property(self, props, key, prop, _type, default=None):
-        if prop is None:
+        if prop is None or (type(prop) == float and math.isnan(prop)):
             # if key in properties, don't overwrite with default value
-            if key not in props:
-                if default:
-                    props[key] = default
-                elif _type in ['int', 'float', 'long']:
-                    props[key] = -1
-                else:
-                    props[key] = ""
+            if key not in props and default:
+                props[key] = default
             return
 
-        if type(prop) == float and math.isnan(prop):
-            props[key] = -1
-            return
 
         types = {
             'int': int,

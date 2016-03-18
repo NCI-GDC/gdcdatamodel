@@ -29,7 +29,7 @@ class TestTCGAClinicalImport(ZugTestBase):
             assert diagnosis.vital_status == "dead"
 
             # check default attributes
-            assert diagnosis.classification_of_tumor == 'other'
+            assert diagnosis.classification_of_tumor == 'not reported'
 
             assert diagnosis.submitter_id == "TCGA-50-5930_diagnosis"
             treatment = self.g.nodes(Treatment).one()

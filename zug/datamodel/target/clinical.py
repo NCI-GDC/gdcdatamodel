@@ -1,4 +1,6 @@
 import os
+import math
+from psqlgraph.exc import ValidationError
 import sys
 import pandas as pd
 import xlrd
@@ -9,9 +11,13 @@ from uuid import UUID, uuid5
 from bs4 import BeautifulSoup
 
 from cdisutils.log import get_logger
-from gdcdatamodel.models import File, Case
+from gdcdatamodel.models import File, Case, Demographic, Diagnosis
 
-CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
+# namespace from gdcdatamodel/xml_mappings/tcga_clinical.yaml
+CLINICAL_NAMESPACE = {
+    'demographic': UUID('7fdd5f16-188e-4dae-89bb-c207427db3a7'),
+    'diagnosis': UUID('0e34df64-b3ab-4b07-b750-e8690ee28eaf'),
+}
 
 # NOTE: "Latinoispanic" etc is not a typo, that's the actual column name
 ETHNICITY_MAP = {
@@ -22,12 +28,47 @@ ETHNICITY_MAP = {
     "Not Reported": None,
 }
 
+DEFAULT_FIELDS = {
+    'icd_10': 'not reported',
+    'tumor_stage': 'not reported',
+    'morphology': 'not reported',
+    'site_of_resection_or_biopsy': 'not reported',
+    'race': "not reported",
+    "ethnicity": "not reported"
+}
+
+REQUIRED_FIELDS = [
+    "gender",
+    "race",
+    "ethnicity",
+    "vital_status",
+    "age_at_diagnosis",
+]
+
 TITLE_STRINGS_TO_CHECK = [
     "gender",
     "race",
     "ethnicity",
     "vital_status",
     "age_at_diagnosis",
+    "icd_10",
+    "tumor_stage",
+    "site_of_resection_or_biopsy",
+    "morphology",
+]
+
+
+TOPOGRAPHY_TITLE_STRINGS = [
+    "ICD-O-3-T",
+]
+
+MORPHOLOGY_TITLE_STRINGS = [
+    "ICD-O-3-M",
+]
+
+TUMOR_STAGE_TITLE_STRINGS = [
+    "Stage",  # roman numbers eg: IV
+    "INSS Stage"  # eg: Stage 2a
 ]
 
 GENDER_TITLE_STRINGS = [
@@ -61,7 +102,7 @@ YEAR_TITLE_STRINGS = [
     "Year of diagnosis"
 ]
 
-AGE_TITLE_STRINGS = [ 
+AGE_TITLE_STRINGS = [
     "Age at diagnosis (days)",
     "Age at Diagnosis in Days",
     "age at diagnosis (days)",
@@ -100,21 +141,24 @@ BARCODE_TITLE_STRINGS = [
     "TARGET USI"
 ]
 
+
 BASE_TITLE_STRING_TYPES = {
     "gender": GENDER_TITLE_STRINGS,
-    "race" : RACE_TITLE_STRINGS,
+    "race": RACE_TITLE_STRINGS,
     "ethnicity" : ETHNICITY_TITLE_STRINGS,
     "vital_status" : VITAL_STATUS_TITLE_STRINGS,
-    "year_of_diagnosis" : YEAR_TITLE_STRINGS,
     "age_at_diagnosis" : AGE_TITLE_STRINGS,
     "days_to_death" : DAYS_TO_DEATH_TITLE_STRINGS,
-    "icd_10" : ICD_10_TITLE_STRINGS
+    "icd_10" : ICD_10_TITLE_STRINGS,
+    "tumor_stage": TUMOR_STAGE_TITLE_STRINGS,
+    "site_of_resection_or_biopsy": TOPOGRAPHY_TITLE_STRINGS,
+    "morphology": MORPHOLOGY_TITLE_STRINGS,
 }
 
 VITAL_STATUS_MAP = {
     "Alive": "alive",
     "Dead": "dead",
-    "Unknown": None,
+    "Unknown": "unknown",
     "Lost to Follow-up": "lost to follow-up"
 }
 
@@ -128,7 +172,8 @@ POSSIBLE_SHEET_NAMES = [
 BASE_URL = "https://target-data.nci.nih.gov"
 
 ACCESS_LEVELS = [
-    "Controlled",
+    # the clinical data files should be cleaned up by now and all moved to public
+    # "Controlled",
     "Public"
 ]
 
@@ -179,10 +224,6 @@ def normalize_vital_status(value):
 
     return vital_status
 
-def normalize_year_of_diagnosis(value):
-    """Parse the year of diagnosis into a canonical form."""
-
-    return value
 
 def normalize_age_at_diagnosis(value):
     """Parse age at diagnosis into a canonical form."""
@@ -198,26 +239,31 @@ def normalize_icd_10(value):
     """Parse ICD 10 into a canonical form."""
     return value
 
-CATEGORY_NORMALIZATIONS = {
-    "gender": GENDER_TITLE_STRINGS,
-    "race" : RACE_TITLE_STRINGS,
-    "ethnicity" : ETHNICITY_TITLE_STRINGS,
-    "vital_status" : VITAL_STATUS_TITLE_STRINGS,
-    "year_of_diagnosis" : YEAR_TITLE_STRINGS,
-    "age_at_diagnosis" : AGE_TITLE_STRINGS,
-    "days_to_death" : DAYS_TO_DEATH_TITLE_STRINGS,
-    "icd_10" : ICD_10_TITLE_STRINGS
-}
+def normalize_topology(value):
+    """Parse topology into a canonical form."""
+    return value.lower()
+
+def normalize_morphology(value):
+    """Parse morphology into a canonical form."""
+    return value.lower()
+
+def normalize_tumor_stage(value):
+    """Parse tumor stage into a canonical form."""
+    return value.lower()
+
+
 
 NORMALIZE_MAP = {
     "gender": normalize_gender,
     "race" : normalize_race,
     "ethnicity" : normalize_ethnicity,
     "vital_status" : normalize_vital_status,
-    "year_of_diagnosis" : normalize_year_of_diagnosis,
     "age_at_diagnosis" : normalize_age_at_diagnosis,
     "days_to_death" : normalize_days_to_death,
-    "icd_10" : normalize_icd_10
+    "icd_10" : normalize_icd_10,
+    "tumor_stage": normalize_tumor_stage,
+    "site_of_resection_or_biopsy": normalize_topology,
+    "morphology": normalize_morphology,
 }
 
 def parse_header_strings(row, category):
@@ -247,14 +293,22 @@ def parse_row_into_props(row):
     for string in TITLE_STRINGS_TO_CHECK:
         row_strings[string] = parse_header_strings(row, string)
         if not row_strings[string]:
-            error_str = "Header string not found for %s" % string
-            log.error(row)
-            log.error(error_str)
-            raise RuntimeError(error_str)
+            if string not in REQUIRED_FIELDS:
+                output_dict[string] = DEFAULT_FIELDS[string]
+            else:
+                error_str = "Header string not found for %s" % string
+                log.error(row)
+                log.error(error_str)
+                raise RuntimeError(error_str)
         else:
-            output_dict[string] = NORMALIZE_MAP[string](row[row_strings[string]])
+            value = row[row_strings[string]]
+            if type(value) == float and math.isnan(value):
+                output_dict[string] = DEFAULT_FIELDS.get(string)
+            else:
+                output_dict[string] = NORMALIZE_MAP[string](value)
 
     return output_dict
+
 
 def match_date(string_to_check):
     """Match a version date found in a file name."""
@@ -376,7 +430,7 @@ class TARGETClinicalSyncer(object):
     def insert(self, df):
         """Insert the clinical data into the database."""
         self.log.info("loading clinical info into graph")
-        with self.graph.session_scope():
+        with self.graph.session_scope() as session:
             self.log.info("looking up the node corresponding to %s", self.url)
             try:
                 clinical_file = self.graph.nodes(File)\
@@ -425,20 +479,53 @@ class TARGETClinicalSyncer(object):
                         self.log.warning("couldn't find case %s, not inserting clinical data", case_barcode)
                         continue
                     self.log.info("found case %s as %s, inserting clinical info", case_barcode, case)
-                    clinical = self.graph.node_merge(
-                        node_id=str(uuid5(CLINICAL_NAMESPACE, case_barcode.encode('ascii'))),
-                        label="clinical",
-                        properties=parse_row_into_props(row),
-                        system_annotations={
+                    try:
+                        properties = parse_row_into_props(row)
+                    except:
+                        self.log.exception("Fail to parse row")
+                        continue
+
+                    self.create_clinical_nodes(
+                        properties, session, case,
+                        sysan={
                             "url": self.url,
                             "version": self.version
-                        }
-                    )
-                    self.log.info("inserted clinical info as %s, tieing to case", clinical)
-                    self.create_edge("describes", clinical, case)
+                        })
                     self.create_edge("describes", clinical_file, case)
+                    session.commit()
                     row_count += 1
 
+    def create_clinical_nodes(self, properties, session, case, sysan):
+        try:
+            demographic = Demographic(
+                str(uuid5(CLINICAL_NAMESPACE['demographic'], str(case.submitter_id))),
+                gender=properties['gender'],
+                race=properties['race'],
+                ethnicity=properties['ethnicity'],
+                system_annotations=sysan)
+            self.log.info("inserted demographic info as %s, tieing to case", demographic)
+            session.merge(demographic)
+            self.create_edge('describes', demographic, case)
+        except ValidationError:
+            self.log.exception("Fail to create demographic node")
+        
+        try:
+            diagnosis = Diagnosis(
+                str(uuid5(CLINICAL_NAMESPACE['diagnosis'], str(case.submitter_id))),
+                vital_status=properties['vital_status'],
+                age_at_diagnosis=properties['age_at_diagnosis'],
+                morphology=properties['morphology'],
+                site_of_resection_or_biopsy=properties['site_of_resection_or_biopsy'],
+                primary_diagnosis=properties['icd_10'],
+                tumor_stage=properties['tumor_stage'],
+                days_to_death=properties['days_to_death'],
+                system_annotations=sysan)
+            self.log.info("inserted diagnosis info as %s, tieing to case", diagnosis)
+            session.merge(diagnosis)
+            
+            self.create_edge('describes', diagnosis, case)
+        except ValidationError:
+            self.log.exception("Fail to create demographic node")
     def sync(self):
         """Main sync routine to sync the data."""
         df = self.load_df()
