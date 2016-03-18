@@ -87,13 +87,13 @@ class TestCacheRelatedCases(unittest.TestCase):
             portion = md.Portion('portion_id_1')
             analyte = md.Analyte('analyte_id_1')
             aliquot = md.Aliquot('aliquot_id_1')
-            submitted_file = md.SubmittedFile('file_id_1')
+            general_file = md.File('file_id_1')
 
             sample.cases = [case]
             portion.samples = [sample]
             analyte.portions = [portion]
             aliquot.analytes = [analyte]
-            submitted_file.aliquots = [aliquot]
+            general_file.aliquots = [aliquot]
             s.merge(case)
 
         with g.session_scope() as s:
