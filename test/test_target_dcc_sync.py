@@ -6,6 +6,8 @@ from zug.datamodel.target.dcc_sync import TARGETDCCProjectSyncer
 from httmock import urlmatch, HTTMock
 from mock import patch
 
+from libcloud.storage.types import Provider
+from libcloud.storage.providers import get_driver
 
 @urlmatch(netloc='target-data.nci.nih.gov')
 def target_file_mock(url, request):
@@ -24,6 +26,7 @@ class TARGETDCCSyncTest(PreludeMixin, StorageMixin,
 
     def setUp(self):
         super(TARGETDCCSyncTest, self).setUp()
+        Local = get_driver(Provider.LOCAL)
         self.bucket_name = "target_dcc_protected"
         self.storage_client.create_container(self.bucket_name)
         self.storage_info = {
