@@ -13,6 +13,7 @@ from gdcdatamodel.models import File, Case
 
 CLINICAL_NAMESPACE = UUID('b27e3043-1c1f-43c6-922f-1127905232b0')
 
+# NOTE: "Latinoispanic" etc is not a typo, that's the actual column name
 ETHNICITY_MAP = {
     "Hispanic or Latino": "hispanic or latino",
     "Not Hispanic or Latinoispanic or Latino": "not hispanic or latino",
@@ -21,15 +22,94 @@ ETHNICITY_MAP = {
     "Not Reported": None,
 }
 
+TITLE_STRINGS_TO_CHECK = [
+    "gender",
+    "race",
+    "ethnicity",
+    "vital_status",
+    "age_at_diagnosis",
+]
+
+GENDER_TITLE_STRINGS = [
+    "Gender",
+    "gender",
+    "Sex",
+    "sex"
+]
+
+RACE_TITLE_STRINGS = [
+    "Race",
+    "race",
+]
+
+ETHNICITY_TITLE_STRINGS = [
+    "Ethnicity",
+    "ethnicity"
+]
+
+VITAL_STATUS_TITLE_STRINGS = [
+    "Vital Status",
+    "Vital status",
+    "vital status",
+    "VITAL STATUS"
+]
+
+# TODO: Get real strings here, these are placeholder
+YEAR_TITLE_STRINGS = [
+    "Year of Diagnosis",
+    "year of diagnosis",
+    "Year of diagnosis"
+]
+
 AGE_TITLE_STRINGS = [ 
-        "Age at diagnosis (days)", 
-        "Age at Diagnosis in Days"
+    "Age at diagnosis (days)",
+    "Age at Diagnosis in Days",
+    "age at diagnosis (days)",
+    "Age at Diagnosis in Days",
+    "Dge at Diagnosis (Days)",
+    "Age at diagnosis in days",
+    "Age at enrollment (days)",
+    "Age at Enrollment (days)"
+    "Age at enrollment in days",
+    "Age at Enrollment in Days"
+]
+
+DAYS_TO_DEATH_TITLE_STRINGS = [
+    "Days to Death (Days)",
+    "Days to death (days)",
+    "days to death (days)",
+    "Days to Death in Days",
+    "Days to death in days",
+    "days to death in days",
+    "Time to Death (Days)",
+    "Time to death (days)",
+    "time to death (days)",
+    "Time to Death in Days",
+    "Time to death in days",
+    "time to death in days",
+]
+
+# TODO: Get real strings here, these are placeholder
+ICD_10_TITLE_STRINGS = [
+    "ICD 10",
+    "icd 10"
 ]
 
 BARCODE_TITLE_STRINGS = [
     "TARGET Patient USI",
     "TARGET USI"
 ]
+
+BASE_TITLE_STRING_TYPES = {
+    "gender": GENDER_TITLE_STRINGS,
+    "race" : RACE_TITLE_STRINGS,
+    "ethnicity" : ETHNICITY_TITLE_STRINGS,
+    "vital_status" : VITAL_STATUS_TITLE_STRINGS,
+    "year_of_diagnosis" : YEAR_TITLE_STRINGS,
+    "age_at_diagnosis" : AGE_TITLE_STRINGS,
+    "days_to_death" : DAYS_TO_DEATH_TITLE_STRINGS,
+    "icd_10" : ICD_10_TITLE_STRINGS
+}
 
 VITAL_STATUS_MAP = {
     "Alive": "alive",
@@ -38,6 +118,13 @@ VITAL_STATUS_MAP = {
     "Lost to Follow-up": "lost to follow-up"
 }
 
+POSSIBLE_SHEET_NAMES = [
+        "Final ", # the whitespace ("Final ") is not a typo, don't change it
+        "Sheet1",
+        "Clinical Data",
+        "EXPORT",
+]
+
 BASE_URL = "https://target-data.nci.nih.gov"
 
 ACCESS_LEVELS = [
@@ -45,19 +132,14 @@ ACCESS_LEVELS = [
     "Public"
 ]
 
-# NB: projects commented out now that haven't been tested, but should
-# be run eventually
 PROJECTS_TO_SYNC = { 
-    # "ALL-P1",
-    # "ALL-P2",
-    #"ALL/Phase_I" : "/Discovery/clinical/harmonized/",  # temp
-    #"ALL/Phase_II" : "/Discovery/clinical/harmonized/", # temp
+    "ALL" : "Discovery/clinical/harmonized/",
     "AML" : "Discovery/clinical/harmonized/",
-    #"AML-IF" : "/Discovery/clinical/",                  # temp
-    #"CCSK" : "/Discovery/clinical/harmonized/",         # temp
+    "AML-IF" : "Discovery/clinical/",
+    "CCSK" : "Discovery/clinical/harmonized/",
     "NBL" : "Discovery/clinical/harmonized/",
-    #"OS" : "/Discovery/clinical/",                      # temp
-    #"RT" : "/Discovery/clinical/harmonized/",           # temp
+    "OS" : "Discovery/clinical/",
+    "RT" : "Discovery/clinical/harmonized/",
     "WT" : "Discovery/clinical/harmonized/"
 }
 
@@ -65,36 +147,115 @@ ROW_CLASSES = [ "even", "odd" ]
 
 log = get_logger("target_clinical_sync_{}".format(os.getpid()))
 
-def parse_race(race):
-    """Parse the race into a canonical form."""
-    if race.strip() == "Unknown":
-        return "not reported"
-    else:
-        return race.lower().strip()
+def normalize_gender(value):
+    """Parse the gender into a canonical form."""
+    return value.lower().strip()
 
-def parse_vital_status(vital_status):
-    """Parse the vital status into a canonical form."""
-    if vital_status.strip() in VITAL_STATUS_MAP:
-        return VITAL_STATUS_MAP[vital_status.strip()]
+def normalize_race(value):
+    """Parse the race into a canonical form."""
+
+    race = None
+    if isinstance(value, basestring):
+        if value.strip() == "Unknown":
+            race = "not reported"
+        else:
+            race = value.lower().strip()
+
+    return race
+
+def normalize_ethnicity(value):
+    """Parse the ethnicity into a canonical form."""
+    return ETHNICITY_MAP[value.strip()]
+
+def normalize_vital_status(value):
+    """Parse vital status into a canonical form."""
+    vital_status = None
+    if isinstance(value, basestring):
+        if value.strip() in VITAL_STATUS_MAP:
+            vital_status = VITAL_STATUS_MAP[value.strip()]
+        else:
+            raise RuntimeError("Unknown vital status:", value)
     else:
-        raise RuntimeError("Unknown vital status:", vital_status)
+       vital_status = VITAL_STATUS_MAP["Unknown"]
+
+    return vital_status
+
+def normalize_year_of_diagnosis(value):
+    """Parse the year of diagnosis into a canonical form."""
+
+    return value
+
+def normalize_age_at_diagnosis(value):
+    """Parse age at diagnosis into a canonical form."""
+
+    return int(value)
+
+def normalize_days_to_death(value):
+    """Parse days to death into a canonical form."""
+
+    return value
+
+def normalize_icd_10(value):
+    """Parse ICD 10 into a canonical form."""
+    return value
+
+CATEGORY_NORMALIZATIONS = {
+    "gender": GENDER_TITLE_STRINGS,
+    "race" : RACE_TITLE_STRINGS,
+    "ethnicity" : ETHNICITY_TITLE_STRINGS,
+    "vital_status" : VITAL_STATUS_TITLE_STRINGS,
+    "year_of_diagnosis" : YEAR_TITLE_STRINGS,
+    "age_at_diagnosis" : AGE_TITLE_STRINGS,
+    "days_to_death" : DAYS_TO_DEATH_TITLE_STRINGS,
+    "icd_10" : ICD_10_TITLE_STRINGS
+}
+
+NORMALIZE_MAP = {
+    "gender": normalize_gender,
+    "race" : normalize_race,
+    "ethnicity" : normalize_ethnicity,
+    "vital_status" : normalize_vital_status,
+    "year_of_diagnosis" : normalize_year_of_diagnosis,
+    "age_at_diagnosis" : normalize_age_at_diagnosis,
+    "days_to_death" : normalize_days_to_death,
+    "icd_10" : normalize_icd_10
+}
+
+def parse_header_strings(row, category):
+    """Parse the header strings and best guess each."""
+
+    header_str = None
+    if category in BASE_TITLE_STRING_TYPES.keys():
+        for entry in BASE_TITLE_STRING_TYPES[category]:
+            if entry in row:
+                header_str = entry
+    else:
+        log.warn("Unable to get header category for %s" % category)    
+    if not header_str:
+        log.warn("Unable to find header for category %s" % category)
+
+    return header_str
 
 def parse_row_into_props(row):
     """Parse a given row from a spreadsheet into a properties dict."""
-    for entry in AGE_TITLE_STRINGS:
-        if entry in row:
-            age_row_string = entry
 
-    return {
-        "gender": row["Gender"].lower().strip(),
-        "race": parse_race(row["Race"]),
-        "ethnicity": ETHNICITY_MAP[row["Ethnicity"].strip()],
-        "vital_status": parse_vital_status(row["Vital Status"]),
-        "year_of_diagnosis": None,
-        "age_at_diagnosis": int(row[age_row_string]),
-        "days_to_death": None,
-        "icd_10": None,
-    }
+    row_strings = {}
+    output_dict = {}
+    for key in BASE_TITLE_STRING_TYPES.keys():
+        row_strings[key] = None
+        output_dict[key] = None
+
+    for string in TITLE_STRINGS_TO_CHECK:
+        row_strings[string] = parse_header_strings(row, string)
+        if not row_strings[string]:
+            error_str = "Header string not found for %s" % string
+            log.error(row)
+            log.error(error_str)
+            raise RuntimeError(error_str)
+        else:
+            output_dict[string] = NORMALIZE_MAP[string](row[row_strings[string]])
+
+    return output_dict
 
 def match_date(string_to_check):
     """Match a version date found in a file name."""
@@ -157,21 +318,25 @@ class TARGETClinicalSyncer(object):
         """
 
         url_verified = False
+        self.project = project
+        self.log = get_logger("target_clinical_sync_{}_{}".format(self.project, os.getpid()))
         for level in ACCESS_LEVELS:
             url_str = "/".join([BASE_URL, level, project, "Discovery"])
             if url.startswith(url_str):
                 url_verified = True
                 break
+            else:
+                self.log.warning("URL incorrect")
+                self.log.warning("Expected %s" % url_str)
+                self.log.warning("We have  %s" % url)
 
         assert url_verified
-        self.project = project
         self.url = url
         self.version = match_date(url)
         if not self.version:
             raise RuntimeError("Could not extract version from url {}".format(url))
         self.graph = graph
         self.dcc_auth = dcc_auth
-        self.log = get_logger("target_clinical_sync_{}_{}".format(self.project, os.getpid()))
 
     def load_df(self):
         """Load the dataframe from a spreadsheet."""
@@ -180,14 +345,13 @@ class TARGETClinicalSyncer(object):
         self.log.info("parsing clinical info into dataframe")
         book = xlrd.open_workbook(file_contents=resp.content)
         sheet_names = [sheet.name for sheet in book.sheets()]
-        # the whitespace ("Final ") is not a typo, don't change it
-        if "Final " in sheet_names:
-            SHEET = "Final "
-        elif "Sheet1" in sheet_names:
-            SHEET = "Sheet1"
-        elif "Clinical Data" in sheet_names:
-            SHEET = "Clinical Data"
-        else:
+        SHEET = None
+        for sheet_str in sheet_names:
+            if sheet_str in POSSIBLE_SHEET_NAMES:
+                SHEET = sheet_str
+                break
+
+        if not SHEET:
             error_str = "Unknown sheet names:", sheet_names
             self.log.error(error_str)
             raise RuntimeError(error_str)
