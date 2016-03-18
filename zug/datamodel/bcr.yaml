@@ -259,9 +259,6 @@ case:
       submitter_id:
         path: ./shared:bcr_patient_barcode
         type: str
-      days_to_index:
-        path: ./bio:days_to_index
-        type: int
 
 slide:
   -
