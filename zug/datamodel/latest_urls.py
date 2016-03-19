@@ -2,8 +2,8 @@ import requests
 import logging
 import re
 from datetime import tzinfo, timedelta
-
 from cdisutils.log import get_logger
+from datadog import statsd
 
 logger = get_logger(__name__)
 
@@ -52,7 +52,7 @@ def parse_archive_name(archive):
 
 def parse_archive_url(archive):
     archive_url = archive['dcc_archive_url']
-
+    archive_ok = True
     if (archive_url.startswith(OPEN_BASE_URL)):
         # open archive
         archive['protected'] = False
@@ -60,24 +60,38 @@ def parse_archive_url(archive):
         # protected archive
         archive['protected'] = True
     else:
-        raise RuntimeError("url {} has unexpected prefix".format(archive["dcc_archive_url"]))
+        tags = [
+            'tcga_latest_urls',
+        ]
 
-    logger.debug('archive_url: %s' % archive_url)
-    parts = archive_url.split('/')
+        statsd.event(
+            'TCGA URL not found',
+            'URL {} has unexpected prefix'.format(archive["dcc_archive_url"]),
+            source_type_name='tcga_archive_check',
+            alert_type='warning',
+            tags=tags
+        )
+        logger.warning("url {} has unexpected prefix".format(archive["dcc_archive_url"]))
+        archive_ok = False
+        #raise RuntimeError("url {} has unexpected prefix".format(archive["dcc_archive_url"]))
 
-    if (parts[8].upper() != archive['disease_code']):
-        logger.warning("Unmatched disease code between Archive URL and "
-                       "Archive Name: " + parts[8] + " vs " +
-                       archive['disease_code'])
-    if (parts[10] != archive['center_name']):
-        logger.warning("Unmatched center_name between Archive URL and "
-                       "Archive Name: " + parts[10] + " vs " +
-                       archive['center_name'])
+    if archive_ok:
+        logger.debug('archive_url: %s' % archive_url)
+        parts = archive_url.split('/')
 
-    archive['center_type'] = parts[9]
-    archive['platform_in_url'] = parts[11]
-    archive['data_type_in_url'] = parts[12]
+        if (parts[8].upper() != archive['disease_code']):
+            logger.warning("Unmatched disease code between Archive URL and "
+                           "Archive Name: " + parts[8] + " vs " +
+                           archive['disease_code'])
+        if (parts[10] != archive['center_name']):
+            logger.warning("Unmatched center_name between Archive URL and "
+                           "Archive Name: " + parts[10] + " vs " +
+                           archive['center_name'])
 
+        archive['center_type'] = parts[9]
+        archive['platform_in_url'] = parts[11]
+        archive['data_type_in_url'] = parts[12]
+    
 
 def parse_archive(archive_name, date_added, archive_url):
     archive = {}
@@ -88,6 +102,7 @@ def parse_archive(archive_name, date_added, archive_url):
 
     parse_archive_name(archive)
     parse_archive_url(archive)
+
     return archive
 
 
