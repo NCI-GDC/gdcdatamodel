@@ -41,7 +41,12 @@ class TCGAAnnotationSyncer(object):
         self.log.info('Downloading annotations from %s', url)
         resp = requests.get(url)
         resp.raise_for_status()
-        annotation_docs = resp.json()["dccAnnotation"]
+        try:
+            annotation_docs = resp.json()["dccAnnotation"]
+        except:
+            self.log.error("Unable to parse response as JSON")
+            self.log.error(resp.text)
+            raise
         # sanity checks
         for doc in annotation_docs:
             assert len(doc["items"]) == 1
@@ -143,33 +148,18 @@ class TCGAAnnotationSyncer(object):
         if item_type == "patient":
             item_type = "case"  # they say patient, we say case. this will have to be case eventually
         cls = Node.get_subclass(item_type)
+        # TODO: Watch for project_id to be filled and use that to query,
+        # also possibly use the value in group_id, but presence is good
+        # for now
         try:
             node = self.graph.nodes(cls)\
-                         .props({'submitter_id': item['item']})\
-                         .scalar()
-        except Exception as e:
-            self.log.warning("Unable to get one result for %s" % item['item'])
-            nodes = self.graph.nodes(cls)\
-                         .props({'submitter_id': item['item']})\
-                         .all()
-            node = None
-            node_matches = 0
-            for tmp_node in nodes:
-                # Ok, this is a serious hack. We aren't properly populating project_id
-                # yet. As a result, there's no easy way to know which ID we're looking
-                # for. Since the new submitted data has a project_id, and our data
-                # doesn't, we'll assume that anything with a project_id of None is
-                # what we're looking for.
-                # TODO: This needs to be fixed when we're actually populating the
-                # project_ids properly
-                if not tmp_node.props['project_id']:
-                    node = tmp_node
-                    self.log.warning("Found potential node, using %s" % node.node_id)
-                    node_matches += 1
-            if not node:
-                raise RuntimeError("Unable to get find result for %s" % item['item'])
-            if node_matches > 1:
-                raise RuntimeError("Multiple project_ids found as None for %s" %
+                             .props({'submitter_id': item['item']})\
+                             .filter(cls._sysan.has_key('group_id'))\
+                             .filter(cls._sysan.has_key('version'))\
+                             .scalar()
+        except:
+            self.log.error("Multiple project_ids found for %s" %
                     item['item'])
+            raise
 
         return node
