@@ -19,6 +19,7 @@ setup(
     },
     install_requires=[
         'python-dateutil==2.4.2',
+        'numpy==1.10.4',
         'progressbar==2.2',
         'networkx',
         'pyyaml',
@@ -34,7 +35,6 @@ setup(
         'apache-libcloud==0.15.1',
         'cssselect==0.9.1',
         'elasticsearch==1.4.0',
-        'numpy==1.10.4',
         'pandas==0.15.2',
         'xlrd==0.9.3',
         'consulate==0.4',
