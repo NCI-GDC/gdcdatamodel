@@ -152,7 +152,8 @@ class TARGETDCCEdgeBuilder(object):
     def classify(self):
         url = self.file_node.system_annotations["url"]
         project = url.split("/")[4]
-        path = re.sub(".*\/{}\/((Discovery)|(Validation)|(Model_Systems))\/".format(project), "", url).split("/")
+        self.log.info("project = %s" % project)
+        path = re.sub(".*\/{}\/".format(project), "", url).split("/")
         self.log.info("classifying with path %s", path)
         classification = classify(path)
         self.log.info("classified as %s", classification)
@@ -169,7 +170,12 @@ class TARGETDCCProjectSyncer(object):
     def __init__(self, project, signpost_url=None,
                  graph_info=None, dcc_auth=None,
                  storage_info=None, pool=None, bucket=None, verify_missing=True):
-        self.project = project
+        # hang onto the unmolested project name for the ACL lookup
+        self.acl_project = project
+        if "ALL" in project:
+            self.project = "ALL"
+        else:
+            self.project = project
         self.dcc_auth = dcc_auth
         self.signpost_url = signpost_url
         self.graph_info = graph_info
@@ -203,21 +209,18 @@ class TARGETDCCProjectSyncer(object):
         """A generator for links to files in this project"""
 
         # We're looking for a URL in the form
-        # [base_url]/[Public/Controlled]/[Project Code]/[Discovery/Validation]
-        # However, right now, "Validation is only present in the old base
-        # url. Since there's a chance it could finally migrate, the code 
+        # [base_url]/[Public/Controlled]/[Project Code]/
+        # Since there's a chance it could move, the code 
         # gracefully skips it if it 404s.
         for access_level in ["Public", "Controlled"]:
-            url_part = access_level + "/" + self.project
-            for toplevel in ["Discovery", "Validation"]:
-                url_full = url_part + "/" + toplevel + "/"
-                url = urljoin(self.base_url, url_full)
-                self.log.info(url)
-                resp = requests.head(url, auth=self.dcc_auth)
-                if resp.status_code != 404:
-                    return tree_walk(url, auth=self.dcc_auth)
-                else:
-                    self.log.warn("%s not present, skipping" % url)
+            url_full = access_level + "/" + self.project
+            url = urljoin(self.base_url, url_full)
+            self.log.info(url)
+            resp = requests.head(url, auth=self.dcc_auth)
+            if resp.status_code != 404:
+                return tree_walk(url, auth=self.dcc_auth)
+            else:
+                self.log.warn("%s not present, skipping" % url)
 
     def check_if_missing(self, url, dcc_auth_info):
         if self.verify_missing:
@@ -317,6 +320,8 @@ class TARGETDCCFileSyncer(object):
     @property
     def acl(self):
         # TODO: This will have to be intelligent
+        # also, use the self.acl_project, *NOT*
+        # self.project, as it'll break for ALL
         return []
 
     @property

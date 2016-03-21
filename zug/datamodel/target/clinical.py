@@ -133,14 +133,13 @@ ACCESS_LEVELS = [
 ]
 
 PROJECTS_TO_SYNC = { 
-    "ALL" : "Discovery/clinical/harmonized/",
-    "AML" : "Discovery/clinical/harmonized/",
-    "AML-IF" : "Discovery/clinical/",
-    "CCSK" : "Discovery/clinical/harmonized/",
-    "NBL" : "Discovery/clinical/harmonized/",
-    "OS" : "Discovery/clinical/",
-    "RT" : "Discovery/clinical/harmonized/",
-    "WT" : "Discovery/clinical/harmonized/"
+    "ALL" : "clinical/harmonized/",
+    "AML" : "clinical/harmonized/",
+    "CCSK" : "clinical/harmonized/",
+    "NBL" : "clinical/harmonized/",
+    "OS" : "clinical/",
+    "RT" : "clinical/harmonized/",
+    "WT" : "clinical/harmonized/"
 }
 
 ROW_CLASSES = [ "even", "odd" ]
@@ -321,7 +320,7 @@ class TARGETClinicalSyncer(object):
         self.project = project
         self.log = get_logger("target_clinical_sync_{}_{}".format(self.project, os.getpid()))
         for level in ACCESS_LEVELS:
-            url_str = "/".join([BASE_URL, level, project, "Discovery"])
+            url_str = "/".join([BASE_URL, level, project, "clinical"])
             if url.startswith(url_str):
                 url_verified = True
                 break

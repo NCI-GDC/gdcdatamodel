@@ -55,7 +55,7 @@ class TARGETClinicalSyncerTest(ZugTestBase):
         )
 
     def test_basic_sync(self):
-        ROOT_TEST_URL = "https://target-data.nci.nih.gov/Public/WT/Discovery/clinical/"
+        ROOT_TEST_URL = "https://target-data.nci.nih.gov/Public/WT/clinical/"
         self.create_file("%stest_target_clinical_19911205.xlsx" % ROOT_TEST_URL)
         case = self.create_case("TARGET-50-ABCDEF")
         syncer = TARGETClinicalSyncer(
