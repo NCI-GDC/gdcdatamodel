@@ -139,10 +139,10 @@ portion:
     edges:
       derived_from:
         sample: ancestor::bio:sample/bio:bcr_sample_uuid
-    #edges_by_property:
-    #  shipped_to:
-    #    center:
-    #      code: .//bio:center_id
+    edges_by_property:
+      shipped_to:
+        center:
+          code: .//bio:center_id
     edge_properties:
       shipped_to:
           plate_id:
