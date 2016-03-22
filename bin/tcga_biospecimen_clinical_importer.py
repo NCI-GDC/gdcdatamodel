@@ -44,11 +44,14 @@ def process(archive):
     for xml, name in extractor(url, return_name=True):
         # multiplex on clinical or biospecimen
         if not args.no_biospecimen and re_biospecimen.match(name):
+            log.info("Biospecimen XML %s" % name)
             converter = biospecimen_converter
         elif not args.no_clinical and re_clinical.match(name):
+            log.info("Clinical XML %s" % name)
             converter = clinical_converter
         else:
             continue
+        log.info(name)
         converter.xml2psqlgraph(xml)
 
     # export

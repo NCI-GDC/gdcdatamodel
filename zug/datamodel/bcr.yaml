@@ -259,11 +259,14 @@ case:
       submitter_id:
         path: ./shared:bcr_patient_barcode
         type: str
+      days_to_index:
+        path: ./bio:days_to_index
+        type: int
 
 slide:
   -
     root: //bio:slide
-    id: .//bio:bcr_slide_uuid
+    id: .//shared:bcr_slide_uuid
     edges:
       derived_from:
         portion: ancestor::bio:portion/bio:bcr_portion_uuid
