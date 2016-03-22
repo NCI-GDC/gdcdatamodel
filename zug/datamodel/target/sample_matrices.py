@@ -431,7 +431,6 @@ class TARGETSampleMatrixSyncer(object):
             case_node = Case(
                 node_id=str(uuid5(NAMESPACE_CASES, str(case))),
                 submitter_id=case,
-                days_to_index=None,
             )
             case_node.system_annotations = sysans
             self.log.info("creating case %s as %s",
