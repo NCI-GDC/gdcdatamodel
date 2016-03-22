@@ -18,6 +18,8 @@ setup(
         ]
     },
     install_requires=[
+        'python-dateutil==2.4.2',
+        'numpy==1.10.4',
         'progressbar==2.2',
         'networkx',
         'pyyaml',

@@ -68,13 +68,13 @@ class MAFReconciler(object):
                 "cleversafe.service.consul": {
                     "aws_access_key_id": os.environ["CLEV_ACCESS_KEY"],
                     "aws_secret_access_key": os.environ["CLEV_SECRET_KEY"],
-                    "is_secure": False,
+                    "is_secure": True,
                     "calling_format": OrdinaryCallingFormat()
                 },
                 "ceph.service.consul": {
                     "aws_access_key_id": os.environ["CEPH_ACCESS_KEY"],
                     "aws_secret_access_key": os.environ["CEPH_SECRET_KEY"],
-                    "is_secure": False,
+                    "is_secure": True,
                     "calling_format": OrdinaryCallingFormat()
                 },
             })
@@ -93,8 +93,30 @@ class MAFReconciler(object):
         """
         self.log.info("Getting url from signpost")
         url = self.signpost.get(file.node_id).urls[0]
-        self.log.info("Getting file data from s3")
-        key = self.s3.get_url(url)
+        self.log.info("Getting file data from s3 for %s" % url)
+        if "gdc-accessor" in url:
+            offset_loc = 0
+            parts = filter(None, url.split('/'))
+            for part in parts:
+                if "gdc-accessor" in part:
+                    break
+                else:
+                    offset_loc += 1
+            if offset_loc < len(parts):
+                parts[offset_loc] = "cleversafe.service.consul"
+                new_url = '/'.join(parts)
+                url = new_url[:new_url.find('/')] + '/' + new_url[new_url.find('/'):]
+                self.log.info("Fixed url to %s" % url)
+            else:
+                self.log.error("Ok, weird, we found the substring in the url %s, but not in the parts" % url)
+                raise RuntimeError("Ok, weird, we found the substring in the url %s, but not in the parts" % url)
+        try:
+            key = self.s3.get_url(url)
+        except Exception as e:
+            self.log.error("Unable to retrieve %s" % url)
+            self.log.error(e)
+            raise RuntimeError(e)
+
         return key.get_contents_as_string()
 
     def df_from_fileobj(self, file_obj):
@@ -176,9 +198,15 @@ class MAFReconciler(object):
         #
         # see here for more context:
         # https://jira.opensciencedatacloud.org/browse/GDC-635
-        analyte = self.graph.nodes(Analyte)\
+        try:
+            analyte = self.graph.nodes(Analyte)\
                             .props(submitter_id=barcode)\
                             .scalar()
+        except Exception as e:
+            self.log.error("Unable to get one value for barcode %s" % barcode)
+            self.log.error(e)
+            raise
+
         if not analyte:
             if barcode == "TCGA-06-0133-01A-01W":
                 # per MAJ here: https://jira.opensciencedatacloud.org/browse/GDC-635?focusedCommentId=15451&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-15451
@@ -210,8 +238,16 @@ class MAFReconciler(object):
 
     def find_aliquot_with_aliquot_barcode(self, barcode, uuid):
         # first try to lookup by barcode
-        aliquot = self.graph.nodes(Aliquot)\
+        try:
+            aliquot = self.graph.nodes(Aliquot)\
                             .props(submitter_id=barcode).scalar()
+        except Exception as e:
+            self.log.error("Unable to get one result for %s, %s" % 
+                (barcode, uuid)
+            )
+            self.log.error(e)
+            aliquot = None
+
         if not aliquot:
             # if that fails, try by uuid
             if uuid:
@@ -270,10 +306,16 @@ class MAFReconciler(object):
 
     def reconcile(self, file):
         self.log.info("Reconciling %s", file)
-        data = self.get_file_data(file)
-        df = self.df_from_fileobj(StringIO(data))
-        cleaned_df = self.clean_df(df)
-        self.tie_to_aliquots(file, cleaned_df)
+        try:
+            data = self.get_file_data(file)
+        except Exception as e:
+            self.log.error("Unable to get file data for %s" % file)
+            self.log.error(e)
+            raise RuntimeError(e)
+        else:
+            df = self.df_from_fileobj(StringIO(data))
+            cleaned_df = self.clean_df(df)
+            self.tie_to_aliquots(file, cleaned_df)
 
     def reconcile_all(self):
         """Reconcile all MAF files that don't already have aliquots, for now

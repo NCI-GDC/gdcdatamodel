@@ -41,7 +41,12 @@ class TCGAAnnotationSyncer(object):
         self.log.info('Downloading annotations from %s', url)
         resp = requests.get(url)
         resp.raise_for_status()
-        annotation_docs = resp.json()["dccAnnotation"]
+        try:
+            annotation_docs = resp.json()["dccAnnotation"]
+        except:
+            self.log.error("Unable to parse response as JSON")
+            self.log.error(resp.text)
+            raise
         # sanity checks
         for doc in annotation_docs:
             assert len(doc["items"]) == 1
@@ -143,7 +148,18 @@ class TCGAAnnotationSyncer(object):
         if item_type == "patient":
             item_type = "case"  # they say patient, we say case. this will have to be case eventually
         cls = Node.get_subclass(item_type)
-        node = self.graph.nodes(cls)\
-                         .props({'submitter_id': item['item']})\
-                         .scalar()
+        # TODO: Watch for project_id to be filled and use that to query,
+        # also possibly use the value in group_id, but presence is good
+        # for now
+        try:
+            node = self.graph.nodes(cls)\
+                             .props({'submitter_id': item['item']})\
+                             .filter(cls._sysan.has_key('group_id'))\
+                             .filter(cls._sysan.has_key('version'))\
+                             .scalar()
+        except:
+            self.log.error("Multiple project_ids found for %s" %
+                    item['item'])
+            raise
+
         return node
