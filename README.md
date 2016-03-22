@@ -10,6 +10,15 @@ To install the gdcdatamodel library run the setup script:
 ❯ python setup.py install
 ```
 
+## Documentation
+
+### Visual representation
+
+For instructions on how to build the Graphviz representation of the
+datamodel, see the
+[docs readme](https://github.com/NCI-GDC/gdcdatamodel/blob/develop/docs/README.md).
+
+
 ## Dependencies
 
 Before continuing you must have the following programs installed:
