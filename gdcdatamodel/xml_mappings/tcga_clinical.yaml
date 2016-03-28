@@ -121,7 +121,7 @@ diagnosis:
         default: not reported
 
       progression_or_recurrence:
-        path: "unknown"
+        path: "//clin_shared:regimen_indication[last()]"
         type: str.lower
         default: unknown
 
@@ -156,15 +156,15 @@ exposure:
         type: str
 
       years_smoked:
-        path: ./shared:stopped_smoking_year - ./shared:year_of_tobacco_smoking_onset
+        path: ./shared:stopped_smoking_year|./clin_shared:stopped_smoking_year - ./shared:year_of_tobacco_smoking_onset|./clin_shared:year_of_tobacco_smoking_onset
         type: float
 
       cigarettes_per_day:
-        path: ./shared:float_pack_years_smoked * 20 div 365
+        path: ./clin_shared:number_pack_years_smoked * 20 div 365
         type: float
 
       alcohol_history:
-        path: "unknown"
+        path: "./clin_shared:alcohol_history_documented"
         type: str.lower
 
       alcohol_intensity:
@@ -172,15 +172,15 @@ exposure:
         type: str.lower
 
       height:
-        path: "unknown"
+        path: "./clin_shared:height"
         type: float
 
       weight:
-        path: "unknown"
+        path: "./clin_shared:weight"
         type: float
 
       bmi:
-        path: "unknown"
+        path: "./clin_shared:weight div (./clin_shared:height * ./clin_shared:height)"
         type: float
 
 treatment:
