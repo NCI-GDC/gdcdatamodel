@@ -23,21 +23,21 @@ demographic:
         default: unknown
 
       race:
-        path: ./shared:race
+        path: ./shared:race|./clin_shared:race_list/clin_shared:race[1]
         type: str.lower
         default: other
 
       ethnicity:
-        path: ./shared:ethnicity
+        path: ./shared:ethnicity|./clin_shared:ethnicity
         type: str.lower
         default: not reported
 
       year_of_birth:
-        path: ./shared:year_of_initial_pathologic_diagnosis - ./shared:age_at_initial_pathologic_diagnosis
+        path: //clin_shared:year_of_initial_pathologic_diagnosis|//shared:year_of_initial_pathologic_diagnosis - //clin_shared:age_at_initial_pathologic_diagnosis|//shared:age_at_initial_pathologic_diagnosis
         type: int
 
       year_of_death:
-        path: ./shared:year_of_initial_pathologic_diagnosis + floor(./shared:days_to_death div 365)
+        path: //clin_shared:year_of_initial_pathologic_diagnosis|//shared:year_of_initial_pathologic_diagnosis + floor(//shared:days_to_death|//clin_shared:days_to_death[last()] div 365)
         type: int
 
 diagnosis:
@@ -59,44 +59,44 @@ diagnosis:
         type: str
 
       age_at_diagnosis:
-        path: ./shared:age_at_initial_pathologic_diagnosis
+        path: //clin_shared:age_at_initial_pathologic_diagnosis|//shared:age_at_initial_pathologic_diagnosis
         type: int
         term:
 
       days_to_birth:
-        path: ./shared:days_to_birth
+        path: ./shared:days_to_birth|./clin_shared:days_to_birth
         type: float
 
       days_to_death:
-        path: ./shared:days_to_death
+        path: ./shared:days_to_death|./clin_shared:days_to_death
         type: float
 
       days_to_last_follow_up:
-        path: ./shared:days_to_last_followup
+        path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
         type: float
 
       vital_status:
-        path: ./shared:vital_status
+        path: ./shared:vital_status|./clin_shared:vital_status
         type: str.lower
         default: unknown
 
       primary_diagnosis:
-        path: ./shared:icd_10
+        path: ./shared:icd_10|./clin_shared:icd_10
         type: str.lower
         default: not reported
 
       morphology:
-        path: ./shared:icd_o_3_histology
+        path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
         type: str.lower
         default: not reported
 
       tissue_or_organ_of_origin:
-        path: ./shared:icd_o_3_site # is this right?
+        path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
         type: str.lower
         default: not reported
 
       site_of_resection_or_biopsy:
-        path: ./shared:icd_o_3_site # is this right?
+        path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
         type: str.lower
         default: not reported
 
