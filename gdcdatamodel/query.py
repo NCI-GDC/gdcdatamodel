@@ -2,7 +2,13 @@ from psqlgraph import Node, Edge
 
 traversals = {}
 terminal_nodes = ['annotations', 'centers', 'archives', 'tissue_source_sites',
-                  'files', 'related_files', 'describing_files']
+                  'files', 'related_files', 'describing_files',
+                  'clinical_metadata_files', 'experiment_metadata_files', 'run_metadata_files',
+                  'analysis_metadata_files', 'biospecimen_metadata_files', 'aligned_reads_metrics',
+                  'read_group_metrics', 'pathology_reports', 'simple_germline_variations',
+                  'aligned_reads_indexes', 'mirna_expressions', 'exon_expressions',
+                  'simple_somatic_mutations', 'gene_expressions', 'aggregated_somatic_mutations',
+                  ]
 
 
 def construct_traversals(root, node, visited, path):
@@ -13,7 +19,9 @@ def construct_traversals(root, node, visited, path):
         and neighbor != node
         # no traveling THROUGH terminal nodes
         and (path[-1] not in terminal_nodes
-             if path else neighbor.label not in terminal_nodes))
+             if path else neighbor.label not in terminal_nodes)
+        and (not path[-1].startswith('_related')
+             if path else not neighbor.label.startswith('_related')))
 
     for edge in Edge._get_edges_with_src(node.__name__):
         neighbor = [n for n in Node.get_subclasses()
