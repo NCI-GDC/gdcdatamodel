@@ -17,12 +17,13 @@ setup(
         "gdcdatamodel": [
             "*.avsc",
             "avro/schemata/*.avsc",
+            "xml_mappings/*.yaml",
         ]
     },
     dependency_links=[
         'git+ssh://git@github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
-        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@4fbeddeb058ad09741c5d2b9aacbd1c63cfc3dd1#egg=psqlgraph',
-        'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@0dc2633a07ff2acdc8af6557d9066d005fc3a480#egg=gdcdictionary',
+        'git+ssh://git@github.com/NCI-GDC/psqlgraph.git@a00ec5c0d3542e6f959e82fed0e46782479c6885#egg=psqlgraph',
+        'git+ssh://git@github.com/NCI-GDC/gdcdictionary.git@c7d03165802ef887128c4b73d1631238d27651dc#egg=gdcdictionary',
     ],
     entry_points={
         'console_scripts': [
