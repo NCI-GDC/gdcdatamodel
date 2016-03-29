@@ -9,8 +9,8 @@ from zug.datamodel.target.sample_matrices import NAMESPACE_CASES
 from zug.datamodel.target.clinical import TARGETClinicalSyncer
 from gdcdatamodel.models import (
     File,
-    Clinical,
-    ClinicalDescribesCase,
+    Demographic,
+    Diagnosis,
     FileDescribesCase
 )
 
@@ -19,7 +19,8 @@ FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures")
 
 @urlmatch(netloc='target-data.nci.nih.gov')
 def target_clinical_mock(url, request):
-    content = open(os.path.join(FIXTURES_DIR, "test_target_clinical_19911205.xlsx")).read()
+    filename = url.path.split('/')[-1]
+    content = open(os.path.join(FIXTURES_DIR, filename)).read()
     return {'content': content,
             'headers': {'Content-Length': str(len(content))}}
 
@@ -66,13 +67,43 @@ class TARGETClinicalSyncerTest(ZugTestBase):
         with HTTMock(target_clinical_mock):
             syncer.sync()
         with self.graph.session_scope():
-            clin = self.graph.nodes(Clinical).filter(Clinical.cases.contains(case)).one()
-            self.assertEqual(clin["vital_status"], "dead")
-            self.assertEqual(clin["gender"], "male")
-            self.assertEqual(clin["race"], "white")
-            self.assertEqual(clin["ethnicity"], "not hispanic or latino")
-            self.assertEqual(clin["age_at_diagnosis"], 123)
+            diagnosis = self.graph.nodes(Diagnosis).filter(Diagnosis.cases.contains(case)).one()
+            demographic = self.graph.nodes(Demographic).filter(Demographic.cases.contains(case)).one()
+            self.assertEqual(diagnosis["vital_status"], "dead")
+            self.assertEqual(demographic["gender"], "male")
+            self.assertEqual(demographic["race"], "white")
+            self.assertEqual(demographic["ethnicity"], "not hispanic or latino")
+            self.assertEqual(diagnosis["age_at_diagnosis"], 123)
+            self.assertEqual(diagnosis['morphology'], 'not reported')
             # make sure the file now describes the case
             self.graph.nodes(File)\
                       .sysan({"url": "%stest_target_clinical_19911205.xlsx" % ROOT_TEST_URL})\
                       .with_edge_to_node(FileDescribesCase, case).one()
+
+    def test_sync_optional_fields(self):
+        ROOT_TEST_URL = "https://target-data.nci.nih.gov/Public/WT/clinical/"
+        self.create_file("%stest_target_clinical_19911206.xlsx" % ROOT_TEST_URL)
+        case = self.create_case("TARGET-50-ABCDEF")
+        syncer = TARGETClinicalSyncer(
+            "WT", 
+            "%stest_target_clinical_19911206.xlsx" % ROOT_TEST_URL,
+            graph=self.graph
+        )
+        with HTTMock(target_clinical_mock):
+            syncer.sync()
+        with self.graph.session_scope():
+            diagnosis = self.graph.nodes(Diagnosis).filter(Diagnosis.cases.contains(case)).one()
+            demographic = self.graph.nodes(Demographic).filter(Demographic.cases.contains(case)).one()
+            self.assertEqual(diagnosis["vital_status"], "dead")
+            self.assertEqual(demographic["gender"], "male")
+            self.assertEqual(demographic["race"], "white")
+            self.assertEqual(demographic["ethnicity"], "not hispanic or latino")
+            self.assertEqual(diagnosis["age_at_diagnosis"], 123)
+            self.assertEqual(diagnosis['tumor_stage'], 'iiib')
+            self.assertEqual(diagnosis['morphology'], '8963/3')
+            self.assertEqual(diagnosis['site_of_resection_or_biopsy'], 'c000')
+            # make sure the file now describes the case
+            self.graph.nodes(File)\
+                      .sysan({"url": "%stest_target_clinical_19911206.xlsx" % ROOT_TEST_URL})\
+                      .with_edge_to_node(FileDescribesCase, case).one()
+

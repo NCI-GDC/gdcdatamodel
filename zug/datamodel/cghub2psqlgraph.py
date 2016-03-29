@@ -261,7 +261,7 @@ class cghub2psqlgraph(object):
 
         with self.graph.session_scope():
             for params in self.xml_mapping[node_type]:
-                files = self.xml.get_node_roots(node_type, params, root=root)
+                files = self.xml.get_node_roots(node_type, params.root, root=root)
                 for f in files:
                     self.parse_file_node(f, node_type, params)
 

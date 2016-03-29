@@ -1,6 +1,8 @@
 import os
 import yaml
 import xml2psqlgraph
+from pkg_resources import resource_string
+
 
 PKG_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,7 +17,8 @@ with open(bcr_xml_mapping_path, 'r') as f:
     bcr_xml_mapping = yaml.load(f.read())
 with open(cghub_xml_mapping_path, 'r') as f:
     cghub_xml_mapping = yaml.load(f.read())
-with open(clinical_xml_mapping_path, 'r') as f:
-    clinical_xml_mapping = yaml.load(f.read())
+
+clinical_xml_mapping = yaml.load(resource_string('gdcdatamodel', 'xml_mappings/tcga_clinical.yaml'))
+
 with open(cghub_categorization_xml_mapping_path, 'r') as f:
     cghub_categorization_mapping = yaml.load(f.read())
