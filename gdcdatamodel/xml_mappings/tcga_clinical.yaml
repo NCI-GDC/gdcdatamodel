@@ -20,12 +20,12 @@ demographic:
       gender:
         path: ./shared:gender
         type: str.lower
-        default: unknown
+        default: not reported
 
       race:
         path: ./shared:race|./clin_shared:race_list/clin_shared:race[1]
         type: str.lower
-        default: other
+        default: not reported
 
       ethnicity:
         path: ./shared:ethnicity|./clin_shared:ethnicity
@@ -68,7 +68,7 @@ diagnosis:
         type: float
 
       days_to_death:
-        path: ./shared:days_to_death|./clin_shared:days_to_death
+        path: ./shared:days_to_death|./clin_shared:days_to_death * 365
         type: float
 
       days_to_last_follow_up:
@@ -78,7 +78,7 @@ diagnosis:
       vital_status:
         path: ./shared:vital_status|./clin_shared:vital_status
         type: str.lower
-        default: unknown
+        default: not reported
 
       primary_diagnosis:
         path: ./shared:icd_10|./clin_shared:icd_10
@@ -103,11 +103,11 @@ diagnosis:
       classification_of_tumor:
         path: "primary"
         type: str.lower
-        default: other
+        default: not reported
 
       prior_malignancy:
         path: ./shared:prior_dx
-        default: unknown
+        default: not reported
         type: str.lower
 
       tumor_stage:
@@ -123,7 +123,7 @@ diagnosis:
       progression_or_recurrence:
         path: "//clin_shared:regimen_indication[last()]"
         type: str.lower
-        default: unknown
+        default: not reported
 
       days_to_recurrence:
         path: "unknown"
@@ -132,7 +132,7 @@ diagnosis:
       last_known_disease_status:
         path: "unknown"
         type: str
-        default: Unknown tumor status
+        default: not reported
 
       days_to_last_known_disease_status:
         path: "unknown"
