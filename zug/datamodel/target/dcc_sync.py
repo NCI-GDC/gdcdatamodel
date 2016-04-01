@@ -41,7 +41,7 @@ PROJECT_PHSID_MAPPING = {
     'MDLS': 'phs000469',
 }
 
-def tree_walk(url, **kwargs):
+def tree_walk(url, walked=set(), **kwargs):
     """
     Recursively walk the target html file server, yielding the urls of
     actual files (as opposed to directories).
@@ -55,18 +55,22 @@ def tree_walk(url, **kwargs):
     # The idea here is that we are seeing if the link mirrors
     # our current url. If so, we are assuming it's a link to
     # parent and avoiding adding so we don't recurse back up.
-    links = [link for link in elem.cssselect("td a")
-             if link.attrib["href"] not in url]
+    links = set([link.attrib['href'] for link in elem.cssselect("td a")
+             if link.attrib["href"] not in url])
     for link in links:
         if not url.endswith("/"):
             url += "/"
-        fulllink = urljoin(url, link.attrib["href"])
+        fulllink = urljoin(url, link)
         if "/CGI/" in fulllink or "CBIIT" in fulllink:
             continue  # skip these for now
         if not fulllink.endswith("/"):
-            yield fulllink
+            if fulllink not in walked:
+                walked.add(fulllink)
+                yield fulllink
+            else:
+                continue
         else:
-            for file in tree_walk(urljoin(url, link.attrib["href"]), **kwargs):
+            for file in tree_walk(fulllink, walked, **kwargs):
                 yield file
 
 
