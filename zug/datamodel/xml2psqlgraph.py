@@ -132,8 +132,7 @@ class xml2psqlgraph(object):
             return []
 
         elif rlen > 1 and single:
-            log.error(result)
-            raise Exception('{}: Expected 1 result for {}, found {}'.format(
+            log.error('{}: Expected 1 result for {}, found {}'.format(
                 label, path, result))
 
         if text and not is_primitive:
