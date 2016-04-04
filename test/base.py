@@ -52,7 +52,7 @@ class ZugTestBase(TestCase):
                   if t != Edge.__tablename__ and t != Node.__tablename__]
         tables += ['_voided_nodes', '_voided_edges']
         with g.engine.begin() as conn:
-            conn.execute('TRUNCATE {}'.format(', '.join(tables)))
+            conn.execute('TRUNCATE {} CASCADE'.format(', '.join(tables)))
 
     def delete_non_prelude_nodes(self):
         self.log.info('Deleting all non-prelude nodes')

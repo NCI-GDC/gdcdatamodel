@@ -26,7 +26,7 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
         data = open(os.path.join(
             FIXTURES_DIR, "TARGET_AML_SampleMatrix_19910121.xlsx")).read()
         df = syncer.load_sample_matrix(data)
-        mapping = syncer.compute_mapping_from_df(df)
+        mapping, errors = syncer.compute_mapping_from_df(df)
         with self.graph.session_scope():
             syncer.put_mapping_in_pg(mapping)
         with self.graph.session_scope():
@@ -36,7 +36,7 @@ class TestTARGETSampleMatrixSync(PreludeMixin, ZugTestBase):
         data = open(os.path.join(
             FIXTURES_DIR, "TARGET_AML_SampleMatrix_19910123.xlsx")).read()
         df = syncer.load_sample_matrix(data)
-        mapping = syncer.compute_mapping_from_df(df)
+        mapping, errors = syncer.compute_mapping_from_df(df)
         with self.graph.session_scope():
             syncer.put_mapping_in_pg(mapping)
             syncer.remove_old_versions()

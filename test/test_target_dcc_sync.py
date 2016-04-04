@@ -6,6 +6,8 @@ from zug.datamodel.target.dcc_sync import TARGETDCCProjectSyncer
 from httmock import urlmatch, HTTMock
 from mock import patch
 
+from libcloud.storage.types import Provider
+from libcloud.storage.providers import get_driver
 
 @urlmatch(netloc='target-data.nci.nih.gov')
 def target_file_mock(url, request):
@@ -15,7 +17,7 @@ def target_file_mock(url, request):
 
 
 def fake_tree_walk(url, **kwargs):
-    for url in ["https://target-data.nci.nih.gov/Public/WT/Discovery/WXS/L3/mutation/BCM/target-wt-snp-indel.mafplus.txt"]:
+    for url in ["https://target-data.nci.nih.gov/Public/WT/WXS/L3/mutation/BCM/target-wt-snp-indel.mafplus.txt"]:
         yield url
 
 
@@ -24,7 +26,15 @@ class TARGETDCCSyncTest(PreludeMixin, StorageMixin,
 
     def setUp(self):
         super(TARGETDCCSyncTest, self).setUp()
-        self.storage_client.create_container("target_dcc_protected")
+        Local = get_driver(Provider.LOCAL)
+        self.bucket_name = "target_dcc_protected"
+        self.storage_client.create_container(self.bucket_name)
+        self.storage_info = {
+            'driver': Local,
+            'bucket': self.bucket_name,
+            'access_key': self.scratch_dir,
+            'kwargs': {}
+        }
 
     @patch("zug.datamodel.target.dcc_sync.tree_walk", fake_tree_walk)
     def test_basic_sync(self):
