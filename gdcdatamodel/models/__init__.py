@@ -15,7 +15,7 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 """
 
-from cdisutils import log
+from cdisutils.log import get_logger
 from collections import defaultdict
 from gdcdictionary import gdcdictionary as dictionary
 from misc import FileReport                      # noqa
@@ -41,7 +41,17 @@ from sqlalchemy.ext.hybrid import (
     hybrid_property,
 )
 
-logger = log.get_logger('gdcdatamodel')
+from caching import (
+    RELATED_CASES_CATEGORIES,
+    RELATED_CASES_LINK_NAME,
+    cache_related_cases_on_update,
+    cache_related_cases_on_insert,
+    cache_related_cases_on_delete,
+    related_cases_from_cache,
+    related_cases_from_parents,
+)
+
+logger = get_logger('gdcdatamodel')
 
 # These are properties that are defined outside of the JSONB column in
 # the database, inform later code to skip these
@@ -318,6 +328,18 @@ def NodeFactory(_id, schema):
     # _pg_edges are all edges, links to AND from other types
     attributes['_pg_edges'] = {}
 
+    # _related_cases_from_parents: get ids of related cases from this
+    # nodes's sysan
+    attributes['_related_cases_from_cache'] = property(
+        related_cases_from_cache
+    )
+
+    # _related_cases_from_parents: get ids of related cases from this
+    # nodes parents
+    attributes['_related_cases_from_parents'] = property(
+        related_cases_from_parents
+    )
+
     # Create the Node subclass!
     cls = type(name, (Node,), dict(
         __tablename__=get_class_tablename_from_id(_id),
@@ -428,6 +450,18 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     _assigned_association_proxies[dst_label].add(dst_src_assoc)
     _assigned_association_proxies[src_label].add(src_dst_assoc)
 
+    hooks_before_insert = Edge._session_hooks_before_insert + [
+        cache_related_cases_on_insert,
+    ]
+
+    hooks_before_update = Edge._session_hooks_before_update + [
+        cache_related_cases_on_update,
+    ]
+
+    hooks_before_delete = Edge._session_hooks_before_delete + [
+        cache_related_cases_on_delete,
+    ]
+
     cls = type(name, (Edge,), {
         '__label__': label,
         '__tablename__': tablename,
@@ -437,6 +471,9 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
         '__dst_src_assoc__': dst_src_assoc,
         '__src_table__': src_cls.__tablename__,
         '__dst_table__': dst_cls.__tablename__,
+        '_session_hooks_before_insert': hooks_before_insert,
+        '_session_hooks_before_update': hooks_before_update,
+        '_session_hooks_before_delete': hooks_before_delete,
     })
 
     return cls
@@ -515,6 +552,32 @@ def load_edges():
                 'edge_out': edge_name,
                 'dst_type': Node.get_subclass(link['target_type'])
             }
+
+    for src_cls in Node.get_subclasses():
+        cache_case = (
+            src_cls._dictionary['category'] in RELATED_CASES_CATEGORIES
+            or src_cls.label in ['annotation']
+        )
+
+        if not cache_case:
+            continue
+
+        link = {
+            'name': RELATED_CASES_LINK_NAME,
+            'multiplicity': 'many_to_one',
+            'required': False,
+            'target_type': 'case',
+            'label': 'relates_to',
+            'backref': '_related_{}'.format(src_cls.label),
+        }
+
+        edge_name = parse_edge(
+            src_cls.label,
+            link['name'],
+            'relates_to',
+            {'id': src_cls.label},
+            link,
+        )
 
 
 def inject_pg_backrefs():
