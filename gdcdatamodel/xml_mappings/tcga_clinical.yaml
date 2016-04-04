@@ -121,7 +121,7 @@ diagnosis:
         default: not reported
 
       progression_or_recurrence:
-        path: "//clin_shared:regimen_indication[last()]"
+        path: "unknown"
         type: str.lower
         default: not reported
 
