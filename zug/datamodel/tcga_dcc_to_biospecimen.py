@@ -51,7 +51,11 @@ class TCGADCCToBiospecimen(object):
                     [attrs[possible_attr + '_uuid']]).first()
             elif possible_attr + '_barcode' in attrs:
                 node = self.pg_driver.nodes().props(
-                    {'submitter_id': attrs[possible_attr + '_barcode']}).first()
+                    {'submitter_id': attrs[possible_attr + '_barcode']})\
+                    .filter(Node._sysan.has_key('group_id'))\
+                    .filter(Node._sysan.has_key('version'))\
+                    .scalar()
+                    #{'submitter_id': attrs[possible_attr + '_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)
@@ -65,7 +69,8 @@ class TCGADCCToBiospecimen(object):
                     [attrs['_case_uuid']]).first()
             elif '_case_barcode' in attrs:
                 node = self.pg_driver.nodes().props(
-                    {'submitter_id': attrs['_case_barcode']}).first()
+                    {'submitter_id': attrs['_case_barcode']}).scalar()
+                    #{'submitter_id': attrs['_case_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)
