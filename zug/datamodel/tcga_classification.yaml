@@ -1743,6 +1743,73 @@ mutations_protected:
           platform: Mixed platforms
           tag: snv
       - <<: *to_be_determined
+    Mixed_DNASeq_automated:
+      - <<: *to_be_ignored
+      - <<: *to_be_ignored_archive_manifest_files
+      -
+        data_format: WIG
+        pattern: .+\.(wig\.bz2|wig\.txt\.gz)$
+        category:
+          data_type: Raw sequencing data
+          data_subtype: Coverage WIG
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: open
+          platform: Mixed platforms
+          tag: coverage
+      -
+        data_format: MAF
+        pattern: .*\.maf$
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple somatic mutation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: ["somatic", "snv"]
+      -
+        data_format: VCF
+        pattern: ^(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})_([a-fA-F\d]{8}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{4}-[a-fA-F\d]{12})\.(.+\.vcf)$
+        captured_fields:
+          - _participant_barcode
+          - _tumor_aliquot_uuid
+          - _control_aliquot_uuid
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.*(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})([\.-])?[\.\-\w]+\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      -
+        data_format: VCF
+        pattern: ^.+(TCGA[_-][A-Z\d]{2}[_-][A-Z\d]{4})\.(\w+)\.1\.vcf$
+        captured_fields:
+          - _participant_barcode
+        category:
+          data_type: Simple nucleotide variation
+          data_subtype: Simple nucleotide variation
+          experimental_strategy: DNA-Seq
+          data_level: Level_2
+          data_access: protected
+          platform: Mixed platforms
+          tag: snv
+      - <<: *to_be_determined      
     Mixed_DNASeq_Cont_automated:
       - <<: *to_be_ignored
       - <<: *to_be_ignored_archive_manifest_files
