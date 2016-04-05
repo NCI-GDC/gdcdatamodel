@@ -8,6 +8,9 @@ from sqlalchemy.exc import IntegrityError
 from psqlgraph import PolyNode as PsqlNode
 from lxml import etree
 from cdisutils.log import get_logger
+from sqlalchemy import not_, or_
+from gdcdatamodel.models import Node
+
 
 log = get_logger(__name__)
 
@@ -217,6 +220,7 @@ class xml2psqlgraph(object):
             return None
         self.xml_root = etree.fromstring(str(data)).getroottree()
         self.namespaces = self.xml_root.getroot().nsmap
+        self.get_project_id()
         if 'clin_shared' not in self.namespaces:
             # version 2.6 doesn't have clin_shared namespace
             self.namespaces['clin_shared'] = 'NA'
@@ -226,6 +230,12 @@ class xml2psqlgraph(object):
         for node_type, param_list in self.xml_mapping.items():
             for params in param_list:
                 self.parse_edge(node_type, params)
+
+    def get_project_id(self):
+        admin = self.xpath("//*[local-name()='admin']", root=self.xml_root, single=True, text=False)
+        self.project_id = self.xpath(
+            './admin:project_code', root=admin, single=True) + '-' +\
+            self.xpath('./admin:disease_code', root=admin, single=True)
 
     def parse_node(self, node_type, params):
         """Convert a subsection of the xml that will be treated as a node
@@ -593,9 +603,12 @@ class xml2psqlgraph(object):
 
 
                 with self.graph.session_scope() as session:
-                    dsts = {node.node_id for node in self.graph.node_lookup(
-                        label=dst_label, property_matches=dst_matches,
-                        session=session)}
+                    cls = Node.get_subclass(dst_label)
+                    dsts = {node.node_id for node in self.graph.nodes(cls)
+                        .props(dst_matches)
+                        .filter(or_(
+                            not_(cls._props.has_key('project_id')),
+                            cls._props['project_id'].astext==self.project_id))}
 
                     for node_id, node in self.nodes.iteritems():
                         if set(dst_matches.items()).issubset(node.props.items()):
