@@ -4,6 +4,8 @@ import os
 
 from psqlgraph import PolyNode as PsqlNode
 from gdcdatamodel.models import (
+    Project,
+    Program,
     DataSubtypeMemberOfDataType,
     ProjectMemberOfProgram
 )
@@ -171,7 +173,7 @@ def insert_project_nodes(driver, path):
         with open(path, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                program, code, state, name, disease_type, primary_site = row
+                program, code, state, name, disease_type, primary_site, accession_number = row
                 node_id = str(uuid5(GDC_NAMESPACES['project'], code))
                 properties = {
                     'code': code,
@@ -179,14 +181,10 @@ def insert_project_nodes(driver, path):
                     'name': name,
                     'disease_type': disease_type,
                     'primary_site': primary_site,
+                    'dbgap_accession_number': accession_number or None,
+                    'released': True,
                 }
-                if driver.nodes().ids(node_id).scalar():
-                    driver.node_clobber(node_id=node_id, properties=properties)
-                else:
-                    driver.node_merge(node=PsqlNode(
-                        node_id=node_id,
-                        label='project',
-                        properties=properties))
+                session.merge(Project(node_id, properties=properties))
                 program_id = programs[program]
                 session.merge(ProjectMemberOfProgram(
                     src_id=node_id,
@@ -218,8 +216,10 @@ def insert_classification_nodes(driver):
         for format in DATA_FORMATS:
             idempotent_insert(driver, "data_format", format, session)
 
-        idempotent_insert(driver, "program", "TCGA", session)
-        idempotent_insert(driver, "program", "TARGET", session)
+        session.merge(Program(str(uuid5(GDC_NAMESPACES['program'], 'TCGA')),
+                              name='TCGA', dbgap_accession_number='phs000178'))
+        session.merge(Program(str(uuid5(GDC_NAMESPACES['program'], 'TARGET')),
+                              name='TARGET', dbgap_accession_number='phs000218'))
 
 
 def create_prelude_nodes(driver):

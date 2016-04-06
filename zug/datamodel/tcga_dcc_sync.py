@@ -641,8 +641,16 @@ class TCGADCCArchiveSyncer(object):
                 archive_node = self.graph.nodes(Archive).ids(self.archive_id).one()
                 assert archive_node.label == "archive"
                 self.log.info("Finding matching archive from DCC")
+                self.log.info("Archive name = %s" % archive_node.system_annotations["archive_name"])
+                split_data = archive_node.system_annotations["archive_name"].split(".")
+                core_name = '.'.join(split_data[:4])
+                version = '.'.join(split_data[4:])
+                self.log.info("Core = %s, version = %s" % (core_name, version))
+                for archive in archives:
+                    if core_name in archive["archive_name"]:
+                        self.log.info("Found candidate version with %s" % archive["archive_name"])
                 self.archive = [archive for archive in archives
-                           if archive["archive_name"] == archive_node.system_annotations["archive_name"]][0]
+                            if ('.'.join(archive["archive_name"].split('.')[:4]) == core_name)][0]
                 if not self.consul.get_consul_lock(self.name):
                     msg = "Couldn't lock archive {} for requested id {}".format(
                         archive["archive_name"],
@@ -704,6 +712,7 @@ class TCGADCCArchiveSyncer(object):
         archive_doc = self.signpost.get(self.archive_node.node_id)
         if archive_doc and archive_doc.urls:
             self.log.info("archive already has signpost url")
+            self.archive_node.sysan["uploaded"] = True
         else:
             self.log.info("storing archive url %s in signpost", archive_url)
             doc = self.signpost.get(self.archive_node.node_id)

@@ -39,7 +39,7 @@ def to_bool(val):
         raise ValueError("Cannot convert {} to boolean".format(val))
 
 
-TARGET_STUDY_RE = re.compile('(phs000218|phs0004\d\d)')
+TARGET_STUDY_RE = re.compile('(phs000218|phs000515|phs0004\d\d)')
 TCGA_STUDY_RE = re.compile('phs000178')
 
 
@@ -261,7 +261,7 @@ class cghub2psqlgraph(object):
 
         with self.graph.session_scope():
             for params in self.xml_mapping[node_type]:
-                files = self.xml.get_node_roots(node_type, params, root=root)
+                files = self.xml.get_node_roots(node_type, params.root, root=root)
                 for f in files:
                     self.parse_file_node(f, node_type, params)
 
@@ -295,6 +295,8 @@ class cghub2psqlgraph(object):
             node = self.save_file_node(file_key, node_type, props, acl)
             self.copy_result_key_to_sysan(root, node, "disease_abbr")
             self.copy_result_key_to_sysan(root, node, "legacy_sample_id")
+            self.copy_result_key_to_sysan(root, node, "state")
+            self.copy_result_key_to_sysan(root, node, "center_name")
             self.add_datetime_system_annotations(root, node)
             self.add_edges(root, node_type, params, file_key)
         else:

@@ -41,7 +41,7 @@ PROJECT_PHSID_MAPPING = {
     'MDLS': 'phs000469',
 }
 
-def tree_walk(url, **kwargs):
+def tree_walk(url, walked=set(), **kwargs):
     """
     Recursively walk the target html file server, yielding the urls of
     actual files (as opposed to directories).
@@ -55,18 +55,22 @@ def tree_walk(url, **kwargs):
     # The idea here is that we are seeing if the link mirrors
     # our current url. If so, we are assuming it's a link to
     # parent and avoiding adding so we don't recurse back up.
-    links = [link for link in elem.cssselect("td a")
-             if link.attrib["href"] not in url]
+    links = set([link.attrib['href'] for link in elem.cssselect("td a")
+             if link.attrib["href"] not in url])
     for link in links:
         if not url.endswith("/"):
             url += "/"
-        fulllink = urljoin(url, link.attrib["href"])
+        fulllink = urljoin(url, link)
         if "/CGI/" in fulllink or "CBIIT" in fulllink:
             continue  # skip these for now
         if not fulllink.endswith("/"):
-            yield fulllink
+            if fulllink not in walked:
+                walked.add(fulllink)
+                yield fulllink
+            else:
+                continue
         else:
-            for file in tree_walk(urljoin(url, link.attrib["href"]), **kwargs):
+            for file in tree_walk(fulllink, walked, **kwargs):
                 yield file
 
 
@@ -88,7 +92,7 @@ def classify(path):
 def process_url(kwargs, url):
     syncer = TARGETDCCFileSyncer(url, **kwargs)
     syncer.log.info("syncing file %s", url)
-    return syncer.sync()
+    return syncer.sync(), syncer.unclassified_files
 
 class MD5SummingStream(object):
 
@@ -117,7 +121,7 @@ class TARGETDCCEdgeBuilder(object):
             "platform": "generated_from",
             "data_subtype": "member_of",
             "data_format": "member_of",
-            "tag": "member_of",
+            "tag": "memeber_of",
             "experimental_strategy": "member_of"
         }
         if not isinstance(value, list):
@@ -152,12 +156,13 @@ class TARGETDCCEdgeBuilder(object):
     def classify(self):
         url = self.file_node.system_annotations["url"]
         project = url.split("/")[4]
-        path = re.sub(".*\/{}\/((Discovery)|(Validation)|(Model_Systems))\/".format(project), "", url).split("/")
+        self.log.info("project = %s" % project)
+        path = re.sub(".*\/{}\/".format(project), "", url).split("/")
         self.log.info("classifying with path %s", path)
         classification = classify(path)
         self.log.info("classified as %s", classification)
         if not classification:
-            self.log.warning("could not classify file %s", self.file_node)
+            self.log.warning("could not classify file %s", self.file_node['file_name'])
             return
         for attr in CLASSIFICATION_ATTRS:
             if classification.get(attr):  # some don't have tags
@@ -168,8 +173,13 @@ class TARGETDCCProjectSyncer(object):
 
     def __init__(self, project, signpost_url=None,
                  graph_info=None, dcc_auth=None,
-                 storage_info=None, pool=None, verify_missing=True):
-        self.project = project
+                 storage_info=None, pool=None, bucket=None, verify_missing=True):
+        # hang onto the unmolested project name for the ACL lookup
+        self.acl_project = project
+        if "ALL" in project:
+            self.project = "ALL"
+        else:
+            self.project = project
         self.dcc_auth = dcc_auth
         self.signpost_url = signpost_url
         self.graph_info = graph_info
@@ -182,6 +192,7 @@ class TARGETDCCProjectSyncer(object):
                               "_" + self.project)
         self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
                                      graph_info["pass"], graph_info["database"])
+        self.unclassified_files = 0
 
     def get_target_dcc_dict(self):
         """Create a dict of target_dcc files for current project"""
@@ -202,24 +213,20 @@ class TARGETDCCProjectSyncer(object):
         """A generator for links to files in this project"""
 
         # We're looking for a URL in the form
-        # [base_url]/[Public/Controlled]/[Project Code]/[Discovery/Validation]
-        # However, right now, "Validation is only present in the old base
-        # url. Since there's a chance it could finally migrate, the code 
+        # [base_url]/[Public/Controlled]/[Project Code]/
+        # Since there's a chance it could move, the code 
         # gracefully skips it if it 404s.
         for access_level in ["Public", "Controlled"]:
-            url_part = access_level + "/" + self.project
-            for toplevel in ["Discovery", "Validation"]:
-                url_full = url_part + "/" + toplevel + "/"
-                url = urljoin(self.base_url, url_full)
-                self.log.info(url)
-                resp = requests.head(url, auth=self.dcc_auth)
-                if resp.status_code != 404:
-                    return tree_walk(url, auth=self.dcc_auth)
-                else:
-                    self.log.warn("%s not present, skipping" % url)
+            url_full = access_level + "/" + self.project
+            url = urljoin(self.base_url, url_full)
+            self.log.info(url)
+            resp = requests.head(url, auth=self.dcc_auth)
+            if resp.status_code != 404:
+                return tree_walk(url, auth=self.dcc_auth)
+            else:
+                self.log.warn("%s not present, skipping" % url)
 
     def check_if_missing(self, url, dcc_auth_info):
-
         if self.verify_missing:
             resp = requests.head(url, auth=dcc_auth_info)
         else:
@@ -242,7 +249,7 @@ class TARGETDCCProjectSyncer(object):
                 if values['delete'] == True:
                     # try and get the file
                     print "Checking", key
-                    if check_if_missing(key, dcc_auth_info):
+                    if self.check_if_missing(key, dcc_auth_info):
                         files_to_delete += 1
                         if 'id' not in values:
                             self.log.warn("Warning, unable to delete %s, id missing." % key)
@@ -262,6 +269,7 @@ class TARGETDCCProjectSyncer(object):
 
     def sync(self):
         self.log.info("running prelude")
+        self.log.info("bucket is %s" % self.storage_info["bucket"])
         kwargs = {
             "signpost_url": self.signpost_url,
             "graph_info": self.graph_info,
@@ -273,7 +281,7 @@ class TARGETDCCProjectSyncer(object):
 
         if self.pool:
             self.log.info("syncing files using process pool")
-            async_result = self.pool.map_async(partial(process_url, kwargs), self.file_links())
+            async_result, self.unclassified_files = self.pool.map_async(partial(process_url, kwargs), self.file_links())
             async_result.get(999999)
         else:
             self.log.info("syncing files serially")
@@ -295,7 +303,7 @@ class TARGETDCCFileSyncer(object):
 
     def __init__(self, url, signpost_url=None,
                  graph_info=None, dcc_auth=None,
-                 storage_info=None):
+                 storage_info=None, bucket=None):
         assert url.startswith("https://target-data.nci.nih.gov")
         self.url = url
         self.project = url.split("/")[4]
@@ -305,20 +313,25 @@ class TARGETDCCFileSyncer(object):
         self.graph = PsqlGraphDriver(graph_info["host"], graph_info["user"],
                                      graph_info["pass"], graph_info["database"])
         self.dcc_auth = dcc_auth
+        self.bucket = storage_info["bucket"]
         self.storage_client = storage_info["driver"](storage_info["access_key"],
-                                                     **storage_info["kwargs"])
+                                                         **storage_info["kwargs"])
         self.log = get_logger("target_dcc_file_sync_" +
                               str(os.getpid()) +
                               "_" + self.filename)
+        self.unclassified_files = 0
 
     @property
     def acl(self):
         # TODO: This will have to be intelligent
+        # also, use the self.acl_project, *NOT*
+        # self.project, as it'll break for ALL
         return []
 
     @property
     def container(self):
-            return self.storage_client.get_container("target_dcc_protected")
+            self.log.info(self.bucket)
+            return self.storage_client.get_container(self.bucket)
 
     def sync(self):
         """Process a url to a target file, allocating an id for it, inserting
@@ -331,7 +344,7 @@ class TARGETDCCFileSyncer(object):
                                         .sysan({"source": "target_dcc", "url": self.url}).scalar()
             if maybe_this_file:
                 file_node = maybe_this_file
-                self.log.info("Not downloading file %s, since it was found in database as %s", self.url, maybe_this_file)
+                #self.log.info("Not downloading file %s, since it was found in database as %s", self.url, maybe_this_file)
             else:
                 # the first thing we try to do is upload it to the object store,
                 # since we need to get an md5sum before putting it in the database
@@ -368,11 +381,11 @@ class TARGETDCCFileSyncer(object):
                 assert doc.urls
                 self.log.info("inserting %s in graph as %s", key, file_node)
                 self.graph.node_insert(file_node)
-            self.log.info("attempting to classify %s", file_node)
+            self.log.info("attempting to classify %s", file_node.properties['file_name'])
             builder = TARGETDCCEdgeBuilder(file_node, self.graph, self.log)
             try:
                 builder.build()
             except Exception:
-                self.log.exception("failed to classify %s", file_node)
-
+                self.unclassified_files += 1
+                self.log.exception("failed to classify %s", file_node.properties['file_name'])
         return file_node.node_id

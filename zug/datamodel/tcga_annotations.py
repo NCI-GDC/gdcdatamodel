@@ -23,11 +23,6 @@ DATE_RE = re.compile('(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(-\d{1,2}:\d{2})')
 ANNOTATION_NAMESPACE = UUID('e61d5a88-7f5c-488e-9c42-a5f32b4d1c50')
 
 
-def unix_time(dt):
-    epoch = datetime.utcfromtimestamp(0)
-    delta = dt - epoch
-    return long(delta.total_seconds())
-
 
 class TCGAAnnotationSyncer(object):
 
@@ -46,7 +41,12 @@ class TCGAAnnotationSyncer(object):
         self.log.info('Downloading annotations from %s', url)
         resp = requests.get(url)
         resp.raise_for_status()
-        annotation_docs = resp.json()["dccAnnotation"]
+        try:
+            annotation_docs = resp.json()["dccAnnotation"]
+        except:
+            self.log.error("Unable to parse response as JSON")
+            self.log.error(resp.text)
+            raise
         # sanity checks
         for doc in annotation_docs:
             assert len(doc["items"]) == 1
@@ -133,8 +133,8 @@ class TCGAAnnotationSyncer(object):
         return notes
 
     def parse_datetime(self, text):
-        return unix_time(datetime.fromtimestamp(mktime(strptime(
-            text, '%Y-%m-%dT%H:%M:%S'))))
+        return datetime.fromtimestamp(mktime(strptime(
+            text, '%Y-%m-%dT%H:%M:%S'))).isoformat('T')
 
     def lookup_item_node(self, item):
         """Lookup node by barcode under it's supposed label.  If we can't find
@@ -148,7 +148,18 @@ class TCGAAnnotationSyncer(object):
         if item_type == "patient":
             item_type = "case"  # they say patient, we say case. this will have to be case eventually
         cls = Node.get_subclass(item_type)
-        node = self.graph.nodes(cls)\
-                         .props({'submitter_id': item['item']})\
-                         .scalar()
+        # TODO: Watch for project_id to be filled and use that to query,
+        # also possibly use the value in group_id, but presence is good
+        # for now
+        try:
+            node = self.graph.nodes(cls)\
+                             .props({'submitter_id': item['item']})\
+                             .filter(cls._sysan.has_key('group_id'))\
+                             .filter(cls._sysan.has_key('version'))\
+                             .scalar()
+        except:
+            self.log.error("Multiple project_ids found for %s" %
+                    item['item'])
+            raise
+
         return node

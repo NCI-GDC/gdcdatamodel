@@ -94,7 +94,11 @@ class DownloadStatsIndexBuilder(object):
         if es:
             self.es = es
         else:
-            self.es = Elasticsearch([os.environ["ELASTICSEARCH_HOST"]])
+            self.es = Elasticsearch(
+                hosts=[os.environ["ELASTICSEARCH_HOST"]],
+                http_auth=(os.environ.get("ES_USER", ""),
+                           os.environ.get("ES_PASSWORD", "")))
+
         self.index_name = index_name
         self.doc_type = doc_type
         self.log = get_logger("download_stats_index_build")
@@ -116,6 +120,7 @@ class DownloadStatsIndexBuilder(object):
         )
 
     def go(self, projects=None):
+            self.create_es_index()
             self.log.info("Loading all projects from database")
             with self.graph.session_scope():
                 if not projects:
@@ -214,7 +219,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(DataSubtype, FileMemberOfDataSubtype.dst_id == DataSubtype.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(DataSubtype.name)
-        return [{"data_subtype": row[2], "size": int(row[0]), "count": row[1]}
+        return [{"data_subtype": row[2], "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def data_type_breakdown(self, subtype_breakdown):
@@ -237,7 +242,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(ExperimentalStrategy, FileMemberOfExperimentalStrategy.dst_id == ExperimentalStrategy.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(ExperimentalStrategy.name)
-        return [{"experimental_strategy": row[2], "size": int(row[0]), "count": row[1]}
+        return [{"experimental_strategy": row[2], "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def data_format_breakdown(self, code):
@@ -246,7 +251,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(DataFormat, FileMemberOfDataFormat.dst_id == DataFormat.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(DataFormat.name)
-        return [{"data_format": row[2], "size": int(row[0]), "count": row[1]}
+        return [{"data_format": row[2], "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def tag_breakdown(self, code):
@@ -255,7 +260,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(Tag, FileMemeberOfTag.dst_id == Tag.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(Tag.name)
-        return [{"tag": row[2], "size": int(row[0]), "count": row[1]}
+        return [{"tag": row[2], "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def platform_breakdown(self, code):
@@ -264,7 +269,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(Platform, FileGeneratedFromPlatform.dst_id == Platform.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(Platform.name)
-        return [{"platform": row[2], "size": int(row[0]), "count": row[1]}
+        return [{"platform": row[2], "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def center_breakdown(self, code):
@@ -273,7 +278,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(Center, FileSubmittedByCenter.dst_id == Center.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(Center.code)
-        return [{"center": row[2], "size": int(row[0]), "count": row[1]}
+        return [{"center": row[2], "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def user_access_type_breakdown(self, code):
@@ -285,7 +290,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(File, FileReport.node_id == File.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code)))\
                       .group_by(open_data, logged_in_user)
-        return [{"user_access_type": user_access_type(row[3], row[2]), "size": int(row[0]), "count": row[1]}
+        return [{"user_access_type": user_access_type(row[3], row[2]), "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def data_access_breakdown(self, code):
@@ -294,7 +299,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(File, FileReport.node_id == File.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code).subquery()))\
                       .group_by(open_data)
-        return [{"access": "open" if row[2] else "protected", "size": int(row[0]), "count": row[1]}
+        return [{"access": "open" if row[2] else "protected", "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def country_breakdown(self, code):
@@ -302,7 +307,7 @@ class DownloadStatsIndexBuilder(object):
                       .join(File, FileReport.node_id == File.node_id)\
                       .filter(FileReport.node_id.in_(self.file_ids_in_project(code).subquery()))\
                       .group_by(FileReport.country_code)
-        return [{"country": row[2] if row[2] else "unknown", "size": int(row[0]), "count": row[1]}
+        return [{"country": row[2] if row[2] else "unknown", "size": int(row[0] or 0), "count": row[1]}
                 for row in q.all()]
 
     def continent_breakdown(self, country_breakdown):

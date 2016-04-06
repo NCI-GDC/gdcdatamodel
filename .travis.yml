@@ -20,10 +20,10 @@ addons:
 before_install:
   - echo -e 'Host github.com\n\tStrictHostKeyChecking no\n' >> ~/.ssh/config
   - sudo apt-get install libxml2-dev libxslt-dev python-dev
-  - wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
-  - unzip 0.5.0_linux_amd64.zip
+  - wget https://releases.hashicorp.com/consul/0.5.0/consul_0.5.0_linux_amd64.zip
+  - unzip consul_0.5.0_linux_amd64.zip
   - ./consul agent -bootstrap-expect=1 -server -data-dir /tmp/consul &
-  - pip uninstall --yes psqlgraph gdcdatamodel || true
+  - pip uninstall --yes psqlgraph gdcdictionary gdcdatamodel || true
 install:
   - python setup.py install
   - pip install -r dev-requirements.txt

@@ -33,6 +33,12 @@ class TCGAAnnotationTest(ZugTestBase):
             amount=3.5,
             concentration=10.0
         )
+        sysans = {
+            'group_id': 'OV_13',
+            'version': 81
+        }
+        aliquot.system_annotations = sysans
+
         with self.graph.session_scope() as session:
             session.merge(aliquot)
         return aliquot
@@ -42,6 +48,11 @@ class TCGAAnnotationTest(ZugTestBase):
             node_id=str(uuid4()),
             submitter_id=barcode
         )
+        sysans = {
+            'group_id': 'THCA_176',
+            'version': 83
+        }
+        case.system_annotations = sysans
         with self.graph.session_scope() as session:
             session.merge(case)
         return case
@@ -53,6 +64,11 @@ class TCGAAnnotationTest(ZugTestBase):
             portion_number="30",
             creation_datetime=123456,
         )
+        sysans = {
+            'group_id': 'KIRC_65',
+            'version': 88
+        }
+        portion.system_annotations = sysans
         with self.graph.session_scope() as session:
             session.merge(portion)
         return portion
@@ -109,6 +125,7 @@ class TCGAAnnotationTest(ZugTestBase):
         with self.graph.session_scope():
             for annotation in self.graph.nodes(Annotation):
                 annotation.acl = []
+
 
         # Re-sync and make sure changes are written
         with HTTMock(mock_annotations(FAKE_ANNOTATIONS)):

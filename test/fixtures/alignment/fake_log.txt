@@ -1,0 +1,16 @@
+2015-10-13_02:36:41_UTC INFO COMMIT
+2015-10-13_02:36:41_UTC INFO SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
+2015-10-13_02:36:41_UTC INFO ()
+2015-10-13_02:36:41_UTC INFO wrote sql to existing table: picard_CollectGcBiasMetrics_detail
+2015-10-13_02:36:41_UTC INFO creating empty file: /alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/have_picard_CollectMultipleMetrics_default_db
+2015-10-13_02:36:41_UTC INFO completed storing `picard CollectMultipleMetrics` of /alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam to db
+2015-10-13_02:36:41_UTC INFO step flag does not exist: /alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/have_picard_CollectWgsMetrics_default
+2015-10-13_02:36:41_UTC INFO running step `picard CollectWgsMetrics of: /alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam
+2015-10-13_02:36:41_UTC INFO do_picard_metrics() pre-alter cmd=['java', '-d64', '-Xmx40G', '-jar', '/home/ubuntu/tools/picard-tools/picard.jar', 'CollectWgsMetrics', 'INPUT=/align
+ment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam', 'OUTPUT=/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/picard_CollectWgsMetrics_default', 'REFERENCE_SEQUENCE=/alignment
+/reference/GRCh38.d1.vd1.fa', 'VALIDATION_STRINGENCY=LENIENT', 'TMP_DIR=/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted']
+2015-10-13_02:36:41_UTC INFO do_picard_metrics() post-alter cmd=['java', '-d64', '-Xmx40G', '-jar', '/home/ubuntu/tools/picard-tools/picard.jar', 'CollectWgsMetrics', 'INPUT=/alig
+nment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam', 'OUTPUT=/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/picard_CollectWgsMetrics_default', 'REFERENCE_SEQUENCE=/alignmen
+t/reference/GRCh38.d1.vd1.fa', 'VALIDATION_STRINGENCY=LENIENT', 'TMP_DIR=/alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted']
+2
+2015-10-13_02:36:41_UTC INFO completed running step bogus of: /alignment/scratchGRGO1I/realn/bwa_aln_pe/sorted/default.bam

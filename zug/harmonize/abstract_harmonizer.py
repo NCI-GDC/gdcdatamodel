@@ -5,12 +5,14 @@ import time
 import shutil
 from urlparse import urlparse
 from cStringIO import StringIO
+import socket
 from datadog import statsd
 statsd.host = 'datadogproxy.service.consul'
 
 from sqlalchemy.pool import NullPool
 import docker
 from boto.s3.connection import OrdinaryCallingFormat
+import requests
 from requests.exceptions import ReadTimeout
 
 # buffer 10 MB in memory at once
@@ -24,9 +26,16 @@ from cdisutils.log import get_logger
 from cdisutils.net import BotoManager, url_for_boto_key
 from signpostclient import SignpostClient
 from zug.consul_manager import ConsulManager
+from zug.binutils import DoNotRestartException
 from gdcdatamodel.models import File
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+
+OPENSTACK_METADATA_URL = "http://169.254.169.254/openstack/latest/meta_data.json"
+
+
+class DockerFailedException(DoNotRestartException):
+    pass
 
 
 def first_s3_url(doc):
@@ -61,7 +70,8 @@ class AbstractHarmonizer(object):
             assert kwarg in self.valid_extra_kwargs
         self.config = self.get_base_config()
         self.config.update(self.get_config(kwargs))
-
+        self.docker_log_flags = {flag: False for flag
+                                 in self.docker_log_flag_funcs.keys()}
         # do some simple validations
         self.validate_config()
 
@@ -85,9 +95,9 @@ class AbstractHarmonizer(object):
             self.signpost = signpost
         else:
             self.signpost = SignpostClient(self.config["signpost_url"])
-        self.docker = docker.Client(**docker.utils.kwargs_from_env(
-            assert_hostname=False
-        ))
+        docker_args = docker.utils.kwargs_from_env(assert_hostname=False)
+        docker_args["timeout"] = 5 * 60
+        self.docker = docker.Client(**docker_args)
         # we need to set self.docker_container to None here in case
         # self.cleanup is called before self.run_docker, since
         # self.cleanup checks this variable
@@ -97,6 +107,18 @@ class AbstractHarmonizer(object):
         self.consul = ConsulManager(prefix=consul_prefix)
         self.start_time = int(time.time())
         self.log = get_logger(self.name)
+        self.openstack_uuid = self.get_openstack_uuid()
+
+    def get_openstack_uuid(self):
+        try:
+            resp = requests.get(OPENSTACK_METADATA_URL)
+            resp.raise_for_status()
+            os_uuid = resp.json()["uuid"]
+            self.log.info("Openstack uuid is %s", os_uuid)
+            return os_uuid
+        except:
+            self.log.exception("Failed to get openstack uuid.")
+            return None
 
     def get_base_config(self):
         """Compute a config dictionary from the process environment. This
@@ -128,6 +150,7 @@ class AbstractHarmonizer(object):
             "scratch_dir": os.path.relpath(scratch_dir, start=workdir),
             "container_workdir": "/alignment",  # TODO make this configurable?
             "docker_image_id": os.environ["DOCKER_IMAGE_ID"],
+            "stop_on_docker_error": os.environ.get("ALIGNMENT_STOP_ON_DOCKER_ERROR")
         }
 
     def validate_config(self):
@@ -150,10 +173,26 @@ class AbstractHarmonizer(object):
         assert os.path.isabs(self.config["workdir"])
         assert os.path.isabs(self.config["container_workdir"])
 
-    def cleanup(self):
+    def cleanup(self, delete_scratch=True):
         scratch_abspath = self.host_abspath(self.config["scratch_dir"])
-        self.log.info("Removing scatch dir %s", scratch_abspath)
-        shutil.rmtree(scratch_abspath)
+        if delete_scratch:
+            self.log.info("Removing scatch dir %s", scratch_abspath)
+            N_RM_SCRATCH_TRIES = 5
+            for n_try in range(1, N_RM_SCRATCH_TRIES+1):
+                try:
+                    shutil.rmtree(scratch_abspath)
+                except:
+                    self.log.exception("failed to remove scratch dir on try %s",
+                                       n_try)
+                    if n_try >= N_RM_SCRATCH_TRIES:
+                        self.log.error("exhausted retries cleaning up scratch dir")
+                        raise
+                    else:
+                        time.sleep(3)
+                else:
+                    break
+        else:
+            self.log.info("Not deleting scratch space per config")
         self.consul.cleanup()
         if self.docker_container:
             self.log.info("Removing docker container %s", self.docker_container)
@@ -252,17 +291,27 @@ class AbstractHarmonizer(object):
         self.log.info("Starting docker container and waiting for it to complete")
         self.docker.start(self.docker_container)
         retcode = None
+        all_docker_logs = ""
         while retcode is None:
             try:
                 for log in self.docker.logs(self.docker_container, stream=True,
                                             stdout=True, stderr=True):
+                    all_docker_logs += log
                     self.log.info(log.strip())  # TODO maybe something better
                 retcode = self.docker.wait(self.docker_container, timeout=0.1)
             except ReadTimeout:
                 pass
+        for flag, func in self.docker_log_flag_funcs.iteritems():
+            if func(all_docker_logs):
+                self.docker_log_flags[flag] = True
         if retcode != 0:
             self.docker.remove_container(self.docker_container, v=True)
-            raise RuntimeError("Docker container failed with exit code {}".format(retcode))
+            self.docker_container = None
+            self.docker_failure_cleanup(all_docker_logs)
+            if self.config["stop_on_docker_error"]:
+                raise DockerFailedException("Docker container failed with exit code {}".format(retcode))
+            else:
+                raise RuntimeError("Docker container failed with exit code {}".format(retcode))
         self.log.info("Container run finished successfully, removing")
         self.docker.remove_container(self.docker_container, v=True)
         self.docker_container = None
@@ -321,7 +370,20 @@ class AbstractHarmonizer(object):
                                    "match size on s3 {}"
                                    .format(disk_size, s3_size))
             self.log.info("md5ing from s3 to verify")
-            md5_on_s3 = md5sum(key)
+            N_MD5SUM_TRIES = 5
+            for md5sum_try in range(1, N_MD5SUM_TRIES+1):
+                try:
+                    md5_on_s3 = md5sum(key)
+                except:
+                    self.log.exception("failed while md5summing from s3 on try %s",
+                                       md5sum_try)
+                    if md5sum_try >= N_MD5SUM_TRIES:
+                        self.log.error("exhausted retries trying to md5sum from s3")
+                        raise
+                    else:
+                        time.sleep(5)
+                else:
+                    break
             if uploaded_md5 != md5_on_s3:
                 raise RuntimeError("checksums do not match: "
                                    "uploaded {}, s3 has {}"
@@ -375,19 +437,72 @@ class AbstractHarmonizer(object):
 
     def go(self):
         try:
+            delete_scratch = True
+            self.submit_event("Aligner start", "")
             self.consul.start_consul_session()
             with self.graph.session_scope():
-                lock_id, inputs = self.find_inputs()
+                self.lock_id, inputs = self.find_inputs()
             self.validate_inputs(inputs)
-            self.try_lock(lock_id)
+            self.try_lock(self.lock_id)
             self.inputs = inputs
             self.input_paths = self.download_inputs()
             self.run_docker()
             self.check_output_paths()
             self.handle_output()
             self.submit_metrics()
+        except DockerFailedException:
+            delete_scratch = False
+            raise
         finally:
-            self.cleanup()
+            self.cleanup(delete_scratch=delete_scratch)
+
+    def docker_failure_cleanup(self, logs):
+        """Subclasses can override to do something special when the docker
+        container fails
+
+        """
+        # send failure event to dd
+        tags = [
+            'alignment_type:{}'.format(self.name),
+            'alignment_host:{}'.format(socket.gethostname()),
+        ]
+
+        statsd.event(
+            'Alignment Failure',
+            'alignment of %s has failed' % self.lock_id,
+            source_type_name='harmonization',
+            alert_type='error',
+            tags=tags,
+        )
+        # also mark the file as having errored
+        with self.graph.session_scope():
+            file = self.graph.nodes(File).ids(self.lock_id).one()
+            file.sysan["alignment_seen_docker_error"] = True
+            file.sysan["alignment_last_docker_error_image"] = self.docker_image["Id"]
+            # save last kilobyte of logs, just as a totally arbitrary cutoff
+            file.sysan["alignment_last_docker_error_logs"] = logs[-1000:]
+
+    @property
+    def docker_log_flag_funcs(self):
+        """A map from string keys to functions. Each function will be called
+        on the log output of the docker container and the
+        corresponding string in self.docker_log_flags set to True if
+        the function returns True.
+
+        The subclass can then inspect the flags and take action based
+        on them later.
+
+        """
+        return {}
+
+    def submit_event(self, name, description, alert_type='info'):
+        self.log.info("[datadog] submit event {}".format(name))
+        tags=["alignment_type:{}".format(self.name),
+              "alignment_host:{}".format(socket.gethostname())]
+
+        statsd.event(name, description, source_type_name='harmonization',
+                     alert_type=alert_type,
+                     tags=tags)
 
     # interface methods / properties that subclasses must implement
 
@@ -427,7 +542,7 @@ class AbstractHarmonizer(object):
     def handle_output(self):
         raise NotImplementedError()
 
-    @abstractmethod 
+    @abstractmethod
     def submit_metrics(self):
         raise NotImplementedError()
 

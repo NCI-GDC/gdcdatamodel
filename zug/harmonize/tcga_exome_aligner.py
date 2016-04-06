@@ -1,16 +1,13 @@
-from sqlalchemy import func, desc, BigInteger
-
-from zug.binutils import NoMoreWorkException
-from gdcdatamodel.models import (
-    Aliquot, File, ExperimentalStrategy,
-    Platform,
-    FileDataFromAliquot,
-)
-
-from zug.harmonize.tcga_bwa_aligner import TCGABWAAligner
+from queries import exome
+from sqlalchemy import BigInteger
+from gdcdatamodel.models import File
+from gdcdatamodel.models import FileDataFromFile
 
 
-class TCGAExomeAligner(TCGABWAAligner):
+from zug.harmonize.bwa_aligner import BWAAligner
+
+
+class TCGAExomeAligner(BWAAligner):
 
     @property
     def name(self):
@@ -23,7 +20,6 @@ class TCGAExomeAligner(TCGABWAAligner):
     def choose_bam_by_forced_id(self):
         input_bam = self.graph.nodes(File).ids(self.config["force_input_id"]).one()
         assert input_bam.sysan["source"] == "tcga_cghub"
-        assert input_bam.file_name.endswith(".bam")
         assert input_bam.data_formats[0].name == "BAM"
         assert input_bam.experimental_strategies[0].name == "WXS"
         return input_bam
@@ -31,43 +27,69 @@ class TCGAExomeAligner(TCGABWAAligner):
     @property
     def bam_files(self):
         '''targeted bam files query'''
-        wxs = ExperimentalStrategy.name.astext == "WXS"
-        illumina = Platform.name.astext.contains("Illumina")
-        # NOTE you would think that file_name filter would be
-        # unnecessary but we have some TCGA exomes that end with
-        # .bam_HOLD_QC_PENDING. I am not sure what to do with these so
-        # for now I am ignoring them
-        return self.graph.nodes(File)\
-                         .props(state="live")\
-                         .sysan(source="tcga_cghub")\
-                         .join(FileDataFromAliquot)\
-                         .join(Aliquot)\
-                         .distinct(Aliquot.node_id.label("aliquot_id"))\
-                         .filter(File.experimental_strategies.any(wxs))\
-                         .filter(File.platforms.any(illumina))\
-                         .filter(File.file_name.astext.endswith(".bam"))\
-                         .order_by(Aliquot.node_id, desc(File._sysan["cghub_upload_date"].cast(BigInteger)))
+        return exome(self.graph, 'tcga_cghub')
+
+    @property
+    def new_alignable_files(self):
+        '''bam files that are not aligned'''
+        currently_being_aligned = self.consul.list_locked_keys()
+        alignable = self.bam_files\
+                        .props(state="live")\
+                        .not_sysan(alignment_data_problem=True)\
+                        .filter(~File.derived_files.any())\
+                        .filter(~File.node_id.in_(currently_being_aligned))
+        if self.config["size_limit"]:
+            alignable = alignable.filter(
+                File.file_size.cast(BigInteger) < self.config["size_limit"]
+            )
+        if self.config["size_min"]:
+            alignable = alignable.filter(
+                File.file_size.cast(BigInteger) > self.config["size_min"]
+            )
+        
+        return alignable
+
+    @staticmethod
+    def with_qc_failures(q):
+        '''
+        Apply a filter for selecting only those nodes that have qc failures.
+        '''
+        return q.sysan(qc_failed=True)
+
+    @staticmethod
+    def without_realignment(q):
+        '''
+        Apply a filter for selecting only non-realigned nodes.
+        '''
+        return q.not_sysan(qc_realigned=True)
+
+    @property
+    def realignable_files(self):
+        '''
+        Returns a query for BAM files that are subject to realignment.
+        '''
+        currently_being_aligned = self.consul.list_locked_keys()
+        
+        alignable = self.bam_files\
+                        .props(state="live")\
+                        .filter(~File.source_files.any())\
+                        .filter(~File.node_id.in_(currently_being_aligned))
+        
+        if self.config["size_limit"]:
+            alignable = alignable.filter(
+                File.file_size.cast(BigInteger) < self.config["size_limit"]
+            )
+        
+        if self.config["size_min"]:
+            alignable = alignable.filter(
+                File.file_size.cast(BigInteger) > self.config["size_min"]
+            )
+        
+        alignable = self.with_qc_failures(alignable)
+        alignable = self.without_realignment(alignable)
+        
+        return alignable
 
     @property
     def alignable_files(self):
-        '''bam files that are not aligned'''
-        currently_being_aligned = self.consul.list_locked_keys()
-        return self.bam_files\
-                   .filter(~File.derived_files.any())\
-                   .filter(~File.node_id.in_(currently_being_aligned))
-
-    def choose_bam_at_random(self):
-        """This queries for a bam file that we can align at random,
-        potentially filtering by size.
-
-        """
-        alignable_files = self.alignable_files
-        if self.config["size_limit"]:
-            alignable_files = alignable_files.filter(
-                File.file_size.cast(BigInteger) < self.config["size_limit"]
-            )
-        input_bam = alignable_files.from_self(File).order_by(func.random()).first()
-        if not input_bam:
-            raise NoMoreWorkException("We appear to have aligned all bam files")
-        else:
-            return input_bam
+        return self.new_alignable_files.union(self.realignable_files)

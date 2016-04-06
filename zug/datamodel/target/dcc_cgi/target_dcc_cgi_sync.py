@@ -20,8 +20,7 @@ from signpostclient import SignpostClient
 from s3_wrapper import S3_Wrapper
 import md5
 
-urllib3.disable_warnings()
-logging.captureWarnings(True)
+requests.packages.urllib3.disable_warnings()
 
 class TargetDCCCGIDownloader(object):
     """Main class to handle TARGET DCC CGI download"""
