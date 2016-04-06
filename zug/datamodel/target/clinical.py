@@ -8,6 +8,7 @@ import requests
 import re
 from datetime import datetime
 from uuid import UUID, uuid5
+from sqlalchemy import or_, not_
 from bs4 import BeautifulSoup
 
 from cdisutils.log import get_logger
@@ -472,9 +473,13 @@ class TARGETClinicalSyncer(object):
                                     self.log.error(error_str)
                                     raise RuntimeError(error_str)
                     if case_barcode:
+                        project_id = 'TARGET-' + self.project
                         self.log.info("looking up case %s", case_barcode)
                         case = self.graph.nodes(Case)\
-                               .props({"submitter_id": case_barcode}).scalar()
+                               .props({"submitter_id": case_barcode})\
+                               .filter(or_(
+                                       not_(Case._props.has_key('project_id')),
+                                       Case.project_id.astext==project_id)).scalar()
                     if not case:
                         self.log.warning("couldn't find case %s, not inserting clinical data", case_barcode)
                         continue
