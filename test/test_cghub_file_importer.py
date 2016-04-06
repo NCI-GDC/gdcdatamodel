@@ -1,6 +1,7 @@
 import unittest
 import uuid
 import os
+import hashlib
 from lxml import etree
 from gdcdatamodel.models import (
     File,
@@ -10,16 +11,15 @@ from gdcdatamodel.models import (
     ExperimentalStrategy,
     DataFormat,
     DataSubtype,
+    AnalysisMetadata,
+    ExperimentMetadata,
+    RunMetadata
 )
+import boto
+from moto import mock_s3
 from psqlgraph import Node, Edge
-from base import ZugTestBase, PreludeMixin, TEST_DIR
-from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping
-
-
-class TestSignpostClient(object):
-    def create(self):
-        self.did = str(uuid.uuid4())
-        return self
+from base import ZugTestBase, PreludeMixin, SignpostMixin, TEST_DIR
+from zug.datamodel import cghub2psqlgraph, cghub_xml_mapping, cghub_xml_metadata
 
 
 analysis_idA = '00007994-abeb-4b16-a6ad-7230300a29e9'
@@ -32,6 +32,7 @@ host = 'localhost'
 user = 'test'
 password = 'test'
 database = 'automated_test'
+bucket = 'test_bucket'
 
 
 FIXTURES_DIR = os.path.join(TEST_DIR, "fixtures", "cghub_xml")
@@ -44,19 +45,34 @@ TARGET_CGI_XML = open(os.path.join(FIXTURES_DIR, "target_cgi.xml")).read()
 TARGET_BCCAGSC_XML = open(os.path.join(FIXTURES_DIR, "target_bccagsc.xml")).read()
 
 
-class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
+class TestCGHubFileImporter(PreludeMixin, SignpostMixin, ZugTestBase):
 
     def setUp(self):
         super(TestCGHubFileImporter, self).setUp()
+        self.mock = mock_s3()
+        self.mock.start()
+        self.s3conn = boto.connect_s3()
+        self.s3conn.create_bucket(bucket)
+
         self.converter = cghub2psqlgraph.cghub2psqlgraph(
             xml_mapping=cghub_xml_mapping,
             host=host,
             user=user,
             password=password,
             database=database,
-            signpost=TestSignpostClient(),
+            signpost=self.signpost_client,
         )
         self._add_required_nodes()
+        
+        self.extractor = cghub_xml_metadata.Extractor( 
+            signpost=self.signpost_client,
+            s3=self.s3conn,
+            bucket=bucket,
+        )
+        self.extractor.g = self.converter.graph
+
+    def tearDown(self):
+        self.mock.stop()
 
     def create_file(self, analysis_id, file_name):
         with self.converter.graph.session_scope():
@@ -91,6 +107,85 @@ class TestCGHubFileImporter(PreludeMixin, ZugTestBase):
             to_delete = [(analysis_idB, bamB), (analysis_idB, baiB)]
             for root in TCGA_TEST_DATA:
                 self.converter.parse('file', etree.fromstring(root))
+
+
+    def test_extract_graph(self):
+        '''
+        Tests that metadata nodes are being inserted correctly
+        '''
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope():
+            self.run_convert()
+            for root in TCGA_TEST_DATA:
+                self.extractor.process(etree.fromstring(root))
+            # Check that each metadata file was extracted
+            n_nodes = graph.nodes(AnalysisMetadata).count()
+            self.assertEqual(n_nodes, 2)
+            n_nodes = graph.nodes(ExperimentMetadata).count()
+            self.assertEqual(n_nodes, 2)
+            n_nodes = graph.nodes(RunMetadata).count()
+            self.assertEqual(n_nodes, 2)
+
+            for T in [AnalysisMetadata, ExperimentMetadata, RunMetadata]:
+                bamA_node = graph.nodes(T).sysan(
+                          {'analysis_id':analysis_idA}).one()
+                self.assertEqual(bamA_node.data_format, 'SRA XML')
+                self.assertEqual(bamA_node.data_category, 'Sequencing Data')
+                self.assertGreater(bamA_node.file_size, 0)
+                self.assertGreater(len(bamA_node.files), 0)
+                self.assertEqual(bamA_node.files[0].props['file_name'], bamA)
+
+    def test_extract_signpost(self):
+        '''
+        Test that s3 urls are put into signpost
+        '''
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope():
+            self.run_convert()
+            for root in TCGA_TEST_DATA:
+                self.extractor.process(etree.fromstring(root))
+            # Check every type of metadata node
+            for T in [AnalysisMetadata, ExperimentMetadata, RunMetadata]:
+                bamA_node = graph.nodes(T).sysan(
+                          {'analysis_id':analysis_idA}).one()
+                # returns 'analysis', 'experiment', or 'run' depending on T
+                t = bamA_node.data_type.split(' ')[0].lower()
+                file_name = '{}_{}.xml'.format(analysis_idA, t)
+                bamA_url = self.signpost_client.get(bamA_node.node_id).urls[0]
+                self.assertEqual(bamA_url.split('/')[-1], file_name)
+
+
+    def test_extract_s3(self):
+        '''
+        Check that metadata files are stored in s3 properly
+        '''
+        graph = self.converter.graph
+        self.insert_test_files()
+        with graph.session_scope():
+            self.run_convert()
+            for root in TCGA_TEST_DATA:
+                self.extractor.process(etree.fromstring(root))
+            # Check every type of metadata node
+            for T in [AnalysisMetadata, ExperimentMetadata, RunMetadata]:
+                bamA_node = graph.nodes(T).sysan(
+                          {'analysis_id':analysis_idA}).one()
+
+                bamA_url = self.signpost_client.get(bamA_node.node_id).urls[0]
+                t = bamA_node.data_type.split(' ')[0].lower()
+                file_name = '{}_{}.xml'.format(analysis_idA, t)
+                # Get file from s3 and check its hash against the node's
+                s3_key_name = '/'.join([
+                    bamA_node.node_id,
+                    file_name
+                ])
+                bamA_from_s3 = self.s3conn.get_bucket(bucket)\
+                                  .get_key(s3_key_name)\
+                                  .get_contents_as_string()
+                self.assertEqual(hashlib.md5(bamA_from_s3).hexdigest(),
+                                    bamA_node.props['md5sum'])
+                # TODO: Check size?
 
     def insert_test_files(self):
         with self.converter.graph.session_scope():
