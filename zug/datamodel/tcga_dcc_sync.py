@@ -314,6 +314,8 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
         all_versions = self.graph.nodes(Archive)\
                                  .props({"submitter_id": submitter_id})\
+                                 .filter(or_(not_(Archive._props.has_key('project_id')),
+                                 Archive._props['project_id'].astext==self.project_id))\
                                  .not_sysan({"to_delete": True})\
                                  .all()
         old_versions = [version for version in all_versions
@@ -341,8 +343,10 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("looking for archive %s in postgres", self.name)
         maybe_this_archive = self.graph.nodes(Archive).props(
             submitter_id=submitter_id,
-            revision=self.archive["revision"]
-        ).scalar()
+            revision=self.archive["revision"])\
+            .filter(or_(not_(Archive._props.has_key('project_id')),
+            Archive._props['project_id'].astext==self.project_id))\
+            .scalar()
         if maybe_this_archive:
             node_id = maybe_this_archive.node_id
             self.log.info("found archive %s in postgres as node %s, not inserting", self.name, maybe_this_archive)
