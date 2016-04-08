@@ -288,6 +288,8 @@ class TCGADCCArchiveSyncer(object):
         # these two also get filled in later
         self.temp_file = None
         self.tarball = None
+        #TODO: Determine this properly
+        self.project_id = None
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()))
 

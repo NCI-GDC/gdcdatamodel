@@ -86,6 +86,8 @@ class MAFReconciler(object):
         else:
             self.signpost = signpost
         self.log = get_logger("maf_reconciler")
+        #TODO: set this properly
+        self.project_id = None
 
     def get_file_data(self, file):
         """
