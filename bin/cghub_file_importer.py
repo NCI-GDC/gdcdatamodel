@@ -1,13 +1,16 @@
 #!/usr/bin/env python
+import os
 import logging
 import argparse
 import uuid
 from gdcdatamodel import models
-from zug.datamodel import cghub2psqlgraph, cgquery, cghub_xml_mapping
+from zug.datamodel import cghub2psqlgraph, cgquery, cghub_xml_mapping, cghub_xml_metadata
 from multiprocessing import Pool
 from lxml import etree
 from signpostclient import SignpostClient
 from cdisutils.log import get_logger
+from boto import connect_s3
+import boto.s3.connection
 
 log = get_logger("cghub_file_importer")
 logging.root.setLevel(level=logging.INFO)
@@ -31,6 +34,7 @@ def setup():
             "http://{}:{}".format(args.signpost_host, args.signpost_port),
             version=args.signpost_version)
 
+
     converter = cghub2psqlgraph.cghub2psqlgraph(
         xml_mapping=cghub_xml_mapping,
         host=args.host,
@@ -39,20 +43,42 @@ def setup():
         database=args.db,
         signpost=signpost,
     )
+
     return converter
 
 
 def process(roots):
     converter = setup()
+
+    s3conn = connect_s3(
+                aws_access_key_id=args.s3access,
+                aws_secret_access_key=args.s3secret,
+                host=args.s3host,
+                is_secure=True,
+                calling_format=boto.s3.connection.OrdinaryCallingFormat()
+    )
+
+    
+    extractor = cghub_xml_metadata.Extractor( 
+        signpost=converter.signpost,
+        s3=s3conn,
+        bucket=args.s3bucket,
+        graph=converter.graph
+    )
+
     with converter.graph.session_scope() as session:
         for root in roots:
             root = etree.fromstring(root)
             converter.parse('file', root)
         converter.rebase()
+
+        for root in roots:
+            root = etree.fromstring(root)
+            extractor.process(root)
+
         if args.dry_run:
             log.warn('Rolling back session as requested.')
             session.rollback()
-
 
 def open_xml():
     log.info('Loading xml from {}...'.format(args.file))
@@ -103,14 +129,22 @@ def import_files(xml):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--db', default='gdc_datamodel', type=str,
-                        help='to odatabase to import to')
-    parser.add_argument('-i', '--host', default='localhost', type=str,
-                        help='host of the postgres server')
-    parser.add_argument('-u', '--user', default='test', type=str,
-                        help='the user to import as')
-    parser.add_argument('-p', '--password', default='test', type=str,
-                        help='the password for import user')
+    parser.add_argument('--db', default=os.environ.get('DB_NAME','gdc_datamodel'),
+                        type=str, help='the database to import to')
+    parser.add_argument('-i', '--host', default=os.environ.get('DB_HOST', 'localhost'),
+                        type=str, help='host of the postgres server')
+    parser.add_argument('-u', '--user', default=os.environ.get('DB_USER','test'),
+                        type=str, help='the user to import as')
+    parser.add_argument('-p', '--password', default=os.environ.get('DB_PASS','test'),
+                        type=str, help='the password for import user')
+    parser.add_argument('--s3host', default=os.environ.get('S3_HOST','gdc-accessor6.osdc.io'),
+                        type=str, help='the host for s3')
+    parser.add_argument('--s3access', default=os.environ.get('S3_ACC_KEY','test'),
+                        type=str, help='the access key for s3')
+    parser.add_argument('--s3secret', default=os.environ.get('S3_SEC_KEY','test'),
+                        type=str, help='the secret key for s3')
+    parser.add_argument('--s3bucket', default=os.environ.get('S3_BUCKET','test_dev_pool1'),
+                        type=str, help='the bucket for s3')
     parser.add_argument('--all', action='store_true',
                         help='import all the files')
     parser.add_argument('-d', '--days', default=1, type=int,
@@ -120,10 +154,10 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--file', default=None, type=str,
                         help='file to load from')
     parser.add_argument('-H', '--signpost-host',
-                        default='http://signpost.service.consul', type=str,
-                        help='signpost server host')
-    parser.add_argument('-P', '--signpost-port', default=80,
-                        help='signpost server port')
+                        default=os.environ.get('SIGNPOST_HOST','http://signpost.service.consul'),
+                        type=str, help='signpost server host')
+    parser.add_argument('-P', '--signpost-port', default=os.environ.get('SIGNPOST_PORT',80),
+                        type=int, help='signpost server port')
     parser.add_argument('-V', '--signpost-version', default='v0',
                         help='the version of signpost API')
     parser.add_argument('--no-signpost', action='store_true',
@@ -142,3 +176,4 @@ if __name__ == '__main__':
     else:
         xml = download_xml()
     import_files(xml)
+
