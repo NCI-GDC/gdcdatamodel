@@ -780,7 +780,8 @@ class TCGADCCArchiveSyncer(object):
         if not self.get_archive():
             # if this returns None, it means we're all done
             return
-        self.project_id = self.archive_node.project_id
+        if self.archive_node:
+            self.project_id = self.archive_node.project_id
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
