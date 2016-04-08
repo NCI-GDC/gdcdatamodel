@@ -4,7 +4,7 @@ from gdcdatamodel.models import (
     FileMemberOfArchive,
 )
 import os
-
+from sqlalchemy import or_, not_
 
 class TCGADCCToBiospecimen(object):
 
@@ -19,6 +19,8 @@ class TCGADCCToBiospecimen(object):
         self.pg_driver = pg_driver
         self.log = get_logger('tcga_dcc_to_biospecimen_'
                               + str(os.getpid()) + '_' + self.name)
+        #TODO: Get the actual project_id
+        self.project_id = None
 
     @property
     def name(self):
@@ -52,8 +54,8 @@ class TCGADCCToBiospecimen(object):
             elif possible_attr + '_barcode' in attrs:
                 node = self.pg_driver.nodes().props(
                     {'submitter_id': attrs[possible_attr + '_barcode']})\
-                    .filter(Node._sysan.has_key('group_id'))\
-                    .filter(Node._sysan.has_key('version'))\
+                    .filter(or_(not_(Node._props.has_key('project_id')),
+                    Node._props['project_id'].astext==self.project_id))\
                     .scalar()
                     #{'submitter_id': attrs[possible_attr + '_barcode']}).first()
             if node:
