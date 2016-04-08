@@ -11,6 +11,7 @@ import os
 import time
 from contextlib import contextmanager
 import requests
+from sqlalchemy import or_, not_
 
 from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
