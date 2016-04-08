@@ -648,7 +648,7 @@ class TCGADCCArchiveSyncer(object):
             with self.graph.session_scope():
                 self.log.info("Archive with id %s requested, finding in database", self.archive_id)
                 archive_node = self.graph.nodes(Archive).ids(self.archive_id).one()
-                self.project_id = archive_node.project_id
+
                 assert archive_node.label == "archive"
                 self.log.info("Finding matching archive from DCC")
                 self.log.info("Archive name = %s" % archive_node.system_annotations["archive_name"])
@@ -780,6 +780,7 @@ class TCGADCCArchiveSyncer(object):
         if not self.get_archive():
             # if this returns None, it means we're all done
             return
+        self.project_id = self.archive.project_id
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.acl = ["phs000178"] if self.archive["protected"] else ["open"]
