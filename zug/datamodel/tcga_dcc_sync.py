@@ -289,7 +289,9 @@ class TCGADCCArchiveSyncer(object):
         # these two also get filled in later
         self.temp_file = None
         self.tarball = None
-        #TODO: Determine this properly
+        #TODO: Fill this out when we first import the archive
+        # we're now using it when updating an existing, so it should
+        # propagate
         self.project_id = None
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()))
@@ -646,6 +648,7 @@ class TCGADCCArchiveSyncer(object):
             with self.graph.session_scope():
                 self.log.info("Archive with id %s requested, finding in database", self.archive_id)
                 archive_node = self.graph.nodes(Archive).ids(self.archive_id).one()
+                self.project_id = archive_node.project_id
                 assert archive_node.label == "archive"
                 self.log.info("Finding matching archive from DCC")
                 self.log.info("Archive name = %s" % archive_node.system_annotations["archive_name"])

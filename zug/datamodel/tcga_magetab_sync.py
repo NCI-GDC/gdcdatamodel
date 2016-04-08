@@ -243,7 +243,7 @@ class TCGAMAGETABSyncer(object):
         self.edges_from = 0
         self._cache_path = cache_path
         self._mapping = None
-        #TODO:Add the actual project_id
+        # this is filled out when we get the archive node to work on 
         self.project_id = None
 
     @property
@@ -487,6 +487,7 @@ class TCGAMAGETABSyncer(object):
                                     .ids(try_archive.node_id)\
                                     .with_for_update(nowait=True).one()
                 self.archive = archive
+                self.project_id = archive.project_id
                 return self.archive
             except OperationalError:
                 self.graph.current_session().rollback()

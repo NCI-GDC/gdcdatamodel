@@ -19,8 +19,7 @@ class TCGADCCToBiospecimen(object):
         self.pg_driver = pg_driver
         self.log = get_logger('tcga_dcc_to_biospecimen_'
                               + str(os.getpid()) + '_' + self.name)
-        #TODO: Get the actual project_id
-        self.project_id = None
+        self.project_id = self.file_node.project_id 
 
     @property
     def name(self):

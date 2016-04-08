@@ -87,7 +87,7 @@ class MAFReconciler(object):
         else:
             self.signpost = signpost
         self.log = get_logger("maf_reconciler")
-        #TODO: set this properly
+        # this is set later when we pull up the file
         self.project_id = None
 
     def get_file_data(self, file):
@@ -341,4 +341,5 @@ class MAFReconciler(object):
                                   .all()
         self.log.info("Reconciling %s MAFs", len(maf_files))
         for file in maf_files:
+            self.project_id = file.project_id
             self.reconcile(file)
