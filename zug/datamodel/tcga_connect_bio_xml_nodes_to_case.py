@@ -132,7 +132,8 @@ class TCGABioXMLCaseConnector(object):
                           for n in self.clinical_names
                           if xmls.get(n.format(barcode=barcode))]
         for clinical in clinical_nodes:
-            if clinical.node_id not in p_neighbor_ids:
+            if clinical.node_id not in p_neighbor_ids and\
+                    clinical.project_id == case.project_id:
                 self.log.info('Adding edge to clinical xml {} for {}'.format(
                     clinical, case))
                 self.g.current_session().merge(FileDescribesCase(
