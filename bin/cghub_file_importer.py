@@ -130,6 +130,7 @@ def import_files(xml):
 
 def clean_xml(xml):
     # A hack to fix invalid xml coming from cghub
+    xml = re.sub('_REGEX=\<(optimized.*numeric values)\>', '_REGEX=\\1', xml)
     xml = re.sub('<(\d),', '&lt; \\1', xml)
     return xml
 
