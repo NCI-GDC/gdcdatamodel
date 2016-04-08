@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import re
 import logging
 import argparse
 import uuid
@@ -127,6 +128,12 @@ def import_files(xml):
         res.get(int(1e9))
     log.info('Complete.')
 
+def clean_xml(xml):
+    # A hack to fix invalid xml coming from cghub
+    xml = re.sub('<(\d),', '&lt; \\1', xml)
+    return xml
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', default=os.environ.get('DB_NAME','gdc_datamodel'),
@@ -175,5 +182,7 @@ if __name__ == '__main__':
         xml = open_xml()
     else:
         xml = download_xml()
+
+    xml = clean_xml(xml)
     import_files(xml)
 
