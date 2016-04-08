@@ -11,6 +11,7 @@ import os
 import time
 from contextlib import contextmanager
 import requests
+from sqlalchemy import or_, not_
 
 from libcloud.storage.drivers.s3 import S3StorageDriver
 from libcloud.storage.drivers.cloudfiles import OpenStackSwiftStorageDriver
@@ -288,6 +289,10 @@ class TCGADCCArchiveSyncer(object):
         # these two also get filled in later
         self.temp_file = None
         self.tarball = None
+        #TODO: Fill this out when we first import the archive
+        # we're now using it when updating an existing, so it should
+        # propagate
+        self.project_id = None
         self.log = get_logger("tcga_dcc_sync_" +
                               str(os.getpid()))
 
@@ -314,6 +319,8 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("looking up old versions of archive %s in postgres", submitter_id)
         all_versions = self.graph.nodes(Archive)\
                                  .props({"submitter_id": submitter_id})\
+                                 .filter(or_(not_(Archive._props.has_key('project_id')),
+                                 Archive._props['project_id'].astext==self.project_id))\
                                  .not_sysan({"to_delete": True})\
                                  .all()
         old_versions = [version for version in all_versions
@@ -341,8 +348,10 @@ class TCGADCCArchiveSyncer(object):
         self.log.info("looking for archive %s in postgres", self.name)
         maybe_this_archive = self.graph.nodes(Archive).props(
             submitter_id=submitter_id,
-            revision=self.archive["revision"]
-        ).scalar()
+            revision=self.archive["revision"])\
+            .filter(or_(not_(Archive._props.has_key('project_id')),
+            Archive._props['project_id'].astext==self.project_id))\
+            .scalar()
         if maybe_this_archive:
             node_id = maybe_this_archive.node_id
             self.log.info("found archive %s in postgres as node %s, not inserting", self.name, maybe_this_archive)
@@ -639,6 +648,7 @@ class TCGADCCArchiveSyncer(object):
             with self.graph.session_scope():
                 self.log.info("Archive with id %s requested, finding in database", self.archive_id)
                 archive_node = self.graph.nodes(Archive).ids(self.archive_id).one()
+
                 assert archive_node.label == "archive"
                 self.log.info("Finding matching archive from DCC")
                 self.log.info("Archive name = %s" % archive_node.system_annotations["archive_name"])
@@ -770,6 +780,8 @@ class TCGADCCArchiveSyncer(object):
         if not self.get_archive():
             # if this returns None, it means we're all done
             return
+        if self.archive_node:
+            self.project_id = self.archive_node.project_id
         self.log.info("syncing archive %s", self.name)
         self.archive["non_tar_url"] = self.archive["dcc_archive_url"].replace(".tar.gz", "")
         self.acl = ["phs000178"] if self.archive["protected"] else ["open"]

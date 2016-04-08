@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<test:test xmlns:test="http://www.w3.org/TR/html4/">
+<test:test xmlns:test="http://www.w3.org/TR/html4/" xmlns:admin="http://tcga.nci/bcr/xml/administration/2.6">
+  <admin:admin>
+        <admin:project_code xsd_ver="">TCGA</admin:project_code>
+        <admin:disease_code xsd_ver="2.6">LAML</admin:disease_code>
+  </admin:admin>
   <test:level1>
     <test:id>level1</test:id>
     <test:text1.1>1a</test:text1.1>

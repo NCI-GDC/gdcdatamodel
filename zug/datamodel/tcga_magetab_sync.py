@@ -12,6 +12,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound
 import requests
 from cdisutils.log import get_logger
+from sqlalchemy import or_, not_
 
 from psqlgraph import Node
 
@@ -242,6 +243,8 @@ class TCGAMAGETABSyncer(object):
         self.edges_from = 0
         self._cache_path = cache_path
         self._mapping = None
+        # this is filled out when we get the archive node to work on 
+        self.project_id = None
 
     @property
     def revision(self):
@@ -354,9 +357,11 @@ class TCGAMAGETABSyncer(object):
                 # dcc file
                 submitter_id, revision = get_submitter_id_and_rev(archive_name)
                 archive_node = self.graph.nodes(Archive)\
-                                         .props({"submitter_id": submitter_id,
-                                                 "revision": revision})\
-                                         .one()
+                                   .props({"submitter_id": submitter_id,
+                                           "revision": revision})\
+                                   .filter(or_(not_(Archive._props.has_key('project_id')),
+                                    Archive._props['project_id'].astext==self.project_id))\
+                                   .one()
                 file_node = self.graph.nodes(File)\
                                       .props({"file_name": file_name})\
                                       .with_edge_to_node(
@@ -376,6 +381,8 @@ class TCGAMAGETABSyncer(object):
         elif barcode:
             bio = self.graph.nodes(Node.get_subclass(label))\
                             .props({"submitter_id": barcode})\
+                            .filter(or_(not_(Node._props.has_key('project_id')),
+                             Node._props['project_id'].astext==self.project_id))\
                             .one()
             self.log.info("found biospecemin by barcode: %s", bio)
 
@@ -480,6 +487,7 @@ class TCGAMAGETABSyncer(object):
                                     .ids(try_archive.node_id)\
                                     .with_for_update(nowait=True).one()
                 self.archive = archive
+                self.project_id = archive.project_id
                 return self.archive
             except OperationalError:
                 self.graph.current_session().rollback()
