@@ -2,6 +2,7 @@ import os
 from boto.s3.connection import OrdinaryCallingFormat
 import pandas as pd
 import numpy as np
+from sqlalchemy import or_, not_
 
 from boto.s3.key import Key
 Key.BufferSize = 10 * 1024 * 1024
@@ -86,6 +87,8 @@ class MAFReconciler(object):
         else:
             self.signpost = signpost
         self.log = get_logger("maf_reconciler")
+        # this is set later when we pull up the file
+        self.project_id = None
 
     def get_file_data(self, file):
         """
@@ -201,6 +204,8 @@ class MAFReconciler(object):
         try:
             analyte = self.graph.nodes(Analyte)\
                             .props(submitter_id=barcode)\
+                            .filter(or_(not_(Analyte._props.has_key('project_id')),
+                            Analyte._props['project_id'].astext==self.project_id))\
                             .scalar()
         except Exception as e:
             self.log.error("Unable to get one value for barcode %s" % barcode)
@@ -240,7 +245,10 @@ class MAFReconciler(object):
         # first try to lookup by barcode
         try:
             aliquot = self.graph.nodes(Aliquot)\
-                            .props(submitter_id=barcode).scalar()
+                            .props(submitter_id=barcode)\
+                            .filter(or_(not_(Aliquot._props.has_key('project_id')),
+                            Aliquot._props['project_id'].astext==self.project_id))\
+                            .scalar()
         except Exception as e:
             self.log.error("Unable to get one result for %s, %s" % 
                 (barcode, uuid)
@@ -333,4 +341,5 @@ class MAFReconciler(object):
                                   .all()
         self.log.info("Reconciling %s MAFs", len(maf_files))
         for file in maf_files:
+            self.project_id = file.project_id
             self.reconcile(file)

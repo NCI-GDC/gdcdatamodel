@@ -4,7 +4,7 @@ from gdcdatamodel.models import (
     FileMemberOfArchive,
 )
 import os
-
+from sqlalchemy import or_, not_
 
 class TCGADCCToBiospecimen(object):
 
@@ -19,6 +19,7 @@ class TCGADCCToBiospecimen(object):
         self.pg_driver = pg_driver
         self.log = get_logger('tcga_dcc_to_biospecimen_'
                               + str(os.getpid()) + '_' + self.name)
+        self.project_id = self.file_node.project_id 
 
     @property
     def name(self):
@@ -51,7 +52,11 @@ class TCGADCCToBiospecimen(object):
                     [attrs[possible_attr + '_uuid']]).first()
             elif possible_attr + '_barcode' in attrs:
                 node = self.pg_driver.nodes().props(
-                    {'submitter_id': attrs[possible_attr + '_barcode']}).first()
+                    {'submitter_id': attrs[possible_attr + '_barcode']})\
+                    .filter(or_(not_(Node._props.has_key('project_id')),
+                    Node._props['project_id'].astext==self.project_id))\
+                    .scalar()
+                    #{'submitter_id': attrs[possible_attr + '_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)
@@ -65,7 +70,8 @@ class TCGADCCToBiospecimen(object):
                     [attrs['_case_uuid']]).first()
             elif '_case_barcode' in attrs:
                 node = self.pg_driver.nodes().props(
-                    {'submitter_id': attrs['_case_barcode']}).first()
+                    {'submitter_id': attrs['_case_barcode']}).scalar()
+                    #{'submitter_id': attrs['_case_barcode']}).first()
             if node:
                 self.log.info("find %s %s", node.label, node['submitter_id'])
                 nodes.append(node)
