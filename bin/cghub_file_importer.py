@@ -4,6 +4,7 @@ import re
 import logging
 import argparse
 import uuid
+import datetime
 from gdcdatamodel import models
 from zug.datamodel import cghub2psqlgraph, cgquery, cghub_xml_mapping, cghub_xml_metadata
 from multiprocessing import Pool
@@ -90,19 +91,14 @@ def open_xml():
 
 def download_xml():
     # Download the file list
-    if args.all:
-        log.info('Importing all files from TCGA...'.format(args.days))
-        xml = cgquery.get_all(all_phsids)
-    else:
-        log.info('Rebasing past {} days from TCGA...'.format(args.days))
-        xml = cgquery.get_changes_last_x_days(args.days, all_phsids)
+    log.info('Rebasing past {} days from TCGA...'.format(args.days))
+    xml = cgquery.get_changes_last_x_days(args.days, all_phsids)
 
     if not xml:
         raise Exception('No xml found')
     else:
         log.info('File list downloaded.')
     return xml
-
 
 def import_files(xml):
     # Split the file into results
@@ -127,6 +123,16 @@ def import_files(xml):
         res = Pool(args.processes).map_async(process, chunks)
         res.get(int(1e9))
     log.info('Complete.')
+
+def import_all():
+    row = 0
+    row_size = args.row_size
+    xml = cgquery.get_n_rows(row, row_size, all_phsids)
+    while '<downloadable_file_count>0</downloadable_file_count>' not in xml:
+        xml = clean_xml(xml)
+        import_files(xml)
+        row += row_size
+        xml = cgquery.get_n_rows(row, row_size, all_phsids)
 
 def clean_xml(xml):
     # A hack to fix invalid xml coming from cghub
@@ -155,6 +161,8 @@ if __name__ == '__main__':
                         type=str, help='the bucket for s3')
     parser.add_argument('--all', action='store_true',
                         help='import all the files')
+    parser.add_argument('-r', '--row_size', default=256, type=int,
+                        help='the number of rows to import at a time')
     parser.add_argument('-d', '--days', default=1, type=int,
                         help='time in days days for incremental import')
     parser.add_argument('-n', '--processes', default=8, type=int,
@@ -181,9 +189,12 @@ if __name__ == '__main__':
 
     if args.file:
         xml = open_xml()
+        xml = clean_xml(xml)
+        import_files(xml)
+    elif args.all:
+        import_all()
     else:
         xml = download_xml()
-
-    xml = clean_xml(xml)
-    import_files(xml)
+        xml = clean_xml(xml)
+        import_files(xml)
 
