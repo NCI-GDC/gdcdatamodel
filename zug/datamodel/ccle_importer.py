@@ -10,6 +10,7 @@ from gdcdatamodel.models import (
         Project,
         Sample,
 )
+import xlrd
 import psqlgraph
 from . import PKG_DIR
 from sqlalchemy.orm.exc import NoResultFound
@@ -17,7 +18,9 @@ from cdisutils.log import get_logger
 
 class CCLEImporter(object):
 
-    def __init__(self, host, user, password, db, disease_path='diseaseStudy.txt'):
+    def __init__(self, host, user, password, db,
+                  excel_path='ccle_data.xlsx',
+                  disease_path='diseaseStudy.txt'):
 
         self.log = get_logger("ccle_import")
         self.g = psqlgraph.PsqlGraphDriver(
@@ -27,12 +30,17 @@ class CCLEImporter(object):
         self.disease_map = self.load_diseases(disease_path)
         self.program_node = None
         self.project_node_map = {}
+        self.data  = xlrd.open_workbook(excel_path).sheet_by_index(0)
 
-        with self.g.session_scope() as session:
-            # Create ccle program and project nodes if they don't exist
-            self.program_node = self.make_program()
-            self.log.info('Creating projects')
-            self.project_node_map = self.make_projects()
+
+    def make_program_project(self):
+        '''
+        Create ccle program and project nodes if they don't exist
+        Separated from __init__ so we can run within a roll-backable scope
+        '''
+        self.program_node = self.make_program()
+        self.log.info('Creating projects')
+        self.project_node_map = self.make_projects()
 
     def load_diseases(self, path):
         '''
@@ -49,111 +57,102 @@ class CCLEImporter(object):
 
         return d_map
 
-    def import_xml_node(self, root):
+    def import_from_excel(self):
+        for rx in range(20, self.data.nrows):
+            self.make_nodes(self.data.row(rx))
+
+    def make_nodes(self, rx):
         '''
-        Processes a <Result> node from cghub
+        Processes a row from the spreadsheet
         '''
-        aliquot_node = self.make_aliquot(root)
-        sample_node = self.make_sample(root)
+        aliquot_node = self.make_aliquot(rx)
+        sample_node = self.make_sample(rx)
         if sample_node not in aliquot_node.samples:
             aliquot_node.samples.append(sample_node)
-        case_node = self.make_case(root)
+        case_node = self.make_case(rx)
         if case_node not in sample_node.cases:
             sample_node.cases.append(case_node)
-        # Try to find corresponding file nodes
-        self.link_files(root, aliquot_node)
 
-    def link_files(self, root, aliquot):
-        '''
-        Tries to find file nodes for the aliquot in the graph and link them
-        '''
-        files = root.xpath('./files/file')
-        for file in files:
-            props = {}
-            for f in file:
-                props[f.tag] = f.text
-            try:
-                f = self.g.nodes(File).props(props).one()
-            except NoResultFound:
-                self.log.info('No file node found: {}'.format(props['filename']))
-            else:
-                aliquot.files.append(f)
-
-    def make_aliquot(self, root):
+    def make_aliquot(self, rx):
         '''
         Make a new aliquot, or return existing
         '''
-        submitter_id = root.xpath('./aliquot_id')[0].text
+        submitter_id = rx[15].value
         n = self.g.nodes(Aliquot).props({'submitter_id':submitter_id}).first()
         if n:
             self.log.info('Aliquot already exists: {}'.format(submitter_id))
             return n
         else:
-            center = root.xpath('./center_name')[0]
-            # TODO Map these
-            if center.text == 'BI':
-                center_code = '08'
-            else:
-                center_code = 'NULL'
+            center = rx[19].value
+            center_code = rx[18].value
             try:
                 center = self.g.nodes(Center).props({'code':center_code}).one()
             except NoResultFound:
                 self.log.warn('Center with id {} not found'.format(center_code))
                 return None
             
-            cancer_code = root.xpath('./disease_abbr')[0].text
+            cancer_code = rx[8].value
             project_id = 'CCLE-{}'.format(cancer_code)
-            analyte_type_id = root.xpath('./analyte_code')[0].text
-            # TODO: Add analyte properties
+            analyte_type = rx[13].value
+            analyte_type_id = rx[12].value
             n = Aliquot(node_id=str(uuid4()),
                         submitter_id=submitter_id,
+                        analyte_type=analyte_type,
+                        analyte_type_id=analyte_type_id,
                         project_id=project_id)
         
             n.centers.append(center)
-
+            self.g.current_session().add(n)
             self.log.info('Made new aliquot: {}'.format(submitter_id))
         return n
 
-    def make_sample(self, root):
+    def make_sample(self, rx):
         '''
         Makes a new sample node
         '''
-        submitter_id = root.xpath('./legacy_sample_id')[0].text
+        submitter_id = rx[9].value
         n = self.g.nodes(Sample).props({'submitter_id':submitter_id}).first()
         if n:
             self.log.info('Sample already exists: {}'.format(submitter_id))
             return n
         else:
-            sample_type_code = root.xpath('./sample_type')[0].text
-            # TODO Map the type code to type
-            cancer_code = root.xpath('./disease_abbr')[0].text
+            sample_type = rx[11].value
+            if sample_type.lower().strip() == 'cell line':
+                sample_type = 'Cell Lines'
+            elif sample_type.lower().strip() == 'ebv immortalized':
+                sample_type = 'EBV Immortalized Normal'
+
+            sample_type_code = rx[10].value
+
+            cancer_code = rx[8].value
 
             project_id = 'CCLE-{}'.format(cancer_code)
             
-            n = Sample(node_id=str(uuid4()),
-                      submitter_id=submitter_id,
-                      #sample_type=sample_type,
-                      sample_type_id=str(sample_type_code))
-
+            if str(sample_type_code) == '':
+                n = Sample(node_id=str(uuid4()),
+                          submitter_id=submitter_id)
+            else:
+                n = Sample(node_id=str(uuid4()),
+                          submitter_id=submitter_id,
+                          sample_type=sample_type,
+                          sample_type_id=str(int(sample_type_code)))
+                self.g.current_session().add(n)
             self.log.info('Made new sample: {}'.format(submitter_id))
 
         return n
 
-    def make_case(self, root):
+    def make_case(self, rx):
         '''
         Make a new case, or return existing
         '''
-        submitter_id = root.xpath('./legacy_sample_id')[0].text
-        # id for sample is same as for case
-        # but with CCLE prefixed and DNA-08 suffixed
-        submitter_id = '-'.join(submitter_id.split('-')[1:-2])
+        submitter_id = rx[2].value
 
         n = self.g.nodes(Case).props({'submitter_id':submitter_id}).first()
         if n:
-            self.log.info('Aliquot already exists: {}'.format(submitter_id))
+            self.log.info('Case already exists: {}'.format(submitter_id))
             return n
         else:
-            cancer_code = root.xpath('./disease_abbr')[0].text
+            cancer_code = rx[8].value
             try:
                 project_node = self.project_node_map[cancer_code]
             except KeyError:
@@ -167,7 +166,7 @@ class CCLEImporter(object):
                     project_id=project_id)
 
             n.projects.append(project_node)
-
+            self.g.current_session().add(n)
             self.log.info('Made new case: {}'.format(submitter_id))
 
         return n
@@ -179,7 +178,7 @@ class CCLEImporter(object):
         '''
         n = self.g.nodes(Program)\
                 .filter(Program._props['name']\
-                    .astext=='Cancer Cell Line Encyclopedia')\
+                    .astext=='CCLE')\
                 .first()
         if n:
             self.log.info('Found CCLE Program')
@@ -187,7 +186,8 @@ class CCLEImporter(object):
         else:
             n = Program(node_id=str(uuid4()),
                         dbgap_accession_number='CCLE',
-                        name='Cancer Cell Line Encyclopedia')
+                        name='CCLE')
+            self.g.current_session().add(n)
             self.log.info('Created new CCLE Program')
         return n
 
@@ -225,6 +225,7 @@ class CCLEImporter(object):
                         state='legacy',
                         dbgap_accession_number='CCLE')
             n.programs.append(self.program_node)
+            self.g.current_session().add(n)
             self.log.info('Created new {} Project'.format(dname))
         return n
 
