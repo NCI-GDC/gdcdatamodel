@@ -59,8 +59,8 @@ diagnosis:
         type: str
 
       age_at_diagnosis:
-        path: //clin_shared:age_at_initial_pathologic_diagnosis|//shared:age_at_initial_pathologic_diagnosis
-        type: int
+        path: ./shared:days_to_birth|./clin_shared:days_to_birth * -1
+        type: float
         term:
 
       days_to_birth:
