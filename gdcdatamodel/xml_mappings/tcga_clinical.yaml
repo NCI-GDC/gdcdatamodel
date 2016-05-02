@@ -68,7 +68,7 @@ diagnosis:
         type: float
 
       days_to_death:
-        path: ./shared:days_to_death|./clin_shared:days_to_death * 365
+        path: ./shared:days_to_death|./clin_shared:days_to_death
         type: float
 
       days_to_last_follow_up:
