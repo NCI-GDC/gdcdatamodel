@@ -61,15 +61,21 @@ diagnosis:
       age_at_diagnosis:
         path: ./shared:days_to_birth|./clin_shared:days_to_birth * -1
         type: float
+        maximum: 32872
+        minimum: 0
         term:
 
       days_to_birth:
         path: ./shared:days_to_birth|./clin_shared:days_to_birth
         type: float
+        minimum: -32872
+        maximum: 0
 
       days_to_death:
         path: ./shared:days_to_death|./clin_shared:days_to_death
         type: float
+        maximum: 32872
+        minimum: 0
 
       days_to_last_follow_up:
         path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
