@@ -16,7 +16,7 @@ GDC datamodel.
 """
 
 from cdisutils.log import get_logger
-from psqlgraph import Node
+from psqlgraph import Node, Edge
 
 logger = get_logger('gdcdatamodel')
 
@@ -35,6 +35,21 @@ RELATED_CASES_CATEGORIES = [
 ]
 
 
+def get_related_case_edge_cls(node):
+    """Returns the Edge class for related cases of a given node
+
+    :param node: The source node (or type(node)) of the edge
+    :returns: Edge subclass
+
+    """
+
+    return next(
+        edge
+        for edge in Edge.__subclasses__()
+        if edge.__name__ == get_related_case_edge_cls_name(node)
+    )
+
+
 def get_related_case_edge_cls_name(node):
     """Standard generation of shortcut edge class name
 
@@ -43,7 +58,7 @@ def get_related_case_edge_cls_name(node):
 
     """
 
-    return '{}RelatesToCase'.format(node._dictionary['title'])
+    return '{}RelatesToCase'.format(node.__class__.__name__)
 
 
 def get_edge_src(edge):
@@ -176,15 +191,14 @@ def cache_related_cases_recursive(node,
     updated_case_ids = set(updated_cases.keys())
     diff = current_case_ids.symmetric_difference(updated_case_ids)
 
-    # If nothing has changed, we don't need to update or recurse
+    # If nothing has changed, we don't need to update or recur
     if not diff:
         return
 
-    # Set the updated case association_proxy
-    setattr(node, RELATED_CASES_LINK_NAME, updated_cases.values())
+    update_cache_edges(node, session, updated_cases)
 
-    to_recurse = [e for e in node.edges_in if e.src]
-    for edge in to_recurse:
+    to_recur = [e for e in node.edges_in if e.src]
+    for edge in to_recur:
         cache_related_cases_recursive(
             get_edge_src(edge),
             session,
@@ -194,6 +208,39 @@ def cache_related_cases_recursive(node,
         )
 
     return
+
+
+def update_cache_edges(node, session, correct_cases):
+    """Creates new edges or deletes old edges"""
+
+    assoc_proxy = getattr(node, RELATED_CASES_LINK_NAME)
+
+    # Get information about the existing edges
+    edge_name = get_related_case_edge_cls_name(node)
+    existing_edges = getattr(node, '_{}_out'.format(edge_name))
+
+    # Remove edges that should no longer exist
+    cases_disconnected = [
+        edge.dst
+        for edge in existing_edges
+        if edge.dst_id not in correct_cases
+    ]
+
+    for case in cases_disconnected:
+        assoc_proxy.remove(case)
+
+    existing_edge_dst_case_ids = {
+        edge.dst_id for edge in existing_edges
+    }
+
+    cases_connected = [
+        case
+        for case_id, case in correct_cases.iteritems()
+        if case_id not in existing_edge_dst_case_ids
+    ]
+
+    for case in cases_connected:
+        assoc_proxy.append(case)
 
 
 def cache_related_cases_on_insert(target,

@@ -207,3 +207,19 @@ class TestCacheRelatedCases(unittest.TestCase):
             sample = g.nodes(md.Sample).one()
 
             assert sample._related_cases == []
+
+    def test_delete_one_parent(self):
+        with g.session_scope() as s:
+            case1 = md.Case('case_id_1')
+            case2 = md.Case('case_id_2')
+            sample = md.Sample('sample_id_1')
+            sample.cases = [case1, case2]
+            s.merge(sample)
+
+        with g.session_scope() as s:
+            case1 = g.nodes(md.Case).ids('case_id_1').one()
+            s.delete(case1)
+
+        with g.session_scope() as s:
+            sample = g.nodes(md.Sample).one()
+            assert sample._related_cases == [case2]
