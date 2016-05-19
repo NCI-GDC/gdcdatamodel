@@ -13,31 +13,31 @@ demographic:
       submitter_id:
         # xpath support concat too, but it will return the suffix
         # if no path is found instead of not found
-        path: ./shared:bcr_patient_barcode
+        path: //*[local-name()='bcr_patient_barcode']
         suffix: _demographic
         type: str
 
       gender:
-        path: ./shared:gender
+        path: //*[local-name()='gender']
         type: str.lower
         default: not reported
 
       race:
-        path: ./shared:race|./clin_shared:race_list/clin_shared:race[1]
+        path: //*[local-name()='race']|./clin_shared:race_list/clin_shared:race[1]
         type: str.lower
         default: not reported
 
       ethnicity:
-        path: ./shared:ethnicity|./clin_shared:ethnicity
+        path: //*[local-name()='ethnicity']
         type: str.lower
         default: not reported
 
       year_of_birth:
-        path: //clin_shared:year_of_initial_pathologic_diagnosis|//shared:year_of_initial_pathologic_diagnosis - //clin_shared:age_at_initial_pathologic_diagnosis|//shared:age_at_initial_pathologic_diagnosis
+        path: //*[local-name()='year_of_initial_pathologic_diagnosis'] - //*[local-name()='age_at_initial_pathologic_diagnosis']
         type: int
 
       year_of_death:
-        path: //clin_shared:year_of_initial_pathologic_diagnosis|//shared:year_of_initial_pathologic_diagnosis + floor(//shared:days_to_death|//clin_shared:days_to_death[last()] div 365)
+        path: //*[local-name()='year_of_initial_pathologic_diagnosis'] + floor(//*[local-name()='days_to_death'] div 365)
         type: int
 
 diagnosis:
@@ -59,55 +59,55 @@ diagnosis:
         type: str
 
       age_at_diagnosis:
-        path: ./shared:days_to_birth|./clin_shared:days_to_birth * -1
+        path: //*[local-name()='days_to_birth'] * -1
         type: float
         maximum: 32872
         minimum: 0
         term:
 
       days_to_birth:
-        path: ./shared:days_to_birth|./clin_shared:days_to_birth
+        path: //*[local-name()='days_to_birth']
         type: float
         minimum: -32872
         maximum: 0
 
       days_to_death:
-        path: ./shared:days_to_death|./clin_shared:days_to_death
+        path: //*[local-name()='days_to_death']
         type: float
         maximum: 32872
         minimum: 0
 
       days_to_last_follow_up:
-        path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
+        path: //*[local-name()='days_to_last_followup']
         type: float
 
       vital_status:
-        path: ./shared:vital_status|./clin_shared:vital_status
+        path: //*[local-name()='vital_status']
         type: str.lower
         default: not reported
 
       primary_diagnosis:
-        path: ./shared:icd_10|./clin_shared:icd_10
+        path: //*[local-name()='histological_type']
         type: str.lower
         default: not reported
 
       morphology:
-        path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
+        path: //*[local-name()='icd_o_3_histology']
         type: str.lower
         default: not reported
 
       tissue_or_organ_of_origin:
-        path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+        path: //*[local-name()='tumor_tissue_site']
         type: str.lower
         default: not reported
 
       site_of_resection_or_biopsy:
-        path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+        path: //*[local-name()='icd_o_3_site']
         type: str.lower
         default: not reported
 
       classification_of_tumor:
-        path: "primary"
+        path: //bio:sample_type
         type: str.lower
         default: not reported
 
@@ -117,32 +117,34 @@ diagnosis:
         type: str.lower
 
       tumor_stage:
-        path: ./shared_stage:stage_event/shared_stage:pathologic_stage
+        path: //*[local-name()='pathologic_stage']
         type: str.lower
         default: not reported
 
       tumor_grade:
-        path: ./shared_stage:gleason_grading/shared_stage:gleason_score
+        path: //shared:neoplasm_histologic_grade
         type: str.lower
         default: not reported
 
       progression_or_recurrence:
-        path: "unknown"
+        path: //*[local-name()='new_tumor_event_after_initial_treatment']
         type: str.lower
         default: not reported
 
       days_to_recurrence:
-        path: "unknown"
+        path: //*[local-name()='days_to_new_tumor_event_after_initial_treatment']
         type: int
+        default: not reported
 
       last_known_disease_status:
-        path: "unknown"
-        type: str
+        path: //*[local-name()='person_neoplasm_cancer_status']
+        type: str.capitalize
         default: not reported
 
       days_to_last_known_disease_status:
-        path: "unknown"
+        path: //*[local-name()='days_to_last_followup']
         type: int
+        default: not reported
 
 exposure:
   - root: //*[local-name()='patient']
@@ -209,25 +211,27 @@ treatment:
         type: str
 
       treatment_or_therapy:
-        path: "unknown"
+        path: ./follow_ups/*/radiation_therapy|./follow_ups/*/postoperative_rx_tx
         term: TBD
         enum:
           - yes
           - no
           - unknown
-        type: str
+          - not reported
+        type: str.lower
+        default: not reported
 
       treatment_intent_type:
-        path: "unknown"
+        path: //shared:regimen_indication[first()]
         term: TBD
         type: str
 
       therapeutic_agents:
-        path: "unknown"
+        path: //rx:drug_name
         term: TBD
-        type: str
+        type: str.lower
 
       days_to_treatment:
-        path: "unknown"
+        path: //rx:days_to_drug_therapy_start[first()]|//rad:days_to_radiation_therapy_start[first()]
         term: TBD
-        type: float
+        type: int
