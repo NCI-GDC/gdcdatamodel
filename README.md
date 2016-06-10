@@ -10,6 +10,22 @@ To install the gdcdatamodel library run the setup script:
 ❯ python setup.py install
 ```
 
+# Jupyter + Graphviz
+
+It's helpful to examine the relationships between nodes visually.  One
+way to do this is to run an Jupyter notebook with a Python2 kernal.
+When used with Graphviz's SVG support, you can view a graphical
+representation of a subgraph directly in a REPL. To do so, install the
+`dev-requirements.txt` dependencies.  There is an example Jupyter
+notebook at `examples/jupyter_example.ipynb` (replicated in
+`examples/jupyter_example.py` for clarity)
+
+```
+pip install -r dev-requirements
+PG_USER=* PG_HOST=* PG_DATABASE=* PG_PASSWORD=*   jupyter notebook examples/jupyter_example.ipynb
+```
+
+
 ## Documentation
 
 ### Visual representation
