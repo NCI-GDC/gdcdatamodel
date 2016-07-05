@@ -8,7 +8,19 @@ from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
 from json import loads, dumps
 from datetime import datetime
+
+import enum
 import pytz
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Text,
+    text,
+)
 
 Base = declarative_base()
 
@@ -90,7 +102,20 @@ class TransactionLog(Base):
         nullable=False,
     )
 
-    project = Column(
+    #: Specifies a non-dry_run transaction that repeated this
+    #: transaction in an attempt to write to the database
+    committed_by = Column(
+        Integer,
+    )
+
+    #: Was this transaction a dry_run (for validation)
+    is_dry_run = Column(
+        Boolean,
+        nullable=False,
+    )
+
+    #: Has this transaction succeeded, errored, failed, etc.
+    state = Column(
         Text,
         nullable=False,
     )
