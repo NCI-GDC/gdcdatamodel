@@ -186,7 +186,7 @@ exposure:
         type: float
 
       bmi:
-        path: "./clin_shared:weight div (./clin_shared:height * ./clin_shared:height)"
+        path: "./clin_shared:weight div (./clin_shared:height * ./clin_shared:height * 0.0001)"
         type: float
 
 treatment:
