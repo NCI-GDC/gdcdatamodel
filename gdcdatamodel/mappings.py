@@ -19,34 +19,40 @@ TOP_LEVEL_IDS = ['sample', 'portion', 'analyte', 'aliquot', 'slide']
 MULTIFIELDS = {
     'project': ['code', 'disease_type', 'name', 'primary_site'],
     'annotation': ['annotation_id', 'entity_id'],
-    'files': ['file_id', 'file_name'],
-    'case': ['case_id', 'submitter_id'],
+    'files': ['file_name'],
+    'case': ['submitter_id'],
 }
 
 
 def index_settings():
-    return {"settings":
-            {"analysis":
-             {"analyzer":
-              {"id_search":
-               {"tokenizer": "whitespace",
-                "filter": ["lowercase"],
-                "type": "custom"},
-               "id_index": {
-                   "tokenizer": "whitespace",
-                   "filter": [
-                       "lowercase",
-                       "edge_ngram"
-                   ],
-                   "type": "custom"
-               }},
-              "filter": {
-                  "edge_ngram": {
-                      "side": "front",
-                      "max_gram": 20,
-                      "min_gram": 2,
-                      "type": "edge_ngram"
-                  }}}}}
+    return {"settings": {"analysis": {"analyzer": {
+        "id_search": {
+            "tokenizer": "whitespace",
+            "filter": ["lowercase"],
+            "type": "custom"},
+        "project_id_search": {
+            "tokenizer": "whitespace",
+            "filter": ["lowercase", "project_delimiter"],
+            "type": "custom"},
+        "id_index": {
+            "tokenizer": "whitespace",
+            "filter": ["lowercase", "edge_ngram"],
+            "type": "custom"}
+    }, "filter": {
+        "edge_ngram": {
+            "side": "front",
+            "max_gram": 20,
+            "min_gram": 2,
+            "type": "edge_ngram"},
+        "project_delimiter": {
+            "type": "word_delimiter",
+            "catenate_numbers": False,
+            "generate_number_parts": False,
+            "split_on_case_change": False,
+            "stem_english_possessive": False,
+            "split_on_numerics": False,
+            "preserve_original": True}
+    }}}}
 
 
 def _get_header(source):
@@ -292,6 +298,7 @@ def get_project_es_mapping():
     # Patch project
     patch_project(project.properties)
     project.properties.update(multifield('project_id'))
+    project.properties.project_id.search_analyzer = "project_delimeter"
 
     # Summary
     summary = project.properties.summary.properties
