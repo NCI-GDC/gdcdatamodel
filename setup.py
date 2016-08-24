@@ -23,7 +23,7 @@ setup(
     dependency_links=[
         'git+https://github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@a00ec5c0d3542e6f959e82fed0e46782479c6885#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@5152302276dead9692240ddd735272949833c2ca#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@f47fc98108b59c82fdd888edb2daa0ff1f787e35#egg=gdcdictionary',
     ],
     entry_points={
         'console_scripts': [
