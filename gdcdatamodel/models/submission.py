@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, Integer, Text, DateTime, BigInteger
 from sqlalchemy import Column, Text, DateTime, text, event
 from sqlalchemy.dialects.postgres import ARRAY, JSONB
 from sqlalchemy import Table, Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, deferred
 from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
 from json import loads, dumps
@@ -109,10 +109,10 @@ class TransactionLog(Base):
         server_default=text('now()'),
     )
 
-    canonical_json = Column(
+    canonical_json = deferred(Column(
         JSONB,
         nullable=False,
-    )
+    ))
 
 
 class TransactionSnapshot(Base):
@@ -208,14 +208,14 @@ class TransactionDocument(Base):
         nullable=False,
     )
 
-    doc = Column(
+    doc = deferred(Column(
         Text,
         nullable=False,
-    )
+    ))
 
-    response_json = Column(
+    response_json = deferred(Column(
         JSONB,
-    )
+    ))
 
     transaction = relationship(
         "TransactionLog",
