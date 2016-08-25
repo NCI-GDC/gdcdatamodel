@@ -1,15 +1,19 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer, Text, DateTime, BigInteger
-from sqlalchemy import Column, Text, DateTime, text, event
-from sqlalchemy.dialects.postgres import ARRAY, JSONB
-from sqlalchemy import Table, Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship, backref, deferred
-from sqlalchemy import func
-from sqlalchemy.ext.hybrid import hybrid_property
-from json import loads, dumps
-from datetime import datetime
+# -*- coding: utf-8 -*-
+"""
+gdcdatamodel.models.submission
+----------------------------------
 
-import enum
+Models for submission TransactionLogs
+"""
+
+from datetime import datetime
+from json import loads, dumps
+from sqlalchemy import func
+from sqlalchemy.dialects.postgres import JSONB
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship, deferred
+
 import pytz
 
 from sqlalchemy import (
