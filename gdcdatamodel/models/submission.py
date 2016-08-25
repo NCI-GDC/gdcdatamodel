@@ -1,14 +1,30 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer, Text, DateTime, BigInteger
-from sqlalchemy import Column, Text, DateTime, text, event
-from sqlalchemy.dialects.postgres import ARRAY, JSONB
-from sqlalchemy import Table, Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship, backref, deferred
-from sqlalchemy import func
-from sqlalchemy.ext.hybrid import hybrid_property
-from json import loads, dumps
+# -*- coding: utf-8 -*-
+"""
+gdcdatamodel.models.submission
+----------------------------------
+
+Models for submission TransactionLogs
+"""
+
 from datetime import datetime
+from json import loads, dumps
+from sqlalchemy import func
+from sqlalchemy.dialects.postgres import JSONB
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship, deferred
+
 import pytz
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Text,
+    text,
+)
 
 Base = declarative_base()
 
@@ -90,7 +106,20 @@ class TransactionLog(Base):
         nullable=False,
     )
 
-    project = Column(
+    #: Specifies a non-dry_run transaction that repeated this
+    #: transaction in an attempt to write to the database
+    committed_by = Column(
+        Integer,
+    )
+
+    #: Was this transaction a dry_run (for validation)
+    is_dry_run = Column(
+        Boolean,
+        nullable=False,
+    )
+
+    #: Has this transaction succeeded, errored, failed, etc.
+    state = Column(
         Text,
         nullable=False,
     )
