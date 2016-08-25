@@ -10,7 +10,7 @@ from datetime import datetime
 from json import loads, dumps
 from sqlalchemy import func
 from sqlalchemy.dialects.postgres import JSONB
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, deferred
 
@@ -22,6 +22,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    Index,
     Text,
     text,
 )
@@ -35,6 +36,19 @@ def datetime_to_unix(dt):
 
 class TransactionLog(Base):
     __tablename__ = 'transaction_logs'
+
+    @declared_attr
+    def __table_args__(cls):
+        tbl = cls.__tablename__
+        return (
+            Index('{}_program_idx'.format(tbl), 'program'),
+            Index('{}_project_idx'.format(tbl), 'project'),
+            Index('{}_is_dry_run_idx'.format(tbl), 'is_dry_run'),
+            Index('{}_committed_by_idx'.format(tbl), 'committed_by'),
+            Index('{}_closed_idx'.format(tbl), 'closed'),
+            Index('{}_state_idx'.format(tbl), 'state'),
+            Index('{}_submitter_idx'.format(tbl), 'submitter'),
+        )
 
     def __repr__(self):
         return "<TransactionLog({}, {})>".format(
@@ -121,6 +135,12 @@ class TransactionLog(Base):
     #: Has this transaction succeeded, errored, failed, etc.
     state = Column(
         Text,
+        nullable=False,
+    )
+
+    closed = Column(
+        Boolean,
+        default=False,
         nullable=False,
     )
 
