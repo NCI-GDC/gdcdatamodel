@@ -22,7 +22,7 @@ class Notification(Base):
     )
 
     def __repr__(self):
-       return "<Notification(id='{}', level='{}', message='{}')>" % (
+       return "<Notification(id='{}', level='{}', message='{}')>".format(
            self.id, self.level, self.message)
 
     def to_json(self):
