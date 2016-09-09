@@ -3,8 +3,13 @@ python:
   - "2.7"
 addons:
   postgresql: '9.4'
-before_script:
+
+install:
+    - pip install -r requirements.txt
     - yes | python setup.py install
+
+before_script:
     - python bin/destroy_and_setup_psqlgraph.py
     - pip freeze
-script: "nosetests -v"
+
+script: "py.test -v"
