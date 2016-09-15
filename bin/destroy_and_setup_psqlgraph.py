@@ -71,31 +71,7 @@ def create_tables(host, user, password, database):
         user=user, host=host, pwd=password, db=database))
     create_all(engine)
     versioned_nodes.Base.metadata.create_all(engine)
-
-
-def create_indexes(host, user, password, database):
-    print('Creating indexes')
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database))
-    index = lambda t, c: ["CREATE INDEX ON {} ({})".format(t, x) for x in c]
-    for scls in Node.get_subclasses():
-        tablename = scls.__tablename__
-        map(engine.execute, index(
-            tablename, [
-                'node_id',
-            ]))
-        map(engine.execute, [
-            "CREATE INDEX ON {} USING gin (_sysan)".format(tablename),
-            "CREATE INDEX ON {} USING gin (_props)".format(tablename),
-            "CREATE INDEX ON {} USING gin (_sysan, _props)".format(tablename),
-        ])
-    for scls in Edge.get_subclasses():
-        map(engine.execute, index(
-            scls.__tablename__, [
-                'src_id',
-                'dst_id',
-                'dst_id, src_id',
-            ]))
+    submission.Base.metadata.create_all(engine)
 
 if __name__ == '__main__':
 
@@ -122,4 +98,3 @@ if __name__ == '__main__':
     setup_database(args.user, args.password, args.database,
                    no_drop=args.no_drop, no_user=args.no_user)
     create_tables(args.host, args.user, args.password, args.database)
-    create_indexes(args.host, args.user, args.password, args.database)
