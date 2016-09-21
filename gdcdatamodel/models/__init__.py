@@ -319,6 +319,7 @@ def NodeFactory(_id, schema):
     attributes['_dictionary'] = {
         'category': schema.get('category'),
         'title': schema.get('title'),
+        'submittable': schema.get('submittable', False),
     }
 
     # _pg_links are out_edges, links TO other types
