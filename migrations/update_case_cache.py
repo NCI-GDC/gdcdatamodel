@@ -9,8 +9,6 @@ Functionality to fix stale case caches in _related_cases edge tables.
 from gdcdatamodel.models import Case
 
 
-CASE_NEIGHBORS = {link['src_type'] for link in Case._pg_backrefs.values()}
-
 
 def update_related_cases(driver, node_id):
     """Removes and re-adds the edge between the given node and it's parent
@@ -58,7 +56,7 @@ def update_cache_cache_tree(driver, case):
     """
 
     visited = set()
-    with driver.session_scope() as session:
+    with driver.session_scope():
         for neighbor in case.edges_in:
             if neighbor.src_id in visited:
                 continue

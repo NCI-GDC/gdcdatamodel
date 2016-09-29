@@ -1,8 +1,11 @@
 language: python
+
 python:
   - "2.7"
+
 addons:
   postgresql: '9.4'
+
 before_script:
     - yes | python setup.py install
     - python bin/destroy_and_setup_psqlgraph.py
