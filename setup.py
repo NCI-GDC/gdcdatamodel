@@ -5,7 +5,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pytz==2016.4',
-        'avro==1.7.7',
         'graphviz==0.4.2',
         'jsonschema==2.5.1',
         'psqlgraph',
@@ -15,8 +14,6 @@ setup(
     ],
     package_data={
         "gdcdatamodel": [
-            "*.avsc",
-            "avro/schemata/*.avsc",
             "xml_mappings/*.yaml",
         ]
     },
