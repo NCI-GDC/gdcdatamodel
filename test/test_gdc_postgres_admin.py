@@ -3,6 +3,7 @@
 Tests for gdcdatamodel.gdc_postgres_admin module
 """
 
+import argparse
 import logging
 import unittest
 
@@ -40,9 +41,14 @@ class TestGDCPostgresAdmin(unittest.TestCase):
     ]
 
     g = PsqlGraphDriver(host, user, '', database)
-    root_con_str = "postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd='', db=database)
-    engine = pgadmin.create_engine(root_con_str)
+
+    engine = pgadmin.get_engine(
+        user=user,
+        host=host,
+        password='',
+        database=database,
+        schema='public',
+    )
 
     @classmethod
     def tearDownClass(cls):
@@ -122,6 +128,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         def blocker():
             with self.g.session_scope() as s:
                 s.merge(models.Case('1'))
+                s.flush()
                 q.put(0)  # Tell main thread we're ready
                 q.get()   # Wait for main thread to tell us to exit
 

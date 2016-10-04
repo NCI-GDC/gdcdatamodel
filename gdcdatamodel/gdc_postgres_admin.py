@@ -29,6 +29,8 @@ logging.basicConfig()
 logger = logging.getLogger("gdc_postgres_admin")
 logger.setLevel(logging.INFO)
 
+SCHEMAS = ['public', 'submitted', 'released']
+
 name_root = "table_creator_"
 app_name = "{}{}".format(name_root, random.randint(1000, 9999))
 no_kill_list = []
@@ -111,12 +113,22 @@ def execute(engine, sql, *args, **kwargs):
     return engine.execute(statement, *args, **kwargs)
 
 
-def get_engine(host, user, password, database):
+def get_engine(user, host, password, database, schema):
+    """Returns postgres engine given cli args :param:`args`
+
+    :param namespace args: Argparser args namespace
+
+    """
+
     connect_args = {"application_name": app_name}
     con_str = "postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database
+        user=user, host=host, pwd=password, db=database,
     )
-    return create_engine(con_str, connect_args=connect_args)
+    engine = create_engine(con_str, connect_args=connect_args)
+    engine.execute(sa.sql.text("set search_path to :search_path"),
+                   search_path=schema)
+
+    return engine
 
 
 def execute_for_all_graph_tables(engine, sql, *args, **kwargs):
@@ -292,14 +304,15 @@ def create_tables(engine, delay, retries):
         create_tables(engine, delay, retries-1)
 
 
-def subcommand_create(args):
+def subcommand_create(args, schema):
     """Idempotently/safely create ALL tables in database that are required
     for the GDC.  This command will not delete/drop any data.
 
     """
 
     logger.info("Running subcommand 'create'")
-    engine = get_engine(args.host, args.user, args.password, args.database)
+    engine = get_engine(args.user, args.host, args.password,
+                        args.database, schema)
     kwargs = dict(
         engine=engine,
         delay=args.delay,
@@ -312,7 +325,7 @@ def subcommand_create(args):
         return create_tables(**kwargs)
 
 
-def subcommand_grant(args):
+def subcommand_grant(args, schema):
     """Grant permissions to a user.
 
     Argument ``--read`` will grant users read permissions
@@ -320,7 +333,8 @@ def subcommand_grant(args):
     """
 
     logger.info("Running subcommand 'grant'")
-    engine = get_engine(args.host, args.user, args.password, args.database)
+    engine = get_engine(args.user, args.host, args.password,
+                        args.database, schema)
 
     assert args.read or args.write, 'No premission types/users specified.'
 
@@ -335,7 +349,7 @@ def subcommand_grant(args):
             grant_write_permissions_to_graph(engine, user)
 
 
-def subcommand_revoke(args):
+def subcommand_revoke(args, schema):
     """Grant permissions to a user.
 
     Argument ``--read`` will revoke users' read permissions
@@ -343,7 +357,9 @@ def subcommand_revoke(args):
     """
 
     logger.info("Running subcommand 'revoke'")
-    engine = get_engine(args.host, args.user, args.password, args.database)
+
+    engine = get_engine(args.user, args.host, args.password,
+                        args.database, schema)
 
     if args.read:
         users_read = [u for u in args.read.split(',') if u]
@@ -365,6 +381,8 @@ def add_base_args(subparser):
                            required=True, help="psql test database")
     subparser.add_argument("-P", "--password", type=str, action="store",
                            default='', help="psql test password")
+    subparser.add_argument("-S", "--schemas", type=str, action="store",
+                           nargs='+', default=SCHEMAS, help="psql schemas")
     return subparser
 
 
@@ -427,18 +445,27 @@ def get_parser():
     return parser
 
 
+def lookup_subcommand(args):
+    return {
+        'graph-create': subcommand_create,
+        'graph-grant': subcommand_grant,
+        'graph-revoke': subcommand_revoke,
+    }[args.subcommand]
+
+
 def main(args=None):
     args = args or get_parser().parse_args()
 
     logger.info("[ HOST     : %-10s ]", args.host)
     logger.info("[ DATABASE : %-10s ]", args.database)
+    logger.info("[ SCHEMA   : %-10s ]", args.schemas)
     logger.info("[ USER     : %-10s ]", args.user)
 
-    return_value = {
-        'graph-create': subcommand_create,
-        'graph-grant': subcommand_grant,
-        'graph-revoke': subcommand_revoke,
-    }[args.subcommand](args)
+    subcommand = lookup_subcommand(args)
+    return_values = [
+        subcommand(args, schema)
+        for schema in args.schemas
+    ]
 
     logger.info("Done.")
-    return return_value
+    return return_values

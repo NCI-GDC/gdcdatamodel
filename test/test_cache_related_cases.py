@@ -27,7 +27,6 @@ class TestCacheRelatedCases(unittest.TestCase):
         for table in Edge.get_subclass_table_names():
             if table != Edge.__tablename__:
                 conn.execute('delete from {}'.format(table))
-        conn.execute('delete from versioned_nodes')
         conn.execute('delete from _voided_nodes')
         conn.execute('delete from _voided_edges')
         conn.close()
