@@ -259,8 +259,9 @@ def create_tables_force(engine, delay, retries):
     p.start()
 
     # Wait up to :param:`delay` seconds
-    for _ in range(delay):
+    for _ in range(delay+2):
         time.sleep(1)
+        logger.info('Waiting for completion...')
         if not p.is_alive():
             break
 
@@ -301,10 +302,7 @@ def create_tables(engine, delay, retries):
         if retries <= 0:
             raise RuntimeError('Max retries exceeded')
 
-        logger.info(
-            'Trying again in {} seconds ({} retries remaining)'
-            .format(delay, retries))
-        time.sleep(delay)
+        logger.info('Trying again (%s retries remaining)', retries)
 
         create_tables(engine, delay, retries-1)
 
