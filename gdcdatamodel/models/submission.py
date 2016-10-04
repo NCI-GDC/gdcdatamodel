@@ -48,6 +48,7 @@ class TransactionLog(Base):
             Index('{}_closed_idx'.format(tbl), 'closed'),
             Index('{}_state_idx'.format(tbl), 'state'),
             Index('{}_submitter_idx'.format(tbl), 'submitter'),
+            Index('{}_project_id_idx'.format(tbl), cls.program+'_'+cls.project),
         )
 
     def __repr__(self):

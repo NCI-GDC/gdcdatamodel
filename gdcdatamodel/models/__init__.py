@@ -43,7 +43,7 @@ from sqlalchemy.ext.hybrid import (
     hybrid_property,
 )
 
-from caching import (
+from .caching import (
     RELATED_CASES_CATEGORIES,
     RELATED_CASES_LINK_NAME,
     cache_related_cases_on_update,
@@ -52,6 +52,12 @@ from caching import (
     related_cases_from_cache,
     related_cases_from_parents,
 )
+
+from .indexes import (
+    cls_add_indexes,
+    get_secondary_key_indexes,
+)
+
 
 logger = get_logger('gdcdatamodel')
 
@@ -289,6 +295,8 @@ def cls_inject_secondary_keys(cls, schema):
     _secondary_keys._is_pg_property = False
     cls._secondary_keys = _secondary_keys
     cls._secondary_keys_dicts = _secondary_keys_dicts
+
+    cls_add_indexes(cls, get_secondary_key_indexes(cls))
 
 
 def NodeFactory(_id, schema):
