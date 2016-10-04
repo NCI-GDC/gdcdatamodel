@@ -3,6 +3,7 @@
 Tests for gdcdatamodel.gdc_postgres_admin module
 """
 
+import argparse
 import logging
 import unittest
 
@@ -40,9 +41,14 @@ class TestGDCPostgresAdmin(unittest.TestCase):
     ]
 
     g = PsqlGraphDriver(host, user, '', database)
-    root_con_str = "postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd='', db=database)
-    engine = pgadmin.create_engine(root_con_str)
+
+    engine = pgadmin.get_engine(
+        user=user,
+        host=host,
+        password='',
+        database=database,
+        schema='public',
+    )
 
     @classmethod
     def tearDownClass(cls):
@@ -70,7 +76,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
     def create_all_tables(cls):
         parser = pgadmin.get_parser()
         args = parser.parse_args([
-            'graph-create', '--delay', '1', '--retries', '0', '--force'
+            'graph-create', '--delay', '10', '--retries', '0', '--force'
         ] + cls.base_args)
         pgadmin.main(args)
 
@@ -93,7 +99,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test simple table creation"""
 
         pgadmin.main(pgadmin.get_parser().parse_args([
-            'graph-create', '--delay', '1', '--retries', '0'
+            'graph-create', '--delay', '10', '--retries', '0'
         ] + self.base_args))
 
         self.engine.execute('SELECT * from node_case')
@@ -102,7 +108,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test idempotency of table creation"""
 
         pgadmin.main(pgadmin.get_parser().parse_args([
-            'graph-create', '--delay', '1', '--retries', '0'
+            'graph-create', '--delay', '10', '--retries', '0'
         ] + self.base_args))
 
         self.engine.execute('SELECT * from node_case')
@@ -113,7 +119,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         q = Queue()  # to communicate with blocking process
 
         args = pgadmin.get_parser().parse_args([
-            'graph-create', '--delay', '1', '--retries', '1'
+            'graph-create', '--delay', '3', '--retries', '1'
         ] + self.base_args)
         pgadmin.main(args)
 
@@ -122,6 +128,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         def blocker():
             with self.g.session_scope() as s:
                 s.merge(models.Case('1'))
+                s.flush()
                 q.put(0)  # Tell main thread we're ready
                 q.get()   # Wait for main thread to tell us to exit
 
@@ -142,7 +149,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         q = Queue()  # to communicate with blocking process
 
         args = pgadmin.get_parser().parse_args([
-            'graph-create', '--delay', '1', '--retries', '1', '--force'
+            'graph-create', '--delay', '3', '--retries', '1', '--force'
         ] + self.base_args)
         pgadmin.main(args)
 

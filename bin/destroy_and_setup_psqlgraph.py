@@ -1,125 +1,171 @@
-import argparse
+"""
+This is a one-time use script to set up a fresh install of Postgres 9.4
+Needs to be run as the postgres user.
+"""
+
+
+from gdcdatamodel.models.misc import FileReport
+from gdcdatamodel.models.reports import GDCReport
+from gdcdatamodel.models.notifications import Notification
 from sqlalchemy import create_engine
+
 import logging
 
-from gdcdatamodel.models import *
-from psqlgraph import create_all, Node, Edge
+from gdcdatamodel.models.submission import (
+    TransactionLog,
+    TransactionSnapshot,
+    TransactionDocument,
+)
+
+from psqlgraph import (
+    PsqlGraphDriver,
+    create_all,
+    Node,
+    Edge,
+    VoidedNode,
+    VoidedEdge,
+)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("setup")
+
+
+POSTGRES_SETTINGS = {
+    "live": {
+        'host': "localhost",
+        'user': "test",
+        'password': "test",
+        'database': "automated_test",
+        'search_path': 'public',
+    },
+    "submitted": {
+        'host': "localhost",
+        'user': "test",
+        'password': "test",
+        'database': "automated_test",
+        'search_path': 'submitted',
+    },
+    "released": {
+        'host': "localhost",
+        'user': "test",
+        'password': "test",
+        'database': "automated_test",
+        'search_path': 'released',
+    },
+}
+
+
+TABLE_CLASSES = (
+    Node.__subclasses__()
+    + Edge.__subclasses__()
+    + [Notification]
+    + [VoidedNode, VoidedEdge]
+    + [FileReport, GDCReport]
+    + [TransactionLog, TransactionSnapshot, TransactionDocument]
+)
+
+
+GRANT_TABLES = [cls.__tablename__ for cls in TABLE_CLASSES] + [
+    '_voided_edges_key_seq',
+    '_voided_nodes_key_seq',
+    'transaction_logs_id_seq',
+    'transaction_documents_id_seq',
+    'filereport_id_seq',
+    'gdc_reports_id_seq',
+]
+
+
+def try_execute(conn, statement):
+    try:
+        logger.debug('TRY EXECUTE: "%s"' % statement)
+        conn.execute(statement)
+        conn.execute('commit')
+    except Exception as msg:
+        logger.warn('Failed to execute: "%s": %s', statement, msg)
+
 
 
 def try_drop_test_data(user, database, root_user='postgres', host=''):
-
-    print('Dropping old test data')
+    logger.info('Dropping old test data')
 
     engine = create_engine("postgres://{user}@{host}/postgres".format(
         user=root_user, host=host))
 
     conn = engine.connect()
     conn.execute("commit")
-
-    try:
-        create_stmt = 'DROP DATABASE "{database}"'.format(database=database)
-        conn.execute(create_stmt)
-    except Exception, msg:
-        logging.warn("Unable to drop test data:" + str(msg))
-
+    try_execute(conn, 'Drop database "{database}"'.format(database=database))
+    try_execute(conn, 'Drop user {user}'.format(user=user))
     conn.close()
 
 
-def setup_database(user, password, database, root_user='postgres',
-                   host='', no_drop=False, no_user=False):
-    """
-    setup the user and database
-    """
-    print('Setting up test database')
+def setup_database(schemas, user, password, database,
+                   root_user='postgres', host=''):
+    """Setup the user and database"""
 
-    if not no_drop:
-        try_drop_test_data(user, database)
+    logger.info('Setting up test database')
 
-    engine = create_engine("postgres://{user}@{host}/postgres".format(
-        user=root_user, host=host))
+    try_drop_test_data(user, database)
+
+    engine = create_engine("postgres://{user}@/postgres".format(user=root_user))
     conn = engine.connect()
     conn.execute("commit")
 
-    create_stmt = 'CREATE DATABASE "{database}"'.format(database=database)
-    try:
-        conn.execute(create_stmt)
-    except Exception, msg:
-        logging.warn('Unable to create database: {}'.format(msg))
+    # Create database
+    try_execute(conn, 'Create database "{database}"'.format(database=database))
 
-    if not no_user:
-        try:
-            user_stmt = "CREATE USER {user} WITH PASSWORD '{password}'".format(
-                user=user, password=password)
-            conn.execute(user_stmt)
+    # Create user
+    try_execute(conn, "Create user {user} with password '{password}'"
+                .format(user=user, password=password))
 
-            perm_stmt = 'GRANT ALL PRIVILEGES ON DATABASE {database} to {password}'\
-                        ''.format(database=database, password=password)
-            conn.execute(perm_stmt)
-            conn.execute("commit")
-        except Exception, msg:
-            logging.warn("Unable to add user:" + str(msg))
+    # Create schemas
+    engine = create_engine("postgres://{user}@/{database}"
+                           .format(user=root_user, database=database))
+    for schema in schemas:
+        engine.execute("Create schema if not exists %s" % schema)
+        conn.execute('Set search_path to %s' % schema)
+
     conn.close()
 
 
-def create_tables(host, user, password, database):
-    """
-    create a table
-    """
-    print('Creating tables in test database')
+def grant_all(conn, user, schema):
+    try_execute(conn, 'set session search_path to %s; commit;' % schema)
+    try_execute(conn, 'Grant usage on schema %s to %s' % (schema, user))
 
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database))
-    create_all(engine)
-    versioned_nodes.Base.metadata.create_all(engine)
+    for table in GRANT_TABLES:
+        try_execute(conn, 'Grant all on {table} to {user}'
+                    .format(user=user, table=table))
 
 
-def create_indexes(host, user, password, database):
-    print('Creating indexes')
-    engine = create_engine("postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd=password, db=database))
-    index = lambda t, c: ["CREATE INDEX ON {} ({})".format(t, x) for x in c]
-    for scls in Node.get_subclasses():
-        tablename = scls.__tablename__
-        map(engine.execute, index(
-            tablename, [
-                'node_id',
-            ]))
-        map(engine.execute, [
-            "CREATE INDEX ON {} USING gin (_sysan)".format(tablename),
-            "CREATE INDEX ON {} USING gin (_props)".format(tablename),
-            "CREATE INDEX ON {} USING gin (_sysan, _props)".format(tablename),
-        ])
-    for scls in Edge.get_subclasses():
-        map(engine.execute, index(
-            scls.__tablename__, [
-                'src_id',
-                'dst_id',
-                'dst_id, src_id',
-            ]))
+def create_schema_tables(conn, schema):
+    try_execute(conn, 'set session search_path to %s' % schema)
+    for cls in TABLE_CLASSES:
+        cls.__table__.create(conn)
+
+
+def create_tables(schemas, **pg_kwargs):
+    """Create all tables"""
+
+    user, pg_kwargs['user'] = pg_kwargs['user'], 'postgres'
+
+    for schema in schemas:
+        logger.info('Creating tables in test database, schema: %s', schema)
+        driver = PsqlGraphDriver(**pg_kwargs)
+        conn = driver.engine.connect()
+        create_schema_tables(conn, schema)
+        grant_all(conn, user, schema)
+        conn.close()
+
+
+def destroy_and_setup_database():
+    schemas = [
+        settings['search_path']
+        for settings in POSTGRES_SETTINGS.values()
+    ]
+    settings = dict(POSTGRES_SETTINGS.values()[0])
+    settings.pop('search_path')
+    setup_database(schemas, **settings)
+    create_tables(schemas, **settings)
+
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, action="store",
-                        default='localhost', help="psql-server host")
-    parser.add_argument("--user", type=str, action="store",
-                        default='test', help="psql test user")
-    parser.add_argument("--password", type=str, action="store",
-                        default='test', help="psql test password")
-    parser.add_argument("--database", type=str, action="store",
-                        default='automated_test', help="psql test database")
-    parser.add_argument("--no-drop", action="store_true",
-                        default=False, help="do not drop any data")
-    parser.add_argument("--no-user", action="store_true",
-                        default=False, help="do not create user")
-
-    args = parser.parse_args()
-
-    assert args.host == 'localhost', (
-        "Refusing to run on a host that is not localhost! "
-        "(This script deletes all the data in the database!)")
-
-    setup_database(args.user, args.password, args.database,
-                   no_drop=args.no_drop, no_user=args.no_user)
-    create_tables(args.host, args.user, args.password, args.database)
-    create_indexes(args.host, args.user, args.password, args.database)
+    destroy_and_setup_database()
