@@ -24,15 +24,12 @@ logger = get_logger('gdcdatamodel')
 #: association proxy
 RELATED_CASES_LINK_NAME = '_related_cases'
 
-#: This variable specifies the categories for which to create short cut
-#: edges to case
-RELATED_CASES_CATEGORIES = [
-    'biospecimen',
-    'notation',
-    'data_bundle',
-    'clinical',
-    'data_file',
-]
+#: This variable specifies the categories for which we won't create
+#short cut : edges to case
+NOT_RELATED_CASES_CATEGORIES = {
+    'administrative',
+    'TBD',
+}
 
 
 def get_related_case_edge_cls(node):

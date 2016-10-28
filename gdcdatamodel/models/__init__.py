@@ -44,7 +44,7 @@ from sqlalchemy.ext.hybrid import (
 )
 
 from .caching import (
-    RELATED_CASES_CATEGORIES,
+    NOT_RELATED_CASES_CATEGORIES,
     RELATED_CASES_LINK_NAME,
     cache_related_cases_on_update,
     cache_related_cases_on_insert,
@@ -565,7 +565,7 @@ def load_edges():
 
     for src_cls in Node.get_subclasses():
         cache_case = (
-            src_cls._dictionary['category'] in RELATED_CASES_CATEGORIES
+            not src_cls._dictionary['category'] in NOT_RELATED_CASES_CATEGORIES
             or src_cls.label in ['annotation']
         )
 
