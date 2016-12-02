@@ -13,8 +13,9 @@ CACHE_EDGES = {
 
 LEVEL_1_SQL = """
 
-INSERT INTO {cache_edge_table} (src_id, dst_id)
-SELECT {cls_table}.node_id, node_case.node_id
+INSERT INTO {cache_edge_table} (src_id, dst_id, _props, _sysan, acl)
+SELECT {cls_table}.node_id, node_case.node_id,
+       '{{}}'::jsonb, '{{}}'::jsonb, '{{}}'::text[]
     FROM {cls_table}
 
     -- Step directly to case
@@ -32,8 +33,9 @@ SELECT {cls_table}.node_id, node_case.node_id
 
 APPEND_CACHE_FROM_PARENT_SQL = """
 
-INSERT INTO {cache_edge_table} (src_id, dst_id)
-SELECT DISTINCT {cls_table}.node_id, node_case.node_id
+INSERT INTO {cache_edge_table} (src_id, dst_id, _props, _sysan, acl)
+SELECT DISTINCT {cls_table}.node_id, node_case.node_id,
+                '{{}}'::jsonb, '{{}}'::jsonb, '{{}}'::text[]
     FROM {cls_table}
 
     -- Step to parent
