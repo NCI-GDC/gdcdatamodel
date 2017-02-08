@@ -8,10 +8,9 @@ python layer.  Classes are produced by a factory, and required
 attributes are injected into them before they are registered into the
 modules globals map.
 
-::WARNING:: This code is the heart of the GDC.  Changes here will
-propogate to all code that imports this package and MAY BREAK THINGS.
-
-- jsm
+.. warning::
+    This code is the heart of the GDC.  Changes here will propogate to
+    all code that imports this package and MAY BREAK THINGS. - jsm
 
 """
 
@@ -73,6 +72,15 @@ loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
 
+# This will be used to store what links and backrefs have been
+# assigned to the source and destination nodes.  This prevents
+# clobbering a backref with a link or a link with a backref, as they
+# would be from different nodes, should be different relationships,
+# and would have different semantic meanings.
+_ASSIGNED_ASSOCIATION_PROXIES = defaultdict(set)
+
+
+
 def remove_spaces(s):
     """Returns a stripped string with all of the spaces removed.
 
@@ -98,6 +106,7 @@ def get_links(schema):
     """Given a schema, pull out all of the ``links`` that this type can
     have an edge to.
 
+    :param dict schema: GDC Dictionary schema for target node type
     :returns: a ``dict`` of format ``{<name>: <link>}``
 
     """
@@ -112,6 +121,11 @@ def get_links(schema):
 
 
 def types_from_str(types):
+    """
+    :param list types: List of string JSON Schema types
+    :returns: A list of python types for
+    """
+
     return [a for type_ in types for a in {
         'string': [str],
         'number': [float, int, long],
@@ -127,7 +141,12 @@ def types_from_str(types):
 def PropertyFactory(name, schema, key=None):
     """Returns a pg_property (psqlgraph specific type of hybrid_property)
 
+    :param str name: The name of the property as it appears as an attribute
+    :param dict schema: The GDC Dictionary JSON Schema
+    :param str key: The key to be written to in the JSONB column
+
     """
+
     key = name if key is None else key
 
     # Assert the dictionary has no references for properties
@@ -156,16 +175,30 @@ def PropertyFactory(name, schema, key=None):
 
 
 def get_class_name_from_id(_id):
+    """:returns: A valid class name from the schema id"""
+
     return ''.join([a.capitalize() for a in _id.split('_')])
 
 
 def get_class_tablename_from_id(_id):
+    """:returns: A valid node table name from the schema id"""
+
     return 'node_{}'.format(_id.replace('_', ''))
 
 
 def cls_inject_versioned_nodes_lookup(cls):
     """Injects a property and a method into the class to retrieve node
     versions.
+
+    :param cls: The python class to inject history lookups into
+
+    The following example can be used to get the last 4 versions of a
+    node:
+
+    .. code-block:: python
+
+        node = g.nodes(Node).first()
+        node._history.order_by(Node.created.desc()).limit(4).all()
 
     """
 
@@ -203,8 +236,12 @@ def cls_inject_created_datetime_hook(cls,
                                      updated_key="updated_datetime",
                                      created_key="created_datetime"):
     """Given a class, inject a SQLAlchemy hook that will write the
-    timestamp of the last session flush to the :param:`updated_key`
-    and :param:`created_key` properties.
+    timestamp of the last session flush to the ``updated_key`` and
+    ``created_key`` properties.
+
+    :param cls: The python class to inject session hooks into
+    :param str updated_key: The key to write updated timestamps to on flush
+    :param str created_key: The key to write created timestamps to on flush
 
     """
 
@@ -219,16 +256,19 @@ def cls_inject_created_datetime_hook(cls,
 
 def cls_inject_updated_datetime_hook(cls, updated_key="updated_datetime"):
     """Given a class, inject a SQLAlchemy hook that will write the
-    timestamp of the last session flush to the :param:`updated_key`
+    timestamp of the last session flush to the ``updated_key``
     property.
+
+    :param cls: The python class to inject session hooks into
+    :param str updated_key: The key to write updated timestamps to on flush
 
     """
 
     @event.listens_for(cls, 'before_update')
     def set_updated_datetimes(mapper, connection, target):
         ts = target.get_session()._flush_timestamp.isoformat('T')
-        if 'updated_datetime' in target.props:
-            target._props['updated_datetime'] = ts
+        if updated_key in target.props:
+            target._props[updated_key] = ts
 
 
 def cls_inject_secondary_keys(cls, schema):
@@ -238,14 +278,26 @@ def cls_inject_secondary_keys(cls, schema):
     these keys.
 
     This function injects:
-        0. a list of ``str`` keys that should be unique to
+        1. a list of ``str`` keys that should be unique to
            ``_pg_secondary_keys``
-        0. ``_secondary_keys_dict`` which is a dictionary of str key
+        2. ``_secondary_keys_dict`` which is a dictionary of str key
            to :class:`sqlalchemy.dialects.postgresql.json.JSONElement`
            values
-        0. ``_secondary_keys``, a tuple of
+        3. ``_secondary_keys``, a tuple of
            :class:`sqlalchemy.dialects.postgresql.json.JSONElement`
            objects
+
+    Because ``_secondary_keys`` implements a custom `Comparator`_, it
+    can be used in a ``filter`` statement as follows:
+
+    .. code-block:: python
+
+        g.nodes(Case).filter(
+            #    comparator      == [  (project_id, submitter_id) ]
+            Case._secondary_keys == [('TEST-PROJECT', 'CASE-1')])
+        .count()
+
+    .. _Comparator: http://docs.sqlalchemy.org/en/latest/orm/extensions/hybrid.html#building-custom-comparators
 
     """
 
@@ -300,9 +352,7 @@ def cls_inject_secondary_keys(cls, schema):
 
 
 def NodeFactory(_id, schema):
-    """Returns a node class given a schema.
-
-    """
+    """:returns: A node class given a GDC Dictionary JSON Schema"""
 
     name = get_class_name_from_id(_id)
     links = get_links(schema)
@@ -367,7 +417,7 @@ def NodeFactory(_id, schema):
 
 
 def generate_edge_tablename(src_label, label, dst_label):
-    """Generate a name for the edge table.
+    """:returns: A name for the edge table.
 
     Because of the limit on table name length on PostgreSQL, we have
     to truncate some of the longer names.  To do this we concatenate
@@ -376,7 +426,7 @@ def generate_edge_tablename(src_label, label, dst_label):
     very likely lead to collisions in naming.  Therefore, we take the
     first 8 characters of a hash of the full, un-truncated name
     *before* we truncate and prepend this to the truncation.  This
-    gets us a name like ``edge_721d393f_LaLeSeqDaFrLaLeSeBu``.  This
+    gets us a name like ``edge_721d393f_laleseqdafrlalesebu``.  This
     is rather an undesirable workaround. - jsm
 
     """
@@ -406,9 +456,8 @@ def generate_edge_tablename(src_label, label, dst_label):
 
 
 def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
-                dst_src_assoc,
-                _assigned_association_proxies=defaultdict(set)):
-    """Returns an edge class.
+                dst_src_assoc):
+    """:returns: A new edge class.
 
     :param name: The name of the edge class.
     :param label: Assigned to ``edge.label``
@@ -420,13 +469,6 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     :param dst_src_assoc:
         The backref name i.e. ``dst.dst_src_assoc`` returns a list of
         source type nodes
-    :param _assigned_association_proxies:
-        Don't pass this parameter. This will be used to store what
-        links and backrefs have been assigned to the source and
-        destination nodes.  This prevents clobbering a backref with a
-        link or a link with a backref, as they would be from different
-        nodes, should be different relationships, and would have
-        different semantic meanings.
 
     """
 
@@ -447,18 +489,18 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     dst_cls = Node.get_subclass(dst_label)
 
     # Assert that we're not clobbering link names
-    assert dst_src_assoc not in _assigned_association_proxies[dst_label], (
+    assert dst_src_assoc not in _ASSIGNED_ASSOCIATION_PROXIES[dst_label], (
         "Attempted to assign backref '{link}' to node '{node}' but "
         "the node already has an attribute called '{link}'"
         .format(link=dst_src_assoc, node=dst_label))
-    assert src_dst_assoc not in _assigned_association_proxies[src_label], (
+    assert src_dst_assoc not in _ASSIGNED_ASSOCIATION_PROXIES[src_label], (
         "Attempted to assign link '{link}' to node '{node}' but "
         "the node already has an attribute called '{link}'"
         .format(link=src_dst_assoc, node=src_label))
 
     # Remember that we're adding this link and this backref
-    _assigned_association_proxies[dst_label].add(dst_src_assoc)
-    _assigned_association_proxies[src_label].add(src_dst_assoc)
+    _ASSIGNED_ASSOCIATION_PROXIES[dst_label].add(dst_src_assoc)
+    _ASSIGNED_ASSOCIATION_PROXIES[src_label].add(src_dst_assoc)
 
     hooks_before_insert = Edge._session_hooks_before_insert + [
         cache_related_cases_on_insert,
@@ -494,7 +536,7 @@ def load_nodes():
 
     """
 
-    for entity, subschema in dictionary.schema.iteritems():
+    for subschema in dictionary.schema.itervalues():
         name = subschema['title']
         _id = subschema['id']
         if name not in loaded_nodes:
@@ -622,7 +664,7 @@ def inject_pg_edges():
         """
 
         for prop, backref in link['dst_type']._pg_backrefs.iteritems():
-            if backref['src_type'] == cls:
+            if backref['src_type'] == src_cls:
                 return prop
 
     def cls_inject_forward_edges(cls):
