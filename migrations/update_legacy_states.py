@@ -34,6 +34,8 @@ update_legacy_states(
 
 """
 
+import os
+
 import logging
 
 from sqlalchemy import not_, or_, and_
@@ -239,3 +241,11 @@ def update_legacy_states(graph_kwargs):
 
     for process in pool:
         process.join()
+
+if __name__ == '__main__':
+    update_legacy_states(
+        host=os.environ['PG_HOST'],
+        user=os.environ['PG_USER'],
+        database=os.environ['PG_NAME'],
+        password=os.environ['PG_PASS'])
+
