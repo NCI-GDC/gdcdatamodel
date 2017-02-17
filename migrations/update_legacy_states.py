@@ -77,7 +77,7 @@ STATE_MAP = {
     },
     'submitted': {
         'state': 'submitted',
-        'file_state': 'registered'
+        'file_state': 'submitted'
     },
     'uploaded': {
         'state': 'submitted',
