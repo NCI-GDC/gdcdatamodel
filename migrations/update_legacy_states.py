@@ -181,7 +181,8 @@ def update_cls(graph, cls):
 
             set_file_state = (
                 'file_state' in node.__pg_properties__
-                and file_state is None
+                and ((file_state is 'validated')
+                    or (file_state is 'registered'))
                 and state in STATE_MAP
             )
 
