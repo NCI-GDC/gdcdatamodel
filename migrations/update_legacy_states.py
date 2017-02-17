@@ -43,7 +43,7 @@ from psqlgraph import Node, PsqlGraphDriver
 from gdcdatamodel import models as md
 from multiprocessing import Process, cpu_count, Queue
 from collections import namedtuple
-
+from argparse import ArgumentParser
 
 CLS_WITH_PROJECT_ID = {
     cls for cls in Node.get_subclasses()
@@ -243,9 +243,22 @@ def update_legacy_states(graph_kwargs):
         process.join()
 
 if __name__ == '__main__':
-    update_legacy_states(
-        host=os.environ['PG_HOST'],
-        user=os.environ['PG_USER'],
-        database=os.environ['PG_NAME'],
-        password=os.environ['PG_PASS'])
+    parser = ArgumentParser()
+    parser.add_argument("job",
+        choices=['status', 'migrate'],
+        help="Actions to perform: status - get current state status, migrate - perform migration")
+
+    args = parser.parse_args()
+    db_kwargs = {
+        'host':os.environ['PG_HOST'],
+        'user':os.environ['PG_USER'],
+        'database':os.environ['PG_NAME'],
+        'password':os.environ['PG_PASS']
+    }
+    if args.job == 'migrate':
+        update_legacy_states(db_kwargs)
+    if args.job == 'status':
+        graph = PsqlGraphDriver(**db_kwargs)
+        with graph.session_scope():
+            print_cls_query_summary(graph)
 
