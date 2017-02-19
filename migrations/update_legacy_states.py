@@ -91,6 +91,7 @@ STATE_MAP = {
     },
 }
 
+FILE_STATES = [ 'validated', 'registered' ]
 
 logger = logging.getLogger("state_updater")
 logging.basicConfig(level=logging.INFO)
@@ -148,12 +149,13 @@ def cls_query(graph, cls):
 
     options = [
         # state
-        null_prop(cls, 'state'),
+        #null_prop(cls, 'state'),
         cls.state.astext.in_(STATE_MAP),
     ]
 
     if 'file_state' in cls.__pg_properties__:
-        options += [null_prop(cls, 'file_state')]
+        options += [cls.file_state.astext.in_(FILE_STATES)]
+        #options += [null_prop(cls, 'file_state')]
 
     return (legacy_filter(graph.nodes(cls), legacy_projects)
             .filter(or_(*options)))
