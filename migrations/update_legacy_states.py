@@ -92,7 +92,7 @@ STATE_MAP = {
     },
 }
 
-FILE_STATES = [ 'validated', 'registered' ]
+FILE_STATES = [ 'validated', 'registered', 'processed' ]
 
 logger = logging.getLogger("state_updater")
 logging.basicConfig(level=logging.INFO)
