@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Text, DateTime, text, Integer, Index, func
-from sqlalchemy.dialects.postgres import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -29,7 +28,7 @@ class GDCReport(Base):
     id = Column(Integer, primary_key=True)
     program = Column(Text)
     project = Column(Text)
-    report = Column(JSONB)
+    report = Column(Text)
     report_type = Column(Text, nullable=False)
 
     created_datetime = Column(
