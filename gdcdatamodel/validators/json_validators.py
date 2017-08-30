@@ -46,5 +46,8 @@ class GDCJSONValidator(object):
                 keys = ['.'.join(error.path)] if error.path else []
                 if not keys:
                     keys = get_keys(error.message)
-                entity.record_error(error.message, keys=keys)
+                message = error.message
+                if error.context:
+                    message += ': {}'.format(' and '.join([c.message for c in error.context]))
+                entity.record_error(message, keys=keys)
             # additional validators go here
