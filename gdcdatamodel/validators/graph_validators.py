@@ -1,4 +1,6 @@
 from gdcdictionary import gdcdictionary
+import psqlgraph
+import sqlalchemy
 
 
 class GDCGraphValidator(object):
@@ -16,12 +18,11 @@ class GDCGraphValidator(object):
         self.optional_validators = {}
 
     def record_errors(self, graph, entities):
+        for validator in self.required_validators.values():
+            validator.validate(entities, graph)
+
         for entity in entities:
             schema = self.schemas.schema[entity.node.label]
-
-            for validator in self.required_validators.values():
-                validator.validate(schema, entity, graph)
-
             validators = schema.get('validators')
             if validators:
                 for validator_name in validators:
@@ -29,12 +30,14 @@ class GDCGraphValidator(object):
 
 
 class GDCLinksValidator(object):
-    def validate(self, schema, entity, graph=None):
-        for link in schema['links']:
-            if 'name' in link:
-                self.validate_edge(link, entity)
-            elif 'subgroup' in link:
-                self.validate_edge_group(link, entity)
+
+    def validate(self, entities, graph=None):
+        for entity in entities:
+            for link in gdcdictionary.schema[entity.node.label]['links']:
+                if 'name' in link:
+                    self.validate_edge(link, entity)
+                elif 'subgroup' in link:
+                    self.validate_edge_group(link, entity)
 
     def validate_edge_group(self, schema, entity):
         submitted_links = []
@@ -106,19 +109,36 @@ class GDCLinksValidator(object):
 
 
 class GDCUniqueKeysValidator(object):
-    def validate(self, schema, entity, graph=None):
-        node = entity.node
-        for keys in schema['uniqueKeys']:
-            props = {}
-            if keys == ["id"]:
-                continue
-            for key in keys:
-                prop = schema['properties'][key].get('systemAlias')
-                if prop:
-                    props[prop] = node[prop]
-                else:
-                    props[key] = node[key]
-            if graph.nodes().props(props).count() > 1:
-                entity.record_error(
-                    "{} with {} already exists in the GDC"
-                    .format(node.label, props), keys=props.keys())
+
+    def validate(self, entities, graph=None):
+
+        all_props = []
+        for entity in entities:
+            schema = gdcdictionary.schema[entity.node.label]
+            node = entity.node
+            for keys in schema['uniqueKeys']:
+                props = {}
+                if keys == ['id']:
+                    continue
+                for key in keys:
+                    prop = schema['properties'][key].get('systemAlias')
+                    if prop:
+                        props[prop] = node[prop]
+                    else:
+                        props[key] = node[key]
+                all_props.append(props)
+
+        entity_props = map(psqlgraph.Node._props.contains, all_props)
+        count = graph.nodes().filter(sqlalchemy.or_(*entity_props)).count()
+        # Check if the number of nodes found is greater than the number of
+        # entities that should have been entered, which means there is a
+        # duplicate entity somewhere. Entities must then be checked
+        # individually, which is slower (hence why the count is checked first
+        # instead of just running the code below).
+        if count > len(entity_props):
+            for props in all_props:
+                if graph.nodes().props(props).count() > 1:
+                    entity.record_error(
+                        '{} with {} already exists in the GDC'
+                        .format(node.label, props), keys=props.keys()
+                    )
