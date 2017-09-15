@@ -17,8 +17,14 @@ GDC datamodel.
 
 from cdisutils.log import get_logger
 from psqlgraph import Node, Edge
+from gdcdictionary import gdcdictionary
 
 logger = get_logger('gdcdatamodel')
+
+CACHE_CASES = (
+    True if not hasattr(gdcdictionary, 'settings')
+    else gdcdictionary.settings.get('enable_case_cache', True)
+)
 
 #: This variable contains the link name for the case shortcut
 #: association proxy
