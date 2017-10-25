@@ -18,7 +18,7 @@ setup(
         ]
     },
     dependency_links=[
-        'git+https://github.com/NCI-GDC/cdisutils.git@c569172f91c431a39dc35b9042e363faa330afef#egg=cdisutils',
+        'git+https://github.com/NCI-GDC/cdisutils.git@6686cdf8fa8fc9146f8eba5c95def713d66d8e07#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@55897862b3a346f2194f6d24f59fa7c14c763602#egg=psqlgraph',
         'git+https://github.com/NCI-GDC/gdcdictionary.git@6a8ddf96ad59b44163c5091d80e04245db4a6e9a#egg=gdcdictionary',
     ],
