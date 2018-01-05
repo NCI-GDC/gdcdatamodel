@@ -9,6 +9,7 @@ setup(
         'jsonschema==2.5.1',
         'psqlgraph',
         'gdcdictionary',
+        'dictionaryutils',
         'cdisutils',
         'python-dateutil==2.4.2',
     ],
@@ -21,6 +22,7 @@ setup(
         'git+https://github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@7b5de7d56aa3159a9526940eb273579ddbf084ca#egg=psqlgraph',
         'git+https://github.com/NCI-GDC/gdcdictionary.git@6a8ddf96ad59b44163c5091d80e04245db4a6e9a#egg=gdcdictionary',
+        'git+https://github.com/uc-cdis/dictionaryutils.git@1.1.0#egg=dictionaryutils',
     ],
     entry_points={
         'console_scripts': [
