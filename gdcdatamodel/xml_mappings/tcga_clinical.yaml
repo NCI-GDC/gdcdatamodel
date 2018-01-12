@@ -24,12 +24,12 @@ demographic:
 
       race:
         path: ./shared:race|./clin_shared:race_list/clin_shared:race[1]
-        type: str.lower
+        type: str
         default: not reported
 
       ethnicity:
         path: ./shared:ethnicity|./clin_shared:ethnicity
-        type: str.lower
+        type: str
         default: not reported
 
       year_of_birth:
@@ -60,35 +60,35 @@ diagnosis:
 
       age_at_diagnosis:
         path: ./shared:days_to_birth|./clin_shared:days_to_birth * -1
-        type: float
+        type: int
         maximum: 32872
         minimum: 0
         term:
 
       days_to_birth:
         path: ./shared:days_to_birth|./clin_shared:days_to_birth
-        type: float
+        type: int
         minimum: -32872
         maximum: 0
 
       days_to_death:
         path: ./shared:days_to_death|./clin_shared:days_to_death
-        type: float
+        type: int
         maximum: 32872
         minimum: 0
 
       days_to_last_follow_up:
         path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
-        type: float
+        type: int
 
       vital_status:
         path: ./shared:vital_status|./clin_shared:vital_status
-        type: str.lower
+        type: str
         default: not reported
 
       primary_diagnosis:
         path: ./shared:icd_10|./clin_shared:icd_10
-        type: str.lower
+        type: str
         default: not reported
 
       morphology:
@@ -98,23 +98,23 @@ diagnosis:
 
       tissue_or_organ_of_origin:
         path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
-        type: str.lower
+        type: str
         default: not reported
 
       site_of_resection_or_biopsy:
         path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
-        type: str.lower
+        type: str
         default: not reported
 
       classification_of_tumor:
         path: "primary"
-        type: str.lower
+        type: str
         default: not reported
 
       prior_malignancy:
         path: ./shared:prior_dx
         default: not reported
-        type: str.lower
+        type: str
 
       tumor_stage:
         path: ./shared_stage:stage_event/shared_stage:pathologic_stage
@@ -123,12 +123,12 @@ diagnosis:
 
       tumor_grade:
         path: ./shared_stage:gleason_grading/shared_stage:gleason_score
-        type: str.lower
+        type: str
         default: not reported
 
       progression_or_recurrence:
         path: "unknown"
-        type: str.lower
+        type: str
         default: not reported
 
       days_to_recurrence:
@@ -171,11 +171,11 @@ exposure:
 
       alcohol_history:
         path: "./clin_shared:alcohol_history_documented"
-        type: str.lower
+        type: str
 
       alcohol_intensity:
         path: "unknown"
-        type: str.lower
+        type: str
 
       height:
         path: "./clin_shared:height"
@@ -215,6 +215,7 @@ treatment:
           - yes
           - no
           - unknown
+          - not reported
         type: str
 
       treatment_intent_type:
@@ -230,4 +231,4 @@ treatment:
       days_to_treatment:
         path: "unknown"
         term: TBD
-        type: float
+        type: int
