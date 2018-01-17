@@ -24,12 +24,12 @@ demographic:
 
       race:
         path: ./shared:race|./clin_shared:race_list/clin_shared:race[1]
-        type: str
+        type: str.lower
         default: not reported
 
       ethnicity:
         path: ./shared:ethnicity|./clin_shared:ethnicity
-        type: str
+        type: str.lower
         default: not reported
 
       year_of_birth:
@@ -83,7 +83,7 @@ diagnosis:
 
       vital_status:
         path: ./shared:vital_status|./clin_shared:vital_status
-        type: str
+        type: str.lower
         default: not reported
 
       primary_diagnosis:
