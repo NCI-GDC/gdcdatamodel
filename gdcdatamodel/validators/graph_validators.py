@@ -14,7 +14,6 @@ class GDCGraphValidator(object):
         self.required_validators = {
             'links_validator': GDCLinksValidator(),
             'uniqueKeys_validator': GDCUniqueKeysValidator()
-            
         }
         self.optional_validators = {}
 
@@ -29,10 +28,6 @@ class GDCGraphValidator(object):
                 for validator_name in validators:
                     self.optional_validators[validator_name].validate()
 
-    def validate_doc_record_errors(self, graph, entities):
-        """
-        Run validators on documents before nodes are instantiated
-        """
 
 class GDCLinksValidator(object):
 
