@@ -1,4 +1,4 @@
-from gdcdictionary import gdcdictionary
+from dictionaryutils import dictionary as gdcdictionary
 import psqlgraph
 import sqlalchemy
 
@@ -111,8 +111,6 @@ class GDCLinksValidator(object):
 class GDCUniqueKeysValidator(object):
 
     def validate(self, entities, graph=None):
-
-        all_props = []
         for entity in entities:
             schema = gdcdictionary.schema[entity.node.label]
             node = entity.node
@@ -126,19 +124,8 @@ class GDCUniqueKeysValidator(object):
                         props[prop] = node[prop]
                     else:
                         props[key] = node[key]
-                all_props.append(props)
-
-        entity_props = map(psqlgraph.Node._props.contains, all_props)
-        count = graph.nodes().filter(sqlalchemy.or_(*entity_props)).count()
-        # Check if the number of nodes found is greater than the number of
-        # entities that should have been entered, which means there is a
-        # duplicate entity somewhere. Entities must then be checked
-        # individually, which is slower (hence why the count is checked first
-        # instead of just running the code below).
-        if count > len(entity_props):
-            for props in all_props:
                 if graph.nodes().props(props).count() > 1:
-                    entity.record_error(
-                        '{} with {} already exists in the GDC'
-                        .format(node.label, props), keys=props.keys()
-                    )
+                        entity.record_error(
+                            '{} with {} already exists in the GDC'
+                            .format(node.label, props), keys=props.keys()
+                        )
