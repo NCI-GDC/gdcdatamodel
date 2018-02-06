@@ -93,8 +93,8 @@ diagnosis:
 
       morphology:
         path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
-        type: str.lower
-        default: not reported
+        type: str
+        default: Not Reported
 
       tissue_or_organ_of_origin:
         path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
