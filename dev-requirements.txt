@@ -3,3 +3,4 @@ jupyter==1.0.0
 jupyter-client==4.2.2
 jupyter-console==4.1.1
 jupyter-core==4.1.0
+-e git+https://github.com/NCI-GDC/gdcdictionary.git@1.2.0#egg=gdcdictionary
