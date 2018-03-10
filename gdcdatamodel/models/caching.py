@@ -17,12 +17,14 @@ GDC datamodel.
 
 from cdisutils.log import get_logger
 from psqlgraph import Node, Edge
-from gdcdictionary import gdcdictionary
+from dictionaryutils import dictionary as gdcdictionary
 
 logger = get_logger('gdcdatamodel')
 
 CACHE_CASES = (
-    True if not hasattr(gdcdictionary, 'settings')
+    True if (
+        not hasattr(gdcdictionary, 'settings')
+        or not gdcdictionary.settings)
     else gdcdictionary.settings.get('enable_case_cache', True)
 )
 
