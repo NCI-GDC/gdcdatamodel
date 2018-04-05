@@ -77,6 +77,7 @@ analyte:
     id: .//bio:bcr_analyte_uuid
     edges:
       portions: ancestor::bio:portion/bio:bcr_portion_uuid
+      samples: ancestor::bio:sample/bio_model:bcr_sample_uuid
     properties:
       submitter_id:
         path: ./bio:bcr_analyte_barcode
@@ -179,61 +180,65 @@ portion:
 
 sample:
   -
-    root: //bio:sample
-    id: .//bio:bcr_sample_uuid
+    root: //bio_model:sample
+    id: .//bio_model:bcr_sample_uuid
     edges:
       cases: ancestor::bio:patient/shared:bcr_patient_uuid
+      samples: ./bio_model:ref_uuid
     properties:
-      submitter_id:
-        path: ./bio:bcr_sample_barcode
+      composition:
+        path: ./bio_model:composition
         type: str
-      sample_type_id:
-        path: ./bio:sample_type_id
-        type: str
-      sample_type:
-        path: ./bio:sample_type
-        type: str
-      tumor_code_id: null
-      tumor_code: null
-      longest_dimension:
-        path: ./bio:longest_dimension
-        type: str
-      intermediate_dimension:
-        path: ./bio:intermediate_dimension
-        type: str
-      shortest_dimension:
-        path: ./bio:shortest_dimension
-        type: str
-      initial_weight:
-        path: ./bio:initial_weight
-        type: float
       current_weight:
-        path: ./bio:current_weight
+        path: ./bio_model:current_weight
         type: float
-      freezing_method:
-        path: ./bio:freezing_method
-        type: str
-      oct_embedded:
-        path: ./bio:oct_embedded
-        type: str
-      time_between_clamping_and_freezing:
-        path: ./bio:time_between_clamping_and_freezing
-        type: str
-      time_between_excision_and_freezing:
-        path: ./bio:time_between_excision_and_freezing
-        type: str
-      is_ffpe:
-        path: ./bio:is_ffpe
-        type: bool
-      pathology_report_uuid:
-        path: ./bio:pathology_report_uuid
-        type: str
       days_to_collection:
         path: ./bio:days_to_collection
         type: int
       days_to_sample_procurement:
         path: ./bio:days_to_procurement
         type: int
+      freezing_method:
+        path: ./bio_model:freezing_method
+        type: str
+      initial_weight:
+        path: ./bio_model:initial_weight
+        type: float
+      intermediate_dimension:
+        path: ./bio_model:intermediate_dimension
+        type: str
+      is_ffpe:
+        path: ./bio:is_ffpe
+        type: bool
+      longest_dimension:
+        path: ./bio_model:longest_dimension
+        type: str
+      oct_embedded:
+        path: ./bio_model:oct_embedded
+        type: str
+      pathology_report_uuid:
+        path: ./bio:pathology_report_uuid
+        type: str
+      sample_type_id:
+        path: ./bio_model:sample_type_id
+        type: str
+      sample_type:
+        path: ./bio_model:sample_type
+        type: str
+      shortest_dimension:
+        path: ./bio_model:shortest_dimension
+        type: str
+      submitter_id:
+        path: ./bio_model:bcr_sample_barcode
+        type: str
+      time_between_clamping_and_freezing:
+        path: ./bio_model:time_between_clamping_and_freezing
+        type: str
+      time_between_excision_and_freezing:
+        path: ./bio_model:time_between_excision_and_freezing
+        type: str
+      tumor_code_id: null
+      tumor_code: null
 
 case:
   -
