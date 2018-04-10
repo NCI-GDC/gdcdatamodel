@@ -68,7 +68,7 @@ class GDCLinksValidator(object):
                 schema_links[:-2] + [" and ".join(schema_links[-2:])])
             entity.record_error(
                 "Links to {} are exclusive.  More than one was provided: {}"
-                .format(schema_links, submitted_links), keys=schema_links)
+                .format(schema_links, entity), keys=schema_links)
 
         result = {'length': num_of_edges, 'name': ", ".join(schema_links)}
 
