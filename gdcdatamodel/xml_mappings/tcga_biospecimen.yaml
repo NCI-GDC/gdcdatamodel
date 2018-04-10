@@ -253,7 +253,7 @@ sample:
         path:
           - ./bio_model:passage_count
           - ./bio:passage_count
-        type: str
+        type: int 
       pathology_report_uuid:
         path:
           - ./bio_model:pathology_report_uuid
