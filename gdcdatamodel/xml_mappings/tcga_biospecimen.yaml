@@ -77,7 +77,9 @@ analyte:
     id: .//bio:bcr_analyte_uuid
     edges:
       portions: ancestor::bio:portion/bio:bcr_portion_uuid
-      samples: ancestor::bio:sample/bio_model:bcr_sample_uuid
+      samples: 
+        - ancestor::bio:sample/bio_model:bcr_sample_uuid
+        - ancestor::bio:sample/bio:bcr_sample_uuid
     properties:
       submitter_id:
         path: ./bio:bcr_analyte_barcode
@@ -217,6 +219,11 @@ sample:
           - ./bio_model:freezing_method
           - ./bio:freezing_method
         type: str
+      growth_rate:
+        path:
+          - ./bio_model:growth_rate
+          - ./bio:growth_rate
+        type: str
       initial_weight:
         path:
           - ./bio_model:initial_weight
@@ -241,6 +248,11 @@ sample:
         path:
           - ./bio_model:oct_embedded
           - ./bio:oct_embedded
+        type: str
+      passage_count:
+        path:
+          - ./bio_model:passage_count
+          - ./bio:passage_count
         type: str
       pathology_report_uuid:
         path:
