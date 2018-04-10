@@ -223,7 +223,7 @@ sample:
         path:
           - ./bio_model:growth_rate
           - ./bio:growth_rate
-        type: str
+        type: int 
       initial_weight:
         path:
           - ./bio_model:initial_weight
