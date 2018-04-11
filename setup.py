@@ -9,7 +9,7 @@ setup(
         'jsonschema==2.5.1',
         'psqlgraph',
         'gdcdictionary',
-        'dictionaryutils>=1.2.0,<2.0.0',
+        'dictionaryutils>=2.0.0,<3.0.0',
         'cdisutils',
         'python-dateutil==2.4.2',
     ],
