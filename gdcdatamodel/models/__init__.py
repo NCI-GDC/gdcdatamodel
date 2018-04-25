@@ -72,7 +72,6 @@ excluded_props = ['id', 'type']
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
-
 def remove_spaces(s):
     """Returns a stripped string with all of the spaces removed.
 
@@ -657,8 +656,17 @@ def inject_pg_edges():
         cls_inject_backward_edges(cls)
 
 
-load_nodes()
-load_edges()
-inject_pg_backrefs()
-inject_pg_edges()
-configure_mappers()
+def initialize(custom_dict=None):
+    if custom_dict:
+        logger.debug('Using custom dictionary: {}'.format(custom_dict))
+        dictionary.init(custom_dict)
+    else:
+        logger.debug('Using gdcdictionary')
+
+    load_nodes()
+    load_edges()
+    inject_pg_backrefs()
+    inject_pg_edges()
+    configure_mappers()
+
+initialize()
