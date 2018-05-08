@@ -1,4 +1,4 @@
-from gdcdictionary import gdcdictionary
+from dictionaryutils import dictionary as gdcdictionary
 import psqlgraph
 import sqlalchemy
 

@@ -17,7 +17,7 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 from cdisutils.log import get_logger
 from collections import defaultdict
-from gdcdictionary import gdcdictionary as dictionary
+from dictionaryutils import dictionary
 from misc import FileReport                      # noqa
 from sqlalchemy.orm import configure_mappers
 from versioned_nodes import VersionedNode        # noqa
