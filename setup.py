@@ -18,9 +18,9 @@ setup(
         ]
     },
     dependency_links=[
-        'git+https://github.com/NCI-GDC/cdisutils.git@4a75cc05c7ba2174e70cca9c9ea7e93947f7a868#egg=cdisutils',
-        'git+https://github.com/NCI-GDC/psqlgraph.git@7b5de7d56aa3159a9526940eb273579ddbf084ca#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@1.12#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
+        'git+https://github.com/NCI-GDC/psqlgraph.git@1.2.0#egg=psqlgraph',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@temp/apiinternal-dict#egg=gdcdictionary',
     ],
     entry_points={
         'console_scripts': [
