@@ -228,7 +228,13 @@ treatment:
         term: TBD
         type: str
 
-      days_to_treatment:
+      days_to_treatment_start:
         path: "unknown"
         term: TBD
         type: int
+
+      days_to_treatment_end:
+        path: "unknown"
+        term: TBD
+        type: int
+
