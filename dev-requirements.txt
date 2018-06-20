@@ -1,4 +1,4 @@
-graphviz==0.4.10
+graphviz==0.8.3
 jupyter==1.0.0
 jupyter-client==4.2.2
 jupyter-console==4.1.1
