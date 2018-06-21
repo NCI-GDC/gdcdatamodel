@@ -90,3 +90,7 @@ OK
 # Contributing
 
 Read how to contribute [here](https://github.com/NCI-GDC/portal-ui/blob/develop/CONTRIBUTING.md)
+
+[![Updates](https://pyup.io/repos/github/NCI-GDC/gdcdatamodel/shield.svg)](https://pyup.io/repos/github/NCI-GDC/gdcdatamodel/)
+
+[![Python 3](https://pyup.io/repos/github/NCI-GDC/gdcdatamodel/python-3-shield.svg)](https://pyup.io/repos/github/NCI-GDC/gdcdatamodel/)
