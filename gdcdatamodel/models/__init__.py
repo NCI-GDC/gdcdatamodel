@@ -149,7 +149,6 @@ def PropertyFactory(name, schema, key=None):
     @pg_property(*python_types, enum=enum)
     def setter(self, val):
         self._set_property(key, val)
-
     setter.__name__ = name
 
     return setter
