@@ -226,9 +226,11 @@ def cls_inject_updated_datetime_hook(cls, updated_key="updated_datetime"):
 
     @event.listens_for(cls, 'before_update')
     def set_updated_datetimes(mapper, connection, target):
-        ts = target.get_session()._flush_timestamp.isoformat('T')
-        if 'updated_datetime' in target.props:
-            target._props['updated_datetime'] = ts
+        # check if any of the attributes have changed before updating the node
+        if target.get_session().is_modified(target, include_collections=False):
+            ts = target.get_session()._flush_timestamp.isoformat('T')
+            if 'updated_datetime' in target.props:
+                target._props['updated_datetime'] = ts
 
 
 def cls_inject_secondary_keys(cls, schema):
