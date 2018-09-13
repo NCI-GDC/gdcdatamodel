@@ -269,12 +269,6 @@ sample:
           - ./bio_model:sample_type
           - ./bio:sample_type
         type: str
-      tissue_type:
-        path:
-          - ./bio_model:tissue_type
-          - ./bio:tissue_type
-        type: str
-        default: Not Reported
       shortest_dimension:
         path:
           - ./bio_model:shortest_dimension
@@ -290,6 +284,7 @@ sample:
           - ./bio_model:tissue_type
           - ./bio:tissue_type
         type: str
+        default: Not Reported
       time_between_clamping_and_freezing:
         path:
           - ./bio_model:time_between_clamping_and_freezing
