@@ -80,6 +80,8 @@ analyte:
       samples: 
         - ancestor::bio:sample/bio_model:bcr_sample_uuid
         - ancestor::bio:sample/bio:bcr_sample_uuid
+        - ancestor::bio_model:sample/bio_model:bcr_sample_uuid
+        - ancestor::bio_model:sample/bio:bcr_sample_uuid
     properties:
       submitter_id:
         path: ./bio:bcr_analyte_barcode
