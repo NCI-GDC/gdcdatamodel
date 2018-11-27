@@ -26,6 +26,7 @@ import hashlib
 import versioned_nodes                           # noqa
 import notifications
 import submission
+import redaction
 
 from sqlalchemy import (
     event,

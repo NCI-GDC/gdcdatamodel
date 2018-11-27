@@ -46,10 +46,12 @@ class RedactionLog(Base):
 
 class RedactionEntry(Base):
 
+    __tablename__ = 'redaction_entry'
+
     node_id = Column(Text, nullable=False, primary_key=True)
     version = Column(Text)
     file_name = Column(Text)
-    release_number = Column(Text, nullable=False, primary_key=True)
+    release_number = Column(Text)
 
-    redaction_id = Column(Integer, ForeignKey("redaction_log.id"), nullable=False)
+    redaction_id = Column(Integer, ForeignKey("redaction_log.id"), nullable=False, primary_key=True)
     redaction_log = relationship("RedactionLog", backref="entries")
