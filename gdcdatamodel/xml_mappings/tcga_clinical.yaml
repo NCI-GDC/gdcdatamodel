@@ -134,6 +134,9 @@ diagnosis:
       days_to_recurrence:
         path: "unknown"
         type: int
+        maximum: 32872
+        minimum: -32872
+        default: null
 
       last_known_disease_status:
         path: "unknown"
@@ -143,6 +146,9 @@ diagnosis:
       days_to_last_known_disease_status:
         path: "unknown"
         type: int
+        maximum: 32872
+        minimum: -32872
+        default: null
 
 exposure:
   - root: //*[local-name()='patient']
