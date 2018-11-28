@@ -120,7 +120,7 @@ portion:
         type: str
       portion_number:
         path: ./bio:portion_number
-        type: int 
+        type: str
       weight:
         path: ./bio:weight
         type: float
@@ -169,7 +169,7 @@ portion:
         type: str
       portion_number:
         path: ./bio:portion_number
-        type: int
+        type: str
       weight:
         path: ./bio:weight
         type: float
