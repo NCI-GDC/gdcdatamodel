@@ -215,6 +215,10 @@ class TransactionSnapshot(Base):
         "TransactionLog",
         backref="entities"
     )
+    
+    __table_args__ = (
+        Index('snapshot_transaction_idx', 'transaction_id'),
+    )
 
 
 class TransactionDocument(Base):
@@ -271,6 +275,10 @@ class TransactionDocument(Base):
     transaction = relationship(
         "TransactionLog",
         backref="documents"
+    )
+    
+    __table_args__ = (
+        Index('document_transaction_idx', 'transaction_id'),
     )
 
     @property
