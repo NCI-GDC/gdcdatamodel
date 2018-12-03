@@ -1,4 +1,6 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, text
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -7,6 +9,9 @@ Base = declarative_base()
 
 
 class RedactionLog(Base):
+    """
+    Logs a redaction event, each redacted node will be stored as a RedactionEntry
+    """
 
     __tablename__ = 'redaction_log'
 
@@ -16,8 +21,13 @@ class RedactionLog(Base):
         nullable=False
     )
 
+    # who initiated the redaction
     initiated_by = Column(Text, nullable=False)
 
+    # who rescinded this redaction
+    rescinded_by = Column(Text, nullable=True)
+
+    # reason code for redaction
     reason = Column(
         Text,
         nullable=False,
@@ -33,25 +43,75 @@ class RedactionLog(Base):
         nullable=False,
     )
 
+    date_created = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text('now()'),
+    )
+
+    date_rescinded = Column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    entries = relationship("RedactionEntry", back_populates="redaction_log")  # type: list[RedactionEntry]
+
+    @hybrid_property
+    def project_id(self):
+        return self.program + '-' + self.project
+
+    def rescind_all(self, rescinded_by):
+        """Rescinds all entries on this redaction log"""
+        self.rescinded_by = rescinded_by
+        self.date_rescinded = datetime.now()
+        for entry in self.entries:
+            entry.rescind(rescinded_by)
+
+    @hybrid_property
+    def is_rescinded(self):
+        """Checks if all redacted entries in this log has been rescinded
+        Returns:
+           bool: True if all are rescinded
+        """
+        for entry in self.entries:
+            if not entry.rescinded:
+                return False
+        return True
+
+
+class RedactionEntry(Base):
+    """
+    Logs a redacted node, holds enough information to enable
+    """
+    __tablename__ = 'redaction_entry'
+
+    node_id = Column(Text, nullable=False, primary_key=True)
+    version = Column(Text)
+    file_name = Column(Text)
+    node_type = Column(Text, nullable=False)
+    release_number = Column(Text)
+
+    redaction_id = Column(Integer, ForeignKey("redaction_log.id"), nullable=False, primary_key=True)
+    redaction_log = relationship("RedactionLog", back_populates="entries")
+
+    rescinded = Column(Boolean, default=False)
+
+    # who rescinded this redaction
+    rescinded_by = Column(Text, nullable=True)
+
     created_datetime = Column(
         DateTime(timezone=True),
         nullable=False,
         server_default=text('now()'),
     )
 
-    @hybrid_property
-    def project_id(self):
-        return self.program + '-' + self.project
+    date_rescinded = Column(
+        DateTime(timezone=True),
+        nullable=True
+    )
 
-
-class RedactionEntry(Base):
-
-    __tablename__ = 'redaction_entry'
-
-    node_id = Column(Text, nullable=False, primary_key=True)
-    version = Column(Text)
-    file_name = Column(Text)
-    release_number = Column(Text)
-
-    redaction_id = Column(Integer, ForeignKey("redaction_log.id"), nullable=False, primary_key=True)
-    redaction_log = relationship("RedactionLog", backref="entries")
+    def rescind(self, rescinded_by):
+        """Performs a rescind action on an entry"""
+        self.rescinded = True
+        self.rescinded_by = rescinded_by
+        self.date_rescinded = datetime.now()

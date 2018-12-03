@@ -5,7 +5,10 @@ gdcdatamodel.test.conftest
 
 pytest setup for gdcdatamodel tests
 """
+import random
+import uuid
 
+from gdcdatamodel import models
 from psqlgraph import PsqlGraphDriver
 
 import pytest
@@ -45,3 +48,33 @@ def indexes(g):
     """).fetchall()
 
     return { row[0]: row[1] for row in rows }
+
+
+@pytest.fixture()
+def redacted_fixture(g):
+    """ Creates a redacted log entry"""
+
+    with g.session_scope() as sxn:
+        log = models.redaction.RedactionLog()
+        log.initiated_by = "TEST"
+        log.program = "AB"
+        log.project = "BQ"
+        log.reason = "Err"
+
+        count = 0
+        for i in range(random.randint(1, 4)):
+            count += 1
+            entry = models.redaction.RedactionEntry(node_id=str(uuid.uuid4()), node_type="AlignedReads")
+            log.entries.append(entry)
+
+        sxn.add(log)
+        sxn.commit()
+    yield log.id, count
+
+    # clean up
+    with g.session_scope() as sxn:
+        log = sxn.query(models.redaction.RedactionLog).get(log.id)
+        # remove all entries
+        for entry in log.entries:
+            sxn.delete(entry)
+        sxn.delete(log)
