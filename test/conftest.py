@@ -62,7 +62,7 @@ def redacted_fixture(g):
         log.reason = "Err"
 
         count = 0
-        for i in range(random.randint(1, 4)):
+        for i in range(random.randint(2, 5)):
             count += 1
             entry = models.redaction.RedactionEntry(node_id=str(uuid.uuid4()), node_type="AlignedReads")
             log.entries.append(entry)
