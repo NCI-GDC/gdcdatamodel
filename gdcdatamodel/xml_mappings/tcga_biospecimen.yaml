@@ -211,11 +211,15 @@ sample:
           - ./bio_model:days_to_collection
           - ./bio:days_to_collection
         type: int
+        maximum: 32872
+        minimum: -32872
       days_to_sample_procurement:
         path:
           - ./bio_model:days_to_procurement
           - ./bio:days_to_procurement
         type: int
+        maximum: 32872
+        minimum: -32872
       freezing_method:
         path:
           - ./bio_model:freezing_method
@@ -235,7 +239,7 @@ sample:
         path:
           - ./bio_model:intermediate_dimension
           - ./bio:intermediate_dimension
-        type: str
+        type: float
       is_ffpe:
         path:
           - ./bio_model:is_ffpe
@@ -245,7 +249,7 @@ sample:
         path:
           - ./bio_model:longest_dimension
           - ./bio:longest_dimension
-        type: str
+        type: float
       oct_embedded:
         path:
           - ./bio_model:oct_embedded
@@ -275,7 +279,7 @@ sample:
         path:
           - ./bio_model:shortest_dimension
           - ./bio:shortest_dimension
-        type: str
+        type: float
       submitter_id:
         path:
           - ./bio_model:bcr_sample_barcode
@@ -291,12 +295,12 @@ sample:
         path:
           - ./bio_model:time_between_clamping_and_freezing
           - ./bio:time_between_clamping_and_freezing
-        type: str
+        type: float
       time_between_excision_and_freezing:
         path:
           - ./bio_model:time_between_excision_and_freezing
           - ./bio:time_between_excision_and_freezing
-        type: str
+        type: float
       tumor_code_id: null
       tumor_code: null
 

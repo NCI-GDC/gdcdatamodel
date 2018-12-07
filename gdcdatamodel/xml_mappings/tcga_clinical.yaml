@@ -70,16 +70,21 @@ diagnosis:
         type: int
         minimum: -32872
         maximum: 0
+        default: null
 
       days_to_death:
         path: ./shared:days_to_death|./clin_shared:days_to_death
         type: int
         maximum: 32872
-        minimum: 0
+        minimum: -32872
+        default: null
 
       days_to_last_follow_up:
         path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
         type: int
+        maximum: 32872
+        minimum: -32872
+        default: null
 
       vital_status:
         path: ./shared:vital_status|./clin_shared:vital_status
@@ -238,9 +243,13 @@ treatment:
         path: "unknown"
         term: TBD
         type: int
+        maximum: 32872
+        minimum: -32872
 
       days_to_treatment_end:
         path: "unknown"
         term: TBD
         type: int
+        maximum: 32872
+        minimum: -32872
 
