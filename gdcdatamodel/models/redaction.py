@@ -15,33 +15,19 @@ class RedactionLog(Base):
 
     __tablename__ = 'redaction_log'
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        nullable=False
-    )
+    id = Column(Integer, primary_key=True, nullable=False)
 
     # who initiated the redaction
-    initiated_by = Column(Text, nullable=False)
+    initiated_by = Column(Text, nullable=False, index=True)
 
     # who rescinded this redaction
     rescinded_by = Column(Text, nullable=True)
 
-    # reason code for redaction
-    reason = Column(
-        Text,
-        nullable=False,
-    )
+    # reasons for redaction
+    reason = Column(Text, nullable=False)  # long text
+    reason_category = Column(Text, nullable=False, index=True)  # short desc
 
-    program = Column(
-        Text,
-        nullable=False,
-    )
-
-    project = Column(
-        Text,
-        nullable=False,
-    )
+    project_id = Column(Text, nullable=False, index=True)
 
     date_created = Column(
         DateTime(timezone=True),
@@ -57,8 +43,12 @@ class RedactionLog(Base):
     entries = relationship("RedactionEntry", back_populates="redaction_log")  # type: list[RedactionEntry]
 
     @hybrid_property
-    def project_id(self):
-        return self.program + '-' + self.project
+    def project(self):
+        return self.project_id.split("-")[1]
+
+    @hybrid_property
+    def program(self):
+        return self.project_id.split("-")[0]
 
     def rescind_all(self, rescinded_by):
         """Rescinds all entries on this redaction log"""
@@ -86,10 +76,10 @@ class RedactionEntry(Base):
     __tablename__ = 'redaction_entry'
 
     node_id = Column(Text, nullable=False, primary_key=True)
-    version = Column(Text)
+    version = Column(Text, index=True)
     file_name = Column(Text)
-    node_type = Column(Text, nullable=False)
-    release_number = Column(Text)
+    node_type = Column(Text, nullable=False, index=True)
+    release_number = Column(Text, index=True)
 
     redaction_id = Column(Integer, ForeignKey("redaction_log.id"), nullable=False, primary_key=True)
     redaction_log = relationship("RedactionLog", back_populates="entries")
