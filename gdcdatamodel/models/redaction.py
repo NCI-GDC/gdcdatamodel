@@ -105,3 +105,11 @@ class RedactionEntry(Base):
         self.rescinded = True
         self.rescinded_by = rescinded_by
         self.date_rescinded = datetime.now()
+
+    @hybrid_property
+    def project_id(self):
+        return self.redaction_log.project_id
+
+    @hybrid_property
+    def is_indexed(self):
+        return self.file_name is not None
