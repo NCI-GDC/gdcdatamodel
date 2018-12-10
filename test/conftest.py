@@ -57,14 +57,14 @@ def redacted_fixture(g):
     with g.session_scope() as sxn:
         log = models.redaction.RedactionLog()
         log.initiated_by = "TEST"
-        log.program = "AB"
-        log.project = "BQ"
+        log.project_id = "AB-BQ"
         log.reason = "Err"
+        log.reason_category = "consent withdrawn"
 
         count = 0
         for i in range(random.randint(2, 5)):
             count += 1
-            entry = models.redaction.RedactionEntry(node_id=str(uuid.uuid4()), node_type="AlignedReads")
+            entry = models.redaction.RedactionEntry(node_id=str(uuid.uuid4()), node_type="Aligned Reads")
             log.entries.append(entry)
 
         sxn.add(log)
