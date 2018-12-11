@@ -57,6 +57,7 @@ def redacted_fixture(g):
     with g.session_scope() as sxn:
         log = models.redaction.RedactionLog()
         log.initiated_by = "TEST"
+        log.annotation_id = str(uuid.uuid4())
         log.project_id = "AB-BQ"
         log.reason = "Err"
         log.reason_category = "consent withdrawn"
