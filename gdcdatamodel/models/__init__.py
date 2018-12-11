@@ -102,15 +102,15 @@ def get_links(schema):
     :returns: a ``dict`` of format ``{<name>: <link>}``
 
     """
-    links = {}
-    for entry in schema.get('links') or []:
-        if 'subgroup' in entry:
-            for link in entry['subgroup']:
-                links[link['name']] = link
-        else:
-            links[entry['name']] = entry
-    return links
-
+    result = {}
+    def _recursive_get_links(links, result):
+        for entry in links:
+            if 'subgroup' in entry:
+                _recursive_get_links(entry['subgroup'], result)
+            else:
+                result[entry['name']] = entry
+    _recursive_get_links(schema.get('links', []), result)
+    return result
 
 def types_from_str(types):
     return [a for type_ in types for a in {
