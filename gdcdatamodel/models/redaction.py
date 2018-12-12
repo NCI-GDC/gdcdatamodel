@@ -1,11 +1,21 @@
-from datetime import datetime
+import copy
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, text
+from datetime import datetime
+import enum
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
+
+
+class RedactionType(enum.Enum):
+
+    LATEST = "PARTIAL"
+    COMPLETE = "COMPLETE"
+    PREVIOUS = "PREVIOUS"
 
 
 class RedactionLog(Base):
@@ -29,6 +39,7 @@ class RedactionLog(Base):
     reason_category = Column(String(128), nullable=False, index=True)  # short desc
 
     project_id = Column(String(32), nullable=False, index=True)
+    redaction_type = Column(Enum(RedactionType), default=RedactionType.COMPLETE)
 
     created_datetime = Column(
         DateTime(timezone=True),
@@ -69,6 +80,11 @@ class RedactionLog(Base):
                 return False
         return True
 
+    def to_json(self):
+        json = dict(id=self.id, annotation_id=self.annotation_id,
+                    project_id=self.project_id, initiated_by=self.initiated_by, reason=self.reason)
+        return json
+
 
 class RedactionEntry(Base):
     """
@@ -108,9 +124,14 @@ class RedactionEntry(Base):
         self.date_rescinded = datetime.now()
 
     @hybrid_property
-    def project_id(self):
-        return self.redaction_log.project_id
-
-    @hybrid_property
     def is_indexed(self):
         return self.file_name is not None
+
+    def to_json(self):
+        return dict(node_id=self.node_id, redaction_id=self.redaction_id,
+                    is_indexed=self.is_indexed, node_type=self.node_type, rescinded=self.rescinded)
+
+
+if __name__ == '__main__':
+    r = RedactionEntry(node_id="AAA", node_type="DDD")
+    print r.to_json()
