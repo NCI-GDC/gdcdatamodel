@@ -1,7 +1,6 @@
 import copy
 
 from datetime import datetime
-import enum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text, text
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,13 +8,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
-
-
-class RedactionType(enum.Enum):
-
-    LATEST = "PARTIAL"
-    COMPLETE = "COMPLETE"
-    PREVIOUS = "PREVIOUS"
 
 
 class RedactionLog(Base):
@@ -39,7 +31,12 @@ class RedactionLog(Base):
     reason_category = Column(String(128), nullable=False, index=True)  # short desc
 
     project_id = Column(String(32), nullable=False, index=True)
-    redaction_type = Column(Enum(RedactionType), default=RedactionType.COMPLETE)
+
+    # LATEST => only latest version is redacted
+    # COMPLETE => all versions are redacted
+    # PREVIOUS => All previous versions are redacted
+    # applicable only to files on indexd
+    redaction_type = Column(Enum("LATEST", "COMPLETE", "PREVIOUS", name="redaction_types"), default="COMPLETE")
 
     created_datetime = Column(
         DateTime(timezone=True),
