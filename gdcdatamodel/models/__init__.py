@@ -328,7 +328,7 @@ def NodeFactory(_id, schema):
     #    'title': schema.get('title'),
     #}
 
-    skipped_dict_vals = [ 'required', '$schema', 'systemProperties',
+    skipped_dict_vals = [ '$schema', 'systemProperties',
                           'additionalProperties', 'links', 'properties',
                           'uniqueKeys', 'id' ]
     attributes['_dictionary'] = {
