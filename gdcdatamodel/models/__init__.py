@@ -323,9 +323,16 @@ def NodeFactory(_id, schema):
     }
 
     # Store for the programmer
+    #attributes['_dictionary'] = {
+    #    'category': schema.get('category'),
+    #    'title': schema.get('title'),
+    #}
+
+    skipped_dict_vals = [ 'required', '$schema', 'systemProperties',
+                          'additionalProperties', 'links', 'properties',
+                          'uniqueKeys', 'id' ]
     attributes['_dictionary'] = {
-        'category': schema.get('category'),
-        'title': schema.get('title'),
+        key: schema[key] for key in schema if key not in skipped_dict_vals  
     }
 
     # _pg_links are out_edges, links TO other types
