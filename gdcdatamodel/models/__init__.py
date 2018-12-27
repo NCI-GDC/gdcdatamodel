@@ -137,6 +137,8 @@ def PropertyFactory(name, schema, key=None):
 
     # Lookup property type and coerce to list
     types = schema.get('type')
+    if 'oneOf' in schema:
+        types = [t.get('type') for t in schema['oneOf']]
     types = [types] if not isinstance(types, list) else types
 
     # Convert the list of string type identifiers to Python types
