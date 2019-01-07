@@ -127,8 +127,3 @@ class RedactionEntry(Base):
     def to_json(self):
         return dict(node_id=self.node_id, redaction_id=self.redaction_id,
                     is_indexed=self.is_indexed, node_type=self.node_type, rescinded=self.rescinded)
-
-
-if __name__ == '__main__':
-    r = RedactionEntry(node_id="AAA", node_type="DDD")
-    print r.to_json()
