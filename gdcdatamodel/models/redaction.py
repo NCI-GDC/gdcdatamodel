@@ -53,7 +53,7 @@ class RedactionLog(Base):
 
     @hybrid_property
     def project(self):
-        return self.project_id.split("-")[1]
+        return "-".join(self.project_id.split("-")[1:])
 
     @hybrid_property
     def program(self):
@@ -85,7 +85,7 @@ class RedactionLog(Base):
 
 class RedactionEntry(Base):
     """
-    Logs a redacted node, holds enough information to enable
+    Logs a redacted node, holds enough information to enable querying and filtering redacted nodes
     """
     __tablename__ = 'redaction_entry'
 
