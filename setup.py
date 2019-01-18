@@ -6,7 +6,7 @@ setup(
     install_requires=[
         'pytz==2016.4',
         'graphviz==0.4.2',
-        'jsonschema==2.5.1',
+        'jsonschema==2.6.0',
         'python-dateutil==2.4.2',
         'psqlgraph',
         'gdcdictionary',
