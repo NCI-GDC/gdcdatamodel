@@ -7,7 +7,7 @@ setup(
         'pytz==2016.4',
         'graphviz==0.4.2',
         'jsonschema==2.5.1',
-        'python-dateutil==2.4.2',
+        'python-dateutil==2.7.5',
         'psqlgraph',
         'gdcdictionary',
         'dictionaryutils>=2.0.0,<3.0.0',
