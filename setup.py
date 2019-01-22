@@ -10,7 +10,7 @@ setup(
         'python-dateutil==2.4.2',
         'psqlgraph',
         'gdcdictionary',
-        'dictionaryutils>=2.0.0,<3.0.0',
+        'dictionaryutils>=2.0.4,<3.0.0',
         'cdisutils',
     ],
     package_data={
