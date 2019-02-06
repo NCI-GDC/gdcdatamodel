@@ -185,15 +185,20 @@ class TransactionSnapshot(Base):
         return doc
 
     id = Column(
-        Text,
+        Integer,
         primary_key=True,
+    )
+
+    entity_id = Column(
+        Text,
         nullable=False,
+        index=True,
     )
 
     transaction_id = Column(
         Integer,
         ForeignKey('transaction_logs.id'),
-        primary_key=True,
+        index=True,
     )
 
     action = Column(
