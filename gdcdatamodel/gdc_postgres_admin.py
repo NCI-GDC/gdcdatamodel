@@ -146,6 +146,31 @@ def revoke_write_permissions_to_graph(engine, user):
     execute_for_all_graph_tables(engine, REVOKE_WRITE_PRIVS_SQL, user=user)
 
 
+def migrate_transaction_snapshots(engine, user):
+    """
+    Updates to TransactionSnapshot table:
+        - change old `id` column to `entity_id`, which is no longer unique or primary
+          key
+        - add new serial `id` column as primary key
+    """
+    md = MetaData(bind=engine)
+    tablename = models.submission.TransactionSnapshot.__tablename__
+    snapshots_table = Table(tablename, md, autoload=True)
+    if "entity_id" not in snapshots_table.c:
+        execute(
+            engine,
+            "ALTER TABLE {name} DROP CONSTRAINT {name}_pkey".format(name=tablename),
+        )
+        execute(
+            engine,
+            "ALTER TABLE {} RENAME id TO entity_id".format(tablename),
+        )
+        execute(
+            engine,
+            "ALTER TABLE {} ADD COLUMN id SERIAL PRIMARY KEY;".format(tablename),
+        )
+
+
 def create_graph_tables(engine, timeout):
     """
     create a table
