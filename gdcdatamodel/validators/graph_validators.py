@@ -12,8 +12,7 @@ class GDCGraphValidator(object):
     def __init__(self):
         self.schemas = gdcdictionary
         self.required_validators = {
-            'links_validator': GDCLinksValidator(),
-            'uniqueKeys_validator': GDCUniqueKeysValidator()
+            'links_validator': GDCLinksValidator()
         }
         self.optional_validators = {}
 
