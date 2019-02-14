@@ -80,7 +80,20 @@ def get_secondary_key_indexes(cls):
         ) for key in secondary_keys
     )
 
-    return tuple(key_indexes) + tuple(lower_key_indexes)
+    rv = tuple(key_indexes) + tuple(lower_key_indexes)
+
+    if secondary_keys:
+        # secondary_keys are "uniqueKeys" in the dictionary yaml file, they are
+        # semantically supposed to be unique locally
+        rv += (
+            Index(
+                index_name(cls, "_".join(secondary_keys) + "_uniq"),
+                *(cls._props[key].astext.label(key) for key in secondary_keys),
+                postgresql_ops=dict((key, index_op) for key in secondary_keys),
+                unique=True
+            ),
+        )
+    return rv
 
 
 def cls_add_indexes(cls, indexes):
