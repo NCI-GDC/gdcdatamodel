@@ -1,3 +1,4 @@
+include LICENSE
 include *.avsc
 global-include *.avsc
 recursive-include gdcdatamodel *

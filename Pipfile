@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+graphviz = ">=0.4.10"
+jupyter = ">=1.0.0"
+jupyter_client = ">=4.2.2"
+jupyter_console = ">=4.1.1"
+jupyter_core = ">=4.1.0"
+pytest = "*"
+gdcdictionary = "*"
+
+[packages]
+gdcdatamodel = {editable = true,path = "."}
+
+[requires]
+python_version = "2.7"

@@ -1,14 +1,21 @@
 language: python
-
 python:
-  - "2.7"
-
+- '2.7'
 addons:
   postgresql: '9.4'
-
 before_script:
-    - pip install -r dev-requirements.txt
-    - yes | python setup.py install
-    - python bin/destroy_and_setup_psqlgraph.py
-    - pip freeze
-script: "py.test -v"
+- pip install pipenv
+- pipenv install --dev
+- pipenv run python bin/destroy_and_setup_psqlgraph.py
+- pipenv graph
+script:
+- pipenv run py.test -v
+- sed -i.bak "s/=get_version\(\)/='$TRAVIS_TAG'/g" setup.py
+deploy:
+  provider: pypi
+  user: uc-ctds
+  skip_existing: true
+  on:
+    tags: true
+  password:
+    secure: mENTFKpxN6cb3/CUDq/J+vArbxUCFbhQBedOpRMY0Z94J47j9w8CoHIidWcAYsoDrRphtTKPPeqY5x43fokH46YdRVMBRger9JqMvU3lBZiAjQfdivnbvnmmxzlF48FeEo9Rl/UipTTpsNJ+qdrC9BAFsR2dDhenXrJQm/MuDvTMo9/x4byOEEUvhQTkbUUQC0RYPZ9eCQu+4TIBV80EyJP31HsiPKPAknV7RqWQ3HJasKXCh9E2JAWB83Fm+j+zF7Q5enb/GaUATaK/NMTEaDKiFlHCH+uJKYtqv4slFZQ38M8bk9PGlhGgI8BICEtF4XOXVOLRThTPGB6vHzmXkbhtiL67LFTQC+/gxV4HYT33nXzSYq2YlCqB2CFdui08XE4TRg4WSmMKeMUI9wjCoXmK6a/RWRfHjiGmk/ShkCmWdoajogKTI2NGGHfSF1zzlhhoD7UYZpt807v5BhqfPA6EuW86iEzi8WoDY4JFvcHD6lPHnVN1x2LPod+4dY8dbo4wNJ+RNM6vKY66Ys+ItbRo+QQsBQlMwoAn1PkIo1O5dKfGOM3SOrmfw3FwYD7SCwWnXggL2UzpxpfbBuFysbho9OND6jnaBliFNhP4ihW+LdbJ26yzDF69d5WiocEWSmD5dgxQB40CKx/5lX2r7AhRa4XxFHgWY6hIW5vJsg8=
