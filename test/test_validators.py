@@ -230,3 +230,18 @@ class TestValidators(unittest.TestCase):
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
             self.assertEquals(0, len(self.entities[0].errors))
+
+    def test_graph_validator_with_existing_unique_keys(self):
+        with g.session_scope() as session:
+            node = self.create_node({'type': 'data_format',
+                                     'props': {'name': 'test'},
+                                     'edges': {}},
+                                    session)
+            node = self.create_node({'type': 'data_format',
+                                     'props': {'name': 'test'},
+                                     'edges': {}},
+                                    session)
+            self.update_schema('data_format', 'uniqueKeys', [['name']])
+            self.entities[0].node = node
+            self.graph_validator.record_errors(g, self.entities)
+            self.assertEquals(['name'], self.entities[0].errors[0]['keys'])
