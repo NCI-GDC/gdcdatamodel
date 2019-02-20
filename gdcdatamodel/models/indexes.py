@@ -89,7 +89,7 @@ def get_secondary_key_indexes(cls):
     unique_indexes = (
         Index(
             index_name(cls, "_".join(keys) + "_uniq"),
-            *(cls._props[key].astext.label(key) for key in keys),
+            *(func.lower(cls._props[key].astext).label(key) for key in keys),
             postgresql_ops=dict((key, index_op) for key in keys),
             unique=True  # https://bugs.python.org/issue9232
         )
