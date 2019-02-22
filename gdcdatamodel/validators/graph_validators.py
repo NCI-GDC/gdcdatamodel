@@ -12,7 +12,8 @@ class GDCGraphValidator(object):
     def __init__(self):
         self.schemas = gdcdictionary
         self.required_validators = {
-            'links_validator': GDCLinksValidator()
+            'links_validator': GDCLinksValidator(),
+            'uniqueKeys_validator': GDCUniqueKeysValidator(),
         }
         self.optional_validators = {}
 
@@ -123,7 +124,7 @@ class GDCUniqueKeysValidator(object):
                         props[prop] = node[prop]
                     else:
                         props[key] = node[key]
-                if graph.nodes().props(props).count() > 1:
+                if graph.nodes(type(node)).props(props).count() > 1:
                         entity.record_error(
                             '{} with {} already exists in the GDC'
                             .format(node.label, props), keys=props.keys()
