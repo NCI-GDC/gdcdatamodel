@@ -32,13 +32,28 @@ demographic:
         type: str.lower
         default: not reported
 
-      year_of_birth:
-        path: //clin_shared:year_of_initial_pathologic_diagnosis|//shared:year_of_initial_pathologic_diagnosis - //clin_shared:age_at_initial_pathologic_diagnosis|//shared:age_at_initial_pathologic_diagnosis
+      days_to_death:
+        path: ./shared:days_to_death|./clin_shared:days_to_death
+        type: int
+        maximum: 32872
+        minimum: -32872
+        default: null
+
+      age_at_index:
+        path: ./clin_shared:age_at_initial_pathologic_diagnosis
         type: int
 
-      year_of_death:
-        path: //clin_shared:year_of_initial_pathologic_diagnosis|//shared:year_of_initial_pathologic_diagnosis + floor(//shared:days_to_death|//clin_shared:days_to_death[last()] div 365)
+      days_to_birth:
+        path: ./shared:days_to_birth|./clin_shared:days_to_birth
         type: int
+        minimum: -32872
+        maximum: 0
+        default: null
+
+      vital_status:
+        path: ./shared:vital_status|./clin_shared:vital_status
+        type: str.lower
+        default: not reported
 
 diagnosis:
   - root: //*[local-name()='patient']
@@ -65,31 +80,12 @@ diagnosis:
         minimum: 0
         term:
 
-      days_to_birth:
-        path: ./shared:days_to_birth|./clin_shared:days_to_birth
-        type: int
-        minimum: -32872
-        maximum: 0
-        default: null
-
-      days_to_death:
-        path: ./shared:days_to_death|./clin_shared:days_to_death
-        type: int
-        maximum: 32872
-        minimum: -32872
-        default: null
-
       days_to_last_follow_up:
         path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
         type: int
         maximum: 32872
         minimum: -32872
         default: null
-
-      vital_status:
-        path: ./shared:vital_status|./clin_shared:vital_status
-        type: str.lower
-        default: not reported
 
       primary_diagnosis:
         path: ./shared:icd_10|./clin_shared:icd_10
@@ -117,7 +113,7 @@ diagnosis:
         default: not reported
 
       prior_malignancy:
-        path: ./shared:prior_dx
+        path: ./shared:other_dx
         default: not reported
         type: str
 
@@ -155,6 +151,24 @@ diagnosis:
         minimum: -32872
         default: null
 
+      year_of_diagnosis:
+        path: ./clin_shared:year_of_initial_pathologic_diagnosis
+        type: int
+        maximum: 32872
+        minimum: -32872
+
+      icd_10_code:
+        path: ./clin_shared:icd_10
+        type: str
+
+      days_to_diagnosis:
+        path: ./clin_shared:days_to_initial_pathologic_diagnosis
+        type: int
+
+      prior_treatment:
+        path: ./shared:history_of_neoadjuvant_treatment
+        type: str
+
 exposure:
   - root: //*[local-name()='patient']
     generated_id:
@@ -176,10 +190,6 @@ exposure:
         path: ./shared:stopped_smoking_year|./clin_shared:stopped_smoking_year - ./shared:year_of_tobacco_smoking_onset|./clin_shared:year_of_tobacco_smoking_onset
         type: float
 
-      cigarettes_per_day:
-        path: ./clin_shared:number_pack_years_smoked * 20 div 365
-        type: float
-
       alcohol_history:
         path: "./clin_shared:alcohol_history_documented"
         type: str
@@ -196,9 +206,9 @@ exposure:
         path: "./clin_shared:weight"
         type: float
 
-      bmi:
-        path: "./clin_shared:weight div (./clin_shared:height * ./clin_shared:height * 0.0001)"
-        type: float
+      pack_years_smoked:
+        path: ./clin_shared:number_pack_years_smoked
+        type: int
 
 treatment:
   - root: //*[local-name()='patient']
@@ -220,7 +230,7 @@ treatment:
         type: str
 
       treatment_or_therapy:
-        path: "unknown"
+        path: ./clin_shared:radiation_therapy|./clin_shared:postoperative_rx_tx
         term: TBD
         enum:
           - yes
@@ -253,3 +263,8 @@ treatment:
         maximum: 32872
         minimum: -32872
 
+      treatment_type:
+        path: ./clin_shared:radiation_therapy|./clin_shared:postoperative_rx_tx
+        enum:
+          - yes
+          - no
