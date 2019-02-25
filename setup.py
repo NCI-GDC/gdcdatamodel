@@ -10,9 +10,11 @@ def get_version():
         )
         return tag.strip("\n")
     except Exception:
-        # if somehow you get the repo not from git,
-        # hardcode default major version
-        return "1.0.0"
+        raise RuntimeError(
+            "The version number cannot be extracted from git tag in this source "
+            "distribution; please either download the source from PyPI, or check out "
+            "from GitHub and make sure that the git CLI is available."
+        )
 
 
 setup(
