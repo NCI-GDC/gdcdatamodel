@@ -11,10 +11,12 @@ before_script:
 script:
 - pipenv run py.test -v
 - sed -i.bak "s/=get_version\(\)/='$TRAVIS_TAG'/g" setup.py
+- cat setup.py
 deploy:
   provider: pypi
   user: uc-ctds
   skip_existing: true
+  skip_cleanup: true
   on:
     tags: true
   password:
