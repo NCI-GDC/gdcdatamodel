@@ -33,11 +33,12 @@ demographic:
         default: not reported
 
       days_to_death:
+        evaluator:
+          name: filter
         path: ./shared:days_to_death|./clin_shared:days_to_death
         type: int
         maximum: 32872
         minimum: -32872
-        default: null
 
       age_at_index:
         path: ./clin_shared:age_at_initial_pathologic_diagnosis
@@ -51,15 +52,15 @@ demographic:
         default: null
 
       vital_status:
+        evaluator:
+          name: vital_status
+          follow_up_path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
         path: ./shared:vital_status|./clin_shared:vital_status
-        type: str.lower
+        type: str.title
         default: not reported
 
 diagnosis:
   - root: //*[local-name()='patient']
-    # roots to lookup property
-    additional_property_roots:
-      - //*[local-name()='follow_up']
     generated_id:
       namespace: 0e34df64-b3ab-4b07-b750-e8690ee28eaf
       name: ./shared:bcr_patient_uuid
@@ -68,106 +69,117 @@ diagnosis:
         case:
           path: ./shared:bcr_patient_uuid
     properties:
-      submitter_id:
-        path: ./shared:bcr_patient_barcode
-        suffix: _diagnosis
-        type: str
+        submitter_id:
+          path: ./shared:bcr_patient_barcode
+          suffix: _diagnosis
+          type: str
 
-      age_at_diagnosis:
-        path: ./shared:days_to_birth|./clin_shared:days_to_birth * -1
-        type: int
-        maximum: 32872
-        minimum: 0
-        term:
+        age_at_diagnosis:
+          path: ./shared:days_to_birth|./clin_shared:days_to_birth * -1
+          type: int
+          maximum: 32872
+          minimum: 0
+          term:
 
-      days_to_last_follow_up:
-        path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
-        type: int
-        maximum: 32872
-        minimum: -32872
-        default: null
+        days_to_last_follow_up:
+          evaluator:
+            name: follow_up
+          path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
+          type: int
+          maximum: 32872
+          minimum: -32872
+          default: null
 
-      primary_diagnosis:
-        path: ./shared:icd_10|./clin_shared:icd_10
-        type: str
-        default: not reported
+        primary_diagnosis:
+          path: ./shared:icd_10|./clin_shared:icd_10
+          type: str
+          default: not reported
 
-      morphology:
-        path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
-        type: str
-        default: Not Reported
+        morphology:
+          path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
+          type: str
+          default: Not Reported
 
-      tissue_or_organ_of_origin:
-        path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
-        type: str
-        default: not reported
+        tissue_or_organ_of_origin:
+          path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+          type: str
+          default: not reported
 
-      site_of_resection_or_biopsy:
-        path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
-        type: str
-        default: not reported
+        site_of_resection_or_biopsy:
+          path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+          type: str
+          default: not reported
 
-      classification_of_tumor:
-        path: "primary"
-        type: str
-        default: not reported
+        classification_of_tumor:
+          path: "primary"
+          type: str
+          default: not reported
 
-      prior_malignancy:
-        path: ./shared:other_dx
-        default: not reported
-        type: str
+        prior_malignancy:
+          path: ./shared:other_dx
+          default: not reported
+          type: str.lower
 
-      tumor_stage:
-        path: ./shared_stage:stage_event/shared_stage:pathologic_stage
-        type: str.lower
-        default: not reported
+        tumor_stage:
+          path: ./shared_stage:stage_event/shared_stage:pathologic_stage
+          type: str.lower
+          default: not reported
 
-      tumor_grade:
-        path: ./shared_stage:gleason_grading/shared_stage:gleason_score
-        type: str
-        default: not reported
+        tumor_grade:
+          path: ./shared_stage:gleason_grading/shared_stage:gleason_score
+          type: str
+          default: not reported
 
-      progression_or_recurrence:
-        path: "unknown"
-        type: str
-        default: not reported
+        progression_or_recurrence:
+          path: "unknown"
+          type: str
+          default: not reported
 
-      days_to_recurrence:
-        path: "unknown"
-        type: int
-        maximum: 32872
-        minimum: -32872
-        default: null
+        days_to_recurrence:
+          path: "unknown"
+          type: int
+          maximum: 32872
+          minimum: -32872
+          default: null
 
-      last_known_disease_status:
-        path: "unknown"
-        type: str
-        default: not reported
+        last_known_disease_status:
+          path: "unknown"
+          type: str
+          default: not reported
 
-      days_to_last_known_disease_status:
-        path: "unknown"
-        type: int
-        maximum: 32872
-        minimum: -32872
-        default: null
+        days_to_last_known_disease_status:
+          path: "unknown"
+          type: int
+          maximum: 32872
+          minimum: -32872
+          default: null
 
-      year_of_diagnosis:
-        path: ./clin_shared:year_of_initial_pathologic_diagnosis
-        type: int
-        maximum: 32872
-        minimum: -32872
+        year_of_diagnosis:
+          path: ./clin_shared:year_of_initial_pathologic_diagnosis
+          type: int
+          maximum: 32872
+          minimum: -32872
 
-      icd_10_code:
-        path: ./clin_shared:icd_10
-        type: str
+        icd_10_code:
+          path: ./clin_shared:icd_10
+          type: str
 
-      days_to_diagnosis:
-        path: ./clin_shared:days_to_initial_pathologic_diagnosis
-        type: int
+        days_to_diagnosis:
+          path: ./clin_shared:days_to_initial_pathologic_diagnosis
+          type: int
 
-      prior_treatment:
-        path: ./shared:history_of_neoadjuvant_treatment
-        type: str
+        prior_treatment:
+          path: ./shared:history_of_neoadjuvant_treatment
+          type: str
+
+        # backward compat, remove after dictionary updates
+        vital_status:
+          evaluator:
+            name: vital_status
+            follow_up_path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
+          path: ./shared:vital_status|./clin_shared:vital_status
+          type: str.lower
+          default: not reported
 
 exposure:
   - root: //*[local-name()='patient']
@@ -230,6 +242,9 @@ treatment:
         type: str
 
       treatment_or_therapy:
+        evaluator:
+          name: treatment_therapy
+          follow_up_path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
         path: ./clin_shared:radiation_therapy|./clin_shared:postoperative_rx_tx
         term: TBD
         enum:
@@ -237,7 +252,7 @@ treatment:
           - no
           - unknown
           - not reported
-        type: str
+        type: str.lower
 
       treatment_intent_type:
         path: "unknown"
@@ -268,3 +283,4 @@ treatment:
         enum:
           - yes
           - no
+        type: str.lower
