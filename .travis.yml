@@ -10,7 +10,8 @@ before_script:
 - pipenv graph
 script:
 - pipenv run py.test -v
-- sed -i.bak "s/=get_version\(\)/='$TRAVIS_TAG'/g" setup.py
+before_deploy:
+- sed -i.bak "s/=get_version()/='$TRAVIS_TAG'/g" setup.py
 - cat setup.py
 deploy:
   provider: pypi
