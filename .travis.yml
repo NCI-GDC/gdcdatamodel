@@ -5,7 +5,7 @@ addons:
   postgresql: '9.4'
 before_script:
 - pip install pipenv
-- pipenv install --dev
+- pipenv install --dev --deploy
 - pipenv run python bin/destroy_and_setup_psqlgraph.py
 - pipenv graph
 script:
