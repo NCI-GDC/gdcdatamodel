@@ -23,12 +23,12 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pytz>=2016.4',
-        'graphviz>=0.4.2',
-        'jsonschema>=2.5.1',
+        'graphviz~=0.4',
+        'jsonschema~=2.5',
         'psqlgraph',
         'dictionaryutils>=1.2.0,<3.0.0',
         'cdisutils',
-        'python-dateutil>=2.4.2',
+        'python-dateutil~=2.4',
     ],
     package_data={
         "gdcdatamodel": [
