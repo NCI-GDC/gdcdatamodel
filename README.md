@@ -21,7 +21,7 @@ notebook at `examples/jupyter_example.ipynb` (replicated in
 `examples/jupyter_example.py` for clarity)
 
 ```
-pip install -r dev-requirements
+pipenv install --dev
 PG_USER=* PG_HOST=* PG_DATABASE=* PG_PASSWORD=*   jupyter notebook examples/jupyter_example.ipynb
 ```
 
@@ -48,7 +48,7 @@ The gdcdatamodel library requires the following pip dependencies
 
 ### Project Dependencies
 
-Project dependencies are managed using [PIP](https://pip.readthedocs.org/en/latest/)
+Project dependencies are managed using [Pipenv](https://pipenv.readthedocs.io/en/latest/)
 
 # Example validation usage
 ```
