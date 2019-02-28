@@ -13,6 +13,7 @@ script:
 before_deploy:
 - sed -i.bak "s/=get_version()/='$TRAVIS_TAG'/g" setup.py
 - cat setup.py
+- if [ $(python setup.py --version) == '0.0.0' ]; then travis_terminate 1; fi
 deploy:
   provider: pypi
   user: uc-ctds
