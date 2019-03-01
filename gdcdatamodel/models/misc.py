@@ -1,6 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer, Text, DateTime, BigInteger
-
+from sqlalchemy.dialects.postgresql import JSONB
 
 Base = declarative_base()
 
@@ -15,3 +15,4 @@ class FileReport(Base):
     streamed_bytes = Column('streamed_bytes', BigInteger)
     username = Column('username', String, index=True)
     requested_bytes = Column('requested_bytes', BigInteger)
+    report_data = Column('report_data', JSONB)
