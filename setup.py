@@ -8,9 +8,9 @@ setup(
         'graphviz==0.4.2',
         'jsonschema==2.5.1',
         'python-dateutil==2.4.2',
-        'psqlgraph',
-        'gdcdictionary',
         'dictionaryutils',
+        'gdcdictionary',
+        'psqlgraph',
         'cdisutils',
     ],
     package_data={
