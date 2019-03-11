@@ -21,7 +21,7 @@ setup(
     dependency_links=[
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@1.2.0#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@1.15.0#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@feat/release-oobleck-follow-up-node#egg=gdcdictionary',
     ],
     entry_points={
         'console_scripts': [
