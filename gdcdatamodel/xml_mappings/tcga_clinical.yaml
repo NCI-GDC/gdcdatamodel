@@ -87,7 +87,7 @@ diagnosis:
         days_to_last_follow_up:
           evaluator:
             name: last_follow_up
-          path: ./shared:days_to_last_followup|./clin_shared:days_to_last_followup
+          path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
           type: int
           maximum: 32872
           minimum: -32872
