@@ -22,7 +22,7 @@ setup(
         'git+https://github.com/uc-cdis/dictionaryutils.git@2.0.4#egg=dictionaryutils',
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@1.2.0#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@release/oobleck#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@586e1aaf14d71832cfba4b53bc5d6535d94f51c5#egg=gdcdictionary',
     ],
     entry_points={
         'console_scripts': [
