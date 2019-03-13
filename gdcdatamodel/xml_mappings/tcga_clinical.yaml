@@ -208,7 +208,8 @@ exposure:
 
       alcohol_history:
         path: "./clin_shared:alcohol_history_documented"
-        type: str
+        type: str.title
+        default: Not Reported
 
       alcohol_intensity:
         path: "unknown"
