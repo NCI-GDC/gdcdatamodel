@@ -122,6 +122,25 @@ diagnosis:
           path: ./shared:other_dx
           default: not reported
           type: str.lower
+          values:
+            No:
+              - no
+              - yes, history of synchronous/bilateral malignancy
+            Yes:
+              - yes
+              - yes, history of prior malignancy
+
+        synchronous_malignancy:
+          path: ./shared:other_dx
+          default: not reported
+          type: str.title
+          values:
+            Yes:
+              - yes, history of synchronous/bilateral malignancy
+            No:
+              - no
+              - yes
+              - yes, history of prior malignancy
 
         tumor_stage:
           path: ./shared_stage:stage_event/shared_stage:pathologic_stage
@@ -173,16 +192,14 @@ diagnosis:
 
         prior_treatment:
           path: ./shared:history_of_neoadjuvant_treatment
-          type: str
-
-        # backward compat, remove after dictionary updates
-        vital_status:
-          evaluator:
-            name: vital_status
-            follow_up_path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
-          path: ./shared:vital_status|./clin_shared:vital_status
-          type: str.lower
-          default: not reported
+          type: str.title
+          values:
+            No:
+              - no
+            Yes:
+              - yes
+              - yes, radiation prior to resection
+              - yes, pharmaceutical treatment prior to resection
 
 exposure:
   - root: //*[local-name()='patient']
