@@ -123,11 +123,11 @@ diagnosis:
           default: not reported
           type: str.lower
           values:
-            No:
-              - no
+            'No':
+              - 'no'
               - yes, history of synchronous/bilateral malignancy
-            Yes:
-              - yes
+            'Yes':
+              - 'yes'
               - yes, history of prior malignancy
 
         synchronous_malignancy:
@@ -135,11 +135,11 @@ diagnosis:
           default: not reported
           type: str.title
           values:
-            Yes:
+            'Yes':
               - yes, history of synchronous/bilateral malignancy
-            No:
-              - no
-              - yes
+            'No':
+              - 'no'
+              - 'yes'
               - yes, history of prior malignancy
 
         tumor_stage:
@@ -194,10 +194,10 @@ diagnosis:
           path: ./shared:history_of_neoadjuvant_treatment
           type: str.title
           values:
-            No:
-              - no
-            Yes:
-              - yes
+            'No':
+              - 'no'
+            'Yes':
+              - 'yes'
               - yes, radiation prior to resection
               - yes, pharmaceutical treatment prior to resection
 
