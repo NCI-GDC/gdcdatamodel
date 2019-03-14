@@ -139,8 +139,9 @@ diagnosis:
               - yes, history of synchronous/bilateral malignancy
             'No':
               - 'no'
-              - 'yes'
               - yes, history of prior malignancy
+            not reported:
+              - 'yes'
 
         tumor_stage:
           path: ./shared_stage:stage_event/shared_stage:pathologic_stage
