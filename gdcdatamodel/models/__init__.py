@@ -136,8 +136,23 @@ def PropertyFactory(name, schema, key=None):
         "Found a JSON reference in dictionary.  These should be resolved "
         "at gdcdictionary module load time as of 2016-02-24")
 
-    # Lookup property type and coerce to list
-    types = schema.get('type')
+    # None is the default for a schema type.
+    types = None
+    if schema.get('oneOf'):
+        # We will handle an empty list after the oneOf/types field checks.
+        # If it really an empty list, then use None as a value.
+        types = [
+            oneOf['type']
+            for oneOf in schema['oneOf']
+            if oneOf.get('type')
+        ] or None
+
+    # If there's both overwrite the 'oneOf' field in favor of the 'type' field.
+    if schema.get('type'):
+        # Lookup property type and coerce to list
+        types = schema.get('type')
+
+    # If None is all we have left over, then turn it into a list of None.
     types = [types] if not isinstance(types, list) else types
 
     # Convert the list of string type identifiers to Python types
