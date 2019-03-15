@@ -26,6 +26,7 @@ import hashlib
 import versioned_nodes                           # noqa
 import notifications
 import submission
+import redaction
 
 from sqlalchemy import (
     event,
@@ -135,8 +136,23 @@ def PropertyFactory(name, schema, key=None):
         "Found a JSON reference in dictionary.  These should be resolved "
         "at gdcdictionary module load time as of 2016-02-24")
 
-    # Lookup property type and coerce to list
-    types = schema.get('type')
+    # None is the default for a schema type.
+    types = None
+    if schema.get('oneOf'):
+        # We will handle an empty list after the oneOf/types field checks.
+        # If it really an empty list, then use None as a value.
+        types = [
+            oneOf['type']
+            for oneOf in schema['oneOf']
+            if oneOf.get('type')
+        ] or None
+
+    # If there's both overwrite the 'oneOf' field in favor of the 'type' field.
+    if schema.get('type'):
+        # Lookup property type and coerce to list
+        types = schema.get('type')
+
+    # If None is all we have left over, then turn it into a list of None.
     types = [types] if not isinstance(types, list) else types
 
     # Convert the list of string type identifiers to Python types
@@ -323,9 +339,16 @@ def NodeFactory(_id, schema):
     }
 
     # Store for the programmer
+    #attributes['_dictionary'] = {
+    #    'category': schema.get('category'),
+    #    'title': schema.get('title'),
+    #}
+
+    skipped_dict_vals = [ '$schema', 'systemProperties',
+                          'additionalProperties', 'links', 'properties',
+                          'uniqueKeys', 'id' ]
     attributes['_dictionary'] = {
-        'category': schema.get('category'),
-        'title': schema.get('title'),
+        key: schema[key] for key in schema if key not in skipped_dict_vals  
     }
 
     # _pg_links are out_edges, links TO other types
