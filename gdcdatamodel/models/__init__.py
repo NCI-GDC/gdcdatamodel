@@ -28,6 +28,7 @@ import notifications
 import submission
 
 from sqlalchemy import (
+    func,
     event,
     and_
 )
@@ -264,12 +265,9 @@ def cls_inject_secondary_keys(cls, schema):
             for keys, values in zip(secondary_keys, other):
                 if 'id' in keys:
                     continue
-                other = {
-                    key: val
-                    for key, val
-                    in zip(keys, values)
-                }
-                filters.append(cls._props.contains(other))
+                for key, val in zip(keys, values):
+                    filters.append(func.lower(cls._props[key].astext) ==
+                                   func.lower(val))
             return and_(*filters)
 
     @property
