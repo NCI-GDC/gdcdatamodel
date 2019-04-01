@@ -243,7 +243,7 @@ exposure:
 
       pack_years_smoked:
         path: ./clin_shared:number_pack_years_smoked
-        type: int
+        type: float
 
 treatment:
   - root: //*[local-name()='patient']
