@@ -36,7 +36,7 @@ demographic:
       days_to_death:
         evaluator:
           name: filter
-        path: //shared:days_to_death[not(@procurement_status = "Not Applicable" or @procurement_status = "Not Available")]|//clin_shared:days_to_death[not(@procurement_status = "Not Applicable" or @procurement_status = "Not Available")]
+        path: (//shared:days_to_death|//clin_shared:days_to_death)[not(@procurement_status = "Not Applicable" or @procurement_status = "Not Available")]
         type: int
         maximum: 32872
         minimum: -32872
@@ -55,6 +55,7 @@ demographic:
       vital_status:
         evaluator:
           name: vital_status
+          dead_vital_status_search: (//clin_shared:vital_status|//shared:vital_status)[translate(text(), 'DEAD', 'dead') = 'dead']
           follow_up_path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
         path: ./shared:vital_status|./clin_shared:vital_status
         type: str.title
@@ -194,6 +195,7 @@ diagnosis:
         prior_treatment:
           path: ./shared:history_of_neoadjuvant_treatment
           type: str.title
+          default: not reported
           values:
             'No':
               - 'no'
