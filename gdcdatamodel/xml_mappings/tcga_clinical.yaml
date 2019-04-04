@@ -42,7 +42,11 @@ demographic:
         minimum: -32872
 
       age_at_index:
-        path: ./clin_shared:age_at_initial_pathologic_diagnosis
+        evaluator:
+          # description: search all elements for path and pick value when:
+          # all elements have the same value, or only one element has a value
+          name: unique_value
+        path: //clin_shared:age_at_initial_pathologic_diagnosis/text()
         type: int
 
       days_to_birth:
@@ -55,7 +59,7 @@ demographic:
       vital_status:
         evaluator:
           name: vital_status
-          dead_vital_status_search: (//clin_shared:vital_status|//shared:vital_status)[translate(text(), 'DEAD', 'dead') = 'dead']
+          dead_vital_status_search: (//clin_shared:vital_status|//shared:vital_status)[translate(text(), 'DEA', 'dea') = 'dead']
           follow_up_path: //shared:days_to_last_followup|//clin_shared:days_to_last_followup
         path: ./shared:vital_status|./clin_shared:vital_status
         type: str.title
@@ -120,7 +124,9 @@ diagnosis:
           default: not reported
 
         prior_malignancy:
-          path: ./shared:other_dx
+          evaluator:
+            name: unique_value
+          path: //shared:other_dx/text()
           default: not reported
           type: str.lower
           values:
@@ -132,7 +138,9 @@ diagnosis:
               - yes, history of prior malignancy
 
         synchronous_malignancy:
-          path: ./shared:other_dx
+          evaluator:
+            name: unique_value
+          path: //shared:other_dx/text()
           default: not reported
           type: str.title
           values:
@@ -179,7 +187,9 @@ diagnosis:
           default: null
 
         year_of_diagnosis:
-          path: ./clin_shared:year_of_initial_pathologic_diagnosis
+          evaluator:
+            name: unique_value
+          path: //clin_shared:year_of_initial_pathologic_diagnosis/text()
           type: int
           maximum: 32872
           minimum: -32872
@@ -189,7 +199,11 @@ diagnosis:
           type: str
 
         days_to_diagnosis:
-          path: ./clin_shared:days_to_initial_pathologic_diagnosis
+          evaluator:
+            # description: search all elements for path and pick value when:
+            # all elements have the same value, or only one element has a value
+            name: unique_value
+          path: //clin_shared:days_to_initial_pathologic_diagnosis/text()
           type: int
 
         prior_treatment:
