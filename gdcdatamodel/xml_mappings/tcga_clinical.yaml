@@ -292,7 +292,7 @@ treatment:
           new_tumor_event_path: //nte:*[@preferred_name='new_tumor_event_type']
           additional_radiation_path: ./nte:additional_radiation_therapy
           additional_pharmaceutical_path: ./nte:additional_pharmaceutical_therapy
-          non_uniform_nte_namespaces:
+          non_uniform_nte_paths:
             kich: //*[local-name() = 'new_tumor_event']
             kirp: //*[local-name() = 'new_tumor_event']|//*[local-name() = 'follow_up']
             kirc: //*[local-name() = 'new_tumor_event']|//*[local-name() = 'follow_up']
