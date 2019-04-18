@@ -62,14 +62,16 @@ def get_secondary_key_indexes(cls):
 
     #: use text_pattern_ops, allows LIKE statements not starting with %
     index_op = 'text_pattern_ops'
-    secondary_keys = {key for pair in cls.__pg_secondary_keys for key in pair}
 
     key_indexes = (
         Index(
             index_name(cls, key),
             cls._props[key].astext.label(key),
             postgresql_ops={key: index_op},
-        ) for key in secondary_keys
+            unique=len(keys) == 1,
+        )
+        for keys in cls.__pg_secondary_keys
+        for key in keys
     )
 
     lower_key_indexes = (
@@ -77,10 +79,25 @@ def get_secondary_key_indexes(cls):
             index_name(cls, key+'_lower'),
             func.lower(cls._props[key].astext).label(key+'_lower'),
             postgresql_ops={key+'_lower': index_op},
-        ) for key in secondary_keys
+        )
+        for keys in cls.__pg_secondary_keys
+        for key in keys
     )
 
-    return tuple(key_indexes) + tuple(lower_key_indexes)
+    # __pg_secondary_keys are "uniqueKeys" in the dictionary yaml file, they are
+    # semantically supposed to be unique locally
+    unique_indexes = (
+        Index(
+            index_name(cls, "_".join(keys) + "_uniq"),
+            *(func.lower(cls._props[key].astext).label(key) for key in keys),
+            postgresql_ops=dict((key, index_op) for key in keys),
+            unique=True  # https://bugs.python.org/issue9232
+        )
+        for keys in cls.__pg_secondary_keys
+        if len(keys) > 1  # skip duplicate indexes
+    )
+
+    return tuple(key_indexes) + tuple(lower_key_indexes) + tuple(unique_indexes)
 
 
 def cls_add_indexes(cls, indexes):
