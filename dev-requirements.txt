@@ -1,5 +1,5 @@
 graphviz==0.4.10
 jupyter==1.0.0
-jupyter-client==4.2.2
+jupyter-client==5.2.4
 jupyter-console==4.1.1
 jupyter-core==4.1.0
