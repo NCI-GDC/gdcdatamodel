@@ -4,7 +4,7 @@ setup(
     name='gdcdatamodel',
     packages=find_packages(),
     install_requires=[
-        'pytz==2016.4',
+        'pytz==2019.1',
         'graphviz==0.4.2',
         'jsonschema==2.5.1',
         'python-dateutil==2.4.2',
