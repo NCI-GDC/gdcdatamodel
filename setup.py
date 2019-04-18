@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pytz==2016.4',
-        'graphviz==0.4.2',
+        'graphviz==0.10.1',
         'jsonschema==2.5.1',
         'python-dateutil==2.4.2',
         'dictionaryutils',
