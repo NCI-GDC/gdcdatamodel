@@ -9,7 +9,7 @@ Models for submission TransactionLogs
 from datetime import datetime
 from json import loads, dumps
 from sqlalchemy import func
-from sqlalchemy.dialects.postgres import JSONB
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, deferred

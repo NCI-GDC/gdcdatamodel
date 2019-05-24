@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Text, DateTime, text, Integer, Index, func
-from sqlalchemy.dialects.postgres import JSONB
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
