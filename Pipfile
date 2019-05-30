@@ -7,10 +7,10 @@ verify_ssl = true
 graphviz = "~=0.4"
 jupyter = "~=1.0"
 pytest = "*"
-gdcdictionary = "*"
+gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "1.2.0"}
 
 [packages]
-gdcdatamodel = {editable = true,path = "."}
+gen3datamodel = {editable = true,path = "."}
 
 [requires]
 python_version = "2.7"

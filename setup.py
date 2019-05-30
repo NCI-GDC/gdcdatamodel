@@ -18,7 +18,7 @@ def get_version():
 
 
 setup(
-    name='gdcdatamodel',
+    name='gen3datamodel',
     version=get_version(),
     packages=find_packages(),
     install_requires=[
