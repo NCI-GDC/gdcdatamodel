@@ -53,4 +53,9 @@ docs/_build/
 # PyBuilder
 target/
 
+# IDE
 .idea/
+.vscode/
+
+# Virtualenv
+venv/

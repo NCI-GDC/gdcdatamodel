@@ -77,7 +77,7 @@ print mappings.get_participant_es_mapping()
 # Tests
 
 ```
-❯  nosetests -v
+❯  pytest -v
 test_invalid_aliquot_node (test_avro_schemas.TestAvroSchemaValidation) ... ok
 test_valid_aliquot_node (test_avro_schemas.TestAvroSchemaValidation) ... ok
 

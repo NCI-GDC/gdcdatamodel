@@ -12,6 +12,7 @@ setup(
         'gdcdictionary',
         'psqlgraph',
         'cdisutils',
+        'pyasn1==0.4.2'
     ],
     package_data={
         "gdcdatamodel": [
