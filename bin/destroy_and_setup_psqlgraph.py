@@ -74,6 +74,7 @@ def create_tables(host, user, password, database):
     submission.Base.metadata.create_all(engine)
     redaction.Base.metadata.create_all(engine)
     misc.Base.metadata.create_all(engine)
+    download_reports.Base.metadata.create_all(engine)
 
 
 if __name__ == '__main__':

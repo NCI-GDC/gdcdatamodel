@@ -25,6 +25,25 @@ def db_config():
 
 
 @pytest.fixture(scope='session')
+def pg_driver_reports(request, db_config):
+
+    pg_driver = PsqlGraphDriver(**db_config)
+
+    def teardown():
+        for table in reversed(
+                models.download_reports.Base.metadata.sorted_tables):
+            table.drop(pg_driver.engine, checkfirst=True)
+
+    # ensure clean db
+    teardown()
+
+    models.download_reports.Base.metadata.create_all(pg_driver.engine)
+
+    request.addfinalizer(teardown)
+    return pg_driver
+
+
+@pytest.fixture(scope='session')
 def g(db_config):
     """Fixture for database driver"""
 
