@@ -250,6 +250,7 @@ class TransactionDocument(Base):
     id = Column(
         Integer,
         primary_key=True,
+        autoincrement=True,
         nullable=False,
     )
 
