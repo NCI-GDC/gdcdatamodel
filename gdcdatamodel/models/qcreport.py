@@ -63,6 +63,7 @@ class ValidationResult(Base):
     id = Column(Integer, primary_key=True)
 
     node_id = Column(String(64), nullable=False)
+    submitter_id = Column(String(128))
 
     error_type = Column(String(128), nullable=True, default='', index=True)
 
