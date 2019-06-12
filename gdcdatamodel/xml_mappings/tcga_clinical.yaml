@@ -223,30 +223,100 @@ diagnosis:
               - 'yes'
               - yes, radiation prior to resection
               - yes, pharmaceutical treatment prior to resection
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2399
         ann_arbor_b_symptoms:
           path: //shared_stage:b_symptoms
           type: str
+
         ann_arbor_extranodal_involvement:
           path: //shared_stage:extranodal_involvement
           type: str
+
         ajcc_pathologic_t:
           path: //shared_stage:pathologic_T
           type: str
+
         ajcc_pathologic_n:
           path: //shared_stage:pathologic_N
           type: str
+
         ajcc_pathologic_m:
           path: //shared_stage:pathologic_M
           type: str
+
         ajcc_clinical_t:
           path: //shared_stage:clinical_T
           type: str
+
         ajcc_clinical_n:
           path: //shared_stage:clinical_N
           type: str
+
         ajcc_clinical_m:
           path: //shared_stage:clinical_M
           type: str
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2404
+        primary_gleason_grade:
+          path: //shared_stage:primary_pattern
+          type: str
+          values:
+            Pattern 2:
+              - 2
+            Pattern 3:
+              - 3
+            Pattern 4:
+              - 4
+            Pattern 5:
+              - 5
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2405
+        secondary_gleason_grade:
+          path: //shared_stage:secondary_pattern
+          type: str
+          values:
+            Pattern 2:
+              - 2
+            Pattern 3:
+              - 3
+            Pattern 4:
+              - 4
+            Pattern 5:
+              - 5
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2406
+        igcccg_stage:
+          path: //shared_stage:igcccg_stage
+          type: str
+          values:
+            Poor Progress:
+              - Poor
+              - poor
+            Good Progress:
+              - Good
+              - good
+            Intermediate Progress:
+              - Intermediate
+              - intermediate
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2407
+        masaoka_stage:
+          path: //shared_stage:masaoka_stage
+          type: str
+          values:
+            Stage I:
+              - I
+            Stage IIa:
+              - IIa
+            Stage IIb:
+              - IIb
+            Stage III:
+              - III
+            Stage IVa:
+              - IVa
+            Stage IVb:
+              - IVb
 
 exposure:
   - root: //*[local-name()='patient']
