@@ -103,25 +103,26 @@ diagnosis:
           minimum: -32872
           default: null
 
+        # mapped to Not Reported see https://jira.opensciencedatacloud.org/browse/DAT-2409
         primary_diagnosis:
-          path: ./shared:icd_10|./clin_shared:icd_10
+          path: "na"
           type: str
-          default: not reported
+          default: Not Reported
 
         morphology:
-          path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
+          path: "na"
           type: str
           default: Not Reported
 
         tissue_or_organ_of_origin:
-          path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+          path: "na"
           type: str
-          default: not reported
+          default: Not Reported
 
         site_of_resection_or_biopsy:
-          path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+          path: "na"
           type: str
-          default: not reported
+          default: Not Reported
 
         classification_of_tumor:
           path: "primary"
