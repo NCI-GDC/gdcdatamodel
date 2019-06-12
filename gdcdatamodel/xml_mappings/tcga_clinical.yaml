@@ -222,6 +222,30 @@ diagnosis:
               - 'yes'
               - yes, radiation prior to resection
               - yes, pharmaceutical treatment prior to resection
+        ann_arbor_b_symptoms:
+          path: //shared_stage:b_symptoms
+          type: str
+        ann_arbor_extranodal_involvement:
+          path: //shared_stage:extranodal_involvement
+          type: str
+        ajcc_pathologic_t:
+          path: //shared_stage:pathologic_T
+          type: str
+        ajcc_pathologic_n:
+          path: //shared_stage:pathologic_N
+          type: str
+        ajcc_pathologic_m:
+          path: //shared_stage:pathologic_M
+          type: str
+        ajcc_clinical_t:
+          path: //shared_stage:clinical_T
+          type: str
+        ajcc_clinical_n:
+          path: //shared_stage:clinical_N
+          type: str
+        ajcc_clinical_m:
+          path: //shared_stage:clinical_M
+          type: str
 
 exposure:
   - root: //*[local-name()='patient']
