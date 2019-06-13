@@ -257,6 +257,15 @@ diagnosis:
           path: //shared_stage:clinical_M
           type: str
 
+        ajcc_pathologic_stage:
+          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:pathologic_stage
+          type: str.title_upper
+          values:
+            Stage IS:
+              - IS
+            Not Reported:
+              - I/II NOS
+
         # see https://jira.opensciencedatacloud.org/browse/DAT-2404
         primary_gleason_grade:
           path: //shared_stage:primary_pattern
@@ -291,13 +300,10 @@ diagnosis:
           type: str
           values:
             Poor Progress:
-              - Poor
               - poor
             Good Progress:
-              - Good
               - good
             Intermediate Progress:
-              - Intermediate
               - intermediate
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2407
