@@ -224,6 +224,11 @@ diagnosis:
               - yes, radiation prior to resection
               - yes, pharmaceutical treatment prior to resection
 
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2398
+        ajcc_staging_system_edition:
+          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:system_version
+          type: str.lower
+
         # see https://jira.opensciencedatacloud.org/browse/DAT-2399
         ann_arbor_b_symptoms:
           path: //shared_stage:b_symptoms
@@ -256,6 +261,65 @@ diagnosis:
         ajcc_clinical_m:
           path: //shared_stage:clinical_M
           type: str
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2402
+        ajcc_clinical_stage:
+          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:clinical_stage
+          type: str
+          values:
+            Stage 0:
+              - stage 0
+            Stage I:
+              - stage i
+            Stage IA:
+              - stage ia
+            Stage IB:
+              - stage ib
+            Stage II:
+              - stage ii
+            Stage IIA:
+              - stage iia
+            Stage IIB:
+              - stage iib
+            Stage IIC:
+              - stage iic
+            Stage III:
+              - stage iii
+            Stage IIIA:
+              - stage iiia
+            Stage IIIB:
+              - stage iiib
+            Stage IIIC:
+              - stage iiic
+            Stage IS:
+              - is
+              - stage is
+            Stage IV:
+              - stage iv
+            Stage IVA:
+              - stage iva
+            Stage IVB:
+              - stage ivb
+            Stage IVC:
+              - stage ivc
+            Stage X:
+              - stage x
+            Not Reported:
+              - i/ii nos
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2403
+        ann_arbor_clinical_stage:
+          path: //shared_stage:stage_event[@system='ANN_ARBOR']/shared_stage:clinical_stage
+          type: str
+          values:
+            Stage I:
+              - stage i
+            Stage II:
+              - stage ii
+            Stage III:
+              - stage iii
+            Stage IV:
+              - stage iv
 
         ajcc_pathologic_stage:
           path: //shared_stage:stage_event[@system='AJCC']/shared_stage:pathologic_stage
@@ -312,17 +376,17 @@ diagnosis:
           type: str
           values:
             Stage I:
-              - I
+              - i
             Stage IIa:
-              - IIa
+              - iia
             Stage IIb:
-              - IIb
+              - iib
             Stage III:
-              - III
+              - iii
             Stage IVa:
-              - IVa
+              - iva
             Stage IVb:
-              - IVb
+              - ivb
 
 exposure:
   - root: //*[local-name()='patient']
