@@ -323,12 +323,89 @@ diagnosis:
 
         ajcc_pathologic_stage:
           path: //shared_stage:stage_event[@system='AJCC']/shared_stage:pathologic_stage
-          type: str.title_upper
+          type: str
           values:
+            Stage 0:
+              - stage 0
+            Stage I:
+              - stage i
+            Stage IA:
+              - stage ia
+            Stage IB:
+              - stage ib
+            Stage II:
+              - stage ii
             Stage IS:
-              - IS
+              - is
+            Stage IIA:
+              - stage iia
+            Stage IIB:
+              - stage iib
+            Stage IIC:
+              - stage iic
+            Stage III:
+              - stage iii
+            Stage IIIA:
+              - stage iiia
+            Stage IIIB:
+              - stage iiib
+            Stage IIIC:
+              - stage iiic
+            Stage IV:
+              - stage iv
+            Stage IVA:
+              - stage iva
+            Stage IVB:
+              - stage ivb
+            Stage IVC:
+              - stage ivc
+            Stage X:
+              - stage x
             Not Reported:
-              - I/II NOS
+              - i/ii nos
+            Stage IS:
+              - is
+            Not Reported:
+              - i/ii nos
+
+        figo_stage:
+          path: //shared_stage:stage_event[@system='FIGO']/shared_stage:clinical_stage
+          type: str
+          values:
+            Stage I:
+              - stage i
+            Stage IA:
+              - stage ia
+            Stage IB:
+              - stage ib
+            Stage IC:
+              - stage ic
+            Stage II:
+              - stage ii
+            Stage IIA:
+              - stage iia
+            Stage IIB:
+              - stage iib
+            Stage IIC:
+              - stage iic
+            Stage III:
+              - stage iii
+            Stage IIIA:
+              - stage iiia
+            Stage IIIB:
+              - stage iiib
+            Stage IIIC:
+              - stage iiic
+            Stage IIIC1:
+              - stage iiic1
+            Stage IIIC2:
+              - stage iiic2
+            Stage IV:
+              - stage iv
+            Stage IVA:
+              - stage iva
+            Stage IVB:
+              - stage ivb
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2404
         primary_gleason_grade:
