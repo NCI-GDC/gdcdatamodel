@@ -321,8 +321,9 @@ diagnosis:
             Stage IV:
               - stage iv
 
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2400
         ajcc_pathologic_stage:
-          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:pathologic_stage
+          path: //shared_stage:stage_event[not(@system) or @system='AJCC']/shared_stage:pathologic_stage
           type: str
           values:
             Stage 0:
@@ -363,11 +364,8 @@ diagnosis:
               - stage x
             Not Reported:
               - i/ii nos
-            Stage IS:
-              - is
-            Not Reported:
-              - i/ii nos
 
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2401
         figo_stage:
           path: //shared_stage:stage_event[@system='FIGO']/shared_stage:clinical_stage
           type: str
