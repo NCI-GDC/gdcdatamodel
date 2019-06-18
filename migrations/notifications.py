@@ -6,7 +6,7 @@ migrations.notifications
 Create `notifications` table.
 """
 
-from gdcdatamodel.models.notifications import Base, Notification
+from gdcdatamodel import models
 
 import logging
 
@@ -17,11 +17,14 @@ logger.setLevel(logging.INFO)
 def up(connection):
     logger.info('Migrating notifications: up')
 
-    Base.metadata.create_all(connection)
+    models.notifications.Base.metadata.create_all(connection)
+    models.redaction.Base.metadata.create_all(connection)
+    models.qcreport.Base.metadata.create_all(connection)
 
 
 def down(connection):
     logger.info('Migrating notifications: down')
 
-    sql_cmd = "DROP TABLE {}".format(Notification.__tablename__)
-    connection.execute(sql_cmd)
+    models.notifications.Base.metadata.drop_all(connection)
+    models.redaction.Base.metadata.drop_all(connection)
+    models.qcreport.Base.metadata.drop_all(connection)
