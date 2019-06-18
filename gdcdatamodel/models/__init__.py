@@ -27,6 +27,7 @@ import versioned_nodes                           # noqa
 import notifications
 import submission
 import redaction
+import qcreport
 
 from sqlalchemy import (
     event,
