@@ -163,6 +163,7 @@ class TransactionLog(Base):
     canonical_json = deferred(Column(
         JSONB,
         nullable=False,
+        default=JSONB.NULL,
     ))
 
 
@@ -209,11 +210,13 @@ class TransactionSnapshot(Base):
     old_props = Column(
         JSONB,
         nullable=False,
+        default=JSONB.NULL,
     )
 
     new_props = Column(
         JSONB,
         nullable=False,
+        default=JSONB.NULL,
     )
 
     transaction = relationship(
