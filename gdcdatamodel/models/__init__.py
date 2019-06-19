@@ -18,16 +18,18 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 from cdisutils.log import get_logger
 from collections import defaultdict
 from dictionaryutils import dictionary
-from misc import FileReport                      # noqa
+from gdc_ng_models.models.misc import FileReport
 from sqlalchemy.orm import configure_mappers
 from versioned_nodes import VersionedNode        # noqa
 
 import hashlib
 import versioned_nodes                           # noqa
-import notifications
-import submission
-import redaction
-import qcreport
+
+import gdc_ng_models.models.misc as misc
+import gdc_ng_models.models.notifications as notifications
+import gdc_ng_models.models.qcreport as qcreport
+import gdc_ng_models.models.redaction as redaction
+import gdc_ng_models.models.submission as submission
 
 from sqlalchemy import (
     event,

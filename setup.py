@@ -25,7 +25,7 @@ setup(
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@1.2.0#egg=psqlgraph',
         'git+https://github.com/NCI-GDC/gdcdictionary.git@1.17.0#egg=gdcdictionary',
-        'git+https://github.com/NCI-GDC/gdc-ng-models.git@357d0f0de297f8cea56d2216ab97d91791562730#egg=gdc_ng_models',
+        'git+https://github.com/NCI-GDC/gdc-ng-models.git@cb1a16b9ecf5523cdf9c9e44207039b1195cabdb#egg=gdc_ng_models',
     ],
     entry_points={
         'console_scripts': [
