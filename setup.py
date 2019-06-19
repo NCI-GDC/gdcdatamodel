@@ -8,10 +8,12 @@ setup(
         'graphviz==0.4.2',
         'jsonschema==2.5.1',
         'python-dateutil==2.4.2',
+        'pyasn1==0.4.2',
         'dictionaryutils',
         'gdcdictionary',
         'psqlgraph',
         'cdisutils',
+        'gdc_ng_models',
     ],
     package_data={
         "gdcdatamodel": [
@@ -23,6 +25,7 @@ setup(
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@1.2.0#egg=psqlgraph',
         'git+https://github.com/NCI-GDC/gdcdictionary.git@1.17.0#egg=gdcdictionary',
+        'git+ssh://git@github.com/NCI-GDC/gdc-ng-models.git@a4a392786c19b7dd504f6d23dda5f4888322f92f#egg=gdc_ng_models',
     ],
     entry_points={
         'console_scripts': [
