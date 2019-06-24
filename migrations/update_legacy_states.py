@@ -34,6 +34,8 @@ update_legacy_states(
 
 """
 
+import os
+
 import logging
 
 from sqlalchemy import not_, or_, and_
@@ -41,7 +43,7 @@ from psqlgraph import Node, PsqlGraphDriver
 from gdcdatamodel import models as md
 from multiprocessing import Process, cpu_count, Queue
 from collections import namedtuple
-
+from argparse import ArgumentParser
 
 CLS_WITH_PROJECT_ID = {
     cls for cls in Node.get_subclasses()
@@ -56,6 +58,7 @@ CLS_WITH_STATE = {
 
 
 CLS_TO_UPDATE = CLS_WITH_PROJECT_ID & CLS_WITH_STATE
+#CLS_TO_UPDATE = [ md.File ]
 
 # Determines state and file_state based on existing state
 STATE_MAP = {
@@ -77,7 +80,7 @@ STATE_MAP = {
     },
     'submitted': {
         'state': 'submitted',
-        'file_state': 'registered'
+        'file_state': 'submitted'
     },
     'uploaded': {
         'state': 'submitted',
@@ -89,6 +92,7 @@ STATE_MAP = {
     },
 }
 
+FILE_STATES = [ 'validated', 'registered', 'processed' ]
 
 logger = logging.getLogger("state_updater")
 logging.basicConfig(level=logging.INFO)
@@ -126,7 +130,8 @@ def print_cls_query_summary(graph):
 
     cls_queries = {
         cls.label: cls_query(graph, cls)
-        for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
+        for cls in CLS_TO_UPDATE
+        #for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
     }
 
     print "%s: %d" % ("legacy_stateless_nodes".ljust(40), sum([
@@ -146,15 +151,16 @@ def cls_query(graph, cls):
 
     options = [
         # state
-        null_prop(cls, 'state'),
+        #null_prop(cls, 'state'),
         cls.state.astext.in_(STATE_MAP),
     ]
 
     if 'file_state' in cls.__pg_properties__:
-        options += [null_prop(cls, 'file_state')]
+        options += [cls.file_state.astext.in_(FILE_STATES)]
+        #options += [null_prop(cls, 'file_state')]
 
     return (legacy_filter(graph.nodes(cls), legacy_projects)
-            .filter(or_(*options)))
+            .filter(and_(*options)))
 
 
 def update_cls(graph, cls):
@@ -179,7 +185,7 @@ def update_cls(graph, cls):
 
             set_file_state = (
                 'file_state' in node.__pg_properties__
-                and file_state is None
+                and file_state in FILE_STATES
                 and state in STATE_MAP
             )
 
@@ -217,6 +223,8 @@ def update_legacy_states(graph_kwargs):
 
     """
 
+
+
     graph = PsqlGraphDriver(**graph_kwargs)
     with graph.session_scope():
         print_cls_query_summary(graph)
@@ -239,3 +247,27 @@ def update_legacy_states(graph_kwargs):
 
     for process in pool:
         process.join()
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument("job",
+        choices=['status', 'migrate', 'query'],
+        help="Actions to perform: status - get current state status, migrate - perform migration")
+
+    args = parser.parse_args()
+    db_kwargs = {
+        'host':os.environ['PG_HOST'],
+        'user':os.environ['PG_USER'],
+        'database':os.environ['PG_NAME'],
+        'password':os.environ['PG_PASS']
+    }
+    graph = PsqlGraphDriver(**db_kwargs)
+    if args.job == 'migrate':
+        update_legacy_states(db_kwargs)
+    if args.job == 'status':
+        with graph.session_scope():
+            print_cls_query_summary(graph)
+    if args.job == 'query':
+        with graph.session_scope():
+            query = cls_query(graph, md.File)
+            print md.File.label, query.count()

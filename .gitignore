@@ -54,3 +54,6 @@ docs/_build/
 target/
 
 .idea/
+
+# vi swap files
+*.sw?
