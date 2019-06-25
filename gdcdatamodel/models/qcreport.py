@@ -113,6 +113,7 @@ class ValidationResult(Base):
     def to_json(self):
         return {
             'node_id': self.node_id,
+            'submitter_id': self.submitter_id,
             'error': self.error_type,
             'severity': self.severity,
             'message': self.message,
