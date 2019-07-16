@@ -103,25 +103,26 @@ diagnosis:
           minimum: -32872
           default: null
 
+        # mapped to Not Reported see https://jira.opensciencedatacloud.org/browse/DAT-2409
         primary_diagnosis:
-          path: ./shared:icd_10|./clin_shared:icd_10
+          path: "na"
           type: str
-          default: not reported
+          default: Not Reported
 
         morphology:
-          path: ./shared:icd_o_3_histology|./clin_shared:icd_o_3_histology
+          path: "na"
           type: str
           default: Not Reported
 
         tissue_or_organ_of_origin:
-          path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+          path: "na"
           type: str
-          default: not reported
+          default: Not Reported
 
         site_of_resection_or_biopsy:
-          path: ./shared:icd_o_3_site|./clin_shared:icd_o_3_site # is this right?
+          path: "na"
           type: str
-          default: not reported
+          default: Not Reported
 
         classification_of_tumor:
           path: "primary"
@@ -223,6 +224,245 @@ diagnosis:
               - yes, radiation prior to resection
               - yes, pharmaceutical treatment prior to resection
 
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2398
+        ajcc_staging_system_edition:
+          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:system_version
+          type: str.lower
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2399
+        ann_arbor_b_symptoms:
+          path: //shared_stage:b_symptoms
+          type: str
+
+        ann_arbor_extranodal_involvement:
+          path: //shared_stage:extranodal_involvement
+          type: str
+
+        ajcc_pathologic_t:
+          path: //shared_stage:pathologic_T
+          type: str
+
+        ajcc_pathologic_n:
+          path: //shared_stage:pathologic_N
+          type: str
+
+        ajcc_pathologic_m:
+          path: //shared_stage:pathologic_M
+          type: str
+
+        ajcc_clinical_t:
+          path: //shared_stage:clinical_T
+          type: str
+
+        ajcc_clinical_n:
+          path: //shared_stage:clinical_N
+          type: str
+
+        ajcc_clinical_m:
+          path: //shared_stage:clinical_M
+          type: str
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2402
+        ajcc_clinical_stage:
+          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:clinical_stage
+          type: str
+          values:
+            Stage 0:
+              - stage 0
+            Stage I:
+              - stage i
+            Stage IA:
+              - stage ia
+            Stage IB:
+              - stage ib
+            Stage II:
+              - stage ii
+            Stage IIA:
+              - stage iia
+            Stage IIB:
+              - stage iib
+            Stage IIC:
+              - stage iic
+            Stage III:
+              - stage iii
+            Stage IIIA:
+              - stage iiia
+            Stage IIIB:
+              - stage iiib
+            Stage IIIC:
+              - stage iiic
+            Stage IS:
+              - is
+              - stage is
+            Stage IV:
+              - stage iv
+            Stage IVA:
+              - stage iva
+            Stage IVB:
+              - stage ivb
+            Stage IVC:
+              - stage ivc
+            Stage X:
+              - stage x
+            Not Reported:
+              - i/ii nos
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2403
+        ann_arbor_clinical_stage:
+          path: //shared_stage:stage_event[@system='ANN_ARBOR']/shared_stage:clinical_stage
+          type: str
+          values:
+            Stage I:
+              - stage i
+            Stage II:
+              - stage ii
+            Stage III:
+              - stage iii
+            Stage IV:
+              - stage iv
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2400
+        ajcc_pathologic_stage:
+          path: //shared_stage:stage_event[not(@system) or @system='AJCC']/shared_stage:pathologic_stage
+          type: str
+          values:
+            Stage 0:
+              - stage 0
+            Stage I:
+              - stage i
+            Stage IA:
+              - stage ia
+            Stage IB:
+              - stage ib
+            Stage II:
+              - stage ii
+            Stage IS:
+              - is
+            Stage IIA:
+              - stage iia
+            Stage IIB:
+              - stage iib
+            Stage IIC:
+              - stage iic
+            Stage III:
+              - stage iii
+            Stage IIIA:
+              - stage iiia
+            Stage IIIB:
+              - stage iiib
+            Stage IIIC:
+              - stage iiic
+            Stage IV:
+              - stage iv
+            Stage IVA:
+              - stage iva
+            Stage IVB:
+              - stage ivb
+            Stage IVC:
+              - stage ivc
+            Stage X:
+              - stage x
+            Not Reported:
+              - i/ii nos
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2401
+        figo_stage:
+          path: //shared_stage:stage_event[@system='FIGO']/shared_stage:clinical_stage
+          type: str
+          values:
+            Stage I:
+              - stage i
+            Stage IA:
+              - stage ia
+            Stage IB:
+              - stage ib
+            Stage IC:
+              - stage ic
+            Stage II:
+              - stage ii
+            Stage IIA:
+              - stage iia
+            Stage IIB:
+              - stage iib
+            Stage IIC:
+              - stage iic
+            Stage III:
+              - stage iii
+            Stage IIIA:
+              - stage iiia
+            Stage IIIB:
+              - stage iiib
+            Stage IIIC:
+              - stage iiic
+            Stage IIIC1:
+              - stage iiic1
+            Stage IIIC2:
+              - stage iiic2
+            Stage IV:
+              - stage iv
+            Stage IVA:
+              - stage iva
+            Stage IVB:
+              - stage ivb
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2404
+        primary_gleason_grade:
+          path: //shared_stage:primary_pattern
+          type: str
+          values:
+            Pattern 2:
+              - 2
+            Pattern 3:
+              - 3
+            Pattern 4:
+              - 4
+            Pattern 5:
+              - 5
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2405
+        secondary_gleason_grade:
+          path: //shared_stage:secondary_pattern
+          type: str
+          values:
+            Pattern 2:
+              - 2
+            Pattern 3:
+              - 3
+            Pattern 4:
+              - 4
+            Pattern 5:
+              - 5
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2406
+        igcccg_stage:
+          path: //shared_stage:igcccg_stage
+          type: str
+          values:
+            Poor Progress:
+              - poor
+            Good Progress:
+              - good
+            Intermediate Progress:
+              - intermediate
+
+        # see https://jira.opensciencedatacloud.org/browse/DAT-2407
+        masaoka_stage:
+          path: //shared_stage:masaoka_stage
+          type: str
+          values:
+            Stage I:
+              - i
+            Stage IIa:
+              - iia
+            Stage IIb:
+              - iib
+            Stage III:
+              - iii
+            Stage IVa:
+              - iva
+            Stage IVb:
+              - ivb
+
 exposure:
   - root: //*[local-name()='patient']
     generated_id:
@@ -293,9 +533,11 @@ treatment:
           additional_radiation_path: ./nte:additional_radiation_therapy
           additional_pharmaceutical_path: ./nte:additional_pharmaceutical_therapy
           non_uniform_nte_paths:
+            lgg: //*[local-name() = 'new_tumor_event']  # see https://jira.opensciencedatacloud.org/browse/DAT-2423
             kich: //*[local-name() = 'new_tumor_event']
             kirp: //*[local-name() = 'new_tumor_event']|//*[local-name() = 'follow_up']
             kirc: //*[local-name() = 'new_tumor_event']|//*[local-name() = 'follow_up']
+            hnsc: //*[local-name() = 'new_tumor_event']|//*[local-name() = 'follow_up']  # see https://jira.opensciencedatacloud.org/browse/DAT-2422
           allowed_tumor_events:
             - Biochemical evidence of disease
             - Both Locoregional and Distant Metastasis
