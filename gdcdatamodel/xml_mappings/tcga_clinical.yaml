@@ -226,7 +226,7 @@ diagnosis:
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2398
         ajcc_staging_system_edition:
-          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:system_version
+          path: //shared_stage:stage_event[not(@system) or @system='AJCC']/shared_stage:system_version
           type: str.lower
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2399
