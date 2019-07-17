@@ -438,11 +438,11 @@ diagnosis:
           path: //shared_stage:igcccg_stage
           type: str
           values:
-            Poor Progress:
+            Poor Prognosis:
               - poor
-            Good Progress:
+            Good Prognosis:
               - good
-            Intermediate Progress:
+            Intermediate Prognosis:
               - intermediate
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2407
