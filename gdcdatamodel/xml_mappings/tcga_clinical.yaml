@@ -232,11 +232,11 @@ diagnosis:
         # see https://jira.opensciencedatacloud.org/browse/DAT-2399
         ann_arbor_b_symptoms:
           path: //shared_stage:b_symptoms
-          type: str
+          type: str.title
 
         ann_arbor_extranodal_involvement:
           path: //shared_stage:extranodal_involvement
-          type: str
+          type: str.title
 
         ajcc_pathologic_t:
           path: //shared_stage:pathologic_T
