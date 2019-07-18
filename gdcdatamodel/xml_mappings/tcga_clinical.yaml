@@ -226,17 +226,17 @@ diagnosis:
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2398
         ajcc_staging_system_edition:
-          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:system_version
+          path: //shared_stage:stage_event[not(@system) or @system='AJCC']/shared_stage:system_version
           type: str.lower
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2399
         ann_arbor_b_symptoms:
           path: //shared_stage:b_symptoms
-          type: str
+          type: str.title
 
         ann_arbor_extranodal_involvement:
           path: //shared_stage:extranodal_involvement
-          type: str
+          type: str.title
 
         ajcc_pathologic_t:
           path: //shared_stage:pathologic_T
@@ -264,7 +264,7 @@ diagnosis:
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2402
         ajcc_clinical_stage:
-          path: //shared_stage:stage_event[@system='AJCC']/shared_stage:clinical_stage
+          path: //shared_stage:stage_event[not(@system) or @system='AJCC']/shared_stage:clinical_stage
           type: str
           values:
             Stage 0:
@@ -411,13 +411,13 @@ diagnosis:
           type: str
           values:
             Pattern 2:
-              - 2
+              - "2"
             Pattern 3:
-              - 3
+              - "3"
             Pattern 4:
-              - 4
+              - "4"
             Pattern 5:
-              - 5
+              - "5"
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2405
         secondary_gleason_grade:
@@ -425,24 +425,24 @@ diagnosis:
           type: str
           values:
             Pattern 2:
-              - 2
+              - "2"
             Pattern 3:
-              - 3
+              - "3"
             Pattern 4:
-              - 4
+              - "4"
             Pattern 5:
-              - 5
+              - "5"
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2406
         igcccg_stage:
           path: //shared_stage:igcccg_stage
           type: str
           values:
-            Poor Progress:
+            Poor Prognosis:
               - poor
-            Good Progress:
+            Good Prognosis:
               - good
-            Intermediate Progress:
+            Intermediate Prognosis:
               - intermediate
 
         # see https://jira.opensciencedatacloud.org/browse/DAT-2407
