@@ -275,6 +275,8 @@ diagnosis:
               - stage ia
             Stage IB:
               - stage ib
+            Stage IC:
+              - stage ic
             Stage II:
               - stage ii
             Stage IIA:
@@ -374,14 +376,26 @@ diagnosis:
               - stage i
             Stage IA:
               - stage ia
+            Stage IA1:
+              - stage ia1
+            Stage IA2:
+              - stage ia2
             Stage IB:
               - stage ib
+            Stage IB1:
+              - stage ib1
+            Stage IB2:
+              - stage ib2
             Stage IC:
               - stage ic
             Stage II:
               - stage ii
             Stage IIA:
               - stage iia
+            Stage IIA1:
+              - stage iia1
+            Stage IIA2:
+              - stage iia2
             Stage IIB:
               - stage iib
             Stage IIC:
