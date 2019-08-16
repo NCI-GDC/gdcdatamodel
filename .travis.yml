@@ -6,9 +6,6 @@ python:
 addons:
   postgresql: '9.4'
 
-before_script:
-    - yes | python setup.py install
-    - pip install -r dev-requirements.txt
-    - python bin/destroy_and_setup_psqlgraph.py
-    - pip freeze
-script: "py.test -v"
+install: "pip install tox-travis"
+
+script: "tox"
