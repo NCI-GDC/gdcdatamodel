@@ -25,7 +25,7 @@ logger = get_logger('gdcdatamodel')
 RELATED_CASES_LINK_NAME = '_related_cases'
 
 #: This variable specifies the categories for which we won't create
-#short cut : edges to case
+# short cut : edges to case
 NOT_RELATED_CASES_CATEGORIES = {
     'administrative',
     'TBD',
@@ -105,7 +105,7 @@ def related_cases_from_cache(node):
 
     """
 
-    return filter(None, getattr(node, RELATED_CASES_LINK_NAME, []))
+    return list(filter(None, getattr(node, RELATED_CASES_LINK_NAME, [])))
 
 
 def related_cases_from_parents(node):
@@ -140,7 +140,7 @@ def related_cases_from_parents(node):
         if dst_class.label == 'case' and edge.dst:
             cases.add(edge.dst)
 
-    return filter(None, cases)
+    return list(filter(None, cases))
 
 
 def cache_related_cases_recursive(node,
