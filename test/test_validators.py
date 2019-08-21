@@ -92,7 +92,7 @@ class TestValidators(unittest.TestCase):
         cls = Node.get_subclass(doc['type'])
         node = cls(str(uuid.uuid4()))
         node.props = doc['props']
-        for key, value in doc['edges'].iteritems():
+        for key, value in doc['edges'].items():
             for target_id in value:
                 edge = g.nodes().ids(target_id).first()
                 node[key].append(edge)
@@ -259,4 +259,9 @@ class TestValidators(unittest.TestCase):
             self.update_schema('data_format', 'uniqueKeys', [['submitter_id', 'project_id']])
             self.entities[0].node = node
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['project_id', 'submitter_id'], self.entities[0].errors[0]['keys'])
+            # Check (project_id, submitter_id) uniqueness is captured
+            self.assertTrue(any({'project_id', 'submitter_id'} == set(e['keys'])
+                                for e in self.entities[0].errors))
+            # Check that missing edges is captured
+            self.assertTrue(any({'analytes', 'samples'} == set(e['keys'])
+                                for e in self.entities[0].errors))

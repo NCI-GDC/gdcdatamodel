@@ -10,11 +10,10 @@ Test functionality to update stale case caches
 from gdcdatamodel import models as md
 from psqlgraph import Node, Edge, PsqlGraphDriver
 
-import os
 import pytest
-import sys
 
 import update_case_cache
+
 
 @pytest.fixture(scope='session')
 def db_config():

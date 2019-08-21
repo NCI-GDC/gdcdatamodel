@@ -67,13 +67,6 @@ print(get_participant_es_mapping())  # Prints participant elasticsearch mapping
 print(get_file_es_mapping())         # Prints file elasticsearch mapping
 ```
 
-# Example Elasticsearch mapping usage
-```
-from gdcdatamodel import mappings
-print mappings.get_file_es_mapping()
-print mappings.get_participant_es_mapping()
-```
-
 # Tests
 
 ```
