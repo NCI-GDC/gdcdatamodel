@@ -61,6 +61,7 @@ from .indexes import (
 )
 from gdcdatamodel.models.misc import FileReport                # noqa
 from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
+from gdcdatamodel.models.utils import py3_to_bytes
 
 
 try:
@@ -423,7 +424,7 @@ def generate_edge_tablename(src_label, label, dst_label):
         oldname = tablename
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
         tablename = 'edge_{}_{}'.format(
-            str(hashlib.md5(tablename).hexdigest())[:8],
+            hashlib.md5(py3_to_bytes(tablename)).hexdigest()[:8],
             "{}{}{}".format(
                 ''.join([a[:2] for a in src_label.split('_')])[:10],
                 ''.join([a[:2] for a in label.split('_')])[:7],

@@ -16,6 +16,9 @@ from sqlalchemy import Index, func, text
 from sqlalchemy.types import DateTime
 import hashlib
 
+from gdcdatamodel.models.utils import py3_to_bytes
+
+
 logger = get_logger(__name__)
 
 
@@ -40,7 +43,7 @@ def index_name(cls, description):
         oldname = index_name
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
         name = 'index_{}_{}_{}'.format(
-            str(hashlib.md5(cls.__tablename__).hexdigest())[:8],
+            hashlib.md5(py3_to_bytes(cls.__tablename__)).hexdigest()[:8],
             ''.join([a[:4] for a in cls.label.split('_')])[:20],
             '_'.join([a[:8] for a in description.split('_')])[:25],
         )
