@@ -1,4 +1,4 @@
-from dictionaryutils import dictionary as gdcdictionary
+from gdcdictionary import gdcdictionary
 from jsonschema import Draft4Validator, RefResolver
 import re
 

@@ -9,7 +9,6 @@ Functionality to fix stale case caches in _related_cases edge tables.
 from gdcdatamodel.models import Case
 
 
-
 def update_related_cases(driver, node_id):
     """Removes and re-adds the edge between the given node and it's parent
     to cascade the new relationship to _related_cases through the

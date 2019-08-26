@@ -1,6 +1,6 @@
-from dictionaryutils import dictionary as gdcdictionary
 import psqlgraph
 import sqlalchemy
+from gdcdictionary import gdcdictionary
 
 
 class GDCGraphValidator(object):
