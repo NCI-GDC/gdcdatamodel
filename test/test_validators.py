@@ -92,7 +92,7 @@ class TestValidators(unittest.TestCase):
         cls = Node.get_subclass(doc['type'])
         node = cls(str(uuid.uuid4()))
         node.props = doc['props']
-        for key, value in doc['edges'].iteritems():
+        for key, value in doc['edges'].items():
             for target_id in value:
                 edge = g.nodes().ids(target_id).first()
                 node[key].append(edge)

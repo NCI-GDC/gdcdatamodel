@@ -129,5 +129,5 @@ class GDCUniqueKeysValidator(object):
                 if graph.nodes().props(props).count() > 1:
                         entity.record_error(
                             '{} with {} already exists in the GDC'
-                            .format(node.label, props), keys=props.keys()
+                            .format(node.label, props), keys=list(props.keys())
                         )

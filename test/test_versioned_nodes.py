@@ -17,10 +17,10 @@ class TestValidators(unittest.TestCase):
         portion = md.Portion(**{
             'node_id': 'case1',
             'is_ffpe': False,
-            'portion_number': u'01',
-            'project_id': u'CGCI-BLGSP',
+            'portion_number': '01',
+            'project_id': 'CGCI-BLGSP',
             'state': 'validated',
-            'submitter_id': u'PORTION-1',
+            'submitter_id': 'PORTION-1',
             'weight': 54.0
         })
         portion.acl = ['acl1']
@@ -31,11 +31,11 @@ class TestValidators(unittest.TestCase):
     def new_analyte():
         return md.Analyte(**{
             'node_id': 'analyte1',
-            'analyte_type': u'Repli-G (Qiagen) DNA',
-            'analyte_type_id': u'W',
-            'project_id': u'CGCI-BLGSP',
+            'analyte_type': 'Repli-G (Qiagen) DNA',
+            'analyte_type_id': 'W',
+            'project_id': 'CGCI-BLGSP',
             'state': 'validated',
-            'submitter_id': u'TCGA-AR-A1AR-01A-31W',
+            'submitter_id': 'TCGA-AR-A1AR-01A-31W',
         })
 
     def setUp(self):

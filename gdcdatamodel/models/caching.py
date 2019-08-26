@@ -232,7 +232,7 @@ def update_cache_edges(node, session, correct_cases):
 
     cases_connected = [
         case
-        for case_id, case in correct_cases.iteritems()
+        for case_id, case in correct_cases.items()
         if case_id not in existing_edge_dst_case_ids
     ]
 
