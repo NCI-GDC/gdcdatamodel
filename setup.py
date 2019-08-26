@@ -10,7 +10,6 @@ setup(
         'jsonschema==2.5.1',
         'python-dateutil==2.4.2',
         'pyasn1==0.4.2',
-        'dictionaryutils',
         'gdcdictionary',
         'psqlgraph',
         'cdisutils',
@@ -22,7 +21,6 @@ setup(
         ]
     },
     dependency_links=[
-        'git+https://github.com/uc-cdis/dictionaryutils.git@5a4e0eaee9174b76f66d91a1b2aa5200798539a4#egg=dictionaryutils',
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@22e574dc98c7a27637e432a21c08e38c3c987163#egg=psqlgraph',
         'git+https://github.com/NCI-GDC/gdcdictionary.git@c0ef6a9faba7855c6b12cb0186e517680e8b3e12#egg=gdcdictionary',
