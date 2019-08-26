@@ -78,7 +78,7 @@ class TestCacheRelatedCases(unittest.TestCase):
 
         with g.session_scope() as s:
             sample = g.nodes(md.Sample).subq_path('cases').one()
-            assert sample._related_cases == [case1, case2]
+            assert set(sample._related_cases) == set([case1, case2])
 
     def test_insert_multiple_edges(self):
         with g.session_scope() as s:

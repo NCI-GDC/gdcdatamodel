@@ -259,4 +259,9 @@ class TestValidators(unittest.TestCase):
             self.update_schema('data_format', 'uniqueKeys', [['submitter_id', 'project_id']])
             self.entities[0].node = node
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['project_id', 'submitter_id'], self.entities[0].errors[0]['keys'])
+            # Check (project_id, submitter_id) uniqueness is captured
+            self.assertTrue(any({'project_id', 'submitter_id'} == set(e['keys'])
+                                for e in self.entities[0].errors))
+            # Check that missing edges is captured
+            self.assertTrue(any({'analytes', 'samples'} == set(e['keys'])
+                                for e in self.entities[0].errors))
