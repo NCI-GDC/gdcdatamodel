@@ -1,3 +1,3 @@
 -e git+https://github.com/NCI-GDC/psqlgraph.git@chore/2to3-099to13#egg=psqlgraph
--e git+https://github.com/NCI-GDC/gdcdictionary.git@c0ef6a9faba7855c6b12cb0186e517680e8b3e12#egg=gdcdictionary
+-e git+https://github.com/NCI-GDC/gdcdictionary.git@feat/TT-1136-port-dictionaryutils#egg=gdcdictionary
 -e git+https://github.com/NCI-GDC/gdc-ng-models.git@1.0.1#egg=gdc_ng_models

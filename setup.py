@@ -23,7 +23,7 @@ setup(
     dependency_links=[
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
         'git+https://github.com/NCI-GDC/psqlgraph.git@chore/2to3-099to13#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@c0ef6a9faba7855c6b12cb0186e517680e8b3e12#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@feat/TT-1136-port-dictionaryutils#egg=gdcdictionary',
         'git+https://github.com/NCI-GDC/gdc-ng-models.git@1.0.1#egg=gdc_ng_models',
     ],
     entry_points={
