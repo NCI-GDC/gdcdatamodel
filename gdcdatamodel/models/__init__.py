@@ -15,7 +15,8 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 """
 
-from cdisutils.log import get_logger
+import logging
+
 from collections import defaultdict
 from gdcdictionary import gdcdictionary as dictionary
 from sqlalchemy.orm import configure_mappers
@@ -69,7 +70,7 @@ try:
 except NameError:
     long = int
 
-logger = get_logger('gdcdatamodel')
+logger = logging.getLogger('gdcdatamodel')
 
 # These are properties that are defined outside of the JSONB column in
 # the database, inform later code to skip these

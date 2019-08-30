@@ -11,7 +11,8 @@ query patterns (e.g. secondary_keys).
 
 """
 
-from cdisutils.log import get_logger
+import logging
+
 from sqlalchemy import Index, func, text
 from sqlalchemy.types import DateTime
 import hashlib
@@ -19,7 +20,7 @@ import hashlib
 from gdcdatamodel.models.utils import py3_to_bytes
 
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def index_name(cls, description):
