@@ -15,10 +15,11 @@ GDC datamodel.
 
 """
 
-from cdisutils.log import get_logger
+import logging
+
 from psqlgraph import Node, Edge
 
-logger = get_logger('gdcdatamodel')
+logger = logging.getLogger('gdcdatamodel')
 
 #: This variable contains the link name for the case shortcut
 #: association proxy
