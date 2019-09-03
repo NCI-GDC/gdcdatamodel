@@ -6,8 +6,6 @@ Functionality to fix stale case caches in _related_cases edge tables.
 
 """
 
-from gdcdatamodel.models import Case
-
 
 def update_related_cases(driver, node_id):
     """Removes and re-adds the edge between the given node and it's parent
@@ -31,10 +29,10 @@ def update_related_cases(driver, node_id):
             )
 
             # Delete the edge
-            (driver.edges(edge_cls)
-             .filter(edge_cls.src_id == copied_edge.src_id)
-             .filter(edge_cls.dst_id == copied_edge.dst_id)
-             .delete())
+            driver.edges(edge_cls).filter(
+                edge_cls.src_id == copied_edge.src_id,
+                edge_cls.dst_id == copied_edge.dst_id,
+            ).delete()
 
             session.expunge(edge)
 
@@ -42,10 +40,10 @@ def update_related_cases(driver, node_id):
             session.add(copied_edge)
 
             # Assert the edge was re-added or abort the session
-            (driver.edges(edge_cls)
-             .filter(edge_cls.src_id == copied_edge.src_id)
-             .filter(edge_cls.dst_id == copied_edge.dst_id)
-             .one())
+            driver.edges(edge_cls).filter(
+                edge_cls.src_id == copied_edge.src_id,
+                edge_cls.dst_id == copied_edge.dst_id,
+            ).one()
 
 
 def update_cache_cache_tree(driver, case):

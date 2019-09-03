@@ -129,14 +129,15 @@ def print_cls_query_summary(graph):
         for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
     }
 
-    print "%s: %d" % ("legacy_stateless_nodes".ljust(40), sum([
-        query.count() for query in cls_queries.itervalues()
-    ]))
+    print(
+        "%s: %d" % ("legacy_stateless_nodes".ljust(40),
+                    sum([query.count() for query in cls_queries.itervalues()]))
+    )
 
-    for label, query in cls_queries.iteritems():
+    for label, query in cls_queries.items():
         count = query.count()
         if count:
-            print "%35s : %d" % (label, count)
+            print("%35s : %d" % (label, count))
 
 
 def cls_query(graph, cls):
@@ -232,7 +233,7 @@ def update_legacy_states(graph_kwargs):
         input_q.put(cls)
 
     for process in pool:
-        input_q.put(None) # put a no more work signal for each process
+        input_q.put(None)  # put a no more work signal for each process
 
     for process in pool:
         process.start()

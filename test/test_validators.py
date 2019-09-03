@@ -1,14 +1,10 @@
 import unittest
 import uuid
+
 from gdcdatamodel.validators import GDCJSONValidator, GDCGraphValidator
-from psqlgraph import PsqlGraphDriver
 from gdcdatamodel.models import *
 
-host = 'localhost'
-user = 'test'
-password = 'test'
-database = 'automated_test'
-g = PsqlGraphDriver(host, user, password, database)
+from test.conftest import BaseTestCase
 
 
 class MockSubmissionEntity(object):
@@ -21,27 +17,13 @@ class MockSubmissionEntity(object):
         self.errors.append(dict(message=message, **kwargs))
 
 
-class TestValidators(unittest.TestCase):
+class TestValidators(BaseTestCase):
     def setUp(self):
+        super(TestValidators, self).setUp()
+
         self.graph_validator = GDCGraphValidator()
         self.json_validator = GDCJSONValidator()
         self.entities = [MockSubmissionEntity()]
-
-    def tearDown(self):
-        self._clear_tables()
-
-    def _clear_tables(self):
-        conn = g.engine.connect()
-        conn.execute('commit')
-        for table in Node().get_subclass_table_names():
-            if table != Node.__tablename__:
-                conn.execute('delete from {}'.format(table))
-        for table in Edge.get_subclass_table_names():
-            if table != Edge.__tablename__:
-                conn.execute('delete from {}'.format(table))
-        conn.execute('delete from _voided_nodes')
-        conn.execute('delete from _voided_edges')
-        conn.close()
 
     def test_json_validator_with_insufficient_properties(self):
         self.entities[0].doc = {'type': 'aliquot',
@@ -94,7 +76,7 @@ class TestValidators(unittest.TestCase):
         node.props = doc['props']
         for key, value in doc['edges'].items():
             for target_id in value:
-                edge = g.nodes().ids(target_id).first()
+                edge = self.g.nodes().ids(target_id).first()
                 node[key].append(edge)
         session.add(node)
         return node
@@ -103,7 +85,7 @@ class TestValidators(unittest.TestCase):
         self.graph_validator.schemas.schema[entity][key] = schema
 
     def test_graph_validator_without_required_link(self):
-        with g.session_scope() as session:
+        with self.g.session_scope() as session:
             node = self.create_node({'type': 'aliquot',
                                      'props': {'submitter_id': 'test'},
                                      'edges': {}}, session)
@@ -117,11 +99,11 @@ class TestValidators(unittest.TestCase):
                   'multiplicity': 'many_to_one',
                   'target_type': 'analyte',
                   'required': True}])
-            self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['analytes'], self.entities[0].errors[0]['keys'])
+            self.graph_validator.record_errors(self.g, self.entities)
+            self.assertEqual(['analytes'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_exclusive_link(self):
-        with g.session_scope() as session:
+        with self.g.session_scope() as session:
             analyte = self.create_node(
                 {'type': 'analyte',
                  'props': {'submitter_id': 'test',
@@ -156,12 +138,12 @@ class TestValidators(unittest.TestCase):
                        'label': 'derived_from',
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
-            self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['analytes', 'samples'],
+            self.graph_validator.record_errors(self.g, self.entities)
+            self.assertEqual(['analytes', 'samples'],
                               self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_wrong_multiplicity(self):
-        with g.session_scope() as session:
+        with self.g.session_scope() as session:
             analyte = self.create_node({'type': 'analyte',
                                         'props': {'submitter_id': 'test',
                                                   'analyte_type_id': 'D',
@@ -196,11 +178,11 @@ class TestValidators(unittest.TestCase):
                        'label': 'derived_from',
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
-            self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['analytes'], self.entities[0].errors[0]['keys'])
+            self.graph_validator.record_errors(self.g, self.entities)
+            self.assertEqual(['analytes'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_correct_node(self):
-        with g.session_scope() as session:
+        with self.g.session_scope() as session:
             analyte = self.create_node({'type': 'analyte',
                                         'props': {'submitter_id': 'test',
                                                   'analyte_type_id': 'D',
@@ -228,11 +210,11 @@ class TestValidators(unittest.TestCase):
                        'label': 'derived_from',
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
-            self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(0, len(self.entities[0].errors))
+            self.graph_validator.record_errors(self.g, self.entities)
+            self.assertEqual(0, len(self.entities[0].errors))
 
     def test_graph_validator_with_existing_unique_keys(self):
-        with g.session_scope() as session:
+        with self.g.session_scope() as session:
             node = self.create_node({'type': 'data_format',
                                      'props': {'name': 'test'},
                                      'edges': {}},
@@ -243,11 +225,11 @@ class TestValidators(unittest.TestCase):
                                     session)
             self.update_schema('data_format', 'uniqueKeys', [['name']])
             self.entities[0].node = node
-            self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['name'], self.entities[0].errors[0]['keys'])
+            self.graph_validator.record_errors(self.g, self.entities)
+            self.assertEqual(['name'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_existing_unique_keys_for_different_node_types(self):
-        with g.session_scope() as session:
+        with self.g.session_scope() as session:
             node = self.create_node({'type': 'sample',
                                      'props': {'submitter_id': 'test','project_id':'A'},
                                      'edges': {}},
@@ -258,7 +240,7 @@ class TestValidators(unittest.TestCase):
                                     session)
             self.update_schema('data_format', 'uniqueKeys', [['submitter_id', 'project_id']])
             self.entities[0].node = node
-            self.graph_validator.record_errors(g, self.entities)
+            self.graph_validator.record_errors(self.g, self.entities)
             # Check (project_id, submitter_id) uniqueness is captured
             self.assertTrue(any({'project_id', 'submitter_id'} == set(e['keys'])
                                 for e in self.entities[0].errors))

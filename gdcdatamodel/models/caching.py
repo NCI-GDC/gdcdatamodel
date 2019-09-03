@@ -124,17 +124,20 @@ def related_cases_from_parents(node):
         get_related_case_edge_cls_name(node)
     ]
 
+    # Make sure the edges haven't been expunged
+    edges_out = [e for e in node.edges_out if e in node.get_session()]
+
     # Get the cached ids from parents
     cases = {
         case
-        for edge in node.edges_out
+        for edge in edges_out
         if edge.dst
         for case in edge.dst._related_cases_from_cache
         if edge.__class__.__name__ not in skip_edges_named
     }
 
     # Are any parents cases?
-    for edge in node.edges_out:
+    for edge in edges_out:
         if edge.__class__.__name__ in skip_edges_named:
             continue
         dst_class = Node.get_subclass_named(edge.__dst_class__)
@@ -297,7 +300,6 @@ def cache_related_cases_on_update(target,
         deprecated).
 
     """
-
     cache_related_cases_recursive(
         get_edge_src(target),
         session,
@@ -326,7 +328,6 @@ def cache_related_cases_on_delete(target,
         deprecated).
 
     """
-
     # Remove the source and destination of application local
     # association_proxy so cache_related_cases_update_children doesn't
     # traverse the edge
