@@ -20,14 +20,11 @@ logger = logging.getLogger("update_related_cases_caches")
 logger.setLevel(logging.INFO)
 
 
-def recursive_update_related_case_caches(node, case, visited_ids=None):
+def recursive_update_related_case_caches(node, case, visited_ids=set()):
     """Upserts the case shortcut edge on the source of all incoming edges
     and recurses.
 
     """
-
-    if not visited_ids:
-        visited_ids = set()
 
     logger.info("{}: | case: {} | project: {}".format(
         node, case, node._props.get('project_id', '?')))
