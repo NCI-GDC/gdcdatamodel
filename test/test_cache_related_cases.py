@@ -1,5 +1,5 @@
 from gdcdatamodel import models as md
-from psqlgraph import Node, Edge, PsqlGraphDriver
+from psqlgraph import Node
 
 from test.conftest import BaseTestCase
 

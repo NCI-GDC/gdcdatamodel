@@ -14,11 +14,11 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
-
 import logging
 
 from collections import defaultdict
 from gdcdictionary import gdcdictionary as dictionary
+from past.builtins import long
 from sqlalchemy.orm import configure_mappers
 
 import hashlib
@@ -63,12 +63,6 @@ from .indexes import (
 from gdcdatamodel.models.misc import FileReport                # noqa
 from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
 from gdcdatamodel.models.utils import py3_to_bytes
-
-
-try:
-    long
-except NameError:
-    long = int
 
 logger = logging.getLogger('gdcdatamodel')
 

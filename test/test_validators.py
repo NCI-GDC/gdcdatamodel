@@ -1,4 +1,3 @@
-import unittest
 import uuid
 
 from gdcdatamodel.validators import GDCJSONValidator, GDCGraphValidator

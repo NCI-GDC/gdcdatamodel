@@ -9,7 +9,6 @@ import random
 import unittest
 import uuid
 
-import psqlgraph
 import pytest
 from gdcdatamodel import models
 from psqlgraph import PsqlGraphDriver, create_all, Node, Edge
@@ -33,7 +32,7 @@ def truncate(engine):
     Remove data from existing tables
     """
     conn = engine.connect()
-    for table in Node().get_subclass_table_names():
+    for table in Node.get_subclass_table_names():
         if table != Node.__tablename__:
             conn.execute('delete from {}'.format(table))
     for table in Edge.get_subclass_table_names():
