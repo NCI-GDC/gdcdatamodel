@@ -2,13 +2,17 @@ language: python
 
 python:
   - "2.7"
+  - "3.5"
+  - "3.6"
 
 addons:
   postgresql: '9.4'
 
+install:
+  - pip install tox-travis
+
 before_script:
-    - yes | python setup.py install
-    - pip install -r dev-requirements.txt
-    - python bin/destroy_and_setup_psqlgraph.py
-    - pip freeze
-script: "py.test -v"
+  - psql -U postgres -c "create user test with superuser password 'test';"
+  - psql -U postgres -c "create database automated_test with owner test;"
+
+script: tox

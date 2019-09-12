@@ -14,20 +14,21 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
+import logging
 
-from cdisutils.log import get_logger
 from collections import defaultdict
-from dictionaryutils import dictionary
-from misc import FileReport                      # noqa
+from gdcdictionary import gdcdictionary as dictionary
+from past.builtins import long
 from sqlalchemy.orm import configure_mappers
-from versioned_nodes import VersionedNode        # noqa
 
 import hashlib
-import versioned_nodes                           # noqa
-import notifications
-import submission
-import redaction
-import qcreport
+from gdcdatamodel.models import (
+    versioned_nodes,
+    notifications,
+    submission,
+    redaction,
+    qcreport,
+)
 
 from sqlalchemy import (
     event,
@@ -59,9 +60,11 @@ from .indexes import (
     cls_add_indexes,
     get_secondary_key_indexes,
 )
+from gdcdatamodel.models.misc import FileReport                # noqa
+from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
+from gdcdatamodel.models.utils import py3_to_bytes
 
-
-logger = get_logger('gdcdatamodel')
+logger = logging.getLogger('gdcdatamodel')
 
 # These are properties that are defined outside of the JSONB column in
 # the database, inform later code to skip these
@@ -334,7 +337,7 @@ def NodeFactory(_id, schema):
     # Pull the JSONB properties from the `properties` key
     attributes = {
         key: PropertyFactory(key, schema)
-        for key, schema in schema.get('properties', {}).iteritems()
+        for key, schema in schema.get('properties', {}).items()
         if key not in links
         and key not in excluded_props
     }
@@ -416,7 +419,7 @@ def generate_edge_tablename(src_label, label, dst_label):
         oldname = tablename
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
         tablename = 'edge_{}_{}'.format(
-            str(hashlib.md5(tablename).hexdigest())[:8],
+            hashlib.md5(py3_to_bytes(tablename)).hexdigest()[:8],
             "{}{}{}".format(
                 ''.join([a[:2] for a in src_label.split('_')])[:10],
                 ''.join([a[:2] for a in label.split('_')])[:7],
@@ -517,7 +520,7 @@ def load_nodes():
 
     """
 
-    for entity, subschema in dictionary.schema.iteritems():
+    for entity, subschema in dictionary.schema.items():
         name = subschema['title']
         _id = subschema['id']
         if name not in loaded_nodes:
@@ -571,13 +574,13 @@ def load_edges():
 
     """
 
-    for src_label, subschema in dictionary.schema.iteritems():
+    for src_label, subschema in dictionary.schema.items():
 
         src_cls = Node.get_subclass(src_label)
         if not src_cls:
             raise RuntimeError('No source class labeled {}'.format(src_label))
 
-        for name, link in get_links(subschema).iteritems():
+        for name, link in get_links(subschema).items():
             edge_label = link['label']
             edge_name = parse_edge(
                 src_label, name, edge_label, subschema, link)
@@ -621,8 +624,8 @@ def inject_pg_backrefs():
 
     """
 
-    for src_label, subschema in dictionary.schema.iteritems():
-        for name, link in get_links(subschema).iteritems():
+    for src_label, subschema in dictionary.schema.items():
+        for name, link in get_links(subschema).items():
             dst_cls = Node.get_subclass(link['target_type'])
             dst_cls._pg_backrefs[link['backref']] = {
                 'name': link['name'],
@@ -644,7 +647,7 @@ def inject_pg_edges():
 
         """
 
-        for prop, backref in link['dst_type']._pg_backrefs.iteritems():
+        for prop, backref in link['dst_type']._pg_backrefs.items():
             if backref['src_type'] == cls:
                 return prop
 
@@ -656,7 +659,7 @@ def inject_pg_edges():
 
         """
 
-        for name, link in cls._pg_links.iteritems():
+        for name, link in cls._pg_links.items():
             cls._pg_edges[name] = {
                 'backref': find_backref(link, cls),
                 'type': link['dst_type'],
@@ -670,7 +673,7 @@ def inject_pg_edges():
 
         """
 
-        for name, backref in cls._pg_backrefs.iteritems():
+        for name, backref in cls._pg_backrefs.items():
             cls._pg_edges[name] = {
                 'backref': backref['name'],
                 'type': backref['src_type'],

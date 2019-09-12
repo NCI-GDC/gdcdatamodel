@@ -173,9 +173,10 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test ability to grant read but not write privs"""
 
         self.create_all_tables()
-        self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
 
         try:
+            self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
 
             #: If this failes, this test (not the code) is wrong!
@@ -201,9 +202,10 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test ability to grant read/write privs"""
 
         self.create_all_tables()
-        self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
 
         try:
+            self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
             pgadmin.main(pgadmin.get_parser().parse_args([
                 'graph-grant', '--write=pytest',
@@ -220,9 +222,10 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test ability to revoke read privs"""
 
         self.create_all_tables()
-        self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
 
         try:
+            self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
 
             pgadmin.main(pgadmin.get_parser().parse_args([
@@ -245,9 +248,10 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         """Test ability to revoke read/write privs"""
 
         self.create_all_tables()
-        self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
 
         try:
+            self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
 
             pgadmin.main(pgadmin.get_parser().parse_args([

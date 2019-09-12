@@ -15,17 +15,18 @@ GDC datamodel.
 
 """
 
-from cdisutils.log import get_logger
+import logging
+
 from psqlgraph import Node, Edge
 
-logger = get_logger('gdcdatamodel')
+logger = logging.getLogger('gdcdatamodel')
 
 #: This variable contains the link name for the case shortcut
 #: association proxy
 RELATED_CASES_LINK_NAME = '_related_cases'
 
 #: This variable specifies the categories for which we won't create
-#short cut : edges to case
+# short cut : edges to case
 NOT_RELATED_CASES_CATEGORIES = {
     'administrative',
     'TBD',
@@ -105,7 +106,7 @@ def related_cases_from_cache(node):
 
     """
 
-    return filter(None, getattr(node, RELATED_CASES_LINK_NAME, []))
+    return list(filter(None, getattr(node, RELATED_CASES_LINK_NAME, [])))
 
 
 def related_cases_from_parents(node):
@@ -123,24 +124,27 @@ def related_cases_from_parents(node):
         get_related_case_edge_cls_name(node)
     ]
 
+    # Make sure the edges haven't been expunged
+    edges_out = [e for e in node.edges_out if e in node.get_session()]
+
     # Get the cached ids from parents
     cases = {
         case
-        for edge in node.edges_out
+        for edge in edges_out
         if edge.dst
         for case in edge.dst._related_cases_from_cache
         if edge.__class__.__name__ not in skip_edges_named
     }
 
     # Are any parents cases?
-    for edge in node.edges_out:
+    for edge in edges_out:
         if edge.__class__.__name__ in skip_edges_named:
             continue
         dst_class = Node.get_subclass_named(edge.__dst_class__)
         if dst_class.label == 'case' and edge.dst:
             cases.add(edge.dst)
 
-    return filter(None, cases)
+    return list(filter(None, cases))
 
 
 def cache_related_cases_recursive(node,
@@ -232,7 +236,7 @@ def update_cache_edges(node, session, correct_cases):
 
     cases_connected = [
         case
-        for case_id, case in correct_cases.iteritems()
+        for case_id, case in correct_cases.items()
         if case_id not in existing_edge_dst_case_ids
     ]
 
@@ -296,7 +300,6 @@ def cache_related_cases_on_update(target,
         deprecated).
 
     """
-
     cache_related_cases_recursive(
         get_edge_src(target),
         session,
@@ -325,7 +328,6 @@ def cache_related_cases_on_delete(target,
         deprecated).
 
     """
-
     # Remove the source and destination of application local
     # association_proxy so cache_related_cases_update_children doesn't
     # traverse the edge
