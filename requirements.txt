@@ -1,5 +1,5 @@
 future
 SQLAlchemy==1.3.3
--e git+https://github.com/NCI-GDC/psqlgraph.git@chore/more-unicode-stuff#egg=psqlgraph
--e git+https://github.com/NCI-GDC/gdcdictionary.git@feat/TT-1136-port-dictionaryutils#egg=gdcdictionary
--e git+https://github.com/NCI-GDC/gdc-ng-models.git@chore/remove-cdis-logging#egg=gdc_ng_models
+-e git+https://github.com/NCI-GDC/psqlgraph.git@release/py3#egg=psqlgraph
+-e git+https://github.com/NCI-GDC/gdcdictionary.git@release/py3#egg=gdcdictionary
+-e git+https://github.com/NCI-GDC/gdc-ng-models.git@release/redfish#egg=gdc_ng_models
