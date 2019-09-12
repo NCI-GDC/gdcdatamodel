@@ -20,9 +20,9 @@ setup(
         ]
     },
     dependency_links=[
-        'git+https://github.com/NCI-GDC/psqlgraph.git@chore/2to3-099to13#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@feat/TT-1136-port-dictionaryutils#egg=gdcdictionary',
-        'git+https://github.com/NCI-GDC/gdc-ng-models.git@1.0.1#egg=gdc_ng_models',
+        'git+https://github.com/NCI-GDC/psqlgraph.git@release/py3#egg=psqlgraph',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@release/py3#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/gdc-ng-models.git@release/redfish#egg=gdc_ng_models',
     ],
     entry_points={
         'console_scripts': [
