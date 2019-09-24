@@ -70,7 +70,7 @@ def tables_created(db_config):
     Create necessary tables
     """
     engine = create_engine(
-        "postgres://{user}:{pwd}@{host}/{db}".format(
+        "postgresql://{user}:{pwd}@{host}/{db}".format(
             user=db_config['user'], host=db_config['host'],
             pwd=db_config['password'], db=db_config['database']
         )

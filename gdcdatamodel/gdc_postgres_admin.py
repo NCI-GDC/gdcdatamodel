@@ -113,7 +113,7 @@ def execute(engine, sql, *args, **kwargs):
 
 def get_engine(host, user, password, database):
     connect_args = {"application_name": app_name}
-    con_str = "postgres://{user}:{pwd}@{host}/{db}".format(
+    con_str = "postgresql://{user}:{pwd}@{host}/{db}".format(
         user=user, host=host, pwd=password, db=database
     )
     return create_engine(con_str, connect_args=connect_args)

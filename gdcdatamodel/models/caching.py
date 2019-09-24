@@ -147,11 +147,11 @@ def related_cases_from_parents(node):
     return list(filter(None, cases))
 
 
-def cache_related_cases_recursive(node,
-                                  session,
-                                  flush_context,
-                                  instances,
-                                  visited_nodes=None):
+def cache_related_cases(node,
+                        session,
+                        flush_context,
+                        instances,
+                        visited_nodes=None):
     """Update the related case cache on source node and its children
     recursively iff the this update changes the related case source
     node's shortcut edges.
@@ -197,16 +197,6 @@ def cache_related_cases_recursive(node,
         return
 
     update_cache_edges(node, session, updated_cases)
-
-    to_recur = [e for e in node.edges_in if e.src]
-    for edge in to_recur:
-        cache_related_cases_recursive(
-            get_edge_src(edge),
-            session,
-            flush_context,
-            instances,
-            visited_nodes,
-        )
 
     return
 
@@ -272,7 +262,7 @@ def cache_related_cases_on_insert(target,
     if not target.dst:
         target.dst = get_edge_dst(target, allow_query=True)
 
-    cache_related_cases_recursive(
+    cache_related_cases(
         get_edge_src(target),
         session,
         flush_context,
@@ -300,7 +290,7 @@ def cache_related_cases_on_update(target,
         deprecated).
 
     """
-    cache_related_cases_recursive(
+    cache_related_cases(
         get_edge_src(target),
         session,
         flush_context,
@@ -332,7 +322,7 @@ def cache_related_cases_on_delete(target,
     # association_proxy so cache_related_cases_update_children doesn't
     # traverse the edge
     target.dst, target.src = None, None
-    cache_related_cases_recursive(
+    cache_related_cases(
         get_edge_src(target),
         session,
         flush_context,
