@@ -125,7 +125,7 @@ def print_cls_query_summary(graph):
     """Print breakdown of class counts to stdout"""
 
     cls_queries = {
-        cls.label: cls_query(graph, cls)
+        cls.get_label(): cls_query(graph, cls)
         for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
     }
 

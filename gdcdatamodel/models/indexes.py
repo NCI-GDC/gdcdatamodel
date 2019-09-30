@@ -45,7 +45,7 @@ def index_name(cls, description):
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
         name = 'index_{}_{}_{}'.format(
             hashlib.md5(py3_to_bytes(cls.__tablename__)).hexdigest()[:8],
-            ''.join([a[:4] for a in cls.label.split('_')])[:20],
+            ''.join([a[:4] for a in cls.get_label().split('_')])[:20],
             '_'.join([a[:8] for a in description.split('_')])[:25],
         )
 

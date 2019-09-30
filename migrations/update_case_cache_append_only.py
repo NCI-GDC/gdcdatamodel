@@ -168,7 +168,7 @@ def seed_level_1(graph, cls):
             cls_to_case_edge_table=case_edge.__tablename__,
         )
 
-        print('Seeding {} through {}'.format(cls.label, case_edge.__name__))
+        print('Seeding {} through {}'.format(cls.get_label(), case_edge.__name__))
         graph.current_session().execute(statement)
 
 
