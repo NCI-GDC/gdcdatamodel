@@ -596,7 +596,7 @@ def load_edges():
     for src_cls in Node.get_subclasses():
         cache_case = (
             not src_cls._dictionary['category'] in NOT_RELATED_CASES_CATEGORIES
-            or src_cls.label in ['annotation']
+            or src_cls.get_label() in ['annotation']
         )
 
         if not cache_case:
@@ -608,14 +608,14 @@ def load_edges():
             'required': False,
             'target_type': 'case',
             'label': 'relates_to',
-            'backref': '_related_{}'.format(src_cls.label),
+            'backref': '_related_{}'.format(src_cls.get_label()),
         }
 
         edge_name = parse_edge(
-            src_cls.label,
+            src_cls.get_label(),
             link['name'],
             'relates_to',
-            {'id': src_cls.label},
+            {'id': src_cls.get_label()},
             link,
         )
 
