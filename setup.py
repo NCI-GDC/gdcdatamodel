@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pytz==2016.4',
-        'graphviz==0.4.2',
+        'graphviz==0.4.10',
         'jsonschema',
         'gdcdictionary',
         'psqlgraph',
