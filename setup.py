@@ -5,8 +5,8 @@ setup(
     version="1.18.0",
     packages=find_packages(),
     install_requires=[
-        'pytz==2016.4',
-        'graphviz==0.4.10',
+        'pytz',
+        'graphviz',
         'jsonschema',
         'gdcdictionary',
         'psqlgraph',
