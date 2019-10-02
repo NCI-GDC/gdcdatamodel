@@ -7,7 +7,7 @@ setup(
     install_requires=[
         'pytz==2016.4',
         'graphviz==0.4.2',
-        'jsonschema,
+        'jsonschema',
         'gdcdictionary',
         'psqlgraph',
         'gdc_ng_models',
