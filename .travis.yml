@@ -1,18 +1,26 @@
-language: python
-
-python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
+language: generic
 
 addons:
   postgresql: '9.4'
 
-install:
-  - pip install tox-travis
-
 before_script:
   - psql -U postgres -c "create user test with superuser password 'test';"
   - psql -U postgres -c "create database automated_test with owner test;"
+  - unset PYENV_ROOT
+  - rm -rf ~/.pyenv
+  - curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+  - export PATH="$HOME/.pyenv/bin:$PATH"
+  - pyenv install 3.5.7
+  - pyenv install 3.6.9
 
-script: tox
+install:
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install tox-travis tox-pyenv
+
+script:
+  - pyenv local 3.5.7 3.6.9
+  - tox -e py27,py35,py36
+
+after_script:
+  - tox -e coverage
