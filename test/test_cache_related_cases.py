@@ -204,11 +204,11 @@ class TestCacheRelatedCases(BaseTestCase):
 
     def test_preserve_timestamps(self):
         """Confirm cache changes do not affect the case's timestamps."""
-        with g.session_scope() as s:
+        with self.g.session_scope() as s:
             s.merge(md.Case('case_id_1'))
 
-        with g.session_scope() as s:
-            case = g.nodes(md.Case).one()
+        with self.g.session_scope():
+            case = self.g.nodes(md.Case).one()
             old_created_datetime = case.created_datetime
             old_updated_datetime = case.updated_datetime
 
@@ -225,16 +225,16 @@ class TestCacheRelatedCases(BaseTestCase):
             sample2 = md.Sample('sample_id_2')
             sample2.cases = [case]
 
-        with g.session_scope() as s:
-            case = g.nodes(md.Case).one()
+        with self.g.session_scope() as s:
+            case = self.g.nodes(md.Case).one()
 
             # Exercise a few cache edge removal use cases as well.
-            analyte = g.nodes(md.Analyte).one()
-            sample2 = g.nodes(md.Sample).get('sample_id_2')
+            analyte = self.g.nodes(md.Analyte).one()
+            sample2 = self.g.nodes(md.Sample).get('sample_id_2')
             s.delete(analyte)
             sample2.cases = []
 
-        with g.session_scope() as s:
-            case = g.nodes(md.Case).one()
+        with self.g.session_scope():
+            case = self.g.nodes(md.Case).one()
             assert case.created_datetime == old_created_datetime
             assert case.updated_datetime == old_updated_datetime
