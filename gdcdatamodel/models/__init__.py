@@ -245,9 +245,13 @@ def cls_inject_updated_datetime_hook(cls, updated_key="updated_datetime"):
 
     @event.listens_for(cls, 'before_update')
     def set_updated_datetimes(mapper, connection, target):
-        ts = target.get_session()._flush_timestamp.isoformat('T')
-        if 'updated_datetime' in target.props:
-            target._props['updated_datetime'] = ts
+        # SQLAlchemy fires this event when associations change, but we should
+        # only adjust the timestamp if the object itself was modified.
+        target_session = target.get_session()
+        if target_session.is_modified(target, include_collections=False):
+            ts = target_session._flush_timestamp.isoformat('T')
+            if updated_key in target.props:
+                target._props[updated_key] = ts
 
 
 def cls_inject_secondary_keys(cls, schema):
