@@ -11,6 +11,7 @@ gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary
 
 [packages]
 gen3datamodel = {path = ".",editable = true}
+psqlgraph = {editable = true,git = "https://git@github.com/NCI-GDC/psqlgraph.git",ref = "release/py3"}
 
 [requires]
-python_version = "2.7"
+python_version = "3.6"

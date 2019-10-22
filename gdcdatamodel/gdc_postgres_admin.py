@@ -191,9 +191,9 @@ def create_graph_tables(engine, timeout):
 def is_blocked_by_no_kill(blocking):
     for proc in blocking:
         if proc.blocking_appname in no_kill_list:
-            print 'Blocked by no-kill process {}, {}: {}'.format(
+            print('Blocked by no-kill process {}, {}: {}'.format(
                 proc.blocking_appname, proc.blocking_pid,
-                proc.blocking_statement)
+                proc.blocking_statement))
             return True
     return False
 

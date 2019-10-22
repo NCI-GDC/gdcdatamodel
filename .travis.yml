@@ -1,6 +1,6 @@
 language: python
 python:
-- '2.7'
+- '3.6'
 addons:
   postgresql: '9.4'
 before_script:
@@ -20,7 +20,7 @@ deploy:
   skip_existing: true
   skip_cleanup: true
   on:
-    python: 2.7
+    python: 3.6
     repo: uc-cdis/gdcdatamodel
     tags: true
   password:

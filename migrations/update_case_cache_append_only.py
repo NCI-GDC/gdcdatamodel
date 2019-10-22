@@ -69,7 +69,7 @@ def max_distances_from_case():
         if cls not in distances:
             children = (
                 link['src_type']
-                for _, link in cls._pg_backrefs.iteritems()
+                for _, link in cls._pg_backrefs.items()
             )
             to_visit.extend((child, level+1) for child in children)
 
@@ -85,11 +85,11 @@ def get_levels():
     """
 
     distances = max_distances_from_case()
-    distinct_distances = set(distances.itervalues())
+    distinct_distances = set(distances.values())
 
     levels = {
         level: [
-            cls for cls, distance in distances.iteritems() if distance == level
+            cls for cls, distance in distances.items() if distance == level
         ] for level in distinct_distances
     }
 
@@ -108,16 +108,16 @@ def append_cache_from_parent(graph, child, parent):
     description = child.label + ' -> ' + parent.label + ' -> case'
 
     if parent not in CACHE_EDGES:
-        print "skipping:", description, ": parent is not cached"
+        print("skipping:", description, ": parent is not cached")
 
     elif child not in CACHE_EDGES:
-        print "skipping:", description, ": child is not cached"
+        print("skipping:", description, ": child is not cached")
 
     elif child is parent:
-        print "skipping:", description, ": cycle"
+        print("skipping:", description, ": cycle")
 
     else:
-        print description
+        print(description)
 
         for cls_to_parent_edge in get_edges_between(child, parent):
             statement = APPEND_CACHE_FROM_PARENT_SQL.format(
@@ -138,7 +138,7 @@ def append_cache_from_parents(graph, cls):
 
     parents = {
         link['dst_type']
-        for link in cls._pg_links.itervalues()
+        for link in cls._pg_links.values()
     }
 
     for parent in parents:
@@ -167,7 +167,7 @@ def seed_level_1(graph, cls):
             cls_to_case_edge_table=case_edge.__tablename__,
         )
 
-        print 'Seeding {} through {}'.format(cls.label, case_edge.__name__)
+        print('Seeding {} through {}'.format(cls.label, case_edge.__name__))
         graph.current_session().execute(statement)
 
 
@@ -188,7 +188,7 @@ def update_case_cache_append_only(graph):
         seed_level_1(graph, cls)
 
     for level in sorted(cls_levels)[2:]:
-        print "\n\nLevel:", level
+        print("\n\nLevel:", level)
         for cls in cls_levels[level]:
             append_cache_from_parents(graph, cls)
 

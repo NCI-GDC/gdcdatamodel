@@ -103,4 +103,4 @@ def get_secondary_key_indexes(cls):
 def cls_add_indexes(cls, indexes):
     """Add indexes to given class"""
 
-    map(cls.__table__.append_constraint, indexes)
+    list(map(cls.__table__.append_constraint, indexes))

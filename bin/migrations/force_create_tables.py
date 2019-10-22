@@ -54,7 +54,7 @@ def grant_graph_permissions(engine, roles, grant_users):
         for cls in Node.get_subclasses() + Edge.get_subclasses():
             stmt = "GRANT {roles} ON TABLE {table} TO {user};".format(
                 roles=roles, table=cls.__tablename__, user=grant_user)
-            print stmt.strip()
+            print(stmt.strip())
             engine.execute(text("BEGIN;" + stmt + "COMMIT;"))
 
 
@@ -82,15 +82,15 @@ def create_graph_tables(engine, timeout):
     except Exception as e:
         trans.rollback()
         if 'timeout' in str(e):
-            print 'Attempt timed out', str(e)
+            print('Attempt timed out', str(e))
         else:
             raise
 
 
 def create_misc_tables(engine):
-    print 'Creating submission transaction tables...'
+    print('Creating submission transaction tables...')
     submission.Base.metadata.create_all(engine)
-    print 'Creating reporting tables...'
+    print('Creating reporting tables...')
     reports.Base.metadata.create_all(engine)
 
 
@@ -98,15 +98,15 @@ def is_blocked_by_no_kill(blocking):
     for proc in blocking:
         blocked_appname, bd_pid, bing_appname, bing_pid, query = proc
         if bing_appname in no_kill_list:
-            print 'Blocked by no-kill process {}, {}: {}'.format(
-                bing_appname, bing_pid, query)
+            print('Blocked by no-kill process {}, {}: {}'.format(
+                bing_appname, bing_pid, query))
             return True
     return False
 
 
 def force_create_graph_tables(engine, delay, retries):
 
-    print 'Running table creator named', name
+    print('Running table creator named', name)
     p = Process(target=create_graph_tables, args=(engine, delay*2))
     p.start()
 

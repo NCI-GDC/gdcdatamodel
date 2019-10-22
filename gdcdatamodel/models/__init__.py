@@ -18,14 +18,14 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 from cdisutils.log import get_logger
 from collections import defaultdict
 from dictionaryutils import dictionary
-from misc import FileReport                      # noqa
+from .misc import FileReport                      # noqa
 from sqlalchemy.orm import configure_mappers
-from versioned_nodes import VersionedNode        # noqa
+from .versioned_nodes import VersionedNode        # noqa
 
 import hashlib
-import versioned_nodes                           # noqa
-import notifications
-import submission
+from . import versioned_nodes                           # noqa
+from . import notifications
+from . import submission
 
 from sqlalchemy import (
     func,
@@ -115,8 +115,8 @@ def get_links(schema):
 def types_from_str(types):
     return [a for type_ in types for a in {
         'string': [str],
-        'number': [float, int, long],
-        'integer': [int, long],
+        'number': [float, int, int],
+        'integer': [int, int],
         'float': [float],
         'null': [str],
         'boolean': [bool],
@@ -317,7 +317,7 @@ def NodeFactory(_id, schema):
     # Pull the JSONB properties from the `properties` key
     attributes = {
         key: PropertyFactory(key, schema)
-        for key, schema in schema.get('properties', {}).iteritems()
+        for key, schema in schema.get('properties', {}).items()
         if key not in links
         and key not in excluded_props
     }
@@ -476,7 +476,7 @@ def load_nodes():
 
     """
 
-    for entity, subschema in dictionary.schema.iteritems():
+    for entity, subschema in dictionary.schema.items():
         name = subschema['title']
         _id = subschema['id']
         if name not in loaded_nodes:
@@ -530,13 +530,13 @@ def load_edges():
 
     """
 
-    for src_label, subschema in dictionary.schema.iteritems():
+    for src_label, subschema in dictionary.schema.items():
 
         src_cls = Node.get_subclass(src_label)
         if not src_cls:
             raise RuntimeError('No source class labeled {}'.format(src_label))
 
-        for name, link in get_links(subschema).iteritems():
+        for name, link in get_links(subschema).items():
             edge_label = link['label']
             edge_name = parse_edge(
                 src_label, name, edge_label, subschema, link)
@@ -554,8 +554,8 @@ def inject_pg_backrefs():
 
     """
 
-    for src_label, subschema in dictionary.schema.iteritems():
-        for name, link in get_links(subschema).iteritems():
+    for src_label, subschema in dictionary.schema.items():
+        for name, link in get_links(subschema).items():
             dst_cls = Node.get_subclass(link['target_type'])
             dst_cls._pg_backrefs[link['backref']] = {
                 'name': link['name'],
@@ -577,7 +577,7 @@ def inject_pg_edges():
 
         """
 
-        for prop, backref in link['dst_type']._pg_backrefs.iteritems():
+        for prop, backref in link['dst_type']._pg_backrefs.items():
             if backref['src_type'] == cls:
                 return prop
 
@@ -589,7 +589,7 @@ def inject_pg_edges():
 
         """
 
-        for name, link in cls._pg_links.iteritems():
+        for name, link in cls._pg_links.items():
             cls._pg_edges[name] = {
                 'backref': find_backref(link, cls),
                 'type': link['dst_type'],
@@ -603,7 +603,7 @@ def inject_pg_edges():
 
         """
 
-        for name, backref in cls._pg_backrefs.iteritems():
+        for name, backref in cls._pg_backrefs.items():
             cls._pg_edges[name] = {
                 'backref': backref['name'],
                 'type': backref['src_type'],

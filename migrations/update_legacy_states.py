@@ -117,7 +117,7 @@ def null_prop(cls, key):
 
     return or_(
         cls._props.contains({key: None}),
-        not_(cls._props.has_key(key)),
+        not_(key in cls._props),
     )
 
 
@@ -129,14 +129,14 @@ def print_cls_query_summary(graph):
         for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
     }
 
-    print "%s: %d" % ("legacy_stateless_nodes".ljust(40), sum([
-        query.count() for query in cls_queries.itervalues()
-    ]))
+    print("%s: %d" % ("legacy_stateless_nodes".ljust(40), sum([
+        query.count() for query in cls_queries.values()
+    ])))
 
-    for label, query in cls_queries.iteritems():
+    for label, query in cls_queries.items():
         count = query.count()
         if count:
-            print "%35s : %d" % (label, count)
+            print("%35s : %d" % (label, count))
 
 
 def cls_query(graph, cls):

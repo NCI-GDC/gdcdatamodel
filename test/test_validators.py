@@ -92,7 +92,7 @@ class TestValidators(unittest.TestCase):
         cls = Node.get_subclass(doc['type'])
         node = cls(str(uuid.uuid4()))
         node.props = doc['props']
-        for key, value in doc['edges'].iteritems():
+        for key, value in doc['edges'].items():
             for target_id in value:
                 edge = g.nodes().ids(target_id).first()
                 node[key].append(edge)
@@ -118,7 +118,7 @@ class TestValidators(unittest.TestCase):
                   'target_type': 'analyte',
                   'required': True}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['analytes'], self.entities[0].errors[0]['keys'])
+            self.assertEqual(['analytes'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_exclusive_link(self):
         with g.session_scope() as session:
@@ -157,7 +157,7 @@ class TestValidators(unittest.TestCase):
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['analytes', 'samples'],
+            self.assertEqual(['analytes', 'samples'],
                               self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_wrong_multiplicity(self):
@@ -197,7 +197,7 @@ class TestValidators(unittest.TestCase):
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(['analytes'], self.entities[0].errors[0]['keys'])
+            self.assertEqual(['analytes'], self.entities[0].errors[0]['keys'])
 
     def test_graph_validator_with_correct_node(self):
         with g.session_scope() as session:
@@ -229,4 +229,4 @@ class TestValidators(unittest.TestCase):
                        'multiplicity': 'many_to_one',
                        'target_type': 'sample'}]}])
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEquals(0, len(self.entities[0].errors))
+            self.assertEqual(0, len(self.entities[0].errors))

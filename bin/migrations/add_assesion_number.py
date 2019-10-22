@@ -8,7 +8,7 @@ mapping = mappings.Mapping()
 def migrate(host, user, password, database):
     graph = PsqlGraphDriver(host, user, password, database)
     with graph.session_scope():
-        for project, phsids in mapping.PROJECT_TO_PHSID.iteritems():
+        for project, phsids in mapping.PROJECT_TO_PHSID.items():
             tokens = project.split('-')
             program_code = tokens[0]
             project_code = '-'.join(tokens[1:])
