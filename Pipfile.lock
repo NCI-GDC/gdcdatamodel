@@ -128,12 +128,6 @@
             ],
             "version": "==1.0.1"
         },
-        "gdcdictionary": {
-            "hashes": [
-                "sha256:02357752c0a8bd5d820539a0f9648b64eef4523ee3a130e45e915c4d4801a183"
-            ],
-            "version": "==1.2.0"
-        },
         "gen3datamodel": {
             "editable": true,
             "path": "."
