@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "69ef11a802d7731d294115065a583e752d1f911b7af7c585f38b71af4fbbf489"
+            "sha256": "3e92bf81aa0f312fb24842d5ed7d1132786b58f695051d83d1eaa8c44f301339"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -128,6 +128,12 @@
             ],
             "version": "==1.0.1"
         },
+        "gdcdictionary": {
+            "hashes": [
+                "sha256:02357752c0a8bd5d820539a0f9648b64eef4523ee3a130e45e915c4d4801a183"
+            ],
+            "version": "==1.2.0"
+        },
         "gen3datamodel": {
             "editable": true,
             "path": "."
@@ -183,7 +189,7 @@
         },
         "psqlgraph": {
             "editable": true,
-            "git": "https://git@github.com/NCI-GDC/psqlgraph.git",
+            "git": "https://github.com/NCI-GDC/psqlgraph.git",
             "ref": "1c397b7960c596ddfbb1aacb1f8fd005b6916ddd"
         },
         "psycopg2-binary": {

@@ -8,11 +8,11 @@ graphviz = "~=0.4"
 jupyter = "~=1.0"
 pytest = "*"
 gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "feat/py2-3-init"}
+dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
 
 [packages]
 gen3datamodel = {path = ".",editable = true}
-psqlgraph = {editable = true,git = "https://git@github.com/NCI-GDC/psqlgraph.git",ref = "release/py3"}
-dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
+psqlgraph = {editable = true,git = "https://github.com/NCI-GDC/psqlgraph.git",ref = "release/py3"}
 
 [requires]
 python_version = "3.6"
