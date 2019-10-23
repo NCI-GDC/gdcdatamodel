@@ -12,6 +12,7 @@ dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryu
 [packages]
 gen3datamodel = {path = ".",editable = true}
 psqlgraph = {editable = true,git = "https://github.com/NCI-GDC/psqlgraph.git",ref = "release/py3"}
+cdislogging = "*"
 
 [requires]
 python_version = "3.6"
