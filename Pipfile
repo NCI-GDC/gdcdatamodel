@@ -7,7 +7,6 @@ verify_ssl = true
 graphviz = "~=0.4"
 jupyter = "~=1.0"
 pytest = "*"
-gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "feat/py2-3-init"}
 dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
 
 [packages]
