@@ -372,7 +372,7 @@ def generate_edge_tablename(src_label, label, dst_label):
         src_label.replace('_', ''),
         label.replace('_', ''),
         dst_label.replace('_', ''),
-    )
+    ).encode('utf-8')
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
     # truncate the each part of the name
