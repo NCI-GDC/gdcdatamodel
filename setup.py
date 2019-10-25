@@ -1,3 +1,5 @@
+
+
 from setuptools import setup, find_packages
 from subprocess import check_output
 
@@ -25,8 +27,7 @@ setup(
         'pytz>=2016.4',
         'graphviz~=0.4',
         'jsonschema~=2.5',
-        'psqlgraph~=2.0',
-        'dictionaryutils>=1.2.0,<3.0.0',
+        'psqlgraph',
         'cdisutils',
         'python-dateutil~=2.4',
         'sqlalchemy~=1.3',
