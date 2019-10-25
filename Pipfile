@@ -7,8 +7,8 @@ verify_ssl = true
 graphviz = "~=0.4"
 jupyter = "~=1.0"
 pytest = "*"
-gdcdictionary = {editable = true,git = "https://github.com/uc-cdis/gdcdictionary",ref = "2.0.0"}
-dictionaryutils = {editable = true,git = "https://git@github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
+dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
+gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "release/py3"}
 
 [packages]
 gen3datamodel = {path = ".",editable = true}

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "31a536b636de4980542dc1320bbe5c778baad0fc0181ff63ec33b8a01d58ddef"
+            "sha256": "aab03f36d2e52c5e1d4a1abf96e77d5b5c735ce1752eaaf149d2ef51e60afbf2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -341,7 +341,7 @@
                 "sha256:5b26757dc6f79a3b7dc9fab95359328d5747fcb2409d331ea66d0272b90ab2a0",
                 "sha256:8b995ffe925347a2138d7ac0fe77155e4311a0ea6d6da4f5128fe4b3cbe5ed71"
             ],
-            "markers": "platform_system == 'Darwin'",
+            "markers": "sys_platform == 'darwin'",
             "version": "==0.1.0"
         },
         "atomicwrites": {
