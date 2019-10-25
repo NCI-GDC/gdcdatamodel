@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "11cdf73123c7fa36ed80d152eb7f414126f3f1da8d28f09a9208208427a494ef"
+            "sha256": "3b098dd85d077ceaa90e29047ec82b63c622f6621c3b79aa8d4a89d6b9b2eab1"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -34,13 +34,6 @@
                 "sha256:ea0d3b40a2d852767be77ca343b58a9e3a4b00d9db440efb8da74b4e58025e5a"
             ],
             "version": "==2.49.0"
-        },
-        "cdislogging": {
-            "hashes": [
-                "sha256:a1cc2e48d5fc26d4b354b80c6497f1f1136f3e3e4f1d1855de8980ccf497fa0a"
-            ],
-            "index": "pypi",
-            "version": "==1.0.0"
         },
         "cdisutils": {
             "hashes": [
@@ -196,7 +189,7 @@
         },
         "psqlgraph": {
             "editable": true,
-            "git": "https://github.com/NCI-GDC/psqlgraph.git",
+            "git": "https://git@github.com/NCI-GDC/psqlgraph.git",
             "ref": "1c397b7960c596ddfbb1aacb1f8fd005b6916ddd"
         },
         "psycopg2-binary": {
@@ -404,6 +397,12 @@
                 "sha256:c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"
             ],
             "version": "==0.3"
+        },
+        "gdcdictionary": {
+            "hashes": [
+                "sha256:02357752c0a8bd5d820539a0f9648b64eef4523ee3a130e45e915c4d4801a183"
+            ],
+            "version": "==1.2.0"
         },
         "graphviz": {
             "hashes": [
@@ -669,11 +668,11 @@
         },
         "pytest": {
             "hashes": [
-                "sha256:7e4800063ccfc306a53c461442526c5571e1462f61583506ce97e4da6a1d88c8",
-                "sha256:ca563435f4941d0cb34767301c27bc65c510cb82e90b9ecf9cb52dc2c63caaa0"
+                "sha256:27abc3fef618a01bebb1f0d6d303d2816a99aa87a5968ebc32fe971be91eb1e6",
+                "sha256:58cee9e09242937e136dbb3dab466116ba20d6b7828c7620f23947f37eb4dae4"
             ],
             "index": "pypi",
-            "version": "==5.2.1"
+            "version": "==5.2.2"
         },
         "python-dateutil": {
             "hashes": [
