@@ -73,7 +73,6 @@ excluded_props = ['id', 'type']
 loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
 loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
 
-
 def remove_spaces(s):
     """Returns a stripped string with all of the spaces removed.
 
@@ -372,7 +371,7 @@ def generate_edge_tablename(src_label, label, dst_label):
         src_label.replace('_', ''),
         label.replace('_', ''),
         dst_label.replace('_', ''),
-    ).encode('utf-8')
+    )
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
     # truncate the each part of the name
@@ -380,7 +379,7 @@ def generate_edge_tablename(src_label, label, dst_label):
         oldname = tablename
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
         tablename = 'edge_{}_{}'.format(
-            str(hashlib.md5(tablename).hexdigest())[:8],
+            str(hashlib.md5(tablename.encode("utf-8")).hexdigest())[:8],
             "{}{}{}".format(
                 ''.join([a[:2] for a in src_label.split('_')])[:10],
                 ''.join([a[:2] for a in label.split('_')])[:7],
