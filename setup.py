@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdcdatamodel',
-    version="1.18.0",
+    version="1.18.1",
     packages=find_packages(),
     install_requires=[
         'pytz==2016.4',
@@ -24,9 +24,9 @@ setup(
     dependency_links=[
         'git+https://github.com/uc-cdis/dictionaryutils.git@2.0.4#egg=dictionaryutils',
         'git+https://github.com/NCI-GDC/cdisutils.git@863ce13772116b51bcf5ce7e556f5df3cb9e6f63#egg=cdisutils',
-        'git+https://github.com/NCI-GDC/psqlgraph.git@1.2.2#egg=psqlgraph',
-        'git+https://github.com/NCI-GDC/gdcdictionary.git@1.18.0#egg=gdcdictionary',
-        'git+https://github.com/NCI-GDC/gdc-ng-models.git@1.0.1#egg=gdc_ng_models',
+        'git+https://github.com/NCI-GDC/psqlgraph.git@1.3.0#egg=psqlgraph',
+        'git+https://github.com/NCI-GDC/gdcdictionary.git@1.18.1#egg=gdcdictionary',
+        'git+https://github.com/NCI-GDC/gdc-ng-models.git@1.1.0#egg=gdc_ng_models',
     ],
     entry_points={
         'console_scripts': [
