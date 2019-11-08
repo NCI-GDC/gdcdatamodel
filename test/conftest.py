@@ -11,26 +11,27 @@ from psqlgraph import PsqlGraphDriver
 import pytest
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_config():
     return {
-        'host': 'localhost',
-        'user': 'test',
-        'password': 'test',
-        'database': 'automated_test',
+        "host": "localhost",
+        "user": "test",
+        "password": "test",
+        "database": "automated_test",
     }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def g(db_config):
     """Fixture for database driver"""
 
     return PsqlGraphDriver(**db_config)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def indexes(g):
-    rows = g.engine.execute("""
+    rows = g.engine.execute(
+        """
         SELECT i.relname as indname,
                ARRAY(
                SELECT pg_get_indexdef(idx.indexrelid, k + 1, true)
@@ -42,6 +43,7 @@ def indexes(g):
         ON     i.oid = idx.indexrelid
         JOIN   pg_am as am
         ON     i.relam = am.oid;
-    """).fetchall()
+    """
+    ).fetchall()
 
-    return { row[0]: row[1] for row in rows }
+    return {row[0]: row[1] for row in rows}

@@ -26,8 +26,11 @@ def recursive_update_related_case_caches(node, case, visited_ids=set()):
 
     """
 
-    logger.info("{}: | case: {} | project: {}".format(
-        node, case, node._props.get('project_id', '?')))
+    logger.info(
+        "{}: | case: {} | project: {}".format(
+            node, case, node._props.get("project_id", "?")
+        )
+    )
 
     visited_ids.add(node.node_id)
 
@@ -35,10 +38,10 @@ def recursive_update_related_case_caches(node, case, visited_ids=set()):
         if edge.src is None:
             continue
 
-        if edge.__class__.__name__.endswith('RelatesToCase'):
+        if edge.__class__.__name__.endswith("RelatesToCase"):
             continue
 
-        if not hasattr(edge.src, '_related_cases'):
+        if not hasattr(edge.src, "_related_cases"):
             continue
 
         original = set(edge.src._related_cases)
@@ -62,14 +65,23 @@ def update_project_related_case_cache(project):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-H", "--host", type=str, action="store",
-                        required=True, help="psql-server host")
-    parser.add_argument("-U", "--user", type=str, action="store",
-                        required=True, help="psql test user")
-    parser.add_argument("-D", "--database", type=str, action="store",
-                        required=True, help="psql test database")
-    parser.add_argument("-P", "--password", type=str, action="store",
-                        help="psql test password")
+    parser.add_argument(
+        "-H", "--host", type=str, action="store", required=True, help="psql-server host"
+    )
+    parser.add_argument(
+        "-U", "--user", type=str, action="store", required=True, help="psql test user"
+    )
+    parser.add_argument(
+        "-D",
+        "--database",
+        type=str,
+        action="store",
+        required=True,
+        help="psql test database",
+    )
+    parser.add_argument(
+        "-P", "--password", type=str, action="store", help="psql test password"
+    )
 
     args = parser.parse_args()
     prompt = "Password for {}:".format(args.user)
@@ -77,10 +89,11 @@ def main():
     g = PsqlGraphDriver(args.host, args.user, password, args.database)
 
     with g.session_scope():
-        projects = g.nodes(md.Project).not_props(state='legacy').all()
+        projects = g.nodes(md.Project).not_props(state="legacy").all()
         map(update_project_related_case_cache, projects)
 
     print("Done.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

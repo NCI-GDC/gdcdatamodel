@@ -7,20 +7,14 @@ Base = declarative_base()
 
 
 class GDCReport(Base):
-    __tablename__ = 'gdc_reports'
+    __tablename__ = "gdc_reports"
     __table_args__ = (
-        Index('{}_report_idx'.format(__tablename__),
-              'report', postgresql_using='gin'),
-        Index('{}_report_type_idx'.format(__tablename__),
-              'report_type'),
-        Index('{}_created_datetime_idx'.format(__tablename__),
-              'created_datetime'),
-        Index('{}_program_idx'.format(__tablename__),
-              'program'),
-        Index('{}_project_idx'.format(__tablename__),
-              'project'),
-        Index('{}_id_idx'.format(__tablename__),
-              'id'),
+        Index("{}_report_idx".format(__tablename__), "report", postgresql_using="gin"),
+        Index("{}_report_type_idx".format(__tablename__), "report_type"),
+        Index("{}_created_datetime_idx".format(__tablename__), "created_datetime"),
+        Index("{}_program_idx".format(__tablename__), "program"),
+        Index("{}_project_idx".format(__tablename__), "project"),
+        Index("{}_id_idx".format(__tablename__), "id"),
     )
 
     def __repr__(self):
@@ -33,15 +27,13 @@ class GDCReport(Base):
     report_type = Column(Text, nullable=False)
 
     created_datetime = Column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=text('now()'),
+        DateTime(timezone=True), nullable=False, server_default=text("now()"),
     )
 
     @hybrid_property
     def project_id(self):
-        return self.program + '-' + self.project
+        return self.program + "-" + self.project
 
     @project_id.expression
     def project_id(cls):
-        return func.concat(cls.program, '-', cls.project)
+        return func.concat(cls.program, "-", cls.project)

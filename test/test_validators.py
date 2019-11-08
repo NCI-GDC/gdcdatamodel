@@ -4,10 +4,10 @@ from gdcdatamodel.validators import GDCJSONValidator, GDCGraphValidator
 from psqlgraph import PsqlGraphDriver
 from gdcdatamodel.models import *
 
-host = 'localhost'
-user = 'test'
-password = 'test'
-database = 'automated_test'
+host = "localhost"
+user = "test"
+password = "test"
+database = "automated_test"
 g = PsqlGraphDriver(host, user, password, database)
 
 
@@ -32,56 +32,71 @@ class TestValidators(unittest.TestCase):
 
     def _clear_tables(self):
         conn = g.engine.connect()
-        conn.execute('commit')
+        conn.execute("commit")
         for table in Node().get_subclass_table_names():
             if table != Node.__tablename__:
-                conn.execute('delete from {}'.format(table))
+                conn.execute("delete from {}".format(table))
         for table in Edge.get_subclass_table_names():
             if table != Edge.__tablename__:
-                conn.execute('delete from {}'.format(table))
-        conn.execute('delete from _voided_nodes')
-        conn.execute('delete from _voided_edges')
+                conn.execute("delete from {}".format(table))
+        conn.execute("delete from _voided_nodes")
+        conn.execute("delete from _voided_edges")
         conn.close()
 
     def test_json_validator_with_insufficient_properties(self):
-        self.entities[0].doc = {'type': 'aliquot',
-                                'centers': {'submitter_id': 'test'}}
+        self.entities[0].doc = {"type": "aliquot", "centers": {"submitter_id": "test"}}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(self.entities[0].errors[0]['keys'], ['submitter_id'])
+        self.assertEqual(self.entities[0].errors[0]["keys"], ["submitter_id"])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_wrong_node_type(self):
-        self.entities[0].doc = {'type': 'aliquo'}
+        self.entities[0].doc = {"type": "aliquo"}
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(self.entities[0].errors[0]['keys'], ['type'])
+        self.assertEqual(self.entities[0].errors[0]["keys"], ["type"])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_wrong_property_type(self):
-        self.entities[0].doc = {'type': 'aliquot',
-                                'submitter_id': 1, 'centers': {'submitter_id': 'test'}}
+        self.entities[0].doc = {
+            "type": "aliquot",
+            "submitter_id": 1,
+            "centers": {"submitter_id": "test"},
+        }
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(['submitter_id'], self.entities[0].errors[0]['keys'])
+        self.assertEqual(["submitter_id"], self.entities[0].errors[0]["keys"])
         self.assertEqual(1, len(self.entities[0].errors))
 
     def test_json_validator_with_multiple_errors(self):
-        self.entities[0].doc = {'type': 'aliquot', 'submitter_id': 1,
-                                'test': 'test',
-                                'centers': {'submitter_id': 'test'}}
+        self.entities[0].doc = {
+            "type": "aliquot",
+            "submitter_id": 1,
+            "test": "test",
+            "centers": {"submitter_id": "test"},
+        }
         self.json_validator.record_errors(self.entities)
         self.assertEqual(2, len(self.entities[0].errors))
 
     def test_json_validator_with_nested_error_keys(self):
-        self.entities[0].doc = {'type': 'aliquot', 'submitter_id': 'test',
-                                'centers': {'submitter_id': True}}
+        self.entities[0].doc = {
+            "type": "aliquot",
+            "submitter_id": "test",
+            "centers": {"submitter_id": True},
+        }
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(['centers'], self.entities[0].errors[0]['keys'])
+        self.assertEqual(["centers"], self.entities[0].errors[0]["keys"])
 
     def test_json_validator_with_multiple_entities(self):
-        self.entities[0].doc = {'type': 'aliquot', 'submitter_id': 1, 'test': 'test',
-                                'centers': {'submitter_id': 'test'}}
+        self.entities[0].doc = {
+            "type": "aliquot",
+            "submitter_id": 1,
+            "test": "test",
+            "centers": {"submitter_id": "test"},
+        }
         entity = MockSubmissionEntity()
-        entity.doc = {'type': 'aliquot', 'submitter_id': 'test',
-                      'centers': {'submitter_id': 'test'}}
+        entity.doc = {
+            "type": "aliquot",
+            "submitter_id": "test",
+            "centers": {"submitter_id": "test"},
+        }
         self.entities.append(entity)
 
         self.json_validator.record_errors(self.entities)
@@ -89,10 +104,10 @@ class TestValidators(unittest.TestCase):
         self.assertEqual(0, len(entity.errors))
 
     def create_node(self, doc, session):
-        cls = Node.get_subclass(doc['type'])
+        cls = Node.get_subclass(doc["type"])
         node = cls(str(uuid.uuid4()))
-        node.props = doc['props']
-        for key, value in doc['edges'].items():
+        node.props = doc["props"]
+        for key, value in doc["edges"].items():
             for target_id in value:
                 edge = g.nodes().ids(target_id).first()
                 node[key].append(edge)
@@ -104,129 +119,213 @@ class TestValidators(unittest.TestCase):
 
     def test_graph_validator_without_required_link(self):
         with g.session_scope() as session:
-            node = self.create_node({'type': 'aliquot',
-                                     'props': {'submitter_id': 'test'},
-                                     'edges': {}}, session)
+            node = self.create_node(
+                {"type": "aliquot", "props": {"submitter_id": "test"}, "edges": {}},
+                session,
+            )
             self.entities[0].node = node
             self.update_schema(
-                'aliquot',
-                'links',
-                [{'name': 'analytes',
-                  'backref': 'aliquots',
-                  'label': 'derived_from',
-                  'multiplicity': 'many_to_one',
-                  'target_type': 'analyte',
-                  'required': True}])
+                "aliquot",
+                "links",
+                [
+                    {
+                        "name": "analytes",
+                        "backref": "aliquots",
+                        "label": "derived_from",
+                        "multiplicity": "many_to_one",
+                        "target_type": "analyte",
+                        "required": True,
+                    }
+                ],
+            )
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEqual(['analytes'], self.entities[0].errors[0]['keys'])
+            self.assertEqual(["analytes"], self.entities[0].errors[0]["keys"])
 
     def test_graph_validator_with_exclusive_link(self):
         with g.session_scope() as session:
             analyte = self.create_node(
-                {'type': 'analyte',
-                 'props': {'submitter_id': 'test',
-                           'analyte_type_id': 'D',
-                           'analyte_type': 'DNA'},
-                 'edges': {}}, session)
-            sample = self.create_node({'type': 'sample',
-                                       'props': {'submitter_id': 'test',
-                                                 'sample_type': 'DNA',
-                                                 'sample_type_id': '01'},
-                                       'edges': {}}, session)
+                {
+                    "type": "analyte",
+                    "props": {
+                        "submitter_id": "test",
+                        "analyte_type_id": "D",
+                        "analyte_type": "DNA",
+                    },
+                    "edges": {},
+                },
+                session,
+            )
+            sample = self.create_node(
+                {
+                    "type": "sample",
+                    "props": {
+                        "submitter_id": "test",
+                        "sample_type": "DNA",
+                        "sample_type_id": "01",
+                    },
+                    "edges": {},
+                },
+                session,
+            )
 
             node = self.create_node(
-                {'type': 'aliquot',
-                 'props': {'submitter_id': 'test'},
-                 'edges': {'analytes': [analyte.node_id],
-                           'samples': [sample.node_id]}}, session)
+                {
+                    "type": "aliquot",
+                    "props": {"submitter_id": "test"},
+                    "edges": {
+                        "analytes": [analyte.node_id],
+                        "samples": [sample.node_id],
+                    },
+                },
+                session,
+            )
             self.entities[0].node = node
             self.update_schema(
-                'aliquot',
-                'links',
-                [{'exclusive': True,
-                  'required': True,
-                  'subgroup': [
-                      {'name': 'analytes',
-                       'backref': 'aliquots',
-                       'label': 'derived_from',
-                       'multiplicity': 'many_to_one',
-                       'target_type': 'analyte'},
-                      {'name': 'samples',
-                       'backref': 'aliquots',
-                       'label': 'derived_from',
-                       'multiplicity': 'many_to_one',
-                       'target_type': 'sample'}]}])
+                "aliquot",
+                "links",
+                [
+                    {
+                        "exclusive": True,
+                        "required": True,
+                        "subgroup": [
+                            {
+                                "name": "analytes",
+                                "backref": "aliquots",
+                                "label": "derived_from",
+                                "multiplicity": "many_to_one",
+                                "target_type": "analyte",
+                            },
+                            {
+                                "name": "samples",
+                                "backref": "aliquots",
+                                "label": "derived_from",
+                                "multiplicity": "many_to_one",
+                                "target_type": "sample",
+                            },
+                        ],
+                    }
+                ],
+            )
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEqual(['analytes', 'samples'],
-                              self.entities[0].errors[0]['keys'])
+            self.assertEqual(
+                ["analytes", "samples"], self.entities[0].errors[0]["keys"]
+            )
 
     def test_graph_validator_with_wrong_multiplicity(self):
         with g.session_scope() as session:
-            analyte = self.create_node({'type': 'analyte',
-                                        'props': {'submitter_id': 'test',
-                                                  'analyte_type_id': 'D',
-                                                  'analyte_type': 'DNA'},
-                                        'edges': {}}, session)
+            analyte = self.create_node(
+                {
+                    "type": "analyte",
+                    "props": {
+                        "submitter_id": "test",
+                        "analyte_type_id": "D",
+                        "analyte_type": "DNA",
+                    },
+                    "edges": {},
+                },
+                session,
+            )
 
-            analyte_b = self.create_node({'type': 'analyte',
-                                          'props': {'submitter_id': 'testb',
-                                                    'analyte_type_id': 'H',
-                                                    'analyte_type': 'RNA'},
-                                          'edges': {}}, session)
+            analyte_b = self.create_node(
+                {
+                    "type": "analyte",
+                    "props": {
+                        "submitter_id": "testb",
+                        "analyte_type_id": "H",
+                        "analyte_type": "RNA",
+                    },
+                    "edges": {},
+                },
+                session,
+            )
 
-            node = self.create_node({'type': 'aliquot',
-                                     'props': {'submitter_id': 'test'},
-                                     'edges': {'analytes': [analyte.node_id,
-                                                            analyte_b.node_id]}},
-                                    session)
+            node = self.create_node(
+                {
+                    "type": "aliquot",
+                    "props": {"submitter_id": "test"},
+                    "edges": {"analytes": [analyte.node_id, analyte_b.node_id]},
+                },
+                session,
+            )
             self.entities[0].node = node
             self.update_schema(
-                'aliquot',
-                'links',
-                [{'exclusive': False,
-                  'required': True,
-                  'subgroup': [
-                      {'name': 'analytes',
-                       'backref': 'aliquots',
-                       'label': 'derived_from',
-                       'multiplicity': 'many_to_one',
-                       'target_type': 'analyte'},
-                      {'name': 'samples',
-                       'backref': 'aliquots',
-                       'label': 'derived_from',
-                       'multiplicity': 'many_to_one',
-                       'target_type': 'sample'}]}])
+                "aliquot",
+                "links",
+                [
+                    {
+                        "exclusive": False,
+                        "required": True,
+                        "subgroup": [
+                            {
+                                "name": "analytes",
+                                "backref": "aliquots",
+                                "label": "derived_from",
+                                "multiplicity": "many_to_one",
+                                "target_type": "analyte",
+                            },
+                            {
+                                "name": "samples",
+                                "backref": "aliquots",
+                                "label": "derived_from",
+                                "multiplicity": "many_to_one",
+                                "target_type": "sample",
+                            },
+                        ],
+                    }
+                ],
+            )
             self.graph_validator.record_errors(g, self.entities)
-            self.assertEqual(['analytes'], self.entities[0].errors[0]['keys'])
+            self.assertEqual(["analytes"], self.entities[0].errors[0]["keys"])
 
     def test_graph_validator_with_correct_node(self):
         with g.session_scope() as session:
-            analyte = self.create_node({'type': 'analyte',
-                                        'props': {'submitter_id': 'test',
-                                                  'analyte_type_id': 'D',
-                                                  'analyte_type': 'DNA'},
-                                        'edges': {}}, session)
+            analyte = self.create_node(
+                {
+                    "type": "analyte",
+                    "props": {
+                        "submitter_id": "test",
+                        "analyte_type_id": "D",
+                        "analyte_type": "DNA",
+                    },
+                    "edges": {},
+                },
+                session,
+            )
 
-            node = self.create_node({'type': 'aliquot',
-                                     'props': {'submitter_id': 'test'},
-                                     'edges': {'analytes': [analyte.node_id]}},
-                                    session)
+            node = self.create_node(
+                {
+                    "type": "aliquot",
+                    "props": {"submitter_id": "test"},
+                    "edges": {"analytes": [analyte.node_id]},
+                },
+                session,
+            )
             self.entities[0].node = node
             self.update_schema(
-                'aliquot',
-                'links',
-                [{'exclusive': False,
-                  'required': True,
-                  'subgroup': [
-                      {'name': 'analytes',
-                       'backref': 'aliquots',
-                       'label': 'derived_from',
-                       'multiplicity': 'many_to_one',
-                       'target_type': 'analyte'},
-                      {'name': 'samples',
-                       'backref': 'aliquots',
-                       'label': 'derived_from',
-                       'multiplicity': 'many_to_one',
-                       'target_type': 'sample'}]}])
+                "aliquot",
+                "links",
+                [
+                    {
+                        "exclusive": False,
+                        "required": True,
+                        "subgroup": [
+                            {
+                                "name": "analytes",
+                                "backref": "aliquots",
+                                "label": "derived_from",
+                                "multiplicity": "many_to_one",
+                                "target_type": "analyte",
+                            },
+                            {
+                                "name": "samples",
+                                "backref": "aliquots",
+                                "label": "derived_from",
+                                "multiplicity": "many_to_one",
+                                "target_type": "sample",
+                            },
+                        ],
+                    }
+                ],
+            )
             self.graph_validator.record_errors(g, self.entities)
             self.assertEqual(0, len(self.entities[0].errors))

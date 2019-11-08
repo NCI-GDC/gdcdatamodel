@@ -32,13 +32,16 @@ logger.setLevel(logging.INFO)
 name_root = "table_creator_"
 app_name = "{}{}".format(name_root, random.randint(1000, 9999))
 no_kill_list = []
-BlockingQueryResult = namedtuple('BlockingQueryResult', [
-    'blocked_appname',
-    'blocked_pid',
-    'blocking_appname',
-    'blocking_pid',
-    'blocking_statement',
-])
+BlockingQueryResult = namedtuple(
+    "BlockingQueryResult",
+    [
+        "blocked_appname",
+        "blocked_pid",
+        "blocking_appname",
+        "blocking_pid",
+        "blocking_statement",
+    ],
+)
 
 
 # See https://wiki.postgresql.org/wiki/Lock_Monitoring
@@ -125,7 +128,7 @@ def execute_for_all_graph_tables(engine, sql, *args, **kwargs):
 
     """
     for cls in Node.__subclasses__() + Edge.__subclasses__():
-        _kwargs = dict(kwargs, **{'table': cls.__tablename__})
+        _kwargs = dict(kwargs, **{"table": cls.__tablename__})
         statement = sql.format(**_kwargs)
         execute(engine, statement)
 
@@ -162,8 +165,7 @@ def migrate_transaction_snapshots(engine, user):
             "ALTER TABLE {name} DROP CONSTRAINT {name}_pkey".format(name=tablename),
         )
         execute(
-            engine,
-            "ALTER TABLE {} RENAME id TO entity_id".format(tablename),
+            engine, "ALTER TABLE {} RENAME id TO entity_id".format(tablename),
         )
         execute(
             engine,
@@ -175,13 +177,13 @@ def create_graph_tables(engine, timeout):
     """
     create a table
     """
-    logger.info('Creating tables (timeout: %d)', timeout)
+    logger.info("Creating tables (timeout: %d)", timeout)
 
     connection = engine.connect()
     trans = connection.begin()
     logger.info("Setting lock_timeout to %d", timeout)
 
-    timeout_str = '{}s'.format(int(timeout+1))
+    timeout_str = "{}s".format(int(timeout + 1))
     connection.execute("SET LOCAL lock_timeout = %s;", timeout_str)
 
     create_all(connection)
@@ -191,9 +193,11 @@ def create_graph_tables(engine, timeout):
 def is_blocked_by_no_kill(blocking):
     for proc in blocking:
         if proc.blocking_appname in no_kill_list:
-            print('Blocked by no-kill process {}, {}: {}'.format(
-                proc.blocking_appname, proc.blocking_pid,
-                proc.blocking_statement))
+            print(
+                "Blocked by no-kill process {}, {}: {}".format(
+                    proc.blocking_appname, proc.blocking_pid, proc.blocking_statement
+                )
+            )
             return True
     return False
 
@@ -229,8 +233,7 @@ def kill_blocking_psql_backend_processes(engine):
     blockers = lookup_blocking_psql_backend_processes(engine)
 
     if is_blocked_by_no_kill(blockers):
-        logger.warn("Process blocked by a 'no-kill' process. "
-                    "Refusing to kill it")
+        logger.warn("Process blocked by a 'no-kill' process. " "Refusing to kill it")
         return
 
     if not blockers:
@@ -240,14 +243,13 @@ def kill_blocking_psql_backend_processes(engine):
 
     for result in blockers:
         logger.warning(
-            'Killing blocking backend process: name({})\tpid({}): {}'.format(
-                result.blocking_appname,
-                result.blocking_pid,
-                result.blocking_statement)
+            "Killing blocking backend process: name({})\tpid({}): {}".format(
+                result.blocking_appname, result.blocking_pid, result.blocking_statement
+            )
         )
 
         # Kill anything in the way, it was deemed of low importance
-        sql_cmd = 'SELECT pg_terminate_backend({blocking_pid});'.format(
+        sql_cmd = "SELECT pg_terminate_backend({blocking_pid});".format(
             blocking_pid=result.blocking_pid
         )
         execute(engine, sql_cmd)
@@ -264,16 +266,17 @@ def create_tables_force(engine, delay, retries):
 
     """
 
-    logger.info('Running table creator named %s', app_name)
-    logger.warning('Running with force=True option %s', app_name)
+    logger.info("Running table creator named %s", app_name)
+    logger.warning("Running with force=True option %s", app_name)
 
     from multiprocessing import Process
+
     p = Process(target=create_graph_tables, args=(engine, delay))
     p.start()
     time.sleep(delay)
 
     if p.is_alive():
-        logger.warning('Table creation blocked!')
+        logger.warning("Table creation blocked!")
         kill_blocking_psql_backend_processes(engine)
 
         #  Wait some time for table creation to proceed
@@ -281,10 +284,10 @@ def create_tables_force(engine, delay, retries):
 
     if p.is_alive():
         if retries <= 0:
-            raise RuntimeError('Max retries exceeded.')
+            raise RuntimeError("Max retries exceeded.")
 
-        logger.warning('Table creation failed, retrying.')
-        return create_tables_force(engine, delay, retries-1)
+        logger.warning("Table creation failed, retrying.")
+        return create_tables_force(engine, delay, retries - 1)
 
 
 def create_tables(engine, delay, retries):
@@ -296,25 +299,25 @@ def create_tables(engine, delay, retries):
 
     """
 
-    logger.info('Running table creator named %s', app_name)
+    logger.info("Running table creator named %s", app_name)
     try:
         return create_graph_tables(engine, delay)
 
     except OperationalError as e:
-        if 'timeout' in str(e):
-            logger.warning('Attempt timed out')
+        if "timeout" in str(e):
+            logger.warning("Attempt timed out")
         else:
             raise
 
         if retries <= 0:
-            raise RuntimeError('Max retries exceeded')
+            raise RuntimeError("Max retries exceeded")
 
         logger.info(
-            'Trying again in {} seconds ({} retries remaining)'
-            .format(delay, retries))
+            "Trying again in {} seconds ({} retries remaining)".format(delay, retries)
+        )
         time.sleep(delay)
 
-        create_tables(engine, delay, retries-1)
+        create_tables(engine, delay, retries - 1)
 
 
 def subcommand_create(args):
@@ -325,11 +328,7 @@ def subcommand_create(args):
 
     logger.info("Running subcommand 'create'")
     engine = get_engine(args.host, args.user, args.password, args.database)
-    kwargs = dict(
-        engine=engine,
-        delay=args.delay,
-        retries=args.retries,
-    )
+    kwargs = dict(engine=engine, delay=args.delay, retries=args.retries,)
 
     if args.force:
         return create_tables_force(**kwargs)
@@ -347,15 +346,15 @@ def subcommand_grant(args):
     logger.info("Running subcommand 'grant'")
     engine = get_engine(args.host, args.user, args.password, args.database)
 
-    assert args.read or args.write, 'No premission types/users specified.'
+    assert args.read or args.write, "No premission types/users specified."
 
     if args.read:
-        users_read = [u for u in args.read.split(',') if u]
+        users_read = [u for u in args.read.split(",") if u]
         for user in users_read:
             grant_read_permissions_to_graph(engine, user)
 
     if args.write:
-        users_write = [u for u in args.write.split(',') if u]
+        users_write = [u for u in args.write.split(",") if u]
         for user in users_write:
             grant_write_permissions_to_graph(engine, user)
 
@@ -371,75 +370,103 @@ def subcommand_revoke(args):
     engine = get_engine(args.host, args.user, args.password, args.database)
 
     if args.read:
-        users_read = [u for u in args.read.split(',') if u]
+        users_read = [u for u in args.read.split(",") if u]
         for user in users_read:
             revoke_read_permissions_to_graph(engine, user)
 
     if args.write:
-        users_write = [u for u in args.write.split(',') if u]
+        users_write = [u for u in args.write.split(",") if u]
         for user in users_write:
             revoke_write_permissions_to_graph(engine, user)
 
 
 def add_base_args(subparser):
-    subparser.add_argument("-H", "--host", type=str, action="store",
-                           required=True, help="psql-server host")
-    subparser.add_argument("-U", "--user", type=str, action="store",
-                           required=True, help="psql test user")
-    subparser.add_argument("-D", "--database", type=str, action="store",
-                           required=True, help="psql test database")
-    subparser.add_argument("-P", "--password", type=str, action="store",
-                           default='', help="psql test password")
+    subparser.add_argument(
+        "-H", "--host", type=str, action="store", required=True, help="psql-server host"
+    )
+    subparser.add_argument(
+        "-U", "--user", type=str, action="store", required=True, help="psql test user"
+    )
+    subparser.add_argument(
+        "-D",
+        "--database",
+        type=str,
+        action="store",
+        required=True,
+        help="psql test database",
+    )
+    subparser.add_argument(
+        "-P",
+        "--password",
+        type=str,
+        action="store",
+        default="",
+        help="psql test password",
+    )
     return subparser
 
 
 def add_subcommand_create(subparsers):
-    parser = add_base_args(subparsers.add_parser(
-        'graph-create',
-        help=subcommand_create.__doc__
-    ))
-    parser.add_argument(
-        "--force", action="store_true",
-        help="Hard killing blocking processes that are not in the 'no-kill' list."
+    parser = add_base_args(
+        subparsers.add_parser("graph-create", help=subcommand_create.__doc__)
     )
     parser.add_argument(
-        "--delay", type=int, action="store", default=60,
-        help="How many seconds to wait for blocking processes to finish before retrying (and hard killing them if used with --force)."
+        "--force",
+        action="store_true",
+        help="Hard killing blocking processes that are not in the 'no-kill' list.",
     )
     parser.add_argument(
-        "--retries", type=int, action="store", default=10,
-        help="If blocked by important process, how many times to retry after waiting `delay` seconds."
+        "--delay",
+        type=int,
+        action="store",
+        default=60,
+        help="How many seconds to wait for blocking processes to finish before retrying (and hard killing them if used with --force).",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        action="store",
+        default=10,
+        help="If blocked by important process, how many times to retry after waiting `delay` seconds.",
     )
 
 
 def add_subcommand_grant(subparsers):
-    parser = add_base_args(subparsers.add_parser(
-        'graph-grant',
-        help=subcommand_grant.__doc__
-    ))
-    parser.add_argument(
-        "--read", type=str, action="store",
-        help="Users to grant read access to (comma separated)."
+    parser = add_base_args(
+        subparsers.add_parser("graph-grant", help=subcommand_grant.__doc__)
     )
     parser.add_argument(
-        "--write", type=str, action="store",
-        help="Users to grant read/write access to (comma separated)."
+        "--read",
+        type=str,
+        action="store",
+        help="Users to grant read access to (comma separated).",
+    )
+    parser.add_argument(
+        "--write",
+        type=str,
+        action="store",
+        help="Users to grant read/write access to (comma separated).",
     )
 
 
 def add_subcommand_revoke(subparsers):
-    parser = add_base_args(subparsers.add_parser(
-        'graph-revoke',
-        help=subcommand_revoke.__doc__
-    ))
-    parser.add_argument(
-        "--read", type=str, action="store",
-        help="Users to revoke read access from (comma separated)."
+    parser = add_base_args(
+        subparsers.add_parser("graph-revoke", help=subcommand_revoke.__doc__)
     )
     parser.add_argument(
-        "--write", type=str, action="store",
-        help=("Users to revoke write access from (comma separated). "
-              "NOTE: The user will still have read privs!!")
+        "--read",
+        type=str,
+        action="store",
+        help="Users to revoke read access from (comma separated).",
+    )
+    parser.add_argument(
+        "--write",
+        type=str,
+        action="store",
+        help=(
+            "Users to revoke write access from (comma separated). "
+            "NOTE: The user will still have read privs!!"
+        ),
     )
 
 
@@ -460,9 +487,9 @@ def main(args=None):
     logger.info("[ USER     : %-10s ]", args.user)
 
     return_value = {
-        'graph-create': subcommand_create,
-        'graph-grant': subcommand_grant,
-        'graph-revoke': subcommand_revoke,
+        "graph-create": subcommand_create,
+        "graph-grant": subcommand_grant,
+        "graph-revoke": subcommand_revoke,
     }[args.subcommand](args)
 
     logger.info("Done.")
