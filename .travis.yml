@@ -3,11 +3,6 @@ python:
 - '3.6'
 addons:
   postgresql: '9.4'
-env:
-  global:
-    - REPOSITORY="uc-cdis/gdcdatamodel" PR_NUMBER="$TRAVIS_PULL_REQUEST"
-install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then pip install -e git+https://git@github.com/uc-cdis/wool.git#egg=wool; fi
 before_script:
 - pip install pipenv
 - pipenv install --dev --deploy --python `which python`
@@ -15,8 +10,6 @@ before_script:
 - pipenv graph
 script:
 - pipenv run py.test -v
-after_script:
-- if [[ $TRAVIS_PYTHON_VERSION == 3.6 && $PR_NUMBER != false ]]; then wool; fi
 before_deploy:
 - sed -i.bak "s/=get_version()/='$TRAVIS_TAG'/g" setup.py
 - cat setup.py
