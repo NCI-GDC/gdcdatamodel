@@ -112,8 +112,8 @@ def types_from_str(types):
         for type_ in types
         for a in {
             "string": [str],
-            "number": [float, int, int],
-            "integer": [int, int],
+            "number": [float, int],
+            "integer": [int],
             "float": [float],
             "null": [str],
             "boolean": [bool],
