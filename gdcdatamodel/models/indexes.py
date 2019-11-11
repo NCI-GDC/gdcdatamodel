@@ -40,7 +40,7 @@ def index_name(cls, description):
         oldname = index_name
         logger.debug("Edge tablename {} too long, shortening".format(oldname))
         name = "index_{}_{}_{}".format(
-            str(hashlib.md5(cls.__tablename__.encode("latin1")).hexdigest())[:8],
+            str(hashlib.md5(cls.__tablename__.encode("utf-8")).hexdigest())[:8],
             "".join([a[:4] for a in cls.label.split("_")])[:20],
             "_".join([a[:8] for a in description.split("_")])[:25],
         )
@@ -103,4 +103,4 @@ def get_secondary_key_indexes(cls):
 def cls_add_indexes(cls, indexes):
     """Add indexes to given class"""
 
-    list(map(cls.__table__.append_constraint, indexes))
+    map(cls.__table__.append_constraint, indexes)
