@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdcdatamodel',
-    version="1.18.1",
+    version="2.0.0-alpha",
     packages=find_packages(),
     install_requires=[
         'pytz',
