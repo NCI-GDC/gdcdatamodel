@@ -8,7 +8,7 @@ def get_version():
         tag = check_output(
             ["git", "describe", "--tags", "--abbrev=0", "--match=[0-9]*"]
         )
-        return tag.decode('utf-8').strip("\n")
+        return tag.decode("utf-8").strip("\n")
     except Exception:
         raise RuntimeError(
             "The version number cannot be extracted from git tag in this source "
@@ -18,27 +18,20 @@ def get_version():
 
 
 setup(
-    name='gen3datamodel',
+    name="gen3datamodel",
     version=get_version(),
     packages=find_packages(),
     install_requires=[
-        'pytz>=2016.4',
-        'graphviz~=0.4',
-        'jsonschema~=2.5',
-        'psqlgraph~=2.0',
-        'dictionaryutils>=1.2.0,<3.0.0',
-        'cdisutils',
-        'python-dateutil~=2.4',
-        'sqlalchemy~=1.3',
+        "pytz>=2016.4",
+        "graphviz~=0.4",
+        "jsonschema~=2.5",
+        "psqlgraph~=3.0",
+        "cdisutils",
+        "python-dateutil~=2.4",
+        "sqlalchemy~=1.3",
     ],
-    package_data={
-        "gdcdatamodel": [
-            "xml_mappings/*.yaml",
-        ]
-    },
+    package_data={"gdcdatamodel": ["xml_mappings/*.yaml",]},
     entry_points={
-        'console_scripts': [
-            'gdc_postgres_admin=gdcdatamodel.gdc_postgres_admin:main'
-        ]
+        "console_scripts": ["gdc_postgres_admin=gdcdatamodel.gdc_postgres_admin:main"]
     },
 )

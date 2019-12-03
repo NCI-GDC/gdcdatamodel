@@ -39,7 +39,7 @@ datamodel, see the
 
 Before continuing you must have the following programs installed:
 
-- [Python 2.7+](http://python.org/)
+- [Python 3.6+](http://python.org/)
 
 The gdcdatamodel library requires the following pip dependencies
 
@@ -70,8 +70,8 @@ print(get_file_es_mapping())         # Prints file elasticsearch mapping
 # Example Elasticsearch mapping usage
 ```
 from gdcdatamodel import mappings
-print mappings.get_file_es_mapping()
-print mappings.get_participant_es_mapping()
+print(mappings.get_file_es_mapping())
+print(mappings.get_participant_es_mapping())
 ```
 
 # Tests

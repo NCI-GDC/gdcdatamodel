@@ -44,14 +44,12 @@ from collections import namedtuple
 
 
 CLS_WITH_PROJECT_ID = {
-    cls for cls in Node.get_subclasses()
-    if 'project_id' in cls.__pg_properties__
+    cls for cls in Node.get_subclasses() if "project_id" in cls.__pg_properties__
 }
 
 
 CLS_WITH_STATE = {
-    cls for cls in Node.get_subclasses()
-    if 'state' in cls.__pg_properties__
+    cls for cls in Node.get_subclasses() if "state" in cls.__pg_properties__
 }
 
 
@@ -59,34 +57,13 @@ CLS_TO_UPDATE = CLS_WITH_PROJECT_ID & CLS_WITH_STATE
 
 # Determines state and file_state based on existing state
 STATE_MAP = {
-    None: {
-        'state': 'submitted',
-        'file_state': None
-    },
-    'error': {
-        'state': 'validated',
-        'file_state': 'error'
-    },
-    'invalid': {
-        'state': 'validated',
-        'file_state': 'error'
-    },
-    'live': {
-        'state': 'submitted',
-        'file_state': 'submitted'
-    },
-    'submitted': {
-        'state': 'submitted',
-        'file_state': 'registered'
-    },
-    'uploaded': {
-        'state': 'submitted',
-        'file_state': 'uploaded'
-    },
-    'validated': {
-        'state': 'submitted',
-        'file_state': 'validated'
-    },
+    None: {"state": "submitted", "file_state": None},
+    "error": {"state": "validated", "file_state": "error"},
+    "invalid": {"state": "validated", "file_state": "error"},
+    "live": {"state": "submitted", "file_state": "submitted"},
+    "submitted": {"state": "submitted", "file_state": "registered"},
+    "uploaded": {"state": "submitted", "file_state": "uploaded"},
+    "validated": {"state": "submitted", "file_state": "validated"},
 }
 
 
@@ -101,60 +78,56 @@ def legacy_filter(query, legacy_projects):
     """
 
     legacy_filters = [
-        query.entity().project_id.astext ==
-        project.programs[0].name + '-' + project.code
+        query.entity().project_id.astext
+        == project.programs[0].name + "-" + project.code
         for project in legacy_projects
     ]
 
-    return query.filter(or_(
-        null_prop(query.entity(), 'project_id'),
-        *legacy_filters
-    ))
+    return query.filter(or_(null_prop(query.entity(), "project_id"), *legacy_filters))
 
 
 def null_prop(cls, key):
     """Provide expression to filter on a null or nonexistent value"""
 
-    return or_(
-        cls._props.contains({key: None}),
-        not_(cls._props.has_key(key)),
-    )
+    return or_(cls._props.contains({key: None}), not_(key in cls._props),)
 
 
 def print_cls_query_summary(graph):
     """Print breakdown of class counts to stdout"""
 
     cls_queries = {
-        cls.label: cls_query(graph, cls)
-        for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
+        cls.label: cls_query(graph, cls) for cls in CLS_WITH_PROJECT_ID & CLS_WITH_STATE
     }
 
-    print "%s: %d" % ("legacy_stateless_nodes".ljust(40), sum([
-        query.count() for query in cls_queries.itervalues()
-    ]))
+    print(
+        "%s: %d"
+        % (
+            "legacy_stateless_nodes".ljust(40),
+            sum([query.count() for query in cls_queries.values()]),
+        )
+    )
 
-    for label, query in cls_queries.iteritems():
+    for label, query in cls_queries.items():
         count = query.count()
         if count:
-            print "%35s : %d" % (label, count)
+            print("%35s : %d" % (label, count))
 
 
 def cls_query(graph, cls):
     """Returns query for legacy nodes with state in {null, 'live'}"""
 
-    legacy_projects = graph.nodes(md.Project).props(state='legacy').all()
+    legacy_projects = graph.nodes(md.Project).props(state="legacy").all()
 
     options = [
         # state
-        null_prop(cls, 'state'),
+        null_prop(cls, "state"),
         cls.state.astext.in_(STATE_MAP),
     ]
 
-    if 'file_state' in cls.__pg_properties__:
-        options += [null_prop(cls, 'file_state')]
+    if "file_state" in cls.__pg_properties__:
+        options += [null_prop(cls, "file_state")]
 
-    return (legacy_filter(graph.nodes(cls), legacy_projects)
-            .filter(or_(*options)))
+    return legacy_filter(graph.nodes(cls), legacy_projects).filter(or_(*options))
 
 
 def update_cls(graph, cls):
@@ -166,32 +139,32 @@ def update_cls(graph, cls):
         if count == 0:
             return
 
-        logger.info('Loading %d %s nodes', count, cls.label)
+        logger.info("Loading %d %s nodes", count, cls.label)
         nodes = query.all()
-        logger.info('Loaded %d %s nodes', len(nodes), cls.label)
+        logger.info("Loaded %d %s nodes", len(nodes), cls.label)
 
         for node in nodes:
-            state = node._props.get('state', None)
-            file_state = node._props.get('file_state', None)
+            state = node._props.get("state", None)
+            file_state = node._props.get("file_state", None)
 
             if state in STATE_MAP:
-                node.state = STATE_MAP[state]['state']
+                node.state = STATE_MAP[state]["state"]
 
             set_file_state = (
-                'file_state' in node.__pg_properties__
+                "file_state" in node.__pg_properties__
                 and file_state is None
                 and state in STATE_MAP
             )
 
             if set_file_state:
-                node.file_state = STATE_MAP[state]['file_state']
+                node.file_state = STATE_MAP[state]["file_state"]
 
-            node.sysan['legacy_state'] = state
-            node.sysan['legacy_file_state'] = file_state
+            node.sysan["legacy_state"] = state
+            node.sysan["legacy_file_state"] = file_state
 
-        logger.info('Committing %s nodes', cls.label)
+        logger.info("Committing %s nodes", cls.label)
         graph.current_session().commit()
-        logger.info('Done with %s nodes', cls.label)
+        logger.info("Done with %s nodes", cls.label)
 
 
 def update_classes(graph_kwargs, input_q):
@@ -232,7 +205,7 @@ def update_legacy_states(graph_kwargs):
         input_q.put(cls)
 
     for process in pool:
-        input_q.put(None) # put a no more work signal for each process
+        input_q.put(None)  # put a no more work signal for each process
 
     for process in pool:
         process.start()

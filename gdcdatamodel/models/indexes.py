@@ -32,20 +32,20 @@ def index_name(cls, description):
 
     """
 
-    name = 'index_{}_{}'.format(cls.__tablename__, description)
+    name = "index_{}_{}".format(cls.__tablename__, description)
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
     # truncate the each part of the name
     if len(name) > 40:
         oldname = index_name
-        logger.debug('Edge tablename {} too long, shortening'.format(oldname))
-        name = 'index_{}_{}_{}'.format(
-            str(hashlib.md5(cls.__tablename__).hexdigest())[:8],
-            ''.join([a[:4] for a in cls.label.split('_')])[:20],
-            '_'.join([a[:8] for a in description.split('_')])[:25],
+        logger.debug("Edge tablename {} too long, shortening".format(oldname))
+        name = "index_{}_{}_{}".format(
+            str(hashlib.md5(cls.__tablename__.encode("utf-8")).hexdigest())[:8],
+            "".join([a[:4] for a in cls.label.split("_")])[:20],
+            "_".join([a[:8] for a in description.split("_")])[:25],
         )
 
-        logger.debug('Shortening {} -> {}'.format(oldname, index_name))
+        logger.debug("Shortening {} -> {}".format(oldname, index_name))
 
     return name
 
@@ -61,7 +61,7 @@ def get_secondary_key_indexes(cls):
     """
 
     #: use text_pattern_ops, allows LIKE statements not starting with %
-    index_op = 'text_pattern_ops'
+    index_op = "text_pattern_ops"
 
     key_indexes = (
         Index(
@@ -76,9 +76,9 @@ def get_secondary_key_indexes(cls):
 
     lower_key_indexes = (
         Index(
-            index_name(cls, key+'_lower'),
-            func.lower(cls._props[key].astext).label(key+'_lower'),
-            postgresql_ops={key+'_lower': index_op},
+            index_name(cls, key + "_lower"),
+            func.lower(cls._props[key].astext).label(key + "_lower"),
+            postgresql_ops={key + "_lower": index_op},
         )
         for keys in cls.__pg_secondary_keys
         for key in keys
@@ -103,4 +103,4 @@ def get_secondary_key_indexes(cls):
 def cls_add_indexes(cls, indexes):
     """Add indexes to given class"""
 
-    map(cls.__table__.append_constraint, indexes)
+    list(map(cls.__table__.append_constraint, indexes))

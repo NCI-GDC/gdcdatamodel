@@ -8,18 +8,18 @@ def create_graphviz(nodes, include_case_cache_edges=False):
     """
 
     dot = Digraph()
-    dot.graph_attr['rankdir'] = 'RL'
+    dot.graph_attr["rankdir"] = "RL"
 
     edges_added = set()
     nodes = {node.node_id: node for node in nodes}
 
     def is_edge_drawn(edge, neighbor):
-        is_case_cache_edge = 'RelatesToCase' in edge.__class__.__name__
+        is_case_cache_edge = "RelatesToCase" in edge.__class__.__name__
 
         return (
-            (include_case_cache_edges or not is_case_cache_edge) and
-            edge not in edges_added and
-            neighbor in nodes
+            (include_case_cache_edges or not is_case_cache_edge)
+            and edge not in edges_added
+            and neighbor in nodes
         )
 
     for node in nodes.values():

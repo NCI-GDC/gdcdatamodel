@@ -7,10 +7,22 @@ verify_ssl = true
 graphviz = "~=0.4"
 jupyter = "~=1.0"
 pytest = "*"
-gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "1.2.0"}
 
 [packages]
-gen3datamodel = {path = ".",editable = true}
+gen3datamodel = {editable = true,path = "."}
+cdislogging = "==1.0.0"
+attrs = "==19.3.0"
+dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
+gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "release/py3"}
+more-itertools = "==7.2.0"
+zipp = "==0.6.0"
+importlib-metadata = "==0.23"
+pyrsistent = "==0.15.4"
+pytz = "*"
+psycopg2-binary = "==2.8.2"
+sqlalchemy = "==1.3.3"
+rstr = "==2.2.6"
+psqlgraph = "==3.0.0"
 
 [requires]
-python_version = "2.7"
+python_version = "3.6"
