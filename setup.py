@@ -25,7 +25,7 @@ setup(
         "pytz>=2016.4",
         "graphviz~=0.4",
         "jsonschema~=2.5",
-        "psqlgraph",
+        "psqlgraph~=3.0",
         "cdisutils",
         "python-dateutil~=2.4",
         "sqlalchemy~=1.3",
