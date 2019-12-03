@@ -10,7 +10,6 @@ pytest = "*"
 
 [packages]
 gen3datamodel = {editable = true,path = "."}
-psqlgraph = {editable = true,git = "https://git@github.com/NCI-GDC/psqlgraph.git",ref = "release/py3"}
 cdislogging = "==1.0.0"
 attrs = "==19.3.0"
 dictionaryutils = {editable = true,git = "https://github.com/uc-cdis/dictionaryutils.git",ref = "chore/py3"}
@@ -23,6 +22,7 @@ pytz = "*"
 psycopg2-binary = "==2.8.2"
 sqlalchemy = "==1.3.3"
 rstr = "==2.2.6"
+psqlgraph = "==3.0.0"
 
 [requires]
 python_version = "3.6"
