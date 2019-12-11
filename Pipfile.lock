@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c1b4a2913875bec2061dd2199e6ae468adf92c811b848809959096fd3c6a42f3"
+            "sha256": "c95d60cd5dddf75435bbc756d1b4ed27b38bb6edd2a60eb21f10a8d05f530efa"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -148,13 +148,21 @@
             "version": "==1.0.1"
         },
         "gdcdictionary": {
-            "editable": true,
-            "git": "https://github.com/NCI-GDC/gdcdictionary",
-            "ref": "462eef16681448a9afd90d3f003d42488a647b18"
+            "hashes": [
+                "sha256:02357752c0a8bd5d820539a0f9648b64eef4523ee3a130e45e915c4d4801a183"
+            ],
+            "version": "==1.2.0"
         },
         "gen3datamodel": {
             "editable": true,
             "path": "."
+        },
+        "gen3dictionary": {
+            "hashes": [
+                "sha256:59731df74e4b0ef719e12425f0a4e064a8182305448825f9237467f60c337446"
+            ],
+            "index": "pypi",
+            "version": "==2.0.1"
         },
         "graphviz": {
             "hashes": [
@@ -395,7 +403,7 @@
                 "sha256:5b26757dc6f79a3b7dc9fab95359328d5747fcb2409d331ea66d0272b90ab2a0",
                 "sha256:8b995ffe925347a2138d7ac0fe77155e4311a0ea6d6da4f5128fe4b3cbe5ed71"
             ],
-            "markers": "sys_platform == 'darwin'",
+            "markers": "platform_system == 'Darwin'",
             "version": "==0.1.0"
         },
         "attrs": {
