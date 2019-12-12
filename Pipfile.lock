@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b6a4bc45bbf3665e83afe7b156cf5f1d4565ce86a42b7ead9a20edf2f126408c"
+            "sha256": "31a28514c4e5ce4306708f2541aa33dc0796111d903190057443cb7400a91bf6"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -135,9 +135,11 @@
             "version": "==2.8"
         },
         "dictionaryutils": {
-            "editable": true,
-            "git": "https://github.com/uc-cdis/dictionaryutils.git",
-            "ref": "8ce5b8bf057951a8438a9ab512f4ee1a94de9dcb"
+            "hashes": [
+                "sha256:900dc103561141e09e65daf1d39f1f781a43e1fd20655281cc48adac17f6f4fc"
+            ],
+            "index": "pypi",
+            "version": "==3.0.0"
         },
         "et-xmlfile": {
             "hashes": [
@@ -229,7 +231,6 @@
             "hashes": [
                 "sha256:a4c8aee48dcb85c9112e6866ae404839dde683bca2df4deaa854caf5d3d2aada"
             ],
-            "index": "pypi",
             "version": "==3.0.0"
         },
         "psycopg2-binary": {
