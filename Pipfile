@@ -13,6 +13,7 @@ gen3datamodel = {editable = true,path = "."}
 cdislogging = "==1.0.0"
 attrs = "==19.3.0"
 dictionaryutils = "==3.0.0"
+gdcdictionary = {editable = true,git = "https://github.com/NCI-GDC/gdcdictionary.git",ref = "release/py3"}
 more-itertools = "==7.2.0"
 zipp = "==0.6.0"
 importlib-metadata = "==0.23"
@@ -21,7 +22,6 @@ pytz = "*"
 psycopg2-binary = "==2.8.2"
 sqlalchemy = "==1.3.3"
 rstr = "==2.2.6"
-gen3dictionary = "==2.0.1"
 
 [requires]
 python_version = "3.6"
