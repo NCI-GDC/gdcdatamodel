@@ -1,6 +1,8 @@
 graphviz==0.4.10
+notebook<5.0.0
 jupyter==1.0.0
 jupyter-client==4.2.2
 jupyter-console==4.1.1
 jupyter-core==4.1.0
-pytest==4.4.1
+pytest==4.6.5
+pytest-cov==2.7.1

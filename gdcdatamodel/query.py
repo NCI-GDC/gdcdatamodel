@@ -40,10 +40,11 @@ def construct_traversals(root, node, visited, path):
     traversals[root][node.label] = traversals[root].get(node.label) or set()
     traversals[root][node.label].add('.'.join(path))
 
+
 def construct_traversals_for_all_nodes():
-  for node in Node.get_subclasses():
-      traversals[node.label] = {}
-      construct_traversals(node.label, node, [node], [])
+    for node in Node.get_subclasses():
+        traversals[node.label] = {}
+        construct_traversals(node.label, node, [node], [])
 
 
 def union_subq_without_path(q, *args, **kwargs):
@@ -52,7 +53,7 @@ def union_subq_without_path(q, *args, **kwargs):
 
 def union_subq_path(q, dst_label, post_filters=[]):
     if traversals == {}:
-      construct_traversals_for_all_nodes()
+        construct_traversals_for_all_nodes()
     src_label = q.entity().label
     if not traversals.get(src_label, {}).get(dst_label, {}):
         return q

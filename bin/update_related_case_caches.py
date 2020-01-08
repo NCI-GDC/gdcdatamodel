@@ -78,9 +78,11 @@ def main():
 
     with g.session_scope():
         projects = g.nodes(md.Project).not_props(state='legacy').all()
-        map(update_project_related_case_cache, projects)
+        for p in projects:
+            update_project_related_case_cache(p)
 
     print("Done.")
+
 
 if __name__ == '__main__':
     main()

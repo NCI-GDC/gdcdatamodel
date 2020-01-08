@@ -11,12 +11,16 @@ query patterns (e.g. secondary_keys).
 
 """
 
-from cdisutils.log import get_logger
+import logging
+
 from sqlalchemy import Index, func, text
 from sqlalchemy.types import DateTime
 import hashlib
 
-logger = get_logger(__name__)
+from gdcdatamodel.models.utils import py3_to_bytes
+
+
+logger = logging.getLogger(__name__)
 
 
 def index_name(cls, description):
@@ -40,8 +44,8 @@ def index_name(cls, description):
         oldname = index_name
         logger.debug('Edge tablename {} too long, shortening'.format(oldname))
         name = 'index_{}_{}_{}'.format(
-            str(hashlib.md5(cls.__tablename__).hexdigest())[:8],
-            ''.join([a[:4] for a in cls.label.split('_')])[:20],
+            hashlib.md5(py3_to_bytes(cls.__tablename__)).hexdigest()[:8],
+            ''.join([a[:4] for a in cls.get_label().split('_')])[:20],
             '_'.join([a[:8] for a in description.split('_')])[:25],
         )
 
@@ -86,4 +90,5 @@ def get_secondary_key_indexes(cls):
 def cls_add_indexes(cls, indexes):
     """Add indexes to given class"""
 
-    map(cls.__table__.append_constraint, indexes)
+    for i in indexes:
+        cls.__table__.append_constraint(i)
