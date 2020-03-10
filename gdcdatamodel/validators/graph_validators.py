@@ -1,3 +1,5 @@
+import psqlgraph
+import sqlalchemy
 from gdcdictionary import gdcdictionary
 
 
@@ -16,12 +18,11 @@ class GDCGraphValidator(object):
         self.optional_validators = {}
 
     def record_errors(self, graph, entities):
+        for validator in self.required_validators.values():
+            validator.validate(entities, graph)
+
         for entity in entities:
             schema = self.schemas.schema[entity.node.label]
-
-            for validator in self.required_validators.values():
-                validator.validate(schema, entity, graph)
-
             validators = schema.get('validators')
             if validators:
                 for validator_name in validators:
@@ -29,12 +30,14 @@ class GDCGraphValidator(object):
 
 
 class GDCLinksValidator(object):
-    def validate(self, schema, entity, graph=None):
-        for link in schema['links']:
-            if 'name' in link:
-                self.validate_edge(link, entity)
-            elif 'subgroup' in link:
-                self.validate_edge_group(link, entity)
+
+    def validate(self, entities, graph=None):
+        for entity in entities:
+            for link in gdcdictionary.schema[entity.node.label]['links']:
+                if 'name' in link:
+                    self.validate_edge(link, entity)
+                elif 'subgroup' in link:
+                    self.validate_edge_group(link, entity)
 
     def validate_edge_group(self, schema, entity):
         submitted_links = []
@@ -64,8 +67,10 @@ class GDCLinksValidator(object):
             names = ", ".join(
                 schema_links[:-2] + [" and ".join(schema_links[-2:])])
             entity.record_error(
-                "Links to {} are exclusive.  More than one was provided."
-                .format(schema_links), keys=schema_links)
+                "Links to {} are exclusive.  More than one was provided: {}"
+                .format(schema_links, entity.node.edges_out), keys=schema_links)
+            for edge in entity.node.edges_out:
+                entity.record_error('{}'.format(edge.dst.submitter_id))
 
         result = {'length': num_of_edges, 'name': ", ".join(schema_links)}
 
@@ -106,19 +111,23 @@ class GDCLinksValidator(object):
 
 
 class GDCUniqueKeysValidator(object):
-    def validate(self, schema, entity, graph=None):
-        node = entity.node
-        for keys in schema['uniqueKeys']:
-            props = {}
-            if keys == ["id"]:
-                continue
-            for key in keys:
-                prop = schema['properties'][key].get('systemAlias')
-                if prop:
-                    props[prop] = node[prop]
-                else:
-                    props[key] = node[key]
-            if graph.nodes().props(props).count() > 1:
-                entity.record_error(
-                    "{} with {} already exists in the GDC"
-                    .format(node.label, props), keys=props.keys())
+
+    def validate(self, entities, graph=None):
+        for entity in entities:
+            schema = gdcdictionary.schema[entity.node.label]
+            node = entity.node
+            for keys in schema['uniqueKeys']:
+                props = {}
+                if keys == ['id']:
+                    continue
+                for key in keys:
+                    prop = schema['properties'][key].get('systemAlias')
+                    if prop:
+                        props[prop] = node[prop]
+                    else:
+                        props[key] = node[key]
+                if graph.nodes().props(props).count() > 1:
+                        entity.record_error(
+                            '{} with {} already exists in the GDC'
+                            .format(node.label, props), keys=list(props.keys())
+                        )
