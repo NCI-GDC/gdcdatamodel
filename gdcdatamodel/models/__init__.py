@@ -28,6 +28,8 @@ from gdcdatamodel.models import (
     submission,
     redaction,
     qcreport,
+    released_data,
+    studyrule,
 )
 
 from sqlalchemy import (
@@ -356,7 +358,7 @@ def NodeFactory(_id, schema):
                           'additionalProperties', 'links', 'properties',
                           'uniqueKeys', 'id' ]
     attributes['_dictionary'] = {
-        key: schema[key] for key in schema if key not in skipped_dict_vals  
+        key: schema[key] for key in schema if key not in skipped_dict_vals
     }
 
     # _pg_links are out_edges, links TO other types
