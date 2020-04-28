@@ -18,7 +18,7 @@ services:
     volumes:
     - .:/home/jenkins
     - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
-    command: bash -c "mkdir -p ~/.ssh && echo -e 'Host github.com\n\tStrictHostKeyChecking no\n' >> ~/.ssh/config && rm -rf .tox && find . \( -name '__pycache__' -or -name '*.pyc' \) -delete  && ./wait-for-it.sh localhost:5432 -t 120 &&  pip install tox -q --user && tox"
+    command: bash -c "./wait-for-it.sh localhost:5432 -t 120 && tox"
     network_mode: "service:postgres"
     depends_on: 
       - postgres
