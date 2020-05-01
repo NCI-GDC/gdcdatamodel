@@ -40,6 +40,14 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+test-reports/
+
+# Jenkins 
+.local/
+.eggs/
+.ssh/
+gdcdatamodel/_version.py
+wait-for-it.sh
 
 # Translations
 *.mo
