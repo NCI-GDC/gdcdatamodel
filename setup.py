@@ -10,6 +10,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pytz',
+        'future',
         'graphviz',
         'jsonschema',
         'gdcdictionary',

@@ -13,8 +13,7 @@ query patterns (e.g. secondary_keys).
 
 import logging
 
-from sqlalchemy import Index, func, text
-from sqlalchemy.types import DateTime
+from sqlalchemy import Index, func
 import hashlib
 
 from gdcdatamodel.models.utils import py3_to_bytes
