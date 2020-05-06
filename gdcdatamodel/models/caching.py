@@ -17,8 +17,6 @@ GDC datamodel.
 
 import logging
 
-from psqlgraph import Node, Edge
-
 logger = logging.getLogger('gdcdatamodel')
 
 #: This variable contains the link name for the case shortcut
@@ -40,10 +38,10 @@ def get_related_case_edge_cls(node):
     :returns: Edge subclass
 
     """
-
+    edge_cls = node.get_edge_class()
     return next(
         edge
-        for edge in Edge.__subclasses__()
+        for edge in edge_cls.get_subclasses()
         if edge.__name__ == get_related_case_edge_cls_name(node)
     )
 
@@ -66,11 +64,12 @@ def get_edge_src(edge):
     set.
 
     """
+    node_cls = edge.get_node_class()
 
     if edge.src:
         src = edge.src
     elif edge.src_id is not None:
-        src_class = Node.get_subclass_named(edge.__src_class__)
+        src_class = node_cls.get_subclass_named(edge.__src_class__)
         src = (edge.get_session().query(src_class)
                .filter(src_class.node_id == edge.src_id)
                .first())
@@ -83,11 +82,13 @@ def get_edge_dst(edge, allow_query=False):
     """Return the edge's destination or None.
 
     """
+    node_cls = edge.get_node_class()
 
     if edge.dst:
         dst = edge.dst
     elif edge.dst_id is not None and allow_query:
-        dst_class = Node.get_subclass_named(edge.__dst_class__)
+
+        dst_class = node_cls.get_subclass_named(edge.__dst_class__)
         dst = (edge.get_session().query(dst_class)
                .filter(dst_class.node_id == edge.dst_id)
                .first())
@@ -140,7 +141,8 @@ def related_cases_from_parents(node):
     for edge in edges_out:
         if edge.__class__.__name__ in skip_edges_named:
             continue
-        dst_class = Node.get_subclass_named(edge.__dst_class__)
+        node_cls = edge.get_node_class()
+        dst_class = node_cls.get_subclass_named(edge.__dst_class__)
         if dst_class.label == 'case' and edge.dst:
             cases.add(edge.dst)
 
