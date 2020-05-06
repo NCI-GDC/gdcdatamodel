@@ -1,6 +1,6 @@
 future
-pytz
-SQLAlchemy
-git+https://github.com/NCI-GDC/psqlgraph.git@feat/support-modularized-dict-models#egg=psqlgraph
+pytz~=2020.1
+SQLAlchemy>=1.3.16,<2
+git+https://github.com/NCI-GDC/psqlgraph.git@3.0.0a1#egg=psqlgraph
 git+https://github.com/NCI-GDC/gdcdictionary.git@2.1.0#egg=gdcdictionary
 git+https://github.com/NCI-GDC/gdc-ng-models.git@1.2.0-alpha#egg=gdc-ng-models

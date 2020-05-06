@@ -375,7 +375,7 @@ def add_base_args(subparser):
                            required=True, help="psql test database")
     subparser.add_argument("-P", "--password", type=str, action="store",
                            default='', help="psql test password")
-    subparser.add_argument("-N", "--namespace", type=str,
+    subparser.add_argument("-N", "--namespace", type=lambda x: x if x else None,
                            help="psqlgraph model namespace")
     return subparser
 
@@ -441,9 +441,6 @@ def get_parser():
 
 def main(args=None):
     args = args or get_parser().parse_args()
-
-    # fix empty string passed as namespace
-    args.namespace = args.namespace or None
 
     logger.info("[ HOST     : %-10s ]", args.host)
     logger.info("[ DATABASE : %-10s ]", args.database)

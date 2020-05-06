@@ -505,7 +505,7 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     dst_cls = node_cls.get_subclass(dst_label)
 
     # Assert that we're not clobbering link names
-    assoc_proxy_key = package_namespace or "_"
+    assoc_proxy_key = package_namespace
     assert dst_src_assoc not in _assigned_association_proxies[assoc_proxy_key][dst_label], (
         "Attempted to assign backref '{link}' to node '{node}' but "
         "the node already has an attribute called '{link}'"
