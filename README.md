@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/NCI-GDC/gdcdatamodel.svg?branch=develop)](https://travis-ci.com/NCI-GDC/gdcdatamodel)
+[![Build Status](https://travis-ci.com/NCI-GDC/gdcdatamodel.svg?branch=develop)](https://travis-ci.org/NCI-GDC/gdcdatamodel)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commitlogoColor=white)](https://github.com/pre-commit/pre-commit)
 
 ---
