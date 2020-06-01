@@ -11,15 +11,12 @@ backports-abc==0.5        # via tornado
 backports.shutil-get-terminal-size==1.0.0  # via ipython
 bleach==3.1.5             # via nbconvert
 configparser==4.0.2       # via entrypoints, importlib-metadata
-contextlib2==0.6.0.post1  # via importlib-metadata, zipp
 coverage==5.1             # via pytest-cov
 decorator==4.4.2          # via ipython, traitlets
 defusedxml==0.6.0         # via nbconvert
 entrypoints==0.3          # via nbconvert
 enum34==1.1.10            # via traitlets
 funcsigs==1.0.2           # via pytest
-functools32==3.2.3.post2  # via jsonschema
-futures==3.3.0            # via tornado
 importlib-metadata==1.6.0  # via jsonschema, pluggy, pytest
 ipykernel==4.10.1         # via ipywidgets, jupyter, jupyter-console, notebook, qtconsole
 ipython-genutils==0.2.0   # via nbformat, notebook, qtconsole, traitlets

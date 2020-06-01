@@ -27,7 +27,6 @@ import logging
 
 from collections import defaultdict
 
-from past.builtins import long
 from sqlalchemy.orm import configure_mappers
 
 import hashlib
@@ -142,8 +141,8 @@ def get_links(schema):
 def types_from_str(types):
     return [a for type_ in types for a in {
         'string': [str],
-        'number': [float, int, long],
-        'integer': [int, long],
+        'number': [float, int],
+        'integer': [int],
         'float': [float],
         'null': [str],
         'boolean': [bool],
