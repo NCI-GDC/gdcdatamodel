@@ -2,7 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdcdatamodel',
-    version="2.1.0",
+    use_scm_version={
+        'local_scheme': 'dirty-tag',
+        'write_to': 'gdcdatamodel/_version.py',
+    },
+    setup_requires=['setuptools_scm'],
     packages=find_packages(),
     install_requires=[
         'pytz',
