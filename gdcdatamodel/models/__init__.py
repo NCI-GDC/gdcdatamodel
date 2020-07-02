@@ -51,6 +51,7 @@ from sqlalchemy.ext.hybrid import (
 from .caching import (
     NOT_RELATED_CASES_CATEGORIES,
     RELATED_CASES_LINK_NAME,
+    CACHE_CASES,
     cache_related_cases_on_update,
     cache_related_cases_on_insert,
     cache_related_cases_on_delete,
@@ -372,15 +373,16 @@ def NodeFactory(_id, schema):
 
     # _related_cases_from_parents: get ids of related cases from this
     # nodes's sysan
-    attributes['_related_cases_from_cache'] = property(
-        related_cases_from_cache
-    )
+    if CACHE_CASES:
+        attributes['_related_cases_from_cache'] = property(
+            related_cases_from_cache
+        )
 
-    # _related_cases_from_parents: get ids of related cases from this
-    # nodes parents
-    attributes['_related_cases_from_parents'] = property(
-        related_cases_from_parents
-    )
+        # _related_cases_from_parents: get ids of related cases from this
+        # nodes parents
+        attributes['_related_cases_from_parents'] = property(
+            related_cases_from_parents
+        )
 
     # Create the Node subclass!
     cls = type(name, (Node,), dict(
@@ -492,17 +494,26 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     _assigned_association_proxies[dst_label].add(dst_src_assoc)
     _assigned_association_proxies[src_label].add(src_dst_assoc)
 
-    hooks_before_insert = Edge._session_hooks_before_insert + [
-        cache_related_cases_on_insert,
-    ]
 
-    hooks_before_update = Edge._session_hooks_before_update + [
-        cache_related_cases_on_update,
-    ]
+    hooks_before_insert = Edge._session_hooks_before_insert
 
-    hooks_before_delete = Edge._session_hooks_before_delete + [
-        cache_related_cases_on_delete,
-    ]
+    hooks_before_update = Edge._session_hooks_before_update
+
+    hooks_before_delete = Edge._session_hooks_before_delete
+
+    if CACHE_CASES:
+        hooks_before_insert = Edge._session_hooks_before_insert + [
+            cache_related_cases_on_insert,
+        ]
+
+        hooks_before_update = Edge._session_hooks_before_update + [
+            cache_related_cases_on_update,
+        ]
+
+        hooks_before_delete = Edge._session_hooks_before_delete + [
+            cache_related_cases_on_delete,
+        ]
+
 
     cls = type(name, (Edge,), {
         '__label__': label,
@@ -601,7 +612,7 @@ def load_edges():
             or src_cls.get_label() in ['annotation']
         )
 
-        if not cache_case:
+        if not cache_case or not CACHE_CASES:
             continue
 
         link = {
