@@ -14,11 +14,19 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
+import os
+import sys
+
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
+
+from types import ModuleType
 import logging
 
 from collections import defaultdict
-from gdcdictionary import gdcdictionary as dictionary
-from past.builtins import long
+
 from sqlalchemy.orm import configure_mappers
 
 import hashlib
@@ -43,12 +51,14 @@ from psqlgraph import (
     pg_property
 )
 
+from psqlgraph import ext
+
 from sqlalchemy.ext.hybrid import (
     Comparator,
     hybrid_property,
 )
 
-from .caching import (
+from gdcdatamodel.models.caching import (
     NOT_RELATED_CASES_CATEGORIES,
     RELATED_CASES_LINK_NAME,
     cache_related_cases_on_update,
@@ -58,7 +68,7 @@ from .caching import (
     related_cases_from_parents,
 )
 
-from .indexes import (
+from gdcdatamodel.models.indexes import (
     cls_add_indexes,
     get_secondary_key_indexes,
 )
@@ -73,13 +83,6 @@ logger = logging.getLogger('gdcdatamodel')
 excluded_props = ['id', 'type']
 
 
-# At module load time, evaluate which classes have already been
-# registered as subclasses of the abstract bases Node and Edge to
-# prevent double-registering
-loaded_nodes = [c.__name__ for c in Node.get_subclasses()]
-loaded_edges = [c.__name__ for c in Edge.get_subclasses()]
-
-
 def remove_spaces(s):
     """Returns a stripped string with all of the spaces removed.
 
@@ -89,16 +92,33 @@ def remove_spaces(s):
     return s.replace(' ', '')
 
 
-def register_class(cls):
+def get_cls_package(package_namespace=None):
+    cls_package = "gdcdatamodel.models"
+    if package_namespace:
+        cls_package = "{}.{}".format(cls_package, package_namespace)
+    return cls_package
+
+
+def register_class(cls, package_namespace=None):
     """Register a class in `globals`.  This allows us to import the ORM
     classes from :mod:`gdcdatamodel.models`
 
     :param cls: Any class object
+    :param package_namespace: defaults to `models` but useful for custom package naming
     :returns: None
 
     """
+    if package_namespace:
+        m = get_cls_package(package_namespace)
+        pkg = sys.modules.get(m)
+        if not pkg:
+            pkg = ModuleType(m)
+            sys.modules[m] = pkg
+            globals()[package_namespace] = pkg
+        setattr(pkg, cls.__name__,  cls)
 
-    globals()[cls.__name__] = cls
+    else:
+        globals()[cls.__name__] = cls
 
 
 def get_links(schema):
@@ -121,8 +141,8 @@ def get_links(schema):
 def types_from_str(types):
     return [a for type_ in types for a in {
         'string': [str],
-        'number': [float, int, long],
-        'integer': [int, long],
+        'number': [float, int],
+        'integer': [int],
         'float': [float],
         'null': [str],
         'boolean': [bool],
@@ -324,7 +344,7 @@ def cls_inject_secondary_keys(cls, schema):
     cls_add_indexes(cls, get_secondary_key_indexes(cls))
 
 
-def NodeFactory(_id, schema):
+def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     """Returns a node class given a schema.
 
     """
@@ -383,7 +403,8 @@ def NodeFactory(_id, schema):
     )
 
     # Create the Node subclass!
-    cls = type(name, (Node,), dict(
+    cls = type(name, (node_cls,), dict(
+        __module__=get_cls_package(package_namespace),
         __tablename__=get_class_tablename_from_id(_id),
         __label__=_id,
         id=node_id,
@@ -395,6 +416,7 @@ def NodeFactory(_id, schema):
     cls_inject_versioned_nodes_lookup(cls)
     cls_inject_secondary_keys(cls, schema)
 
+    node_cls.add_subclass(cls)
     return cls
 
 
@@ -439,7 +461,10 @@ def generate_edge_tablename(src_label, label, dst_label):
 
 def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
                 dst_src_assoc,
-                _assigned_association_proxies=defaultdict(set)):
+                node_cls=Node,
+                edge_cls=Edge,
+                package_namespace=None,
+                _assigned_association_proxies=defaultdict(lambda: defaultdict(set))):
     """Returns an edge class.
 
     :param name: The name of the edge class.
@@ -461,7 +486,7 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
         different semantic meanings.
 
     """
-
+    cls_package = get_cls_package(package_namespace)
     # Correctly format all of the names
     name = remove_spaces(name)
     label = remove_spaces(label)
@@ -475,36 +500,38 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
     tablename = generate_edge_tablename(src_label, label, dst_label)
 
     # Lookup the tablenames for the source and destination classes
-    src_cls = Node.get_subclass(src_label)
-    dst_cls = Node.get_subclass(dst_label)
+    src_cls = node_cls.get_subclass(src_label)
+    dst_cls = node_cls.get_subclass(dst_label)
 
     # Assert that we're not clobbering link names
-    assert dst_src_assoc not in _assigned_association_proxies[dst_label], (
+    assoc_proxy_key = package_namespace
+    assert dst_src_assoc not in _assigned_association_proxies[assoc_proxy_key][dst_label], (
         "Attempted to assign backref '{link}' to node '{node}' but "
         "the node already has an attribute called '{link}'"
-        .format(link=dst_src_assoc, node=dst_label))
-    assert src_dst_assoc not in _assigned_association_proxies[src_label], (
+            .format(link=dst_src_assoc, node=dst_label))
+    assert src_dst_assoc not in _assigned_association_proxies[assoc_proxy_key][src_label], (
         "Attempted to assign link '{link}' to node '{node}' but "
         "the node already has an attribute called '{link}'"
-        .format(link=src_dst_assoc, node=src_label))
+            .format(link=src_dst_assoc, node=src_label))
 
     # Remember that we're adding this link and this backref
-    _assigned_association_proxies[dst_label].add(dst_src_assoc)
-    _assigned_association_proxies[src_label].add(src_dst_assoc)
+    _assigned_association_proxies[assoc_proxy_key][dst_label].add(dst_src_assoc)
+    _assigned_association_proxies[assoc_proxy_key][src_label].add(src_dst_assoc)
 
-    hooks_before_insert = Edge._session_hooks_before_insert + [
+    hooks_before_insert = edge_cls._session_hooks_before_insert + [
         cache_related_cases_on_insert,
     ]
 
-    hooks_before_update = Edge._session_hooks_before_update + [
+    hooks_before_update = edge_cls._session_hooks_before_update + [
         cache_related_cases_on_update,
     ]
 
-    hooks_before_delete = Edge._session_hooks_before_delete + [
+    hooks_before_delete = edge_cls._session_hooks_before_delete + [
         cache_related_cases_on_delete,
     ]
 
-    cls = type(name, (Edge,), {
+    cls = type(name, (edge_cls,), {
+        '__module__': cls_package,
         '__label__': label,
         '__tablename__': tablename,
         '__src_class__': get_class_name_from_id(src_label),
@@ -518,28 +545,40 @@ def EdgeFactory(name, label, src_label, dst_label, src_dst_assoc,
         '_session_hooks_before_delete': hooks_before_delete,
     })
 
+    edge_cls.add_subclass(cls)
+    register_class(cls, package_namespace)
     return cls
 
 
-def load_nodes():
+def load_nodes(dictionary, node_cls=None, package_namespace=None):
     """Parse all nodes from dictionary and create Node subclasses
-
+    Args:
+        dictionary: The dictionary to load
+        node_cls (psqlgraph.Node): Node class definition
+        package_namespace (str): package name
     """
-
+    node_cls = node_cls or Node
     for entity, subschema in dictionary.schema.items():
-        name = subschema['title']
         _id = subschema['id']
-        if name not in loaded_nodes:
+        name = get_class_name_from_id(_id)
+        if not node_cls.is_subclass_loaded(name):
             try:
-                cls = NodeFactory(_id, subschema)
+                cls = NodeFactory(_id, subschema, node_cls, package_namespace)
+                register_class(cls, package_namespace)
             except Exception:
                 print('Unable to load {}'.format(name))
                 raise
-            else:
-                register_class(cls)
 
 
-def parse_edge(src_label, name, edge_label, subschema, link):
+def parse_edge(src_label,
+               name,
+               edge_label,
+               subschema,
+               link,
+               dictionary,
+               node_cls=Node,
+               edge_cls=Edge,
+               package_namespace=None):
     """Parse an edge from the dictionary and create and Edge subclass
 
     :returns: The outbound name of the edge
@@ -558,6 +597,9 @@ def parse_edge(src_label, name, edge_label, subschema, link):
     dst_label = dictionary.schema[dst_label]['id']
     edge_name = ''.join(map(get_class_name_from_id, [
         src_label, edge_label, dst_label]))
+    
+    if edge_cls.is_subclass_loaded(name):
+        return '_{}_out'.format(edge_name)
 
     edge = EdgeFactory(
         edge_name,
@@ -566,14 +608,15 @@ def parse_edge(src_label, name, edge_label, subschema, link):
         dst_label,
         name,
         backref,
+        node_cls=node_cls,
+        edge_cls=edge_cls,
+        package_namespace=package_namespace
     )
 
-    register_class(edge)
-
-    return '_{}_out'.format(edge_name)
+    return '_{}_out'.format(edge.__name__)
 
 
-def load_edges():
+def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None):
     """Add a dictionry of links from this class
 
     { <link name>: {'backref': <backref name>, 'type': <source type> } }
@@ -582,20 +625,25 @@ def load_edges():
 
     for src_label, subschema in dictionary.schema.items():
 
-        src_cls = Node.get_subclass(src_label)
+        src_cls = node_cls.get_subclass(src_label)
         if not src_cls:
             raise RuntimeError('No source class labeled {}'.format(src_label))
 
         for name, link in get_links(subschema).items():
             edge_label = link['label']
             edge_name = parse_edge(
-                src_label, name, edge_label, subschema, link)
+                src_label, name, edge_label, subschema, link, 
+                dictionary=dictionary,
+                node_cls=node_cls,
+                edge_cls=edge_cls,
+                package_namespace=package_namespace,
+            )
             src_cls._pg_links[link['name']] = {
                 'edge_out': edge_name,
-                'dst_type': Node.get_subclass(link['target_type'])
+                'dst_type': node_cls.get_subclass(link['target_type'])
             }
 
-    for src_cls in Node.get_subclasses():
+    for src_cls in node_cls.get_subclasses():
         cache_case = (
             not src_cls._dictionary['category'] in NOT_RELATED_CASES_CATEGORIES
             or src_cls.get_label() in ['annotation']
@@ -610,19 +658,23 @@ def load_edges():
             'required': False,
             'target_type': 'case',
             'label': 'relates_to',
-            'backref': '_related_{}'.format(src_cls.get_label()),
+            'backref': '_related_{}'.format(src_cls.label),
         }
 
-        edge_name = parse_edge(
-            src_cls.get_label(),
+        parse_edge(
+            src_cls.label,
             link['name'],
             'relates_to',
-            {'id': src_cls.get_label()},
+            {'id': src_cls.label},
             link,
+            dictionary=dictionary,
+            node_cls=node_cls,
+            edge_cls=edge_cls,
+            package_namespace=package_namespace,
         )
 
 
-def inject_pg_backrefs():
+def inject_pg_backrefs(dictionary, node_cls):
     """Add a dict of links to this class.  Backrefs look like:
 
     .. code-block::
@@ -632,14 +684,14 @@ def inject_pg_backrefs():
 
     for src_label, subschema in dictionary.schema.items():
         for name, link in get_links(subschema).items():
-            dst_cls = Node.get_subclass(link['target_type'])
+            dst_cls = node_cls.get_subclass(link['target_type'])
             dst_cls._pg_backrefs[link['backref']] = {
                 'name': link['name'],
-                'src_type': Node.get_subclass(src_label)
+                'src_type': node_cls.get_subclass(src_label)
             }
 
 
-def inject_pg_edges():
+def inject_pg_edges(node_cls):
     """Add a dict of ALL the links, to and from, each class
 
     .. code-block::
@@ -685,13 +737,44 @@ def inject_pg_edges():
                 'type': backref['src_type'],
             }
 
-    for cls in Node.get_subclasses():
+    for cls in node_cls.get_subclasses():
         cls_inject_forward_edges(cls)
         cls_inject_backward_edges(cls)
 
 
-load_nodes()
-load_edges()
-inject_pg_backrefs()
-inject_pg_edges()
-configure_mappers()
+@lru_cache(maxsize=10)
+def load_dictionary(dictionary=None, package_namespace=None):
+    """ Loads all classes defined in dictionary, this method is expected to be called only once
+        and very early in the application lifecycle. Subsequent calls are cached
+    Args:
+        dictionary: gdc dictionary or an extension of it
+        package_namespace (str): module namespace used to insert all class generated from the dictionary
+    Raises:
+        AssertionError: If method is called more than maxsize of the lru_cache, which is 10. This method should only
+            be called once
+    """
+
+    if dictionary is None:
+        from gdcdictionary import gdcdictionary
+        dictionary = gdcdictionary
+
+    node_cls, edge_cls = ext.register_base_class(package_namespace)
+
+    load_nodes(dictionary, node_cls, package_namespace)
+    load_edges(dictionary, node_cls, edge_cls, package_namespace)
+    inject_pg_backrefs(dictionary, node_cls)
+    inject_pg_edges(node_cls)
+    configure_mappers()
+
+    # register abstract node and edge in package
+    if package_namespace:
+        m = get_cls_package(package_namespace)
+        pkg = sys.modules.get(m)
+        setattr(pkg, "Node", node_cls)
+        setattr(pkg, "Edge", edge_cls)
+
+
+# load default dictionary
+if os.environ.get("LOAD_GDC_DICTIONARY", "True") == "True":
+    load_dictionary()
+

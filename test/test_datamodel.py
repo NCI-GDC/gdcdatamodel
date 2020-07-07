@@ -84,12 +84,12 @@ class TestDataModel(unittest.TestCase):
 
     def test_created_datetime_hook(self):
         """Test setting created/updated datetime when a node is created."""
-        time_before = datetime.utcnow().isoformat()
+        time_before = datetime.now().isoformat()
 
         with self.g.session_scope() as s:
-            s.merge(md.Case('case1'))
+            s.add(md.Case('case1'))
 
-        time_after = datetime.utcnow().isoformat()
+        time_after = datetime.now().isoformat()
 
         with self.g.session_scope():
             case = self.g.nodes(md.Case).one()
