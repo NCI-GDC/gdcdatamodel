@@ -5,11 +5,6 @@ Tests for gdcdatamodel.gdc_postgres_admin module
 
 import logging
 import unittest
-
-from gdcdatamodel import gdc_postgres_admin as pgadmin
-from gdcdatamodel import models
-from sqlalchemy.exc import ProgrammingError
-
 from multiprocessing import (
     Process,
     Queue,
@@ -18,8 +13,12 @@ from multiprocessing import (
 from psqlgraph import (
     Edge,
     Node,
-    PsqlGraphDriver,
+    PsqlGraphDriver, ext,
 )
+from sqlalchemy.exc import ProgrammingError
+
+from gdcdatamodel import gdc_postgres_admin as pgadmin
+from gdcdatamodel import models
 
 logging.basicConfig()
 
@@ -52,14 +51,14 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         cls.create_all_tables()
 
         # Re-grant permissions to test user
-        for scls in Node.__subclasses__() + Edge.__subclasses__():
+        for scls in Node.get_subclasses() + Edge.get_subclasses():
             statment = ("GRANT ALL PRIVILEGES ON TABLE {} TO test"
                         .format(scls.__tablename__))
             cls.engine.execute('BEGIN; %s; COMMIT;' % statment)
 
     @classmethod
     def drop_all_tables(cls):
-        for scls in Node.__subclasses__():
+        for scls in Node.get_subclasses():
             try:
                 cls.engine.execute("DROP TABLE {} CASCADE"
                                    .format(scls.__tablename__))
@@ -130,11 +129,12 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         p.start()
         q.get()
 
-        with self.assertRaises(RuntimeError):
-            pgadmin.main(args)
-
-        q.put(0)
-        p.terminate()
+        try:
+            with self.assertRaises(RuntimeError):
+                pgadmin.main(args)
+        finally:
+            q.put(0)
+            p.terminate()
 
     def test_create_force(self):
         """Test ability to force table creation"""
@@ -176,6 +176,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
         try:
             self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+            self.engine.execute("GRANT USAGE ON SCHEMA public TO pytest")
 
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
 
@@ -205,6 +206,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
         try:
             self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+            self.engine.execute("GRANT USAGE ON SCHEMA public TO pytest")
 
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
             pgadmin.main(pgadmin.get_parser().parse_args([
@@ -225,6 +227,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
         try:
             self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+            self.engine.execute("GRANT USAGE ON SCHEMA public TO pytest")
 
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
 
@@ -251,6 +254,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
         try:
             self.engine.execute("CREATE USER pytest WITH PASSWORD 'pyt3st'")
+            self.engine.execute("GRANT USAGE ON SCHEMA public TO pytest")
 
             g = PsqlGraphDriver(self.host, 'pytest', 'pyt3st', self.database)
 
