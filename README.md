@@ -1,7 +1,23 @@
+[![Build Status](https://travis-ci.com/NCI-GDC/gdcdatamodel.svg?branch=develop)](https://travis-ci.org/NCI-GDC/gdcdatamodel)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commitlogoColor=white)](https://github.com/pre-commit/pre-commit)
+
+---
 GDC Data Model
 ==============
 
 Repo to keep information about the GDC data model design.
+
+- [GDC Data Model](#gdc-data-model)
+- [Installation](#installation)
+- [Jupyter + Graphviz](#jupyter--graphviz)
+  - [Documentation](#documentation)
+    - [Visual representation](#visual-representation)
+  - [Dependencies](#dependencies)
+    - [Project Dependencies](#project-dependencies)
+- [Example validation usage](#example-validation-usage)
+- [Tests](#tests)
+- [Setup pre-commit hook to check for secrets](#setup-pre-commit-hook-to-check-for-secrets)
+- [Contributing](#contributing)
 
 # Installation
 
@@ -13,7 +29,7 @@ To install the gdcdatamodel library run the setup script:
 # Jupyter + Graphviz
 
 It's helpful to examine the relationships between nodes visually.  One
-way to do this is to run an Jupyter notebook with a Python2 kernal.
+way to do this is to run a Jupyter notebook with a Python2 kernel.
 When used with Graphviz's SVG support, you can view a graphical
 representation of a subgraph directly in a REPL. To do so, install the
 `dev-requirements.txt` dependencies.  There is an example Jupyter
@@ -80,6 +96,28 @@ Ran 2 tests in 0.033s
 OK
 ```
 
+
+    
+# Setup pre-commit hook to check for secrets
+
+We use [pre-commit](https://pre-commit.com/) to setup pre-commit hooks for this repo.
+We use [detect-secrets](https://github.com/Yelp/detect-secrets) to search for secrets being committed into the repo. 
+
+To install the pre-commit hook, run
+```
+pre-commit install
+```
+
+To update the .secrets.baseline file run
+```
+detect-secrets scan --update .secrets.baseline
+```
+
+`.secrets.baseline` contains all the string that were caught by detect-secrets but are not stored in plain text. Audit the baseline to view the secrets . 
+
+```
+detect-secrets audit .secrets.baseline
+```
 # Contributing
 
 Read how to contribute [here](https://github.com/NCI-GDC/portal-ui/blob/develop/CONTRIBUTING.md)
