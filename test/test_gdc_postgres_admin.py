@@ -10,6 +10,7 @@ from multiprocessing import (
     Queue,
 )
 
+import pytest
 from psqlgraph import (
     Edge,
     Node,
@@ -19,6 +20,7 @@ from sqlalchemy.exc import ProgrammingError
 
 from gdcdatamodel import gdc_postgres_admin as pgadmin
 from gdcdatamodel import models
+from test import RUN_ENV
 
 logging.basicConfig()
 
@@ -106,6 +108,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
         self.engine.execute('SELECT * from node_case')
 
+    @pytest.mark.skipif(RUN_ENV == "docker", reason="Race condition")
     def test_create_fails_blocked_without_force(self):
         """Test table creation fails when blocked w/o force"""
 
@@ -136,6 +139,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
             q.put(0)
             p.terminate()
 
+    @pytest.mark.skipif(RUN_ENV == "docker", reason="Race condition")
     def test_create_force(self):
         """Test ability to force table creation"""
 
