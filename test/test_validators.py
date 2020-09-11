@@ -1,4 +1,5 @@
 import uuid
+from copy import copy
 
 from gdcdatamodel.validators import GDCJSONValidator, GDCGraphValidator
 from gdcdatamodel.models import *
@@ -68,6 +69,39 @@ class TestValidators(BaseTestCase):
         self.json_validator.record_errors(self.entities)
         self.assertEqual(2, len(self.entities[0].errors))
         self.assertEqual(0, len(entity.errors))
+
+    def test_json_validator_with_array_prop(self):
+        entity_doc = {
+            'type': 'diagnosis',
+            'submitter_id': 'test',
+            'age_at_diagnosis': 10,
+            'primary_diagnosis': 'Abdominal desmoid',
+            "morphology": "8000/0",
+            "tissue_or_organ_of_origin": "Abdomen, NOS",
+            "site_of_resection_or_biopsy": "Abdomen, NOS",
+        }
+
+        def mock_doc(sites_of_involvement):
+            mock = MockSubmissionEntity()
+            mock.doc = copy(entity_doc)
+            mock.doc["sites_of_involvement"] = sites_of_involvement
+            return mock
+
+        # invalid array value at index 0
+        self.entities[0] = mock_doc(["Right"])
+
+        # invalid array value at index 1
+        self.entities.append(mock_doc(["Cervix", "Right"]))
+
+        # valid array values
+        self.entities.append(mock_doc(["Cervix", "Ovary, NOS"]))
+
+        self.json_validator.record_errors(self.entities)
+        self.assertEqual(1, len(self.entities[0].errors))
+        self.assertEqual(1, len(self.entities[1].errors))
+        self.assertEqual(0, len(self.entities[2].errors))
+        self.assertEqual(["sites_of_involvement.0"], self.entities[0].errors[0]["keys"])
+        self.assertEqual(["sites_of_involvement.1"], self.entities[1].errors[0]["keys"])
 
     def create_node(self, doc, session):
         cls = Node.get_subclass(doc['type'])
