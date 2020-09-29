@@ -10,7 +10,7 @@ services:
       - ./psql-users.sh:/docker-entrypoint-initdb.d/psql-users.sh
 
   app:
-    image: quay.io/ncigdc/jenkins-agent:multipython
+    image: docker.osdc.io/ncigdc/jenkins-agent:1.0.2
     environment:
       SSH_AUTH_SOCK: $SSH_AUTH_SOCK
       HTTPS_PROXY: http://cloud-proxy:3128
@@ -19,7 +19,7 @@ services:
     volumes:
     - .:/home/jenkins
     - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
-    command: bash -c "./wait-for-it.sh localhost:5432 -t 120 && tox"
+    command: bash -c "wait-for-it localhost:5432 -t 120 && tox"
     network_mode: "service:postgres"
     depends_on:
       - postgres
