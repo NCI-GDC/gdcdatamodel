@@ -237,40 +237,6 @@ def kill_blocking_psql_backend_processes(engine):
         execute(engine, sql_cmd)
 
 
-def create_tables_force(engine, delay, retries, namespace=None):
-    """Create the tables and **KILL ANY BLOCKING PROCESSES**.
-
-    This command will spawn a process to create the new tables in
-    order to find out which process is blocking us.  If we didn't do
-    this concurrently, then the table creation will have disappeared
-    by the time we tried to find its blocker in the postgres backend
-    tables.
-
-    """
-
-    logger.info('Running table creator named %s', app_name)
-    logger.warning('Running with force=True option %s', app_name)
-
-    from multiprocessing import Process
-    p = Process(target=create_graph_tables, args=(engine, delay, namespace))
-    p.start()
-    time.sleep(delay)
-
-    if p.is_alive():
-        logger.warning('Table creation blocked!')
-        kill_blocking_psql_backend_processes(engine)
-
-        #  Wait some time for table creation to proceed
-        time.sleep(4)
-
-    if p.is_alive():
-        if retries <= 0:
-            raise RuntimeError('Max retries exceeded.')
-
-        logger.warning('Table creation failed, retrying.')
-        return create_tables_force(engine, delay, retries-1, namespace=namespace)
-
-
 def create_tables(engine, delay, retries, namespace=None):
     """Create the tables but do not kill any blocking processes.
 
@@ -316,10 +282,7 @@ def subcommand_create(args):
         namespace=args.namespace
     )
 
-    if args.force:
-        return create_tables_force(**kwargs)
-    else:
-        return create_tables(**kwargs)
+    return create_tables(**kwargs)
 
 
 def subcommand_grant(args):
@@ -386,12 +349,8 @@ def add_subcommand_create(subparsers):
         help=subcommand_create.__doc__
     ))
     parser.add_argument(
-        "--force", action="store_true",
-        help="Hard killing blocking processes that are not in the 'no-kill' list."
-    )
-    parser.add_argument(
         "--delay", type=int, action="store", default=60,
-        help="How many seconds to wait for blocking processes to finish before retrying (and hard killing them if used with --force)."
+        help="How many seconds to wait for blocking processes to finish before retrying."
     )
     parser.add_argument(
         "--retries", type=int, action="store", default=10,

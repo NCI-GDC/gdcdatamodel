@@ -42,7 +42,7 @@ nosetests.xml
 coverage.xml
 test-reports/
 
-# Jenkins 
+# Jenkins
 .local/
 .eggs/
 .ssh/
@@ -65,3 +65,6 @@ target/
 # IDE
 .idea/
 .vscode/
+
+# vim
+*.swp
