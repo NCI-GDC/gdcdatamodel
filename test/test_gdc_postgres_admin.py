@@ -5,22 +5,16 @@ Tests for gdcdatamodel.gdc_postgres_admin module
 
 import logging
 import unittest
-from multiprocessing import (
-    Process,
-    Queue,
-)
 
-import pytest
 from psqlgraph import (
     Edge,
     Node,
-    PsqlGraphDriver, ext,
+    PsqlGraphDriver,
 )
 from sqlalchemy.exc import ProgrammingError
 
 from gdcdatamodel import gdc_postgres_admin as pgadmin
 from gdcdatamodel import models
-from test import RUN_ENV
 
 logging.basicConfig()
 

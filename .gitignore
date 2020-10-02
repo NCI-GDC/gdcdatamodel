@@ -68,3 +68,5 @@ target/
 
 # vim
 *.swp
+
+.mypy_cache/
