@@ -22,27 +22,54 @@ class VersionedNode(Base):
 
     key = Column(BigInteger, primary_key=True, nullable=False)
 
-    label = Column(Text, nullable=False,)
-
-    node_id = Column(Text, nullable=False,)
-
-    project_id = Column(Text, nullable=False,)
-
-    gdc_versions = Column(ARRAY(Text),)
-
-    created = Column(DateTime(timezone=True), nullable=False,)
-
-    versioned = Column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()"),
+    label = Column(
+        Text,
+        nullable=False,
     )
 
-    acl = Column(ARRAY(Text), default=list(),)
+    node_id = Column(
+        Text,
+        nullable=False,
+    )
 
-    system_annotations = Column(JSONB, default={},)
+    project_id = Column(
+        Text,
+        nullable=False,
+    )
 
-    properties = Column(JSONB, default={},)
+    gdc_versions = Column(
+        ARRAY(Text),
+    )
 
-    neighbors = Column(ARRAY(Text),)
+    created = Column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    versioned = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+    )
+
+    acl = Column(
+        ARRAY(Text),
+        default=list(),
+    )
+
+    system_annotations = Column(
+        JSONB,
+        default={},
+    )
+
+    properties = Column(
+        JSONB,
+        default={},
+    )
+
+    neighbors = Column(
+        ARRAY(Text),
+    )
 
     @staticmethod
     def clone(node):

@@ -50,9 +50,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Recreate the database for tests that follow.
-
-        """
+        """Recreate the database for tests that follow."""
         cls.create_all_tables()
 
         # Re-grant permissions to test user
@@ -195,7 +193,11 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
             pgadmin.main(
                 pgadmin.get_parser().parse_args(
-                    ["graph-grant", "--read=pytest",] + self.base_args
+                    [
+                        "graph-grant",
+                        "--read=pytest",
+                    ]
+                    + self.base_args
                 )
             )
 
@@ -219,7 +221,11 @@ class TestGDCPostgresAdmin(unittest.TestCase):
             g = PsqlGraphDriver(self.host, "pytest", "pyt3st", self.database)
             pgadmin.main(
                 pgadmin.get_parser().parse_args(
-                    ["graph-grant", "--write=pytest",] + self.base_args
+                    [
+                        "graph-grant",
+                        "--write=pytest",
+                    ]
+                    + self.base_args
                 )
             )
 
@@ -241,13 +247,21 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
             pgadmin.main(
                 pgadmin.get_parser().parse_args(
-                    ["graph-grant", "--read=pytest",] + self.base_args
+                    [
+                        "graph-grant",
+                        "--read=pytest",
+                    ]
+                    + self.base_args
                 )
             )
 
             pgadmin.main(
                 pgadmin.get_parser().parse_args(
-                    ["graph-revoke", "--read=pytest",] + self.base_args
+                    [
+                        "graph-revoke",
+                        "--read=pytest",
+                    ]
+                    + self.base_args
                 )
             )
 
@@ -270,13 +284,21 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
             pgadmin.main(
                 pgadmin.get_parser().parse_args(
-                    ["graph-grant", "--write=pytest",] + self.base_args
+                    [
+                        "graph-grant",
+                        "--write=pytest",
+                    ]
+                    + self.base_args
                 )
             )
 
             pgadmin.main(
                 pgadmin.get_parser().parse_args(
-                    ["graph-revoke", "--write=pytest",] + self.base_args
+                    [
+                        "graph-revoke",
+                        "--write=pytest",
+                    ]
+                    + self.base_args
                 )
             )
 

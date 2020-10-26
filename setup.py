@@ -30,7 +30,11 @@ setup(
         "python-dateutil~=2.4",
         "sqlalchemy~=1.3",
     ],
-    package_data={"gdcdatamodel": ["xml_mappings/*.yaml",]},
+    package_data={
+        "gdcdatamodel": [
+            "xml_mappings/*.yaml",
+        ]
+    },
     entry_points={
         "console_scripts": ["gdc_postgres_admin=gdcdatamodel.gdc_postgres_admin:main"]
     },

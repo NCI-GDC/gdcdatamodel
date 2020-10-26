@@ -124,9 +124,7 @@ def types_from_str(types):
 
 
 def PropertyFactory(name, schema, key=None):
-    """Returns a pg_property (psqlgraph specific type of hybrid_property)
-
-    """
+    """Returns a pg_property (psqlgraph specific type of hybrid_property)"""
     key = name if key is None else key
 
     # Assert the dictionary has no references for properties
@@ -186,9 +184,7 @@ def cls_inject_versioned_nodes_lookup(cls):
         return self.get_versions(session)
 
     def get_versions(self, session):
-        """Returns a query for node versions given a session.
-
-        """
+        """Returns a query for node versions given a session."""
 
         return (
             session.query(VersionedNode)
@@ -300,9 +296,7 @@ def cls_inject_secondary_keys(cls, schema):
 
 
 def NodeFactory(_id, schema):
-    """Returns a node class given a schema.
-
-    """
+    """Returns a node class given a schema."""
 
     name = get_class_name_from_id(_id)
     links = get_links(schema)
@@ -373,7 +367,9 @@ def generate_edge_tablename(src_label, label, dst_label):
     """
 
     tablename = "edge_{}{}{}".format(
-        src_label.replace("_", ""), label.replace("_", ""), dst_label.replace("_", ""),
+        src_label.replace("_", ""),
+        label.replace("_", ""),
+        dst_label.replace("_", ""),
     )
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
@@ -487,9 +483,7 @@ def EdgeFactory(
 
 
 def load_nodes():
-    """Parse all nodes from dictionary and create Node subclasses
-
-    """
+    """Parse all nodes from dictionary and create Node subclasses"""
 
     for entity, subschema in dictionary.schema.items():
         name = subschema["title"]
@@ -525,7 +519,14 @@ def parse_edge(src_label, name, edge_label, subschema, link):
     dst_label = dictionary.schema[dst_label]["id"]
     edge_name = "".join(map(get_class_name_from_id, [src_label, edge_label, dst_label]))
 
-    edge = EdgeFactory(edge_name, edge_label, src_label, dst_label, name, backref,)
+    edge = EdgeFactory(
+        edge_name,
+        edge_label,
+        src_label,
+        dst_label,
+        name,
+        backref,
+    )
 
     register_class(edge)
 

@@ -165,7 +165,8 @@ def migrate_transaction_snapshots(engine, user):
             "ALTER TABLE {name} DROP CONSTRAINT {name}_pkey".format(name=tablename),
         )
         execute(
-            engine, "ALTER TABLE {} RENAME id TO entity_id".format(tablename),
+            engine,
+            "ALTER TABLE {} RENAME id TO entity_id".format(tablename),
         )
         execute(
             engine,
@@ -203,8 +204,7 @@ def is_blocked_by_no_kill(blocking):
 
 
 def lookup_blocking_psql_backend_processes(engine):
-    """
-    """
+    """"""
 
     sql_cmd = sa.sql.text(BLOCKING_SQL)
     conn = engine.connect()
@@ -328,7 +328,11 @@ def subcommand_create(args):
 
     logger.info("Running subcommand 'create'")
     engine = get_engine(args.host, args.user, args.password, args.database)
-    kwargs = dict(engine=engine, delay=args.delay, retries=args.retries,)
+    kwargs = dict(
+        engine=engine,
+        delay=args.delay,
+        retries=args.retries,
+    )
 
     if args.force:
         return create_tables_force(**kwargs)

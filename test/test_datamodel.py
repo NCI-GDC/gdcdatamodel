@@ -42,5 +42,10 @@ class TestDataModel(unittest.TestCase):
     def test_backref_clobber_prevention(self):
         with self.assertRaises(AssertionError):
             md.EdgeFactory(
-                "Testedge", "test", "sample", "aliquot", "_uncontended_link", "samples",
+                "Testedge",
+                "test",
+                "sample",
+                "aliquot",
+                "_uncontended_link",
+                "samples",
             )

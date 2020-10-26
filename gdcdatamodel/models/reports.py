@@ -27,7 +27,9 @@ class GDCReport(Base):
     report_type = Column(Text, nullable=False)
 
     created_datetime = Column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()"),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
     )
 
     @hybrid_property

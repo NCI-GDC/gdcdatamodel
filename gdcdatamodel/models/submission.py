@@ -94,27 +94,53 @@ class TransactionLog(Base):
 
         return doc
 
-    id = Column(Integer, primary_key=True,)
+    id = Column(
+        Integer,
+        primary_key=True,
+    )
 
-    submitter = Column(Text,)
+    submitter = Column(
+        Text,
+    )
 
-    role = Column(Text, nullable=False,)
+    role = Column(
+        Text,
+        nullable=False,
+    )
 
-    program = Column(Text, nullable=False,)
+    program = Column(
+        Text,
+        nullable=False,
+    )
 
-    project = Column(Text, nullable=False,)
+    project = Column(
+        Text,
+        nullable=False,
+    )
 
     #: Specifies a non-dry_run transaction that repeated this
     #: transaction in an attempt to write to the database
-    committed_by = Column(Integer,)
+    committed_by = Column(
+        Integer,
+    )
 
     #: Was this transaction a dry_run (for validation)
-    is_dry_run = Column(Boolean, nullable=False,)
+    is_dry_run = Column(
+        Boolean,
+        nullable=False,
+    )
 
     #: Has this transaction succeeded, errored, failed, etc.
-    state = Column(Text, nullable=False,)
+    state = Column(
+        Text,
+        nullable=False,
+    )
 
-    closed = Column(Boolean, default=False, nullable=False,)
+    closed = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
 
     @hybrid_property
     def project_id(self):
@@ -125,10 +151,18 @@ class TransactionLog(Base):
         return func.concat(cls.program, "-", cls.project)
 
     created_datetime = Column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()"),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
     )
 
-    canonical_json = deferred(Column(JSONB, nullable=False, default=JSONB.NULL,))
+    canonical_json = deferred(
+        Column(
+            JSONB,
+            nullable=False,
+            default=JSONB.NULL,
+        )
+    )
 
 
 class TransactionSnapshot(Base):
@@ -151,17 +185,39 @@ class TransactionSnapshot(Base):
         doc = {key: getattr(self, key) for key in fields}
         return doc
 
-    id = Column(Integer, primary_key=True,)
+    id = Column(
+        Integer,
+        primary_key=True,
+    )
 
-    entity_id = Column(Text, nullable=False, index=True,)
+    entity_id = Column(
+        Text,
+        nullable=False,
+        index=True,
+    )
 
-    transaction_id = Column(Integer, ForeignKey("transaction_logs.id"), index=True,)
+    transaction_id = Column(
+        Integer,
+        ForeignKey("transaction_logs.id"),
+        index=True,
+    )
 
-    action = Column(Text, nullable=False,)
+    action = Column(
+        Text,
+        nullable=False,
+    )
 
-    old_props = Column(JSONB, nullable=False, default=JSONB.NULL,)
+    old_props = Column(
+        JSONB,
+        nullable=False,
+        default=JSONB.NULL,
+    )
 
-    new_props = Column(JSONB, nullable=False, default=JSONB.NULL,)
+    new_props = Column(
+        JSONB,
+        nullable=False,
+        default=JSONB.NULL,
+    )
 
     transaction = relationship("TransactionLog", backref="entities")
 
@@ -192,19 +248,40 @@ class TransactionDocument(Base):
         doc = {key: getattr(self, key) for key in fields}
         return doc
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False,)
-
-    transaction_id = Column(
-        Integer, ForeignKey("transaction_logs.id"), primary_key=True,
+    id = Column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
     )
 
-    name = Column(Text,)
+    transaction_id = Column(
+        Integer,
+        ForeignKey("transaction_logs.id"),
+        primary_key=True,
+    )
 
-    doc_format = Column(Text, nullable=False,)
+    name = Column(
+        Text,
+    )
 
-    doc = deferred(Column(Text, nullable=False,))
+    doc_format = Column(
+        Text,
+        nullable=False,
+    )
 
-    response_json = deferred(Column(JSONB,))
+    doc = deferred(
+        Column(
+            Text,
+            nullable=False,
+        )
+    )
+
+    response_json = deferred(
+        Column(
+            JSONB,
+        )
+    )
 
     transaction = relationship("TransactionLog", backref="documents")
 

@@ -89,7 +89,10 @@ def legacy_filter(query, legacy_projects):
 def null_prop(cls, key):
     """Provide expression to filter on a null or nonexistent value"""
 
-    return or_(cls._props.contains({key: None}), not_(key in cls._props),)
+    return or_(
+        cls._props.contains({key: None}),
+        not_(key in cls._props),
+    )
 
 
 def print_cls_query_summary(graph):

@@ -197,8 +197,8 @@ treatment:
 
     edges_by_property:
       describes:
-        diagnosis: 
-          submitter_id: 
+        diagnosis:
+          submitter_id:
             path: ./shared:bcr_patient_barcode
             suffix: _diagnosis
 

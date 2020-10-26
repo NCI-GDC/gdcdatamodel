@@ -16,7 +16,9 @@ class Notification(Base):
     level = Column(String)
     dismissible = Column(Boolean, default=True)
     created = Column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()"),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
     )
 
     def __repr__(self):
