@@ -10,7 +10,7 @@ git+https://github.com/NCI-GDC/gdcdictionary.git@2.2.0#egg=gdcdictionary  # via 
 graphviz==0.4.10          # via gdcdatamodel (setup.py)
 importlib-metadata==1.6.0  # via jsonschema
 jsonschema==3.2.0         # via gdcdatamodel (setup.py), gdcdictionary
-git+https://github.com/NCI-GDC/psqlgraph.git@3.0.0#egg=psqlgraph  # via gdcdatamodel (setup.py)
+git+https://github.com/NCI-GDC/psqlgraph.git@3.0.2#egg=psqlgraph  # via gdcdatamodel (setup.py)
 psycopg2==2.8.5           # via psqlgraph
 pyrsistent==0.16.0        # via jsonschema
 pytz==2020.1              # via gdcdatamodel (setup.py)
