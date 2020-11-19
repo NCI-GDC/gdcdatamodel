@@ -6,7 +6,7 @@
 #
 attrs==19.3.0             # via jsonschema
 git+https://github.com/NCI-GDC/gdc-ng-models.git@1.4.0#egg=gdc-ng-models  # via gdcdatamodel (setup.py)
-git+https://github.com/NCI-GDC/gdcdictionary.git@2.2.0#egg=gdcdictionary  # via gdcdatamodel (setup.py)
+git+https://github.com/NCI-GDC/gdcdictionary.git@99d7020fcdf318a1b87117816e229887b090ded1#egg=gdcdictionary  # via gdcdatamodel (setup.py)
 graphviz==0.4.10          # via gdcdatamodel (setup.py)
 importlib-metadata==1.6.0  # via jsonschema
 jsonschema==3.2.0         # via gdcdatamodel (setup.py), gdcdictionary
