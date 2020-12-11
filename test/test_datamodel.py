@@ -4,7 +4,6 @@ import unittest
 
 from psqlgraph import Edge, Node, PsqlGraphDriver
 from psqlgraph.exc import ValidationError
-
 from gdcdatamodel import models as md
 
 logging.basicConfig(level=logging.INFO)
@@ -133,3 +132,10 @@ class TestDataModel(unittest.TestCase):
             updated_case = self.g.nodes(md.Case).one()
             assert updated_case.created_datetime == old_created_datetime
             assert updated_case.updated_datetime == old_updated_datetime
+
+    def test_default_values(self):
+        p = md.Project()
+        project_defaults = p._defaults
+        assert project_defaults['state'] == 'open'
+        assert project_defaults['submission_enabled'] == True
+        assert project_defaults['released'] == False
