@@ -14,7 +14,7 @@ setup(
         'jsonschema~=3.2',
         'gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.2.0#egg=gdcdictionary',
         'psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.0.2#egg=psqlgraph',
-        'gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.4.0#egg=gdc-ng-models',
+        'gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@feat/DEV-481-bigint-for-id-keys#egg=gdc-ng-models',
     ],
     extras_require={
       'python_version == "2.7"': [
