@@ -158,11 +158,6 @@ diagnosis:
             not reported:
               - 'yes'
 
-        tumor_stage:
-          path: ./shared_stage:stage_event/shared_stage:pathologic_stage
-          type: str.lower
-          default: not reported
-
         tumor_grade:
           path: ./shared_stage:gleason_grading/shared_stage:gleason_score
           type: str
