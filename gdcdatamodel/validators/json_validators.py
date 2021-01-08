@@ -42,8 +42,9 @@ class GDCJSONValidator(object):
                     .format(json_doc['type']), keys=['type'])
                 break
             for error in self.iter_errors(json_doc):
-                # the key will be  property.subproperty for nested properties
-                keys = ['.'.join(error.path)] if error.path else []
+                # the key will be  property.sub property for nested properties
+                errors = [str(e) for e in error.path if error.path]
+                keys = ['.'.join(errors)] if errors else []
                 if not keys:
                     keys = get_keys(error.message)
                 message = error.message
