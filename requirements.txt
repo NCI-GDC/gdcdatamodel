@@ -18,7 +18,7 @@ jsonschema==3.2.0
     # via
     #   gdcdatamodel (setup.py)
     #   gdcdictionary
-git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.1#egg=psqlgraph
+git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.2#egg=psqlgraph
     # via gdcdatamodel (setup.py)
 psycopg2==2.8.5
     # via psqlgraph
