@@ -1,6 +1,10 @@
+import os
 import uuid
 
 from sqlalchemy import and_, event, select
+
+UUID_NAMESPACE_SEED = os.getenv("UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-5ea73a379d47")
+UUID_NAMESPACE = uuid.UUID(UUID_NAMESPACE_SEED.encode(), version=4)
 
 
 def __generate_hash(seed, label):
@@ -71,6 +75,3 @@ def inject_set_tag_after_insert(cls):
             .where(table.c.node_id == node.node_id)
             .values(_sysan=node._sysan)
         )
-
-
-UUID_NAMESPACE = uuid.UUID(b"86bb916a-24c5-48e4-8a46-5ea73a379d47", version=4)
