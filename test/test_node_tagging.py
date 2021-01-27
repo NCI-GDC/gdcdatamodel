@@ -1,11 +1,17 @@
 import pytest
 import yaml
+from psqlgraph import PsqlGraphDriver
+
+from gdcdatamodel import models
 from gdcdictionary import gdcdictionary
 from psqlgraph.mocks import GraphFactory
 
-from gdcdatamodel import models
+gdcdictionary.schema["program"]["tagProperties"] = ["name"]
+gdcdictionary.schema["project"]["tagProperties"] = ["code"]
+gdcdictionary.schema["case"]["tagProperties"] = ["submitter_id"]
 
-factory = GraphFactory(models, gdcdictionary)
+models.load_dictionary(gdcdictionary, package_namespace="test")
+factory = GraphFactory(models.test, gdcdictionary)
 
 y = """
 nodes:
@@ -29,12 +35,27 @@ edges:
 """
 
 
+@pytest.fixture(scope='module')
+def tg(tables_created):
+    """Fixture for database driver"""
+
+    cfg = {
+        'host': 'localhost',
+        'user': 'test',
+        'password': 'test',
+        'database': 'automated_test',
+        'package_namespace': 'test',
+    }
+
+    return PsqlGraphDriver(**cfg)
+
+
 @pytest.fixture()
 def sample_data():
     return yaml.safe_load(y)
 
 
-def test_1(sample_data, g):
+def test_1(sample_data, tg):
     nodes = factory.create_from_nodes_and_edges(
         nodes=sample_data["nodes"],
         edges=sample_data["edges"],
@@ -42,16 +63,17 @@ def test_1(sample_data, g):
         all_props=True,
     )
 
-    with g.session_scope() as s:
+    with tg.session_scope() as s:
         for n in nodes:
             s.add(n)
 
-    with g.session_scope() as s:
-        cv = g.nodes(models.Case).all()
+    with tg.session_scope() as s:
+        cv = tg.nodes(models.test.Case).all()
         for c in cv:
-            print(c.tag, c.version)
+            assert c.tag is not None
+            assert c.version == 1
 
-    with g.session_scope() as s:
+    with tg.session_scope() as s:
         for n in nodes:
             s.delete(n)
 
