@@ -8,9 +8,6 @@ python:
   - 3.8
 
 addons:
-  postgresql: '9.4'
-
-addons:
   postgresql: "13"
   apt:
     sources:
