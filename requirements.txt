@@ -6,7 +6,7 @@
 #
 attrs==19.3.0
     # via jsonschema
-git+https://github.com/NCI-GDC/gdc-ng-models.git@feat/DEV-485-notifications-datetimes#egg=gdc-ng-models  # via gdcdatamodel (setup.py)
+git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2-rc.1#egg=gdc-ng-models
     # via gdcdatamodel (setup.py)
 git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.0#egg=gdcdictionary
     # via gdcdatamodel (setup.py)
