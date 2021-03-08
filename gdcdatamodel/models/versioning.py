@@ -9,7 +9,7 @@ UUID_NAMESPACE = uuid.UUID(UUID_NAMESPACE_SEED, version=4)
 
 def __generate_hash(seed, label):
     namespace = UUID_NAMESPACE
-    name = b"{}-{}".format(seed, label)
+    name = "{}-{}".format(seed, label)
     return str(uuid.uuid5(namespace, name))
 
 
