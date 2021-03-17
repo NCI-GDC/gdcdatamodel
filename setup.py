@@ -6,7 +6,7 @@ setup(
         "local_scheme": "dirty-tag",
         "write_to": "gdcdatamodel/_version.py",
     },
-    setup_requires=["setuptools_scm"],
+    setup_requires=["setuptools_scm<6"],
     packages=find_packages(),
     install_requires=[
         "pytz~=2020.1",
