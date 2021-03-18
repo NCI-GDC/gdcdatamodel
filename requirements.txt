@@ -8,7 +8,7 @@ attrs==19.3.0
     # via jsonschema
 git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2-rc.3#egg=gdc-ng-models
     # via gdcdatamodel (setup.py)
-git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.0#egg=gdcdictionary
+git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.1-rc.0#egg=gdcdictionary
     # via gdcdatamodel (setup.py)
 graphviz==0.4.10
     # via gdcdatamodel (setup.py)
@@ -18,7 +18,7 @@ jsonschema==3.2.0
     # via
     #   gdcdatamodel (setup.py)
     #   gdcdictionary
-git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.2#egg=psqlgraph
+git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.3#egg=psqlgraph
     # via gdcdatamodel (setup.py)
 psycopg2==2.8.5
     # via psqlgraph
