@@ -38,6 +38,7 @@ from gdcdatamodel.models import (
     qcreport,
     released_data,
     studyrule,
+    batch
 )
 
 from sqlalchemy import (
