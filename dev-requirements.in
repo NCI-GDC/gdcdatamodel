@@ -1,6 +1,6 @@
 -c requirements.txt
 
-notebook<5.0.0
+notebook>4,<6.0.2
 jupyter~=1.0.0
 jupyter-client>=4.2.2,<6
 jupyter-console>=4.1.1,<6
