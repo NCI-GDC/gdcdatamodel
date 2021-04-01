@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=dev-requirements.txt dev-requirements.in
 #
+--index-url https://nexus.osdc.io/repository/pypi-all/simple
+
 appdirs==1.4.4
     # via virtualenv
 appnope==0.1.2
