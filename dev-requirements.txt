@@ -6,6 +6,8 @@
 #
 appdirs==1.4.4
     # via virtualenv
+appnope==0.1.2
+    # via ipython
 aspy.yaml==1.3.0
     # via pre-commit
 atomicwrites==1.4.0
@@ -50,6 +52,10 @@ importlib-metadata==1.6.0
     #   pluggy
     #   pre-commit
     #   pytest
+    #   virtualenv
+importlib-resources==3.2.1
+    # via
+    #   pre-commit
     #   virtualenv
 ipykernel==4.10.1
     # via
@@ -126,6 +132,8 @@ packaging==20.4
     #   pytest
 pandocfilters==1.4.2
     # via nbconvert
+pathlib2==2.3.5
+    # via pytest
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
@@ -181,6 +189,7 @@ six==1.15.0
     #   jsonschema
     #   more-itertools
     #   packaging
+    #   pathlib2
     #   pre-commit
     #   prompt-toolkit
     #   pytest
@@ -221,7 +230,9 @@ webencodings==0.5.1
 widgetsnbextension==3.5.1
     # via ipywidgets
 zipp==1.2.0
-    # via importlib-metadata
+    # via
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
