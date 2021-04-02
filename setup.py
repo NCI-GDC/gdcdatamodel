@@ -13,7 +13,7 @@ setup(
         'graphviz==0.4.10',
         'jsonschema~=3.2',
         'gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.1-rc.0#egg=gdcdictionary',
-        'psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.2#egg=psqlgraph',
+        'psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.3#egg=psqlgraph',
         'gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2-rc.3#egg=gdc-ng-models',
     ],
     extras_require={
