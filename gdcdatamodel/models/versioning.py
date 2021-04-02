@@ -26,7 +26,7 @@ def compute_tag(node):
     return __generate_hash(keys, node.label)
 
 
-def __get_tagged_version(node_id, table, tag, conn):
+def get_tagged_version(node_id, table, tag, conn):
     """Super private function to figure out the proper version number to use just after insertion
     Args:
         node_id (str): current node_id
@@ -63,7 +63,7 @@ def inject_set_tag_after_insert(cls):
         table = node.__table__
         tag = compute_tag(node)
 
-        version = __get_tagged_version(node.node_id, table, tag, conn)
+        version = get_tagged_version(node.node_id, table, tag, conn)
 
         node._sysan["tag"] = tag
         node._sysan["latest"] = True
