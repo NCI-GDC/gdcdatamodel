@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy import and_, event, select
 
 UUID_NAMESPACE_SEED = os.getenv("UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-5ea73a379d47")
-UUID_NAMESPACE = uuid.UUID(UUID_NAMESPACE_SEED, version=4)
+UUID_NAMESPACE = uuid.UUID("urn:uuid:{}".format(UUID_NAMESPACE_SEED), version=4)
 
 
 def __generate_hash(seed, label):
@@ -20,14 +20,13 @@ def compute_tag(node):
     Returns:
         str: computed tag
     """
-    keys = {node.node_id if p == "node_id" else node.props[p] for p in node.tag_properties}
-    seeds = {p.dst.tag or compute_tag(p.dst) for p in node.edges_out}
-    keys.update(seeds)
+    keys = [node.node_id if p == "node_id" else node.props[p] for p in node.tag_properties]
+    keys += sorted([p.dst.tag or compute_tag(p.dst) for p in node.edges_out if p.label != "relates_to"])
     return __generate_hash(keys, node.label)
 
 
 def get_tagged_version(node_id, table, tag, conn):
-    """Super private function to figure out the proper version number to use just after insertion
+    """Function to figure out the proper version number to use just after insertion
     Args:
         node_id (str): current node_id
         table (sqlalchemy.Table): node table instance
