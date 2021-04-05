@@ -40,7 +40,7 @@ from gdcdatamodel.models import (
     qcreport,
     released_data,
     studyrule,
-    batch
+    batch,
     versioning,
 )
 

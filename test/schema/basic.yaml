@@ -1,0 +1,105 @@
+# dummy dictionary for testing purposes
+program:
+  id: program
+  category: administrative
+  tagProperties:
+    - name
+  required:
+    - name
+  properties:
+    name:
+      type: string
+project:
+  id: project
+  category: administrative
+  tagProperties:
+    - code
+  required:
+    - code
+  properties:
+    code:
+      type: string
+    name:
+      type: string
+  links:
+    - name: programs
+      backref: projects
+      label: member_of
+      target_type: program
+      multiplicity: many_to_one
+      required: true
+case:
+  id: case
+  category: administrative
+  tagProperties:
+    - submitter_id
+  required:
+    - submitter_id
+  properties:
+    submitter_id:
+      type: string
+    consent_type:
+      enum:
+        - Consent by Death
+        - Consent Exemption
+        - Consent Waiver
+        - Informed Consent
+  links:
+    - name: projects
+      backref: cases
+      label: member_of
+      target_type: project
+      multiplicity: many_to_one
+      required: true
+sample:
+  id: sample
+  category: biospecimen
+  tagProperties:
+    - submitter_id
+  required:
+    - submitter_id
+  properties:
+    submitter_id:
+      type: string
+    catalog_reference:
+      type: string
+  links:
+    - name: cases
+      backref: samples
+      label: derived_from
+      target_type: case
+      multiplicity: many_to_one
+      required: true
+center:
+  id: center
+  category: administrative
+  required:
+    - code
+  properties:
+    code:
+      type: string
+  tagProperties:
+    - code
+portion:
+  id: portion
+  category: biospecimen
+  required:
+    - submitter_id
+  properties:
+    submitter_id:
+      type: string
+  tagProperties:
+    - submitter_id
+  links:
+    - name: samples
+      backref: portions
+      label: derived_from
+      target_type: sample
+      multiplicity: many_to_one
+      required: true
+    - name: centers
+      backref: portions
+      label: shipped_to
+      target_type: center
+      multiplicity: many_to_one
+      required: false
