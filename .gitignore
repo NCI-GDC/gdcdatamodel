@@ -69,4 +69,7 @@ target/
 # vim
 *.swp
 
+# pyenv
+*.python-version
+
 .mypy_cache/
