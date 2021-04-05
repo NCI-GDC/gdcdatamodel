@@ -26,8 +26,17 @@ def bg():
 @pytest.fixture(scope="module")
 def create_samples(sample_data, bg):
     with bg.session_scope() as s:
+
+        version_2s = []
         for node in sample_data:
+            # delay adding version 2
+            if node.node_id in ["a2b2d27a-6523-4ddd-8b2e-e94437a2aa23", "5ffb4b0e-969e-4643-8187-536ce7130e9c"]:
+                version_2s.append(node)
+                continue
             s.add(node)
+        s.commit()
+        for v2 in version_2s:
+            s.add(v2)
     yield
 
     with bg.session_scope():
