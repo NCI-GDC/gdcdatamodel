@@ -9,6 +9,7 @@ setup(
     setup_requires=["setuptools_scm<6"],
     packages=find_packages(),
     install_requires=[
+        "configparser<5",       # for python 27
         "pytz~=2020.1",
         "graphviz==0.4.10",
         "jsonschema~=3.2",

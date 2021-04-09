@@ -6,6 +6,8 @@
 #
 attrs==19.3.0
     # via jsonschema
+configparser==4.0.2
+    # via gdcdatamodel (setup.py)
 git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2-rc.3#egg=gdc-ng-models
     # via gdcdatamodel (setup.py)
 git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.1-rc.0#egg=gdcdictionary
