@@ -13,7 +13,7 @@ setup(
         "graphviz>=0.4.10,<0.17",
         "jsonschema~=3.2",
         "gdcdictionary>=2.3.1-rc.0,<3",
-        "gdc-ng-models>=1.5.2-rc.3,<2",
+        "gdc-ng-models>=1.5.2-rc.5,<2",
         "psqlgraph>=3.1.0-rc.3,<4",
     ],
     extras_require={

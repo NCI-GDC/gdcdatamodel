@@ -8,7 +8,7 @@
 
 attrs==19.3.0
     # via jsonschema
-gdc-ng-models==1.5.2rc3
+gdc-ng-models==1.5.2rc5
     # via gdcdatamodel (setup.py)
 gdcdictionary==2.4.0
     # via gdcdatamodel (setup.py)
