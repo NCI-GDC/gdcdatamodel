@@ -1,6 +1,11 @@
 from dictionaryutils import dictionary as gdcdictionary
 from jsonschema import Draft4Validator, RefResolver
+import logging
 import re
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 missing_prop_re = re.compile("'([a-zA-Z_-]+)' is a required property")
 extra_prop_re = re.compile(
@@ -46,8 +51,11 @@ class GDCJSONValidator(object):
                 )
                 break
             for error in self.iter_errors(json_doc):
+                logger.info(
+                    f"Validation error while validating entity '{json_doc}' against subschema '{error.schema}': {error.message}"
+                )
                 # the key will be  property.subproperty for nested properties
-                keys = [".".join(error.path)] if error.path else []
+                keys = [".".join((str(x) for x in error.path))] if error.path else []
                 if not keys:
                     keys = get_keys(error.message)
                 message = error.message
