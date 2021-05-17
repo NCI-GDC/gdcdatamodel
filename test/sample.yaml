@@ -1,0 +1,17 @@
+nodes:
+  - label: program
+    name: GDC
+    node_id: pg_1
+  - label: project
+    name: MISC
+    code: MISC
+    node_id: pj_1
+  - label: case
+    project_id: GDC-MISC
+    submitter_id: SAMPLE_!
+    node_id: case_1
+edges:
+  - src: pg_1
+    dst: pj_1
+  - src: pj_1
+    dst: case_1
