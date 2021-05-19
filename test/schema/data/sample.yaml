@@ -1,0 +1,43 @@
+nodes:
+  - label: program
+    name: GDC
+    node_id: ed9aa864-1e40-4657-9378-7e3dc26551cc
+  - label: project
+    code: MISC
+    node_id: c6a795f6-ee4a-4fcd-bfed-79348e07cd49
+  - label: center
+    code: T1
+    node_id: fb69d25b-5c5d-4879-8955-8f2126e57524
+  - label: case
+    node_id: be66197b-f6cc-4366-bded-365856ec4f63
+    submitter_id: BSC_1
+  - label: case  # version 2 case
+    node_id: a2b2d27a-6523-4ddd-8b2e-e94437a2aa23
+    submitter_id: BSC_1
+  - label: sample
+    node_id: 813f97c4-dffc-4f94-b3f6-66a93476a233
+    submitter_id: sample_1
+    catelog_reference: Zoom
+  - label: portion
+    node_id: 6974c692-be47-4cb8-b8d6-9bd815983cd9
+    submitter_id: portion_1
+  - label: portion  # version 2 portion
+    node_id: 5ffb4b0e-969e-4643-8187-536ce7130e9c
+    submitter_id: portion_1
+edges:
+  - src: c6a795f6-ee4a-4fcd-bfed-79348e07cd49
+    dst: ed9aa864-1e40-4657-9378-7e3dc26551cc
+  - src: be66197b-f6cc-4366-bded-365856ec4f63
+    dst: c6a795f6-ee4a-4fcd-bfed-79348e07cd49
+  - src: a2b2d27a-6523-4ddd-8b2e-e94437a2aa23
+    dst: c6a795f6-ee4a-4fcd-bfed-79348e07cd49
+  - src: 813f97c4-dffc-4f94-b3f6-66a93476a233
+    dst: be66197b-f6cc-4366-bded-365856ec4f63
+  - src: 6974c692-be47-4cb8-b8d6-9bd815983cd9
+    dst: 813f97c4-dffc-4f94-b3f6-66a93476a233
+  - src: 6974c692-be47-4cb8-b8d6-9bd815983cd9
+    dst: fb69d25b-5c5d-4879-8955-8f2126e57524
+  - src: 5ffb4b0e-969e-4643-8187-536ce7130e9c
+    dst: 813f97c4-dffc-4f94-b3f6-66a93476a233
+  - src: 5ffb4b0e-969e-4643-8187-536ce7130e9c
+    dst: fb69d25b-5c5d-4879-8955-8f2126e57524
