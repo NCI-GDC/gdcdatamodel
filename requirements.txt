@@ -4,22 +4,43 @@
 #
 #    pip-compile setup.py
 #
-attrs==19.3.0             # via jsonschema
-git+https://github.com/NCI-GDC/gdc-ng-models.git@1.4.0#egg=gdc-ng-models  # via gdcdatamodel (setup.py)
-git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.0#egg=gdcdictionary  # via gdcdatamodel (setup.py)
-graphviz==0.4.10          # via gdcdatamodel (setup.py)
-importlib-metadata==1.6.0  # via jsonschema
-jsonschema==3.2.0         # via gdcdatamodel (setup.py), gdcdictionary
-git+https://github.com/NCI-GDC/psqlgraph.git@3.0.2#egg=psqlgraph  # via gdcdatamodel (setup.py)
-psycopg2==2.8.5           # via psqlgraph
-pyrsistent==0.16.0        # via jsonschema
-pytz==2020.1              # via gdcdatamodel (setup.py)
-pyyaml==5.3.1             # via gdcdictionary
-rstr==2.2.6               # via psqlgraph
-six==1.15.0               # via jsonschema, psqlgraph, pyrsistent
-sqlalchemy==1.3.17        # via psqlgraph
-xlocal==0.5               # via psqlgraph
-zipp==1.2.0               # via importlib-metadata
+attrs==19.3.0
+    # via jsonschema
+git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2#egg=gdc-ng-models
+    # via gdcdatamodel (setup.py)
+git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.1#egg=gdcdictionary
+    # via gdcdatamodel (setup.py)
+graphviz==0.4.10
+    # via gdcdatamodel (setup.py)
+importlib-metadata==1.6.0
+    # via jsonschema
+jsonschema==3.2.0
+    # via
+    #   gdcdatamodel (setup.py)
+    #   gdcdictionary
+git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0#egg=psqlgraph
+    # via gdcdatamodel (setup.py)
+psycopg2==2.8.5
+    # via psqlgraph
+pyrsistent==0.16.0
+    # via jsonschema
+pytz==2020.1
+    # via gdcdatamodel (setup.py)
+pyyaml==5.3.1
+    # via gdcdictionary
+rstr==2.2.6
+    # via psqlgraph
+six==1.15.0
+    # via
+    #   jsonschema
+    #   psqlgraph
+    #   pyrsistent
+sqlalchemy==1.3.17
+    # via psqlgraph
+xlocal==0.5
+    # via psqlgraph
+zipp==1.2.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

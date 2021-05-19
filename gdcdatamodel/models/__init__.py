@@ -38,6 +38,7 @@ from gdcdatamodel.models import (
     qcreport,
     released_data,
     studyrule,
+    batch
 )
 
 from sqlalchemy import (
@@ -379,6 +380,13 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
                           'uniqueKeys', 'id' ]
     attributes['_dictionary'] = {
         key: schema[key] for key in schema if key not in skipped_dict_vals
+    }
+
+    # _defaults: default value for specified fields in the dictionary
+    attributes['_defaults'] = {
+        key: values['default']
+        for key, values in schema.get('properties', {}).items()
+        if 'default' in values
     }
 
     # _pg_links are out_edges, links TO other types
