@@ -12,9 +12,9 @@ setup(
         "pytz~=2020.1",
         "graphviz>=0.4.10,<0.17",
         "jsonschema~=3.2",
-        "gdcdictionary>=2.3.1-rc.0,<3",
-        "gdc-ng-models>=1.5.2-rc.5,<2",
-        "psqlgraph>=3.1.0-rc.3,<4",
+        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.1-rc.0#egg=gdcdictionary",
+        "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2-rc.3#egg=gdc-ng-models",
+        "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.1.0-rc.3#egg=psqlgraph",
     ],
     extras_require={
         'python_version == "2.7"': [
