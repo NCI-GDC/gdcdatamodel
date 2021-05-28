@@ -7,6 +7,12 @@ UUID_NAMESPACE_SEED = os.getenv("UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-
 UUID_NAMESPACE = uuid.UUID("urn:uuid:{}".format(UUID_NAMESPACE_SEED), version=4)
 
 
+class TagKeys:
+    tag = "tag"
+    latest = "latest"
+    version = "ver"
+
+
 def __generate_hash(seed, label):
     namespace = UUID_NAMESPACE
     name = "{}-{}".format(seed, label)
@@ -37,14 +43,14 @@ def __get_tagged_version(node_id, table, tag, conn):
         int: appropriate version number to use. 1 greater than the current max
     """
     query = select([table]).where(
-        and_(table.c._sysan["tag"].astext == tag, table.c.node_id != node_id)
+        and_(table.c._sysan[TagKeys.tag].astext == tag, table.c.node_id != node_id)
     )
     max_version = 0
     for r in conn.execute(query):
-        max_version = max(r._sysan.get("version", 0), max_version)
+        max_version = max(r._sysan.get(TagKeys.version, 0), max_version)
 
         # reset latest
-        r._sysan["latest"] = False
+        r._sysan[TagKeys.latest] = False
         conn.execute(
             table.update().where(table.c.node_id == r.node_id).values(_sysan=r._sysan)
         )
@@ -64,9 +70,9 @@ def inject_set_tag_after_insert(cls):
 
         version = __get_tagged_version(node.node_id, table, tag, conn)
 
-        node._sysan["tag"] = tag
-        node._sysan["latest"] = True
-        node._sysan["version"] = version
+        node._sysan[TagKeys.tag] = tag
+        node._sysan[TagKeys.latest] = True
+        node._sysan[TagKeys.version] = version
 
         # update tag and version
         conn.execute(

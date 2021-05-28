@@ -372,15 +372,15 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
     @property
     def is_latest(self):
-        return self._sysan.get("latest", False)
+        return self._sysan.get(versioning.TagKeys.latest, False)
 
     @property
     def version(self):
-        return self._sysan.get("version")
+        return self._sysan.get(versioning.TagKeys.version)
 
     @property
     def tag(self):
-        return self._sysan.get("tag")
+        return self._sysan.get(versioning.TagKeys.tag)
 
     # Pull the JSONB properties from the `properties` key
     attributes = {
