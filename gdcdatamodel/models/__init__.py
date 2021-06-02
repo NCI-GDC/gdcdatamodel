@@ -368,18 +368,40 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
     @property
     def tag_properties(self):
+        """Keys specified in the dictionary, used for generation of tags
+
+        Returns:
+            list[str]: list of keys used to generate tags
+        """
         return tag_props
 
     @property
     def is_latest(self):
+        """latest version of the node based on tagging
+
+        Returns:
+            bool: True if its the latest version otherwise false
+        """
         return self._sysan.get(versioning.TagKeys.latest, False)
 
     @property
     def ver(self):
+        """node version number based on tagging
+
+        versions are computed during save or via an external script
+        Returns:
+            int: version number
+        """
         return self._sysan.get(versioning.TagKeys.version)
 
     @property
     def tag(self):
+        """Unique identifier for a group of nodes that are part of the same version family
+
+        Tags are generated when a node is saved. They can be manually created using an external script
+        Returns:
+            str: tag value
+        """
         return self._sysan.get(versioning.TagKeys.tag)
 
     # Pull the JSONB properties from the `properties` key
@@ -427,8 +449,8 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     )
 
     if tag_props:
-        attributes["tag"] = tag
-        attributes["ver"] = ver
+        attributes[versioning.TagKeys.tag] = tag
+        attributes[versioning.TagKeys.version] = ver
         attributes["tag_properties"] = tag_properties
         attributes["is_latest"] = is_latest
 
