@@ -59,4 +59,4 @@ def test_1(create_samples, bg, node_id, tag, version):
     with bg.session_scope():
         node = bg.nodes().get(node_id)
         assert node.tag == tag
-        assert node.version == version
+        assert node.ver == version

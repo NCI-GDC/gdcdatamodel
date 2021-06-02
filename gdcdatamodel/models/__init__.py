@@ -375,7 +375,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         return self._sysan.get(versioning.TagKeys.latest, False)
 
     @property
-    def version(self):
+    def ver(self):
         return self._sysan.get(versioning.TagKeys.version)
 
     @property
@@ -428,7 +428,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
     if tag_props:
         attributes["tag"] = tag
-        attributes["version"] = version
+        attributes["ver"] = ver
         attributes["tag_properties"] = tag_properties
         attributes["is_latest"] = is_latest
 
