@@ -12,7 +12,7 @@ setup(
         "pytz~=2020.1",
         "graphviz>=0.4.10,<0.17",
         "jsonschema~=3.2",
-        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.3.1#egg=gdcdictionary",
+        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.4.0-rc.q#egg=gdcdictionary",
         "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2#egg=gdc-ng-models",
         "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.3.0-rc.1#egg=psqlgraph",
     ],
