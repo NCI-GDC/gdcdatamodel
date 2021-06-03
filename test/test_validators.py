@@ -76,6 +76,7 @@ class TestValidators(BaseTestCase):
             'submitter_id': 'test',
             'age_at_diagnosis': 10,
             'primary_diagnosis': 'Abdominal desmoid',
+            "primary_disease": True,  # now required property with dictionary 2.4.0
             "morphology": "8000/0",
             "tissue_or_organ_of_origin": "Abdomen, NOS",
             "site_of_resection_or_biopsy": "Abdomen, NOS",
