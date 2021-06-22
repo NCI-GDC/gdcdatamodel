@@ -17,6 +17,8 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 import os
 import sys
 
+from sqlalchemy.orm.attributes import flag_modified
+
 try:
     from functools import lru_cache
 except ImportError:
@@ -38,7 +40,8 @@ from gdcdatamodel.models import (
     qcreport,
     released_data,
     studyrule,
-    batch
+    batch,
+    versioning,
 )
 
 from sqlalchemy import (
@@ -353,6 +356,8 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     name = get_class_name_from_id(_id)
     links = get_links(schema)
 
+    tag_props = schema.get("tagProperties")
+
     @property
     def node_id(self, value):
         return self.node_id
@@ -360,6 +365,44 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     @node_id.setter
     def node_id(self, value):
         self.node_id = value
+
+    @property
+    def tag_properties(self):
+        """Keys specified in the dictionary, used for generation of tags
+
+        Returns:
+            list[str]: list of keys used to generate tags
+        """
+        return tag_props
+
+    @property
+    def is_latest(self):
+        """latest version of the node based on tagging
+
+        Returns:
+            bool: True if its the latest version otherwise false
+        """
+        return self._sysan.get(versioning.TagKeys.latest, False)
+
+    @property
+    def ver(self):
+        """node version number based on tagging
+
+        versions are computed during save or via an external script
+        Returns:
+            int: version number
+        """
+        return self._sysan.get(versioning.TagKeys.version)
+
+    @property
+    def tag(self):
+        """Unique identifier for a group of nodes that are part of the same version family
+
+        Tags are generated when a node is saved. They can be manually created using an external script
+        Returns:
+            str: tag value
+        """
+        return self._sysan.get(versioning.TagKeys.tag)
 
     # Pull the JSONB properties from the `properties` key
     attributes = {
@@ -369,15 +412,16 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         and key not in excluded_props
     }
 
-    # Store for the programmer
-    #attributes['_dictionary'] = {
-    #    'category': schema.get('category'),
-    #    'title': schema.get('title'),
-    #}
-
-    skipped_dict_vals = [ '$schema', 'systemProperties',
-                          'additionalProperties', 'links', 'properties',
-                          'uniqueKeys', 'id' ]
+    skipped_dict_vals = [
+        '$schema',
+        'systemProperties',
+        'additionalProperties',
+        'links',
+        'properties',
+        'uniqueKeys',
+        'id' ,
+        'tagProperties'
+    ]
     attributes['_dictionary'] = {
         key: schema[key] for key in schema if key not in skipped_dict_vals
     }
@@ -404,6 +448,12 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         related_cases_from_cache
     )
 
+    if tag_props:
+        attributes[versioning.TagKeys.tag] = tag
+        attributes[versioning.TagKeys.version] = ver
+        attributes["tag_properties"] = tag_properties
+        attributes["is_latest"] = is_latest
+
     # _related_cases_from_parents: get ids of related cases from this
     # nodes parents
     attributes['_related_cases_from_parents'] = property(
@@ -423,6 +473,9 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     cls_inject_updated_datetime_hook(cls)
     cls_inject_versioned_nodes_lookup(cls)
     cls_inject_secondary_keys(cls, schema)
+
+    if tag_props:
+        versioning.inject_set_tag_after_insert(cls)
 
     node_cls.add_subclass(cls)
     return cls
@@ -605,7 +658,7 @@ def parse_edge(src_label,
     dst_label = dictionary.schema[dst_label]['id']
     edge_name = ''.join(map(get_class_name_from_id, [
         src_label, edge_label, dst_label]))
-    
+
     if edge_cls.is_subclass_loaded(name):
         return '_{}_out'.format(edge_name)
 
@@ -640,7 +693,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
         for name, link in get_links(subschema).items():
             edge_label = link['label']
             edge_name = parse_edge(
-                src_label, name, edge_label, subschema, link, 
+                src_label, name, edge_label, subschema, link,
                 dictionary=dictionary,
                 node_cls=node_cls,
                 edge_cls=edge_cls,

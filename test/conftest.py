@@ -8,50 +8,20 @@ pytest setup for gdcdatamodel tests
 import random
 import unittest
 import uuid
+import pkg_resources
 
 import pytest
+import yaml
 from gdcdatamodel import models
-from psqlgraph import PsqlGraphDriver, create_all, Node, Edge
+from psqlgraph import PsqlGraphDriver, mocks
 from sqlalchemy import create_engine
 
-
-def create_tables(engine):
-    """
-    create a table
-    """
-    create_all(engine)
-    models.versioned_nodes.Base.metadata.create_all(engine)
-    models.submission.Base.metadata.create_all(engine)
-    models.redaction.Base.metadata.create_all(engine)
-    models.qcreport.Base.metadata.create_all(engine)
-    models.misc.Base.metadata.create_all(engine)
+from test.helpers import truncate, create_tables
+from test.models import BasicDictionary
 
 
-def truncate(engine):
-    """
-    Remove data from existing tables
-    """
-    conn = engine.connect()
-    for table in Node.get_subclass_table_names():
-        if table != Node.__tablename__:
-            conn.execute('delete from {}'.format(table))
-    for table in Edge.get_subclass_table_names():
-        if table != Edge.__tablename__:
-            conn.execute('delete from {}'.format(table))
-
-    # Extend this list as needed
-    ng_models_metadata = [
-        models.versioned_nodes.Base.metadata,
-        models.submission.Base.metadata,
-        models.redaction.Base.metadata,
-        models.qcreport.Base.metadata,
-        models.misc.Base.metadata,
-    ]
-
-    for meta in ng_models_metadata:
-        for table in meta.tables:
-            conn.execute("DELETE FROM  {}".format(table))
-    conn.close()
+models.load_dictionary(BasicDictionary, "basic")
+from gdcdatamodel.models import basic  # noqa
 
 
 @pytest.fixture(scope='session')
@@ -155,3 +125,19 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         truncate(self.g.engine)
+
+
+@pytest.fixture(scope="module")
+def sample_data():
+    with pkg_resources.resource_stream(__name__, "schema/data/sample.yaml") as f:
+        graph = yaml.safe_load(f)
+
+    f = mocks.GraphFactory(basic, BasicDictionary)
+    nodes = f.create_from_nodes_and_edges(
+        nodes=graph["nodes"],
+        edges=graph["edges"],
+        unique_key="node_id",
+        all_props=True,
+    )
+
+    return nodes
