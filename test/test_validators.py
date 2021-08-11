@@ -98,9 +98,10 @@ class TestValidators(BaseTestCase):
         self.entities.append(mock_doc(["Cervix", "Ovary, NOS"]))
 
         self.json_validator.record_errors(self.entities)
-        self.assertEqual(1, len(self.entities[0].errors))
-        self.assertEqual(1, len(self.entities[1].errors))
-        self.assertEqual(0, len(self.entities[2].errors))
+        # 'diagnosis_is_primary_disease' is a required property
+        self.assertEqual(2, len(self.entities[0].errors))
+        self.assertEqual(2, len(self.entities[1].errors))
+        self.assertEqual(1, len(self.entities[2].errors))
         self.assertEqual(["sites_of_involvement.0"], self.entities[0].errors[0]["keys"])
         self.assertEqual(["sites_of_involvement.1"], self.entities[1].errors[0]["keys"])
 
