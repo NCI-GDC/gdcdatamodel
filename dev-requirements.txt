@@ -13,35 +13,19 @@ attrs==21.2.0
     #   -c requirements.txt
     #   jsonschema
     #   pytest
-backports-abc==0.5
-    # via tornado
 backports.entry-points-selectable==1.1.0
     # via virtualenv
-backports.functools-lru-cache==1.6.4
-    # via wcwidth
-backports.shutil-get-terminal-size==1.0.0
-    # via ipython
 bleach==3.3.1
     # via nbconvert
 cfgv==2.0.1
     # via
     #   -r dev-requirements.in
     #   pre-commit
-configparser==4.0.2
-    # via
-    #   -c requirements.txt
-    #   entrypoints
-    #   importlib-metadata
-contextlib2==0.6.0.post1
-    # via
-    #   -c requirements.txt
-    #   importlib-metadata
-    #   importlib-resources
-    #   zipp
 coverage==5.5
     # via pytest-cov
 decorator==4.4.2
     # via
+    #   -c requirements.txt
     #   ipython
     #   traitlets
 defusedxml==0.7.1
@@ -50,20 +34,8 @@ distlib==0.3.2
     # via virtualenv
 entrypoints==0.3
     # via nbconvert
-enum34==1.1.10
-    # via traitlets
 filelock==3.0.12
     # via virtualenv
-funcsigs==1.0.2
-    # via pytest
-functools32==3.2.3.post2
-    # via
-    #   -c requirements.txt
-    #   jsonschema
-futures==3.3.0
-    # via
-    #   pre-commit
-    #   tornado
 identify==1.6.2
     # via pre-commit
 importlib-metadata==2.1.1
@@ -75,14 +47,13 @@ importlib-metadata==2.1.1
     #   pre-commit
     #   pytest
     #   virtualenv
-importlib-resources==3.3.1
+importlib-resources==3.2.1
     # via
     #   pre-commit
     #   virtualenv
-ipaddress==1.0.23
-    # via notebook
 ipykernel==4.10.1
     # via
+    #   -r dev-requirements.in
     #   ipywidgets
     #   jupyter
     #   jupyter-console
@@ -96,6 +67,7 @@ ipython-genutils==0.2.0
     #   traitlets
 ipython==5.10.0
     # via
+    #   -r dev-requirements.in
     #   ipykernel
     #   ipywidgets
     #   jupyter-console
@@ -109,14 +81,14 @@ jsonschema==3.2.0
     # via
     #   -c requirements.txt
     #   nbformat
-jupyter-client==5.3.5
+jupyter-client==4.4.0
     # via
     #   -r dev-requirements.in
     #   ipykernel
     #   jupyter-console
     #   notebook
     #   qtconsole
-jupyter-console==5.2.0
+jupyter-console==4.1.1
     # via
     #   -r dev-requirements.in
     #   jupyter
@@ -135,19 +107,22 @@ markupsafe==1.1.1
 mistune==0.8.4
     # via nbconvert
 more-itertools==5.0.0
-    # via pytest
+    # via
+    #   -r dev-requirements.in
+    #   pytest
 nbconvert==5.6.1
     # via
     #   jupyter
     #   notebook
 nbformat==4.4.0
     # via
+    #   -r dev-requirements.in
     #   ipywidgets
     #   nbconvert
     #   notebook
 nodeenv==1.6.0
     # via pre-commit
-notebook==5.7.13
+notebook==4.4.1
     # via
     #   -r dev-requirements.in
     #   jupyter
@@ -159,14 +134,7 @@ packaging==20.9
 pandocfilters==1.4.3
     # via nbconvert
 pathlib2==2.3.6
-    # via
-    #   -c requirements.txt
-    #   importlib-metadata
-    #   importlib-resources
-    #   ipython
-    #   pickleshare
-    #   pytest
-    #   virtualenv
+    # via pytest
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
@@ -177,12 +145,8 @@ pluggy==0.13.1
     # via pytest
 pre-commit==1.21.0
     # via -r dev-requirements.in
-prometheus-client==0.11.0
-    # via notebook
 prompt-toolkit==1.0.18
-    # via
-    #   ipython
-    #   jupyter-console
+    # via ipython
 ptyprocess==0.7.0
     # via
     #   pexpect
@@ -192,7 +156,6 @@ py==1.10.0
 pygments==2.5.2
     # via
     #   ipython
-    #   jupyter-console
     #   nbconvert
     #   qtconsole
 pyparsing==2.4.7
@@ -203,38 +166,26 @@ pyrsistent==0.16.1
     #   jsonschema
 pytest-cov==2.8.1
     # via -r dev-requirements.in
-pytest==4.6.11
+pytest==4.6.10
     # via
     #   -r dev-requirements.in
     #   pytest-cov
-python-dateutil==2.8.2
-    # via jupyter-client
-pyyaml==5.4.1
+pyyaml==5.3.1
     # via
     #   -c requirements.txt
     #   aspy.yaml
     #   pre-commit
 pyzmq==19.0.2
     # via
+    #   -r dev-requirements.in
     #   jupyter-client
-    #   notebook
     #   qtconsole
 qtconsole==4.7.7
     # via jupyter
 qtpy==1.9.0
     # via qtconsole
-scandir==1.10.0
-    # via
-    #   -c requirements.txt
-    #   pathlib2
-send2trash==1.8.0
-    # via notebook
 simplegeneric==0.8.1
     # via ipython
-singledispatch==3.6.2
-    # via
-    #   importlib-resources
-    #   tornado
 six==1.15.0
     # via
     #   -c requirements.txt
@@ -245,21 +196,22 @@ six==1.15.0
     #   pathlib2
     #   pre-commit
     #   prompt-toolkit
+    #   pyrsistent
     #   pytest
-    #   python-dateutil
-    #   singledispatch
     #   traitlets
     #   virtualenv
 terminado==0.8.3
     # via notebook
 testpath==0.4.4
-    # via nbconvert
+    # via
+    #   -r dev-requirements.in
+    #   nbconvert
 toml==0.10.2
     # via pre-commit
 tornado==5.1.1
     # via
+    #   -r dev-requirements.in
     #   ipykernel
-    #   jupyter-client
     #   notebook
     #   terminado
 traitlets==4.3.3
@@ -273,8 +225,6 @@ traitlets==4.3.3
     #   nbformat
     #   notebook
     #   qtconsole
-typing==3.10.0.0
-    # via importlib-resources
 virtualenv==20.7.2
     # via pre-commit
 wcwidth==0.2.5
