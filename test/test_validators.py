@@ -102,10 +102,10 @@ class TestValidators(BaseTestCase):
         self.assertEqual(1, len(self.entities[2].errors))
         error_keys_zero = [e["keys"][0] for e in self.entities[0].errors]
         error_keys_one = [e["keys"][0] for e in self.entities[1].errors]
-        assert "sites_of_involvement.0" in error_keys_zero
-        assert "diagnosis_is_primary_disease" in error_keys_zero
-        assert "sites_of_involvement.1" in error_keys_one
-        assert "diagnosis_is_primary_disease" in error_keys_one
+        self.assertIn("sites_of_involvement.0", error_keys_zero)
+        self.assertIn("diagnosis_is_primary_disease", error_keys_zero)
+        self.assertIn("sites_of_involvement.1", error_keys_one)
+        self.assertIn("diagnosis_is_primary_disease", error_keys_one)
 
     def create_node(self, doc, session):
         cls = Node.get_subclass(doc['type'])
