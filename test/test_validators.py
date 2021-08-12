@@ -76,7 +76,6 @@ class TestValidators(BaseTestCase):
             'submitter_id': 'test',
             'age_at_diagnosis': 10,
             'primary_diagnosis': 'Abdominal desmoid',
-            "primary_disease": True,  # now required property with dictionary 2.4.0
             "morphology": "8000/0",
             "tissue_or_organ_of_origin": "Abdomen, NOS",
             "site_of_resection_or_biopsy": "Abdomen, NOS",
@@ -98,14 +97,15 @@ class TestValidators(BaseTestCase):
         self.entities.append(mock_doc(["Cervix", "Ovary, NOS"]))
 
         self.json_validator.record_errors(self.entities)
-        # 'diagnosis_is_primary_disease' is a required property
         self.assertEqual(2, len(self.entities[0].errors))
         self.assertEqual(2, len(self.entities[1].errors))
         self.assertEqual(1, len(self.entities[2].errors))
         error_keys_zero = [e["keys"][0] for e in self.entities[0].errors]
         error_keys_one = [e["keys"][0] for e in self.entities[1].errors]
         assert "sites_of_involvement.0" in error_keys_zero
+        assert "diagnosis_is_primary_disease" in error_keys_zero
         assert "sites_of_involvement.1" in error_keys_one
+        assert "diagnosis_is_primary_disease" in error_keys_one
 
     def create_node(self, doc, session):
         cls = Node.get_subclass(doc['type'])
