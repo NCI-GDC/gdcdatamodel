@@ -1,6 +1,7 @@
 import os
 import uuid
 
+import six
 from sqlalchemy import and_, event, select
 
 UUID_NAMESPACE_SEED = os.getenv("UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-5ea73a379d47")
@@ -16,7 +17,7 @@ class TagKeys:
 def __generate_hash(seed, label):
     namespace = UUID_NAMESPACE
     name = "{}-{}".format(seed, label)
-    return str(uuid.uuid5(namespace, name))
+    return six.ensure_str(str(uuid.uuid5(namespace, name)))
 
 
 def compute_tag(node):
@@ -26,8 +27,17 @@ def compute_tag(node):
     Returns:
         str: computed tag
     """
-    keys = [node.node_id if p == "node_id" else node.props[p] for p in node.tag_properties]
-    keys += sorted([p.dst.tag or compute_tag(p.dst) for p in node.edges_out if p.label != "relates_to"])
+    keys = [
+        six.ensure_str(node.node_id if p == "node_id" else node.props[p])
+        for p in node.tag_properties
+    ]
+    keys += sorted(
+        [
+            six.ensure_str(p.dst.tag or compute_tag(p.dst))
+            for p in node.edges_out
+            if p.label != "relates_to"
+        ]
+    )
     return __generate_hash(keys, node.label)
 
 

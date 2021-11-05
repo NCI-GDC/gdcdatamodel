@@ -1,7 +1,7 @@
 import pytest
 from psqlgraph import PsqlGraphDriver
 
-from gdcdatamodel.models import basic  # noqa
+from gdcdatamodel.models import basic, versioning  # noqa
 from test.helpers import create_tables, truncate
 
 
@@ -60,3 +60,4 @@ def test_1(create_samples, bg, node_id, tag, version):
         node = bg.nodes().get(node_id)
         assert node.tag == tag
         assert node.ver == version
+        assert versioning.compute_tag(node) == node.tag
