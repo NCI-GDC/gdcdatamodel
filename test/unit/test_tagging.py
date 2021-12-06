@@ -42,16 +42,22 @@ def test_multi_parent(sample_data):
 
     portion.samples.append(sample)
     portion.centers.append(center)
+
+    v.compute_tag.cache_clear()
     v_tag = v.compute_tag(portion)
     assert v_tag == "a9a67fae-d916-5843-bdf3-b7db0b7a82a2"
 
     # unlink
     portion.samples = []
     portion.centers = []
+
+    v.compute_tag.cache_clear()
     v_tag = v.compute_tag(portion)
     assert v_tag == "5776f97a-a58b-5900-83da-43cbc7105796"
 
     portion.centers.append(center)
     portion.samples.append(sample)
+
+    v.compute_tag.cache_clear()
     v_tag = v.compute_tag(portion)
     assert v_tag == "a9a67fae-d916-5843-bdf3-b7db0b7a82a2"
