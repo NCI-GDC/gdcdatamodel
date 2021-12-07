@@ -17,8 +17,6 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 import os
 import sys
 
-from sqlalchemy.orm.attributes import flag_modified
-
 try:
     from functools import lru_cache
 except ImportError:
