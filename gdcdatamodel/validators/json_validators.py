@@ -1,5 +1,5 @@
 from dictionaryutils import dictionary as gdcdictionary
-from jsonschema import Draft4Validator, RefResolver
+from jsonschema import Draft4Validator, FormatChecker
 import logging
 import re
 
@@ -33,7 +33,11 @@ class GDCJSONValidator(object):
     def iter_errors(self, doc):
         # Note whenever gdcdictionary use a newer version of jsonschema
         # we need to update the Validator
-        validator = Draft4Validator(self.schemas.schema[doc["type"]])
+        validator = Draft4Validator(
+            self.schemas.schema[doc["type"]],
+            # note that the `strict-rfc3339` package is required to validate the `date-time` format
+            format_checker=FormatChecker(),
+        )
         return validator.iter_errors(doc)
 
     def record_errors(self, entities):
