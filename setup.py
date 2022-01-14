@@ -28,7 +28,7 @@ setup(
         "psqlgraph~=3.0",
         "cdisutils",
         "sqlalchemy~=1.3",
-        "rfc3339-validator~=0.1.4",
+        "strict-rfc3339==0.7",
     ],
     package_data={
         "gdcdatamodel": [

@@ -35,7 +35,7 @@ class GDCJSONValidator(object):
         # we need to update the Validator
         validator = Draft4Validator(
             self.schemas.schema[doc["type"]],
-            # note that the `rfc3339-validator` package is required to validate the `date-time` format
+            # note that the `strict-rfc3339` package is required to validate the `date-time` format
             format_checker=FormatChecker(),
         )
         return validator.iter_errors(doc)
