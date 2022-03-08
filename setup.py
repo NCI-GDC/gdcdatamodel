@@ -15,7 +15,7 @@ setup(
         "jsonschema~=3.2",
         "pyrsistent<0.17.0",
         "decorator<=5.0.0",
-        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.4.2-rc.1#egg=gdcdictionary",
+        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.4.2#egg=gdcdictionary",
         "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2#egg=gdc-ng-models",
         "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.4.0#egg=psqlgraph",
     ],

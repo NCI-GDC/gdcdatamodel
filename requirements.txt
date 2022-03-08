@@ -10,7 +10,7 @@ decorator==4.4.2
     # via gdcdatamodel (setup.py)
 git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2#egg=gdc-ng-models
     # via gdcdatamodel (setup.py)
-git+https://github.com/NCI-GDC/gdcdictionary.git@2.4.2-rc.1#egg=gdcdictionary
+git+https://github.com/NCI-GDC/gdcdictionary.git@2.4.2#egg=gdcdictionary
     # via gdcdatamodel (setup.py)
 graphviz==0.14.2
     # via gdcdatamodel (setup.py)
@@ -36,6 +36,7 @@ rstr==2.2.6
     # via psqlgraph
 six==1.15.0
     # via
+    #   gdcdatamodel (setup.py)
     #   jsonschema
     #   psqlgraph
     #   pyrsistent
