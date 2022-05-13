@@ -61,3 +61,11 @@ def test_multi_parent(sample_data):
     v.compute_tag.cache_clear()
     v_tag = v.compute_tag(portion)
     assert v_tag == "a9a67fae-d916-5843-bdf3-b7db0b7a82a2"
+
+
+def test_config():
+    portion = basic.Portion(node_id="b9b6fdb3-6c31-4ed3-9f8c-67d4eae72102", submitter_id="portion_2")
+    assert portion.is_taggable()
+
+    center = basic.Center(node_id="TEST-1", code="A101")
+    assert center.is_taggable() is False

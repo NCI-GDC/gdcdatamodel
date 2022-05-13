@@ -80,6 +80,11 @@ center:
       type: string
   tagProperties:
     - code
+  tagConfig:
+    skipIf:
+      - prop: code
+        values:
+          - A101
 portion:
   id: portion
   category: biospecimen

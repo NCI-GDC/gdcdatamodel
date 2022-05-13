@@ -355,6 +355,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     links = get_links(schema)
 
     tag_props = schema.get("tagProperties")
+    tag_config = schema.get("tagConfig", {})
 
     @property
     def node_id(self, value):
@@ -372,6 +373,18 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
             list[str]: list of keys used to generate tags
         """
         return tag_props
+
+    @property
+    def tagging_config(self):
+        """Tagging configuration instance used for checking if node instance participates in versioning
+
+        Returns:
+            versioning.TaggingConfig): config instance
+        """
+        return versioning.TaggingConfig(cfg=tag_config)
+
+    def is_taggable(self):
+        return self.tagging_config.is_taggable(self)
 
     @property
     def is_latest(self):
@@ -418,7 +431,8 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         'properties',
         'uniqueKeys',
         'id' ,
-        'tagProperties'
+        'tagProperties',
+        'tagConfig',
     ]
     attributes['_dictionary'] = {
         key: schema[key] for key in schema if key not in skipped_dict_vals
@@ -451,6 +465,8 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         attributes[versioning.TagKeys.version] = ver
         attributes["tag_properties"] = tag_properties
         attributes["is_latest"] = is_latest
+        attributes["tagging_config"] = tagging_config
+        attributes["is_taggable"] = is_taggable
 
     # _related_cases_from_parents: get ids of related cases from this
     # nodes parents
