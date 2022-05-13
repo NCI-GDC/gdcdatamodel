@@ -21,7 +21,7 @@ class TagKeys:
     version = "ver"
 
 
-class TaggingCriteria:
+class TaggingConstraint:
     """Computes whether a node instance supports tagging or not"""
 
     def __init__(self, path, prop, values):
@@ -73,20 +73,32 @@ class TaggingCriteria:
 
 
 class TaggingConfig:
+    """A wrapper around the tagConfig definition in the dictionary yaml"""
+
     def __init__(self, cfg):
+        """
+
+        Args:
+            cfg (dict[str, Any]): The tagConfig section of the dictionary
+        """
         self.cfg = cfg
 
-    def skip_criterion(self):
+    def _constraints(self):
+        """Returns all constraints defined for a particular node type"""
+
         skip_criterion = self.cfg.get("skipIf", [])
         for criteria in skip_criterion:
-            yield TaggingCriteria(
+            yield TaggingConstraint(
                 path=criteria.get("path"),
                 prop=criteria["prop"],
                 values=criteria["values"],
             )
 
     def is_taggable(self, node):
-        return not any(criteria.match(node) for criteria in self.skip_criterion())
+        """Returns true if node supports tagging else False. Ideally, instances that return false will not
+            have tag and version number set on them
+        """
+        return not any(criteria.match(node) for criteria in self._constraints())
 
 
 def __generate_hash(seed, label):
