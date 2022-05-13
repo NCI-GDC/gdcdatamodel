@@ -1,10 +1,8 @@
-import functools
 import os
 import uuid
 
 import six
 from sqlalchemy import and_, event, select
-
 try:
     from functools import lru_cache
 except ImportError:
