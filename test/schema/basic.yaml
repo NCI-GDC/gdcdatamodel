@@ -80,8 +80,8 @@ center:
       type: string
   tagProperties:
     - code
-  tagConfig:
-    skipIf:
+  tagBuilderConfig:
+    ignoreEntries:
       - prop: code
         values:
           - A101

@@ -86,7 +86,7 @@ class TaggingConfig:
     def _constraints(self):
         """Returns all constraints defined for a particular node type"""
 
-        skip_criterion = self.cfg.get("skipIf", [])
+        skip_criterion = self.cfg.get("ignoreEntries", [])
         for criteria in skip_criterion:
             yield TaggingConstraint(
                 path=criteria.get("path"),

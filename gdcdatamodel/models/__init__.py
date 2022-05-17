@@ -355,7 +355,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     links = get_links(schema)
 
     tag_props = schema.get("tagProperties")
-    tag_config = schema.get("tagConfig", {})
+    tag_config = schema.get("tagBuilderConfig", {})
 
     @property
     def node_id(self, value):
@@ -432,7 +432,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         'uniqueKeys',
         'id' ,
         'tagProperties',
-        'tagConfig',
+        'tagBuilderConfig',
     ]
     attributes['_dictionary'] = {
         key: schema[key] for key in schema if key not in skipped_dict_vals
