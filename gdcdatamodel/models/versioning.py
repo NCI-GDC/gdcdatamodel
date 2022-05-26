@@ -56,6 +56,11 @@ class TaggingConstraint:
             return node
 
         for path in self.path.split("."):
+            # Since a node type can have multiple paths to a given parent
+            # this check allows instances that do not have this specific path
+            if len(node[path]) == 0:
+                return None
+
             node = node[path][0]
         return node
 
@@ -69,7 +74,7 @@ class TaggingConstraint:
             Returns (bool)
         """
         node = self._resolve_target_node_from_path(node)
-        return node[self.prop] in self.values
+        return node and node[self.prop] in self.values
 
 
 class TaggingConfig:
@@ -115,10 +120,7 @@ def compute_tag(node):
     Returns:
         str: computed tag
     """
-    keys = [
-        six.ensure_str(node.node_id if p == "node_id" else node.props[p])
-        for p in node.tag_properties
-    ]
+    keys = node.get_tag_property_values()
     keys += sorted(
         [
             six.ensure_str(compute_tag(p.dst))
