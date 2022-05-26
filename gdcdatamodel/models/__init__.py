@@ -364,13 +364,13 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         return tag_props
 
     @property
-    def tagging_config(self):
+    def tag_builder_config(self):
         """Tagging configuration instance used for checking if node instance participates in versioning
 
         Returns:
-            versioning.TaggingConfig): config instance
+            versioning.TaggingConfig: config instance
         """
-        return versioning.TaggingConfig(cfg=tag_config)
+        return versioning.TagBuilderConfig(cfg=tag_config)
 
     def is_taggable(self):
         """Returns True if a node instance can be tagged and versioned
@@ -378,7 +378,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
             bool: True if node can be tagged
         """
 
-        return self.tagging_config.is_taggable(self)
+        return self.tag_builder_config.is_taggable(self)
 
     def get_tag_property_values(self):
         """Values that are used for computing the node's tag
@@ -474,7 +474,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         attributes[versioning.TagKeys.version] = ver
         attributes["tag_properties"] = tag_properties
         attributes["is_latest"] = is_latest
-        attributes["tagging_config"] = tagging_config
+        attributes["tag_builder_config"] = tag_builder_config
         attributes["is_taggable"] = is_taggable
         attributes["get_tag_property_values"] = get_tag_property_values
 

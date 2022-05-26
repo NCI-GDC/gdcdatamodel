@@ -77,8 +77,8 @@ class TaggingConstraint:
         return node and node[self.prop] in self.values
 
 
-class TaggingConfig:
-    """A wrapper around the tagConfig definition in the dictionary yaml"""
+class TagBuilderConfig:
+    """A wrapper around the tagBuilderConfig definition in the dictionary yaml"""
 
     def __init__(self, cfg):
         """
@@ -102,6 +102,9 @@ class TaggingConfig:
     def is_taggable(self, node):
         """Returns true if node supports tagging else False. Ideally, instances that return false will not
             have tag and version number set on them
+
+            Returns:
+                bool: True for nodes that can be tagged
         """
         return not any(criteria.match(node) for criteria in self._constraints())
 
