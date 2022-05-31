@@ -1,3 +1,5 @@
+import pytest
+
 from gdcdatamodel.models import versioning as v
 from gdcdatamodel.models import basic  # noqa
 
@@ -20,13 +22,17 @@ def test_compute_tag(sample_data):
     for node in sample_data:
         print("\n..........{}...........".format(node))
         v_tag = v.compute_tag(node)
-        assert v_tag == EXPECTED_TAGS[node.node_id], "invalid tag computed for {}".format(node.node_id)
+        assert (
+            v_tag == EXPECTED_TAGS[node.node_id]
+        ), "invalid tag computed for {}".format(node.node_id)
 
 
 def test_multi_parent(sample_data):
     """Test version tag resolves to the same value independent of how the parents were attached"""
 
-    portion = basic.Portion(node_id="b9b6fdb3-6c31-4ed3-9f8c-67d4eae72102", submitter_id="portion_2")
+    portion = basic.Portion(
+        node_id="b9b6fdb3-6c31-4ed3-9f8c-67d4eae72102", submitter_id="portion_2"
+    )
     v_tag = v.compute_tag(portion)
     assert v_tag == "5776f97a-a58b-5900-83da-43cbc7105796"
 
@@ -61,3 +67,14 @@ def test_multi_parent(sample_data):
     v.compute_tag.cache_clear()
     v_tag = v.compute_tag(portion)
     assert v_tag == "a9a67fae-d916-5843-bdf3-b7db0b7a82a2"
+
+
+@pytest.mark.parametrize(
+    "node, is_taggable",
+    [
+        (basic.Portion(node_id="A101", submitter_id="portion_2"), True),
+        (basic.Center(node_id="TEST-1", code="A101"), False),
+    ],
+)
+def test_node_is_taggable(node, is_taggable):
+    assert node.is_taggable() is is_taggable
