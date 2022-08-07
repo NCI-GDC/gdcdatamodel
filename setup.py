@@ -16,7 +16,7 @@ setup(
         "pyrsistent<0.17.0",
         "decorator<=5.0.0",
         "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.5.0-rc.0#egg=gdcdictionary",
-        "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@develop#egg=gdc-ng-models",
+        "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@feat/dev-1317-convert-cohort-static-field#egg=gdc-ng-models",
         "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.4.0#egg=psqlgraph",
     ],
     extras_require={
