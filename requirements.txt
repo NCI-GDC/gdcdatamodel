@@ -8,7 +8,7 @@ attrs==21.2.0
     # via jsonschema
 decorator==4.4.2
     # via gdcdatamodel (setup.py)
-gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@feat/dev-1317-convert-cohort-static-field
+gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@develop
     # via gdcdatamodel (setup.py)
 gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.5.0-rc.0
     # via gdcdatamodel (setup.py)
