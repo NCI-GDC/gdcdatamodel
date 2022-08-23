@@ -42,7 +42,7 @@ from gdcdatamodel.models import (
     studyrule,
     batch,
     versioning,
-    cohort,
+    # cohort,
 )
 
 from sqlalchemy import event, and_
