@@ -854,7 +854,7 @@ def inject_pg_edges(node_cls):
         cls_inject_backward_edges(cls)
 
 
-@lru_cache(maxsize=10)
+@lru_cache(maxsize=11)
 def load_dictionary(dictionary=None, package_namespace=None):
     """Loads all classes defined in dictionary, this method is expected to be called only once
         and very early in the application lifecycle. Subsequent calls are cached
