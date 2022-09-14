@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """update_related_case_caches
 --------------------------
 

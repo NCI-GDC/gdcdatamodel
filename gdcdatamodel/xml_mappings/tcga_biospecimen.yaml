@@ -77,7 +77,7 @@ analyte:
     id: .//bio:bcr_analyte_uuid
     edges:
       portions: ancestor::bio:portion/bio:bcr_portion_uuid
-      samples: 
+      samples:
         - ancestor::bio:sample/bio_model:bcr_sample_uuid
         - ancestor::bio:sample/bio:bcr_sample_uuid
         - ancestor::bio_model:sample/bio_model:bcr_sample_uuid
@@ -229,7 +229,7 @@ sample:
         path:
           - ./bio_model:growth_rate
           - ./bio:growth_rate
-        type: int 
+        type: int
       initial_weight:
         path:
           - ./bio_model:initial_weight
@@ -259,7 +259,7 @@ sample:
         path:
           - ./bio_model:passage_count
           - ./bio:passage_count
-        type: int 
+        type: int
       pathology_report_uuid:
         path:
           - ./bio_model:pathology_report_uuid
