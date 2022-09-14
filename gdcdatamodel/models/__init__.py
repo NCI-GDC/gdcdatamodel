@@ -753,6 +753,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
             src_cls._pg_links[link["name"]] = {
                 "edge_out": edge_name,
                 "dst_type": node_cls.get_subclass(link["target_type"]),
+                "backref": link["backref"]
             }
 
     for src_cls in node_cls.get_subclasses():
@@ -809,17 +810,6 @@ def inject_pg_edges(node_cls):
         { <link name>: {'backref': <backref name>, 'type': <target type> } }
 
     """
-
-    def find_backref(link, src_cls):
-        """Given the JSON link definition and a source class :param:`src_cls`,
-        return the name of the backref
-
-        """
-
-        for prop, backref in link["dst_type"]._pg_backrefs.items():
-            if backref["src_type"] == cls:
-                return prop
-
     def cls_inject_forward_edges(cls):
         """We should have already added the links that go OUT from this class,
         so let's add them to `_pg_edges`
@@ -830,9 +820,10 @@ def inject_pg_edges(node_cls):
 
         for name, link in cls._pg_links.items():
             cls._pg_edges[name] = {
-                "backref": find_backref(link, cls),
+                "backref": link["backref"],
                 "type": link["dst_type"],
             }
+            del link["backref"]
 
     def cls_inject_backward_edges(cls):
         """We should have already added the links that go INTO this class,
