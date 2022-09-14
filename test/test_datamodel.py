@@ -141,7 +141,7 @@ class TestDataModel(unittest.TestCase):
         assert project_defaults['released'] == False
 
 
-def test_file_pg_edges() -> None:
+def test_file_pg_edges():
     """Test file pg edges.
 
         Given a file node
