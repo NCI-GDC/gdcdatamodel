@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 gdcdatamodel.gdc_postgres_admin
 ----------------------------------

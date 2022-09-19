@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 migrations.async_transactions
 ----------------------------------

@@ -1,7 +1,21 @@
 repos:
--   repo: git@github.com:Yelp/detect-secrets
-    rev: v0.13.0
-    hooks:
-    -   id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
-
+    - repo: git@github.com:Yelp/detect-secrets
+      rev: v0.13.0
+      hooks:
+          - id: detect-secrets
+            args: [ '--baseline', '.secrets.baseline' ]
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.1.0 # last version to support py36
+      hooks:
+          - id: check-json
+          - id: check-toml
+          - id: check-yaml
+          - id: end-of-file-fixer
+          - id: fix-encoding-pragma
+            args: [ --remove ]
+          - id: no-commit-to-branch
+            args: [ --branch, develop, --branch, master, --pattern, release/.* ]
+          - id: pretty-format-json
+            args: [ --autofix ]
+          - id: trailing-whitespace
+            args: [ --markdown-linebreak-ext=md ]

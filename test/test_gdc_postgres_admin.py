@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for gdcdatamodel.gdc_postgres_admin module
 """

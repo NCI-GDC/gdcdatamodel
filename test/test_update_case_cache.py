@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 gdcdatamodel.test.test_update_case_cache
 ----------------------------------
