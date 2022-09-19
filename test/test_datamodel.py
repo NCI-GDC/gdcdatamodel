@@ -139,3 +139,51 @@ class TestDataModel(unittest.TestCase):
         assert project_defaults['state'] == 'open'
         assert project_defaults['submission_enabled'] == True
         assert project_defaults['released'] == False
+
+
+def test_file_pg_edges():
+    """Test file pg edges.
+
+        Given a file node
+        When different type of edges exists between
+            1. the file nodes and case nodes
+            2. the file nodes and other file nodes
+        Then _pg_edges should have the correct link information.
+
+    Args:
+        md: All node and edge classes
+    """
+    # from pg links
+    assert md.File._pg_edges["cases"] == {
+        "backref": "files",
+        "type": md.Case,
+    }
+
+    assert md.File._pg_edges["described_cases"] == {
+        "backref": "describing_files",
+        "type": md.Case,
+    }
+
+    assert md.File._pg_edges["source_files"] == {
+        "backref": "derived_files",
+        "type": md.File,
+    }
+
+    assert md.File._pg_edges["related_files"] == {
+        "backref": "parent_files",
+        "type": md.File,
+    }
+
+    # from pg backrefs
+    assert md.File._pg_edges["derived_files"] == {
+        "backref": "source_files",
+        "type": md.File,
+    }
+
+    assert md.File._pg_edges["parent_files"] == {
+        "backref": "related_files",
+        "type": md.File,
+    }
+
+    for link in md.File._pg_links.values():
+        assert link.get("backref") is None
