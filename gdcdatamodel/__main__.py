@@ -1,11 +1,11 @@
 import argparse
 import getpass
-import psqlgraph
 
-from models import *                              # noqa
-from psqlgraph import *                           # noqa
-from sqlalchemy import *                          # noqa
+import psqlgraph
+from models import *  # noqa
 from models.versioned_nodes import VersionedNode  # noqa
+from psqlgraph import *  # noqa
+from sqlalchemy import *  # noqa
 
 try:
     import IPython

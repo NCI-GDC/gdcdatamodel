@@ -5,9 +5,9 @@ migrations.notifications
 Create `notifications` table.
 """
 
-from gdcdatamodel import models
-
 import logging
+
+from gdcdatamodel import models
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

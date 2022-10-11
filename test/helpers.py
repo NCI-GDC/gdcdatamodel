@@ -1,5 +1,5 @@
 import psqlgraph
-from psqlgraph import Node, Edge, create_all, ext
+from psqlgraph import Edge, Node, create_all, ext
 
 from gdcdatamodel import models
 

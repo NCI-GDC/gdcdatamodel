@@ -1,10 +1,9 @@
 import uuid
 from copy import copy
-
-from gdcdatamodel.validators import GDCJSONValidator, GDCGraphValidator
-from gdcdatamodel.models import *
-
 from test.conftest import BaseTestCase
+
+from gdcdatamodel.models import *
+from gdcdatamodel.validators import GDCGraphValidator, GDCJSONValidator
 
 
 class MockSubmissionEntity(object):

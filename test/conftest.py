@@ -7,17 +7,16 @@ pytest setup for gdcdatamodel tests
 import random
 import unittest
 import uuid
-import pkg_resources
+from test.helpers import create_tables, truncate
+from test.models import BasicDictionary
 
+import pkg_resources
 import pytest
 import yaml
-from gdcdatamodel import models
 from psqlgraph import PsqlGraphDriver, mocks
 from sqlalchemy import create_engine
 
-from test.helpers import truncate, create_tables
-from test.models import BasicDictionary
-
+from gdcdatamodel import models
 
 models.load_dictionary(BasicDictionary, "basic")
 from gdcdatamodel.models import basic  # noqa

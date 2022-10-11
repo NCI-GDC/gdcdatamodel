@@ -1,6 +1,6 @@
-from gdcdatamodel import models as md
-
 from test.conftest import BaseTestCase
+
+from gdcdatamodel import models as md
 
 
 class TestValidators(BaseTestCase):
