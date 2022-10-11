@@ -39,3 +39,8 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--mapping, '2', --sequence, '4', --offset, '2', --width, '80']
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.19.0 # last version to support py36
+    hooks:
+      - id: toml-sort
+        args: [--in-place]
