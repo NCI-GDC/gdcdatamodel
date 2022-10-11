@@ -8,7 +8,6 @@ def _load(name):
 
 
 class Dictionary:
-
     def __init__(self, name):
         self.schema = _load(name)
 

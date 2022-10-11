@@ -19,9 +19,10 @@ logger.setLevel(logging.INFO)
 
 
 def up_transaction(connection):
-    logger.info('Migrating async-transactions: up')
+    logger.info("Migrating async-transactions: up")
 
-    connection.execute("""
+    connection.execute(
+        """
     ALTER TABLE transaction_logs ADD COLUMN state        TEXT;
     ALTER TABLE transaction_logs ADD COLUMN committed_by INTEGER;
     ALTER TABLE transaction_logs ADD COLUMN is_dry_run   BOOLEAN;
@@ -37,13 +38,15 @@ def up_transaction(connection):
 
     UPDATE transaction_logs SET state      = 'SUCCEEDED'  WHERE state       IS NULL;
     UPDATE transaction_logs SET is_dry_run = FALSE        WHERE is_dry_run  IS NULL;
-    """)
+    """
+    )
 
 
 def down_transaction(connection):
-    logger.info('Migrating async-transactions: down')
+    logger.info("Migrating async-transactions: down")
 
-    connection.execute("""
+    connection.execute(
+        """
     DROP INDEX transaction_logs_program_idx;
     DROP INDEX transaction_logs_project_idx;
     DROP INDEX transaction_logs_is_dry_run_idx;
@@ -56,7 +59,8 @@ def down_transaction(connection):
     ALTER TABLE transaction_logs DROP COLUMN closed;
     ALTER TABLE transaction_logs DROP COLUMN committed_by;
     ALTER TABLE transaction_logs DROP COLUMN is_dry_run;
-    """)
+    """
+    )
 
 
 def up(connection):

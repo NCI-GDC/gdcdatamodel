@@ -16,17 +16,17 @@ GDC datamodel.
 
 import logging
 
-logger = logging.getLogger('gdcdatamodel')
+logger = logging.getLogger("gdcdatamodel")
 
 #: This variable contains the link name for the case shortcut
 #: association proxy
-RELATED_CASES_LINK_NAME = '_related_cases'
+RELATED_CASES_LINK_NAME = "_related_cases"
 
 #: This variable specifies the categories for which we won't create
 # short cut : edges to case
 NOT_RELATED_CASES_CATEGORIES = {
-    'administrative',
-    'TBD',
+    "administrative",
+    "TBD",
 }
 
 
@@ -53,7 +53,7 @@ def get_related_case_edge_cls_name(node):
 
     """
 
-    return '{}RelatesToCase'.format(node.__class__.__name__)
+    return "{}RelatesToCase".format(node.__class__.__name__)
 
 
 def get_edge_src(edge):
@@ -69,18 +69,19 @@ def get_edge_src(edge):
         src = edge.src
     elif edge.src_id is not None:
         src_class = node_cls.get_subclass_named(edge.__src_class__)
-        src = (edge.get_session().query(src_class)
-               .filter(src_class.node_id == edge.src_id)
-               .first())
+        src = (
+            edge.get_session()
+            .query(src_class)
+            .filter(src_class.node_id == edge.src_id)
+            .first()
+        )
     else:
         src = None
     return src
 
 
 def get_edge_dst(edge, allow_query=False):
-    """Return the edge's destination or None.
-
-    """
+    """Return the edge's destination or None."""
     node_cls = edge.get_node_class()
 
     if edge.dst:
@@ -88,9 +89,12 @@ def get_edge_dst(edge, allow_query=False):
     elif edge.dst_id is not None and allow_query:
 
         dst_class = node_cls.get_subclass_named(edge.__dst_class__)
-        dst = (edge.get_session().query(dst_class)
-               .filter(dst_class.node_id == edge.dst_id)
-               .first())
+        dst = (
+            edge.get_session()
+            .query(dst_class)
+            .filter(dst_class.node_id == edge.dst_id)
+            .first()
+        )
     else:
         dst = None
 
@@ -120,9 +124,7 @@ def related_cases_from_parents(node):
 
     """
 
-    skip_edges_named = [
-        get_related_case_edge_cls_name(node)
-    ]
+    skip_edges_named = [get_related_case_edge_cls_name(node)]
 
     # Make sure the edges haven't been expunged
     edges_out = [e for e in node.edges_out if e in node.get_session()]
@@ -142,17 +144,15 @@ def related_cases_from_parents(node):
             continue
         node_cls = edge.get_node_class()
         dst_class = node_cls.get_subclass_named(edge.__dst_class__)
-        if dst_class.label == 'case' and edge.dst:
+        if dst_class.label == "case" and edge.dst:
             cases.add(edge.dst)
 
     return list(filter(None, cases))
 
 
-def cache_related_cases_recursive(node,
-                                  session,
-                                  flush_context,
-                                  instances,
-                                  visited_nodes=None):
+def cache_related_cases_recursive(
+    node, session, flush_context, instances, visited_nodes=None
+):
     """Update the related case cache on source node and its children
     recursively iff the this update changes the related case source
     node's shortcut edges.
@@ -219,21 +219,17 @@ def update_cache_edges(node, session, correct_cases):
 
     # Get information about the existing edges
     edge_name = get_related_case_edge_cls_name(node)
-    existing_edges = getattr(node, '_{}_out'.format(edge_name))
+    existing_edges = getattr(node, "_{}_out".format(edge_name))
 
     # Remove edges that should no longer exist
     cases_disconnected = [
-        edge.dst
-        for edge in existing_edges
-        if edge.dst_id not in correct_cases
+        edge.dst for edge in existing_edges if edge.dst_id not in correct_cases
     ]
 
     for case in cases_disconnected:
         assoc_proxy.remove(case)
 
-    existing_edge_dst_case_ids = {
-        edge.dst_id for edge in existing_edges
-    }
+    existing_edge_dst_case_ids = {edge.dst_id for edge in existing_edges}
 
     cases_connected = [
         case
@@ -245,10 +241,7 @@ def update_cache_edges(node, session, correct_cases):
         assoc_proxy.append(case)
 
 
-def cache_related_cases_on_insert(target,
-                                  session,
-                                  flush_context,
-                                  instances):
+def cache_related_cases_on_insert(target, session, flush_context, instances):
     """Hook on updated edges.  Update the related case cache on source
     node and its children iff the this update changes the related case
     source node's cache.
@@ -281,10 +274,7 @@ def cache_related_cases_on_insert(target,
     )
 
 
-def cache_related_cases_on_update(target,
-                                  session,
-                                  flush_context,
-                                  instances):
+def cache_related_cases_on_update(target, session, flush_context, instances):
     """Hook on deleted edges.  Update the related case cache on source
     node and its children.
 
@@ -309,10 +299,7 @@ def cache_related_cases_on_update(target,
     )
 
 
-def cache_related_cases_on_delete(target,
-                                  session,
-                                  flush_context,
-                                  instances):
+def cache_related_cases_on_delete(target, session, flush_context, instances):
     """Hook on deleted edges.  Update the related case cache on source
     node and its children.
 

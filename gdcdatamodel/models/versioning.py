@@ -3,6 +3,7 @@ import uuid
 
 import six
 from sqlalchemy import and_, event, select
+
 try:
     from functools import lru_cache
 except ImportError:
@@ -101,10 +102,10 @@ class TagBuilderConfig:
 
     def is_taggable(self, node):
         """Returns true if node supports tagging else False. Ideally, instances that return false will not
-            have tag and version number set on them
+        have tag and version number set on them
 
-            Returns:
-                bool: True for nodes that can be tagged
+        Returns:
+            bool: True for nodes that can be tagged
         """
         return not any(criteria.match(node) for criteria in self._constraints())
 

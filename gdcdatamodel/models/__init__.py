@@ -1,4 +1,3 @@
-
 """gdcdatamodel.models
 ----------------------------------
 
@@ -752,7 +751,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
             src_cls._pg_links[link["name"]] = {
                 "edge_out": edge_name,
                 "dst_type": node_cls.get_subclass(link["target_type"]),
-                "backref": link["backref"]
+                "backref": link["backref"],
             }
 
     for src_cls in node_cls.get_subclasses():
@@ -809,6 +808,7 @@ def inject_pg_edges(node_cls):
         { <link name>: {'backref': <backref name>, 'type': <target type> } }
 
     """
+
     def cls_inject_forward_edges(cls):
         """We should have already added the links that go OUT from this class,
         so let's add them to `_pg_edges`

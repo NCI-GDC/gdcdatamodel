@@ -8,12 +8,7 @@ from gdcdatamodel import models
 
 
 def get_base_args(host="localhost", database="automated_test", namespace=None):
-    return [
-        '-H', host,
-        '-U', "postgres",
-        '-D', database,
-        "-N", namespace or ""
-    ]
+    return ["-H", host, "-U", "postgres", "-D", database, "-N", namespace or ""]
 
 
 def get_admin_driver(db_config, namespace=None):
@@ -24,14 +19,18 @@ def get_admin_driver(db_config, namespace=None):
         host=db_config["host"],
         user="postgres",
         password=None,
-        database=db_config["database"]
+        database=db_config["database"],
     )
 
     return g
 
 
 def drop_all_tables(g):
-    orm_base = ext.get_orm_base(g.package_namespace) if g.package_namespace else psqlgraph.base.ORMBase
+    orm_base = (
+        ext.get_orm_base(g.package_namespace)
+        if g.package_namespace
+        else psqlgraph.base.ORMBase
+    )
     psqlgraph.base.drop_all(g.engine, orm_base)
 
 
@@ -44,12 +43,12 @@ def run_admin_command(args, namespace=None):
 def invalid_write_access_fn(g):
     with pytest.raises(ProgrammingError):
         with g.session_scope() as s:
-            s.add(models.Case('1'))
+            s.add(models.Case("1"))
 
 
 def valid_write_access_fn(g):
     with g.session_scope() as s:
-        s.merge(models.Case('1'))
+        s.merge(models.Case("1"))
     yield
     with g.session_scope() as s:
         n = g.nodes().get("1")
@@ -77,7 +76,9 @@ def add_test_database_user(db_config):
     g = get_admin_driver(db_config)
 
     try:
-        g.engine.execute("CREATE USER {} WITH PASSWORD '{}'".format(dummy_user, dummy_pwd))
+        g.engine.execute(
+            "CREATE USER {} WITH PASSWORD '{}'".format(dummy_user, dummy_pwd)
+        )
         g.engine.execute("GRANT USAGE ON SCHEMA public TO {}".format(dummy_user))
         yield dummy_user, dummy_pwd
     finally:
@@ -86,10 +87,10 @@ def add_test_database_user(db_config):
 
 @pytest.mark.parametrize("namespace", [None, "gdc"], ids=["default", "custom"])
 def test_create_tables(db_config, namespace):
-    """ Tests tables can be created with the admin script using either a custom dictionary or the default
-        Args:
-            db_config (dict[str,str]): db connection config
-            namespace (str): module namespace, None for default
+    """Tests tables can be created with the admin script using either a custom dictionary or the default
+    Args:
+        db_config (dict[str,str]): db connection config
+        namespace (str): module namespace, None for default
     """
 
     # simulate loading a different dictionary
@@ -114,7 +115,9 @@ def test_create_tables(db_config, namespace):
     assert 'relation "node_case" does not exist' in str(e.value)
 
     # create tables using admin script
-    args = ['graph-create', '--delay', '1', '--retries', '0'] + get_base_args(namespace=namespace)
+    args = ["graph-create", "--delay", "1", "--retries", "0"] + get_base_args(
+        namespace=namespace
+    )
     parsed_args = pgadmin.get_parser().parse_args(args)
     pgadmin.main(parsed_args)
 
@@ -125,13 +128,22 @@ def test_create_tables(db_config, namespace):
 
 
 @pytest.mark.parametrize("namespace", [None, "gdc"], ids=["default", "custom"])
-@pytest.mark.parametrize("permission, invalid_permission_fn, valid_permission_fn", [
-    ("read", invalid_read_access_fn, valid_read_access_fn),
-    ("write", invalid_write_access_fn, valid_write_access_fn),
-    ], ids=["read", "write"]
+@pytest.mark.parametrize(
+    "permission, invalid_permission_fn, valid_permission_fn",
+    [
+        ("read", invalid_read_access_fn, valid_read_access_fn),
+        ("write", invalid_write_access_fn, valid_write_access_fn),
+    ],
+    ids=["read", "write"],
 )
-def test_grant_permissions(db_config, namespace, add_test_database_user,
-                           permission, invalid_permission_fn, valid_permission_fn):
+def test_grant_permissions(
+    db_config,
+    namespace,
+    add_test_database_user,
+    permission,
+    invalid_permission_fn,
+    valid_permission_fn,
+):
 
     # simulate loading a different dictionary
     if namespace:
@@ -140,11 +152,11 @@ def test_grant_permissions(db_config, namespace, add_test_database_user,
     dummy_user, dummy_pwd = add_test_database_user
 
     g = psqlgraph.PsqlGraphDriver(
-            host=db_config["host"],
-            user=dummy_user,
-            password=dummy_pwd,
-            database=db_config["database"],
-            package_namespace=namespace,
+        host=db_config["host"],
+        user=dummy_user,
+        password=dummy_pwd,
+        database=db_config["database"],
+        package_namespace=namespace,
     )
 
     # verify user does not have permission
@@ -156,13 +168,22 @@ def test_grant_permissions(db_config, namespace, add_test_database_user,
 
 
 @pytest.mark.parametrize("namespace", [None, "gdc"], ids=["default", "custom"])
-@pytest.mark.parametrize("permission, invalid_permission_fn, valid_permission_fn", [
-    ("read", invalid_read_access_fn, valid_read_access_fn),
-    ("write", invalid_write_access_fn, valid_write_access_fn),
-    ], ids=["read", "write"]
+@pytest.mark.parametrize(
+    "permission, invalid_permission_fn, valid_permission_fn",
+    [
+        ("read", invalid_read_access_fn, valid_read_access_fn),
+        ("write", invalid_write_access_fn, valid_write_access_fn),
+    ],
+    ids=["read", "write"],
 )
-def test_revoke_permissions(db_config, namespace, add_test_database_user,
-                            permission, invalid_permission_fn, valid_permission_fn):
+def test_revoke_permissions(
+    db_config,
+    namespace,
+    add_test_database_user,
+    permission,
+    invalid_permission_fn,
+    valid_permission_fn,
+):
 
     # simulate loading a different dictionary
     if namespace:
@@ -171,11 +192,11 @@ def test_revoke_permissions(db_config, namespace, add_test_database_user,
     dummy_user, dummy_pwd = add_test_database_user
 
     g = psqlgraph.PsqlGraphDriver(
-            host=db_config["host"],
-            user=dummy_user,
-            password=dummy_pwd,
-            database=db_config["database"],
-            package_namespace=namespace,
+        host=db_config["host"],
+        user=dummy_user,
+        password=dummy_pwd,
+        database=db_config["database"],
+        package_namespace=namespace,
     )
 
     # grant user permissions
