@@ -1,3 +1,4 @@
+---
 # example:
 #   -
 #     root: xpath
@@ -26,8 +27,7 @@
 #             year: xpath
 
 aliquot:
-  -
-    root: //bio:aliquot
+  - root: //bio:aliquot
     id: .//bio:bcr_aliquot_uuid
     edges:
       analytes: ancestor::bio:analyte/bio:bcr_analyte_uuid
@@ -72,8 +72,7 @@ aliquot:
         type: float
 
 analyte:
-  -
-    root: //bio:analyte
+  - root: //bio:analyte
     id: .//bio:bcr_analyte_uuid
     edges:
       portions: ancestor::bio:portion/bio:bcr_portion_uuid
@@ -109,8 +108,7 @@ analyte:
         type: str
 
 portion:
-  -
-    root: //bio:portion
+  - root: //bio:portion
     id: .//bio:bcr_portion_uuid
     edges:
       samples: ancestor::bio:sample/bio:bcr_sample_uuid
@@ -132,8 +130,7 @@ portion:
         day: ./bio:day_of_creation
         month: ./bio:month_of_creation
         year: ./bio:year_of_creation
-  -
-    root: //bio:shipment_portion
+  - root: //bio:shipment_portion
     id: .//bio:bcr_shipment_portion_uuid
     edges:
       samples: ancestor::bio:sample/bio:bcr_sample_uuid
@@ -183,8 +180,7 @@ portion:
         year: ./bio:shipment_portion_year_of_shipment
 
 sample:
-  -
-    root:
+  - root:
       - //bio_model:sample
       - //bio:sample
     id:
@@ -301,12 +297,11 @@ sample:
           - ./bio_model:time_between_excision_and_freezing
           - ./bio:time_between_excision_and_freezing
         type: float
-      tumor_code_id: null
-      tumor_code: null
+      tumor_code_id:
+      tumor_code:
 
 case:
-  -
-    root: //*[local-name()='patient']
+  - root: //*[local-name()='patient']
     id: .//shared:bcr_patient_uuid
     edges_by_property:
       tissue_source_sites:
@@ -319,8 +314,7 @@ case:
         type: str
 
 slide:
-  -
-    root: //bio:slide
+  - root: //bio:slide
     id: .//shared:bcr_slide_uuid
     edges:
       portions: ancestor::bio:portion/bio:bcr_portion_uuid

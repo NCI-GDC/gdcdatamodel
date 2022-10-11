@@ -1,9 +1,10 @@
+---
 repos:
   - repo: git@github.com:Yelp/detect-secrets
     rev: v0.13.0
     hooks:
       - id: detect-secrets
-        args: [ '--baseline', '.secrets.baseline' ]
+        args: [--baseline, .secrets.baseline]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0 # last version to support py36
     hooks:
@@ -12,24 +13,29 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: fix-encoding-pragma
-        args: [ --remove ]
+        args: [--remove]
       - id: no-commit-to-branch
-        args: [ --branch, develop, --branch, master, --pattern, release/.* ]
+        args: [--branch, develop, --branch, master, --pattern, release/.*]
       - id: pretty-format-json
-        args: [ --autofix ]
+        args: [--autofix]
       - id: trailing-whitespace
-        args: [ --markdown-linebreak-ext=md ]
+        args: [--markdown-linebreak-ext=md]
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
         name: isort (python)
-        args: [ --profile, black ]
+        args: [--profile, black]
       - id: isort
         name: isort (cython)
-        types: [ cython ]
-        args: [ --profile, black ]
+        types: [cython]
+        args: [--profile, black]
       - id: isort
         name: isort (pyi)
-        types: [ pyi ]
-        args: [ --profile, black ]
+        types: [pyi]
+        args: [--profile, black]
+  - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+    rev: 0.2.1
+    hooks:
+      - id: yamlfmt
+        args: [--mapping, '2', --sequence, '4', --offset, '2', --width, '80']
