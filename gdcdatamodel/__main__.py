@@ -1,6 +1,5 @@
 import argparse
 import getpass
-import psqlgraph
 
 from models import *  # noqa
 from psqlgraph import *  # noqa

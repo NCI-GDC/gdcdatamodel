@@ -1,6 +1,7 @@
+import re
+
 from gdcdictionary import gdcdictionary
 from jsonschema import Draft4Validator
-import re
 
 missing_prop_re = re.compile("'([a-zA-Z_-]+)' is a required property")
 extra_prop_re = re.compile(

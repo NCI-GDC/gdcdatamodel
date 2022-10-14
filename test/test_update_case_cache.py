@@ -7,8 +7,8 @@ Test functionality to update stale case caches
 """
 
 import pytest
-from gdcdatamodel import models as md
 
+from gdcdatamodel import models as md
 from migrations import update_case_cache
 
 

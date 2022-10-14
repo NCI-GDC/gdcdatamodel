@@ -5,11 +5,7 @@ Tests for gdcdatamodel.gdc_postgres_admin module
 import logging
 import unittest
 
-from psqlgraph import (
-    Edge,
-    Node,
-    PsqlGraphDriver,
-)
+from psqlgraph import Edge, Node, PsqlGraphDriver
 from sqlalchemy.exc import ProgrammingError
 
 from gdcdatamodel import gdc_postgres_admin as pgadmin

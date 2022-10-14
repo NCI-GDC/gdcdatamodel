@@ -1,7 +1,8 @@
-from gdcdatamodel import models as md
+from test.conftest import BaseTestCase
+
 from psqlgraph import Node
 
-from test.conftest import BaseTestCase
+from gdcdatamodel import models as md
 
 
 class TestCacheRelatedCases(BaseTestCase):

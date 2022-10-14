@@ -9,13 +9,12 @@ query patterns (e.g. secondary_keys).
 
 """
 
+import hashlib
 import logging
 
 from sqlalchemy import Index, func
-import hashlib
 
 from gdcdatamodel.models.utils import py3_to_bytes
-
 
 logger = logging.getLogger(__name__)
 

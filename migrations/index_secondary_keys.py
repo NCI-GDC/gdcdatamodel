@@ -11,13 +11,13 @@ the following indexes per secondary key
 
 """
 
+import logging
+
 from psqlgraph import Node
-from gdcdatamodel.models import get_secondary_key_indexes
-from gdcdatamodel.models.submission import TransactionLog
 from sqlalchemy import Index
 
-
-import logging
+from gdcdatamodel.models import get_secondary_key_indexes
+from gdcdatamodel.models.submission import TransactionLog
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
