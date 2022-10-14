@@ -11,17 +11,13 @@ import random
 import time
 
 import sqlalchemy as sa
+from psqlgraph import create_all, ext
 from psqlgraph.base import ORMBase
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 #: Required but 'unused' import to register GDC models
 from . import models  # noqa
-
-from psqlgraph import (
-    create_all,
-    ext,
-)
 
 logging.basicConfig()
 logger = logging.getLogger("gdc_postgres_admin")

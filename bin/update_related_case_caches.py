@@ -10,9 +10,9 @@ import argparse
 import getpass
 import logging
 
-from gdcdatamodel import models as md
 from psqlgraph import PsqlGraphDriver
 
+from gdcdatamodel import models as md
 
 logging.basicConfig()
 logger = logging.getLogger("update_related_cases_caches")

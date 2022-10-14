@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-from psqlgraph import Node, Edge
-from gdcdatamodel import models as md
+from psqlgraph import Edge, Node
 
+from gdcdatamodel import models as md
 
 CACHE_EDGES = {
     Node.get_subclass_named(edge.__src_class__): edge

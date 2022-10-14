@@ -1,6 +1,8 @@
 import os
-from gdcdatamodel import models as m
+
 from graphviz import Digraph
+
+from gdcdatamodel import models as m
 
 
 def build_visualization():

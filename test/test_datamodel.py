@@ -1,9 +1,10 @@
-from datetime import datetime
 import logging
 import unittest
+from datetime import datetime
 
 from psqlgraph import Edge, Node, PsqlGraphDriver
 from psqlgraph.exc import ValidationError
+
 from gdcdatamodel import models as md
 
 logging.basicConfig(level=logging.INFO)

@@ -35,13 +35,13 @@ update_legacy_states(
 """
 
 import logging
-
-from sqlalchemy import not_, or_, and_
-from psqlgraph import Node, PsqlGraphDriver
-from gdcdatamodel import models as md
-from multiprocessing import Process, cpu_count, Queue
 from collections import namedtuple
+from multiprocessing import Process, Queue, cpu_count
 
+from psqlgraph import Node, PsqlGraphDriver
+from sqlalchemy import and_, not_, or_
+
+from gdcdatamodel import models as md
 
 CLS_WITH_PROJECT_ID = {
     cls for cls in Node.get_subclasses()

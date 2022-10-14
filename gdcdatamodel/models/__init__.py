@@ -23,54 +23,40 @@ try:
 except ImportError:
     from functools32 import lru_cache
 
-from types import ModuleType
+import hashlib
 import logging
-
 from collections import defaultdict
+from types import ModuleType
 
+from psqlgraph import Edge, Node, ext, pg_property
+from sqlalchemy import and_, event
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import configure_mappers
 
-import hashlib
 from gdcdatamodel.models import (
-    versioned_nodes,
+    batch,
     notifications,
-    submission,
-    redaction,
     qcreport,
+    redaction,
     released_data,
     studyrule,
-    batch,
+    submission,
+    versioned_nodes,
     versioning,
 )
-
-from sqlalchemy import event, and_
-
-from psqlgraph import Node, Edge, pg_property
-
-from psqlgraph import ext
-
-from sqlalchemy.ext.hybrid import (
-    Comparator,
-    hybrid_property,
-)
-
 from gdcdatamodel.models.caching import (
     NOT_RELATED_CASES_CATEGORIES,
     RELATED_CASES_LINK_NAME,
-    cache_related_cases_on_update,
-    cache_related_cases_on_insert,
     cache_related_cases_on_delete,
+    cache_related_cases_on_insert,
+    cache_related_cases_on_update,
     related_cases_from_cache,
     related_cases_from_parents,
 )
-
-from gdcdatamodel.models.indexes import (
-    cls_add_indexes,
-    get_secondary_key_indexes,
-)
+from gdcdatamodel.models.indexes import cls_add_indexes, get_secondary_key_indexes
 from gdcdatamodel.models.misc import FileReport  # noqa
-from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
 from gdcdatamodel.models.utils import py3_to_bytes
+from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
 
 logger = logging.getLogger("gdcdatamodel")
 

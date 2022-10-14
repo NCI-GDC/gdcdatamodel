@@ -1,8 +1,9 @@
+from test.helpers import create_tables, truncate
+
 import pytest
 from psqlgraph import PsqlGraphDriver
 
 from gdcdatamodel.models import basic, versioning  # noqa
-from test.helpers import create_tables, truncate
 
 
 @pytest.fixture(scope='module')

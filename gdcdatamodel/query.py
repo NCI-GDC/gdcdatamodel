@@ -1,4 +1,4 @@
-from psqlgraph import Node, Edge
+from psqlgraph import Edge, Node
 
 traversals = {}
 terminal_nodes = ['annotations', 'centers', 'archives', 'tissue_source_sites',
