@@ -13,13 +13,13 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: fix-encoding-pragma
-        args: [ --remove ]
+        args: [--remove]
       - id: no-commit-to-branch
-        args: [ --branch, develop, --branch, master, --pattern, release/.* ]
+        args: [--branch, develop, --branch, master, --pattern, release/.*]
       - id: pretty-format-json
-        args: [ --autofix ]
+        args: [--autofix]
       - id: trailing-whitespace
-        args: [ --markdown-linebreak-ext=md ]
+        args: [--markdown-linebreak-ext=md]
   - repo: https://github.com/psf/black
     rev: 20.8b1  # for pre-commit 1.21.0 in jenkins
     hooks:

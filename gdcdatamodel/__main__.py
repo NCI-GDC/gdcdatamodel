@@ -2,9 +2,9 @@ import argparse
 import getpass
 
 from models import *  # noqa
+from models.versioned_nodes import VersionedNode  # noqa
 from psqlgraph import *  # noqa
 from sqlalchemy import *  # noqa
-from models.versioned_nodes import VersionedNode  # noqa
 
 try:
     import IPython
