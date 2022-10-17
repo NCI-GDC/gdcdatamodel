@@ -22,25 +22,27 @@ models.load_dictionary(BasicDictionary, "basic")
 from gdcdatamodel.models import basic  # noqa
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_config():
     return {
-        'host': 'localhost',
-        'user': 'test',
-        'password': 'test',
-        'database': 'automated_test',
+        "host": "localhost",
+        "user": "test",
+        "password": "test",
+        "database": "automated_test",
     }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def tables_created(db_config):
     """
     Create necessary tables
     """
     engine = create_engine(
         "postgres://{user}:{pwd}@{host}/{db}".format(
-            user=db_config['user'], host=db_config['host'],
-            pwd=db_config['password'], db=db_config['database']
+            user=db_config["user"],
+            host=db_config["host"],
+            pwd=db_config["password"],
+            db=db_config["database"],
         )
     )
 
@@ -51,14 +53,14 @@ def tables_created(db_config):
     truncate(engine)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def g(db_config, tables_created):
     """Fixture for database driver"""
 
     return PsqlGraphDriver(**db_config)
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope="class")
 def db_class(request, g):
     """
     Sets g property on a test class
@@ -66,9 +68,10 @@ def db_class(request, g):
     request.cls.g = g
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def indexes(g):
-    rows = g.engine.execute("""
+    rows = g.engine.execute(
+        """
         SELECT i.relname as indname,
                ARRAY(
                SELECT pg_get_indexdef(idx.indexrelid, k + 1, true)
@@ -80,14 +83,15 @@ def indexes(g):
         ON     i.oid = idx.indexrelid
         JOIN   pg_am as am
         ON     i.relam = am.oid;
-    """).fetchall()
+    """
+    ).fetchall()
 
-    return { row[0]: row[1] for row in rows }
+    return {row[0]: row[1] for row in rows}
 
 
 @pytest.fixture()
 def redacted_fixture(g):
-    """ Creates a redacted log entry"""
+    """Creates a redacted log entry"""
 
     with g.session_scope() as sxn:
         log = models.redaction.RedactionLog()
@@ -100,7 +104,9 @@ def redacted_fixture(g):
         count = 0
         for i in range(random.randint(2, 5)):
             count += 1
-            entry = models.redaction.RedactionEntry(node_id=str(uuid.uuid4()), node_type="Aligned Reads")
+            entry = models.redaction.RedactionEntry(
+                node_id=str(uuid.uuid4()), node_type="Aligned Reads"
+            )
             log.entries.append(entry)
 
         sxn.add(log)
@@ -116,7 +122,7 @@ def redacted_fixture(g):
         sxn.delete(log)
 
 
-@pytest.mark.usefixtures('db_class')
+@pytest.mark.usefixtures("db_class")
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         truncate(self.g.engine)

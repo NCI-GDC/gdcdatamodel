@@ -75,7 +75,7 @@ def execute_for_all_graph_tables(engine, sql, namespace=None, **kwargs):
     edge_cls = ext.get_abstract_edge(namespace)
 
     for cls in node_cls.get_subclasses() + edge_cls.get_subclasses():
-        _kwargs = dict(kwargs, **{'table': cls.__tablename__})
+        _kwargs = dict(kwargs, **{"table": cls.__tablename__})
         statement = sql.format(**_kwargs)
         execute(engine, statement)
 
@@ -100,13 +100,13 @@ def create_graph_tables(engine, timeout, namespace=None):
     """
     create a table
     """
-    logger.info('Creating tables (timeout: %d)', timeout)
+    logger.info("Creating tables (timeout: %d)", timeout)
 
     connection = engine.connect()
     trans = connection.begin()
     logger.info("Setting lock_timeout to %d", timeout)
 
-    timeout_str = '{}s'.format(int(timeout+1))
+    timeout_str = "{}s".format(int(timeout + 1))
     connection.execute("SET LOCAL lock_timeout = %s;", timeout_str)
 
     orm_base = ext.get_orm_base(namespace) if namespace else ORMBase
@@ -123,25 +123,25 @@ def create_tables(engine, delay, retries, namespace=None):
 
     """
 
-    logger.info('Running table creator named %s', app_name)
+    logger.info("Running table creator named %s", app_name)
     try:
         return create_graph_tables(engine, delay, namespace=namespace)
 
     except OperationalError as e:
-        if 'timeout' in str(e):
-            logger.warning('Attempt timed out')
+        if "timeout" in str(e):
+            logger.warning("Attempt timed out")
         else:
             raise
 
         if retries <= 0:
-            raise RuntimeError('Max retries exceeded')
+            raise RuntimeError("Max retries exceeded")
 
         logger.info(
-            'Trying again in {} seconds ({} retries remaining)'
-            .format(delay, retries))
+            "Trying again in {} seconds ({} retries remaining)".format(delay, retries)
+        )
         time.sleep(delay)
 
-        create_tables(engine, delay, retries-1, namespace=namespace)
+        create_tables(engine, delay, retries - 1, namespace=namespace)
 
 
 def subcommand_create(args):
@@ -153,10 +153,7 @@ def subcommand_create(args):
     logger.info("Running subcommand 'create'")
     engine = get_engine(args.host, args.user, args.password, args.database)
     kwargs = dict(
-        engine=engine,
-        delay=args.delay,
-        retries=args.retries,
-        namespace=args.namespace
+        engine=engine, delay=args.delay, retries=args.retries, namespace=args.namespace
     )
 
     return create_tables(**kwargs)
@@ -172,15 +169,15 @@ def subcommand_grant(args):
     logger.info("Running subcommand 'grant'")
     engine = get_engine(args.host, args.user, args.password, args.database)
 
-    assert args.read or args.write, 'No premission types/users specified.'
+    assert args.read or args.write, "No premission types/users specified."
 
     if args.read:
-        users_read = [u for u in args.read.split(',') if u]
+        users_read = [u for u in args.read.split(",") if u]
         for user in users_read:
             grant_read_permissions_to_graph(engine, user, args.namespace)
 
     if args.write:
-        users_write = [u for u in args.write.split(',') if u]
+        users_write = [u for u in args.write.split(",") if u]
         for user in users_write:
             grant_write_permissions_to_graph(engine, user, args.namespace)
 
@@ -196,73 +193,104 @@ def subcommand_revoke(args):
     engine = get_engine(args.host, args.user, args.password, args.database)
 
     if args.read:
-        users_read = [u for u in args.read.split(',') if u]
+        users_read = [u for u in args.read.split(",") if u]
         for user in users_read:
             revoke_read_permissions_to_graph(engine, user, args.namespace)
 
     if args.write:
-        users_write = [u for u in args.write.split(',') if u]
+        users_write = [u for u in args.write.split(",") if u]
         for user in users_write:
             revoke_write_permissions_to_graph(engine, user, args.namespace)
 
 
 def add_base_args(subparser):
-    subparser.add_argument("-H", "--host", type=str, action="store",
-                           required=True, help="psql-server host")
-    subparser.add_argument("-U", "--user", type=str, action="store",
-                           required=True, help="psql test user")
-    subparser.add_argument("-D", "--database", type=str, action="store",
-                           required=True, help="psql test database")
-    subparser.add_argument("-P", "--password", type=str, action="store",
-                           default='', help="psql test password")
-    subparser.add_argument("-N", "--namespace", type=lambda x: x if x else None,
-                           help="psqlgraph model namespace")
+    subparser.add_argument(
+        "-H", "--host", type=str, action="store", required=True, help="psql-server host"
+    )
+    subparser.add_argument(
+        "-U", "--user", type=str, action="store", required=True, help="psql test user"
+    )
+    subparser.add_argument(
+        "-D",
+        "--database",
+        type=str,
+        action="store",
+        required=True,
+        help="psql test database",
+    )
+    subparser.add_argument(
+        "-P",
+        "--password",
+        type=str,
+        action="store",
+        default="",
+        help="psql test password",
+    )
+    subparser.add_argument(
+        "-N",
+        "--namespace",
+        type=lambda x: x if x else None,
+        help="psqlgraph model namespace",
+    )
     return subparser
 
 
 def add_subcommand_create(subparsers):
-    parser = add_base_args(subparsers.add_parser(
-        'graph-create',
-        help=subcommand_create.__doc__
-    ))
-    parser.add_argument(
-        "--delay", type=int, action="store", default=60,
-        help="How many seconds to wait for blocking processes to finish before retrying."
+    parser = add_base_args(
+        subparsers.add_parser("graph-create", help=subcommand_create.__doc__)
     )
     parser.add_argument(
-        "--retries", type=int, action="store", default=10,
-        help="If blocked by important process, how many times to retry after waiting `delay` seconds."
+        "--delay",
+        type=int,
+        action="store",
+        default=60,
+        help="How many seconds to wait for blocking processes to finish before retrying.",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        action="store",
+        default=10,
+        help="If blocked by important process, how many times to retry after waiting `delay` seconds.",
     )
 
 
 def add_subcommand_grant(subparsers):
-    parser = add_base_args(subparsers.add_parser(
-        'graph-grant',
-        help=subcommand_grant.__doc__
-    ))
-    parser.add_argument(
-        "--read", type=str, action="store",
-        help="Users to grant read access to (comma separated)."
+    parser = add_base_args(
+        subparsers.add_parser("graph-grant", help=subcommand_grant.__doc__)
     )
     parser.add_argument(
-        "--write", type=str, action="store",
-        help="Users to grant read/write access to (comma separated)."
+        "--read",
+        type=str,
+        action="store",
+        help="Users to grant read access to (comma separated).",
+    )
+    parser.add_argument(
+        "--write",
+        type=str,
+        action="store",
+        help="Users to grant read/write access to (comma separated).",
     )
 
 
 def add_subcommand_revoke(subparsers):
-    parser = add_base_args(subparsers.add_parser(
-        'graph-revoke',
-        help=subcommand_revoke.__doc__
-    ))
-    parser.add_argument(
-        "--read", type=str, action="store",
-        help="Users to revoke read access from (comma separated)."
+    parser = add_base_args(
+        subparsers.add_parser("graph-revoke", help=subcommand_revoke.__doc__)
     )
     parser.add_argument(
-        "--write", type=str, action="store",
-        help=("Users to revoke write access from (comma separated). "
-              "NOTE: The user will still have read privs!!")
+        "--read",
+        type=str,
+        action="store",
+        help="Users to revoke read access from (comma separated).",
+    )
+    parser.add_argument(
+        "--write",
+        type=str,
+        action="store",
+        help=(
+            "Users to revoke write access from (comma separated). "
+            "NOTE: The user will still have read privs!!"
+        ),
     )
 
 
@@ -284,9 +312,9 @@ def main(args=None):
     logger.info("[ NAMESPACE     : %-10s ]", args.namespace or "default")
 
     return_value = {
-        'graph-create': subcommand_create,
-        'graph-grant': subcommand_grant,
-        'graph-revoke': subcommand_revoke,
+        "graph-create": subcommand_create,
+        "graph-grant": subcommand_grant,
+        "graph-revoke": subcommand_revoke,
     }[args.subcommand](args)
 
     logger.info("Done.")
