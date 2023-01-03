@@ -19,12 +19,6 @@ setup(
         "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.5.2#egg=gdc-ng-models",
         "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@3.4.0#egg=psqlgraph",
     ],
-    extras_require={
-        'python_version == "2.7"': [
-            "futures~=3.3",
-            "functools32~=3.2",
-        ]
-    },
     package_data={
         "gdcdatamodel": [
             "xml_mappings/*.yaml",
