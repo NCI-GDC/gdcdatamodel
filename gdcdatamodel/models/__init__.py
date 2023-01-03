@@ -12,21 +12,15 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
-import os
-import sys
-
-import six
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
 import hashlib
 import logging
+import os
+import sys
 from collections import defaultdict
+from functools import lru_cache
 from types import ModuleType
 
+import six
 from psqlgraph import Edge, Node, ext, pg_property
 from sqlalchemy import and_, event
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property

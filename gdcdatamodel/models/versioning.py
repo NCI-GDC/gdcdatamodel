@@ -1,14 +1,9 @@
 import os
 import uuid
+from functools import lru_cache
 
 import six
 from sqlalchemy import and_, event, select
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
 
 UUID_NAMESPACE_SEED = os.getenv(
     "UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-5ea73a379d47"
