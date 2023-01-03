@@ -369,7 +369,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
             if not property_val:
                 raise ValueError(
-                    "Property {0} must have a value on instance {1} for tagging to proceed".format(
+                    "Property {} must have a value on instance {} for tagging to proceed".format(
                         prop, self
                     )
                 )

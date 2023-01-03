@@ -121,11 +121,9 @@ def compute_tag(node):
     """
     keys = node.get_tag_property_values()
     keys += sorted(
-        [
-            six.ensure_str(compute_tag(p.dst))
-            for p in node.edges_out
-            if p.dst.is_taggable() and p.label != "relates_to"
-        ]
+        six.ensure_str(compute_tag(p.dst))
+        for p in node.edges_out
+        if p.dst.is_taggable() and p.label != "relates_to"
     )
     return __generate_hash(keys, node.label)
 

@@ -5,7 +5,7 @@ from jsonschema import Draft4Validator
 
 missing_prop_re = re.compile("'([a-zA-Z_-]+)' is a required property")
 extra_prop_re = re.compile(
-    "Additional properties are not allowed \(u'([a-zA-Z_-]+)' was unexpected\)"
+    r"Additional properties are not allowed \(u'([a-zA-Z_-]+)' was unexpected\)"
 )
 
 
