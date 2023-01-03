@@ -20,7 +20,6 @@ from collections import defaultdict
 from functools import lru_cache
 from types import ModuleType
 
-import six
 from psqlgraph import Edge, Node, ext, pg_property
 from sqlalchemy import and_, event
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
@@ -373,7 +372,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
                         prop, self
                     )
                 )
-            keys.append(six.ensure_str(property_val))
+            keys.append(str(property_val))
         return keys
 
     @property
