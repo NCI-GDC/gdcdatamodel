@@ -12,19 +12,12 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
-import os
-import sys
-
-import six
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
 import hashlib
 import logging
+import os
+import sys
 from collections import defaultdict
+from functools import lru_cache
 from types import ModuleType
 
 from psqlgraph import Edge, Node, ext, pg_property
@@ -375,11 +368,11 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
             if not property_val:
                 raise ValueError(
-                    "Property {0} must have a value on instance {1} for tagging to proceed".format(
+                    "Property {} must have a value on instance {} for tagging to proceed".format(
                         prop, self
                     )
                 )
-            keys.append(six.ensure_str(property_val))
+            keys.append(str(property_val))
         return keys
 
     @property

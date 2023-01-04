@@ -1,14 +1,8 @@
 import os
 import uuid
+from functools import lru_cache
 
-import six
 from sqlalchemy import and_, event, select
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
 
 UUID_NAMESPACE_SEED = os.getenv(
     "UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-5ea73a379d47"
@@ -113,7 +107,7 @@ class TagBuilderConfig:
 def __generate_hash(seed, label):
     namespace = UUID_NAMESPACE
     name = "{}-{}".format(seed, label)
-    return six.ensure_str(str(uuid.uuid5(namespace, name)))
+    return str(uuid.uuid5(namespace, name))
 
 
 @lru_cache(maxsize=None)
@@ -126,11 +120,9 @@ def compute_tag(node):
     """
     keys = node.get_tag_property_values()
     keys += sorted(
-        [
-            six.ensure_str(compute_tag(p.dst))
-            for p in node.edges_out
-            if p.dst.is_taggable() and p.label != "relates_to"
-        ]
+        compute_tag(p.dst)
+        for p in node.edges_out
+        if p.dst.is_taggable() and p.label != "relates_to"
     )
     return __generate_hash(keys, node.label)
 

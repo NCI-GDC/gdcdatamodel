@@ -8,13 +8,3 @@ jupyter-core>=4.1.0,<4.7
 pytest>=4.6.5,<4.6.11
 pytest-cov~=2.8.1
 pre-commit~=1.21.0
-cfgv~=2.0.1
-
-# python2 pins
-more-itertools<=5.0.0
-nbformat<=4.4.0
-ipykernel<5
-ipython<=5.10.0
-pyzmq<=19.0.2
-testpath<=0.4.4
-tornado<=5.1.1
