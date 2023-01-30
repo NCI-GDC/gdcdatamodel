@@ -688,7 +688,7 @@ def parse_edge(
     dst_label = dictionary.schema[dst_label]["id"]
     edge_name = "".join(map(get_class_name_from_id, [src_label, edge_label, dst_label]))
 
-    if edge_cls.is_subclass_loaded(name):
+    if edge_cls.is_fully_qualified_subclass_loaded("{}.{}".format(get_cls_package(package_namespace), name)):
         return "_{}_out".format(edge_name)
 
     edge = EdgeFactory(
