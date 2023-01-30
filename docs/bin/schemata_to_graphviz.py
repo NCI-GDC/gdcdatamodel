@@ -25,7 +25,7 @@ def build_visualization():
     # Add nodes
     for node in m.Node.get_subclasses():
         label = node.get_label()
-        print label
+        # print label
         dot.node(label, label)
 
     # Add edges

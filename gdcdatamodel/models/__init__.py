@@ -172,6 +172,11 @@ def PropertyFactory(name, schema, key=None):
     return setter
 
 
+def get_fully_qualified_class_name_from_id(_id, package_namespace):
+    class_name = get_class_name_from_id(_id)
+    return "{}.{}".format(get_cls_package(package_namespace), class_name)
+
+
 def get_class_name_from_id(_id):
     return "".join([a.capitalize() for a in _id.split("_")])
 
@@ -642,8 +647,8 @@ def load_nodes(dictionary, node_cls=None, package_namespace=None):
     node_cls = node_cls or Node
     for entity, subschema in dictionary.schema.items():
         _id = subschema["id"]
-        name = get_class_name_from_id(_id)
-        if not node_cls.is_subclass_loaded(name):
+        name = get_fully_qualified_class_name_from_id(_id, package_namespace)
+        if not node_cls.is_fully_qualified_subclass_loaded(name):
             try:
                 cls = NodeFactory(_id, subschema, node_cls, package_namespace)
                 register_class(cls, package_namespace)
