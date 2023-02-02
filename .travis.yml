@@ -1,18 +1,18 @@
+---
 language: python
 dist: focal
 
 python:
-  - 2.7
   - 3.5
   - 3.6.8
   - 3.7
   - 3.8
 
 addons:
-  postgresql: "13"
+  postgresql: '13'
   apt:
     sources:
-      - sourceline: deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main 13
+      - sourceline: deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main 13
         key_url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
     packages:
       - postgresql-13

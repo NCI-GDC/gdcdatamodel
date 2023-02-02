@@ -1,8 +1,7 @@
 import pytest
 
-from gdcdatamodel.models import versioning as v
 from gdcdatamodel.models import basic  # noqa
-
+from gdcdatamodel.models import versioning as v
 
 EXPECTED_TAGS = {
     "be66197b-f6cc-4366-bded-365856ec4f63": "84044bd2-54a4-5837-b83d-f920eb97c18d",

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """gdcdatamodel.models
 ----------------------------------
 
@@ -14,64 +12,43 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
+import hashlib
+import logging
 import os
 import sys
-
-import six
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
-from types import ModuleType
-import logging
-
 from collections import defaultdict
+from functools import lru_cache
+from types import ModuleType
 
+from psqlgraph import Edge, Node, ext, pg_property
+from sqlalchemy import and_, event
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import configure_mappers
 
-import hashlib
 from gdcdatamodel.models import (
-    versioned_nodes,
+    batch,
     notifications,
-    submission,
-    redaction,
     qcreport,
+    redaction,
     released_data,
     studyrule,
-    batch,
+    submission,
+    versioned_nodes,
     versioning,
 )
-
-from sqlalchemy import event, and_
-
-from psqlgraph import Node, Edge, pg_property
-
-from psqlgraph import ext
-
-from sqlalchemy.ext.hybrid import (
-    Comparator,
-    hybrid_property,
-)
-
 from gdcdatamodel.models.caching import (
     NOT_RELATED_CASES_CATEGORIES,
     RELATED_CASES_LINK_NAME,
-    cache_related_cases_on_update,
-    cache_related_cases_on_insert,
     cache_related_cases_on_delete,
+    cache_related_cases_on_insert,
+    cache_related_cases_on_update,
     related_cases_from_cache,
     related_cases_from_parents,
 )
-
-from gdcdatamodel.models.indexes import (
-    cls_add_indexes,
-    get_secondary_key_indexes,
-)
+from gdcdatamodel.models.indexes import cls_add_indexes, get_secondary_key_indexes
 from gdcdatamodel.models.misc import FileReport  # noqa
-from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
 from gdcdatamodel.models.utils import py3_to_bytes
+from gdcdatamodel.models.versioned_nodes import VersionedNode  # noqa
 
 logger = logging.getLogger("gdcdatamodel")
 
@@ -391,11 +368,11 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
             if not property_val:
                 raise ValueError(
-                    "Property {0} must have a value on instance {1} for tagging to proceed".format(
+                    "Property {} must have a value on instance {} for tagging to proceed".format(
                         prop, self
                     )
                 )
-            keys.append(six.ensure_str(property_val))
+            keys.append(str(property_val))
         return keys
 
     @property
@@ -753,6 +730,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
             src_cls._pg_links[link["name"]] = {
                 "edge_out": edge_name,
                 "dst_type": node_cls.get_subclass(link["target_type"]),
+                "backref": link["backref"],
             }
 
     for src_cls in node_cls.get_subclasses():
@@ -810,16 +788,6 @@ def inject_pg_edges(node_cls):
 
     """
 
-    def find_backref(link, src_cls):
-        """Given the JSON link definition and a source class :param:`src_cls`,
-        return the name of the backref
-
-        """
-
-        for prop, backref in link["dst_type"]._pg_backrefs.items():
-            if backref["src_type"] == cls:
-                return prop
-
     def cls_inject_forward_edges(cls):
         """We should have already added the links that go OUT from this class,
         so let's add them to `_pg_edges`
@@ -830,9 +798,10 @@ def inject_pg_edges(node_cls):
 
         for name, link in cls._pg_links.items():
             cls._pg_edges[name] = {
-                "backref": find_backref(link, cls),
+                "backref": link["backref"],
                 "type": link["dst_type"],
             }
+            del link["backref"]
 
     def cls_inject_backward_edges(cls):
         """We should have already added the links that go INTO this class,

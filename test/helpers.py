@@ -1,5 +1,5 @@
 import psqlgraph
-from psqlgraph import Node, Edge, create_all, ext
+from psqlgraph import Edge, Node, create_all, ext
 
 from gdcdatamodel import models
 
@@ -16,10 +16,10 @@ def truncate(engine, namespace=None):
     conn = engine.connect()
     for table in abstract_node.get_subclass_table_names():
         if table != abstract_node.__tablename__:
-            conn.execute('delete from {}'.format(table))
+            conn.execute("delete from {}".format(table))
     for table in abstract_edge.get_subclass_table_names():
         if table != abstract_edge.__tablename__:
-            conn.execute('delete from {}'.format(table))
+            conn.execute("delete from {}".format(table))
 
     if not namespace:
         # add ng models only to main graph model

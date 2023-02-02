@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-from psqlgraph import Node, Edge
-from gdcdatamodel import models as md
+from psqlgraph import Edge, Node
 
+from gdcdatamodel import models as md
 
 CACHE_EDGES = {
     Node.get_subclass_named(edge.__src_class__): edge
     for edge in Edge.get_subclasses()
-    if 'RelatesToCase' in edge.__name__
+    if "RelatesToCase" in edge.__name__
 }
 
 
@@ -32,9 +32,10 @@ def set_null_edge_columns(graph):
 
 
 def main():
-    print("No main() action defined, please manually call "
-          "set_null_edge_columns(graph)")
+    print(
+        "No main() action defined, please manually call " "set_null_edge_columns(graph)"
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
