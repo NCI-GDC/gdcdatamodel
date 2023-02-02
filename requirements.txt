@@ -30,7 +30,7 @@ pyrsistent==0.16.1
     #   jsonschema
 pytz==2020.5
     # via gdcdatamodel (setup.py)
-pyyaml==5.3.1
+pyyaml==5.4
     # via gdcdictionary
 rstr==2.2.6
     # via psqlgraph
