@@ -4,7 +4,6 @@
 #
 #    pip-compile
 #
---index-url https://nexus.osdc.io/repository/pypi-all/simple
 
 attrs==22.1.0
     # via jsonschema
