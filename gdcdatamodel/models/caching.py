@@ -53,7 +53,7 @@ def get_related_case_edge_cls_name(node):
 
     """
 
-    return "{}RelatesToCase".format(node.__class__.__name__)
+    return f"{node.__class__.__name__}RelatesToCase"
 
 
 def get_edge_src(edge):
@@ -219,7 +219,7 @@ def update_cache_edges(node, session, correct_cases):
 
     # Get information about the existing edges
     edge_name = get_related_case_edge_cls_name(node)
-    existing_edges = getattr(node, "_{}_out".format(edge_name))
+    existing_edges = getattr(node, f"_{edge_name}_out")
 
     # Remove edges that should no longer exist
     cases_disconnected = [

@@ -69,7 +69,7 @@ def remove_spaces(s):
 def get_cls_package(package_namespace=None):
     cls_package = "gdcdatamodel.models"
     if package_namespace:
-        cls_package = "{}.{}".format(cls_package, package_namespace)
+        cls_package = f"{cls_package}.{package_namespace}"
     return cls_package
 
 
@@ -198,7 +198,7 @@ def cls_inject_versioned_nodes_lookup(cls):
         session = self.get_session()
         if not session:
             raise RuntimeError(
-                "{} not bound to a session. Try .get_versions(session).".format(self)
+                f"{self} not bound to a session. Try .get_versions(session)."
             )
         return self.get_versions(session)
 
@@ -509,7 +509,7 @@ def generate_edge_tablename(src_label, label, dst_label):
     # truncate the each part of the name
     if len(tablename) > 40:
         oldname = tablename
-        logger.debug("Edge tablename {} too long, shortening".format(oldname))
+        logger.debug(f"Edge tablename {oldname} too long, shortening")
         tablename = "edge_{}_{}".format(
             hashlib.md5(py3_to_bytes(tablename)).hexdigest()[:8],
             "{}{}{}".format(
@@ -518,7 +518,7 @@ def generate_edge_tablename(src_label, label, dst_label):
                 "".join([a[:2] for a in dst_label.split("_")])[:10],
             ),
         )
-        logger.debug("Shortening {} -> {}".format(oldname, tablename))
+        logger.debug(f"Shortening {oldname} -> {tablename}")
 
     return tablename
 
@@ -648,7 +648,7 @@ def load_nodes(dictionary, node_cls=None, package_namespace=None):
                 cls = NodeFactory(_id, subschema, node_cls, package_namespace)
                 register_class(cls, package_namespace)
             except Exception:
-                print("Unable to load {}".format(name))
+                print(f"Unable to load {name}")
                 raise
 
 
@@ -684,7 +684,7 @@ def parse_edge(
     edge_name = "".join(map(get_class_name_from_id, [src_label, edge_label, dst_label]))
 
     if edge_cls.is_subclass_loaded(name):
-        return "_{}_out".format(edge_name)
+        return f"_{edge_name}_out"
 
     edge = EdgeFactory(
         edge_name,
@@ -698,7 +698,7 @@ def parse_edge(
         package_namespace=package_namespace,
     )
 
-    return "_{}_out".format(edge.__name__)
+    return f"_{edge.__name__}_out"
 
 
 def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None):
@@ -712,7 +712,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
 
         src_cls = node_cls.get_subclass(src_label)
         if not src_cls:
-            raise RuntimeError("No source class labeled {}".format(src_label))
+            raise RuntimeError(f"No source class labeled {src_label}")
 
         for name, link in get_links(subschema).items():
             edge_label = link["label"]
@@ -747,7 +747,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
             "required": False,
             "target_type": "case",
             "label": "relates_to",
-            "backref": "_related_{}".format(src_cls.label),
+            "backref": f"_related_{src_cls.label}",
         }
 
         parse_edge(
