@@ -24,7 +24,7 @@ logger = logging.getLogger("gdc_postgres_admin")
 logger.setLevel(logging.INFO)
 
 name_root = "table_creator_"
-app_name = "{}{}".format(name_root, random.randint(1000, 9999))
+app_name = f"{name_root}{random.randint(1000, 9999)}"
 
 
 GRANT_READ_PRIVS_SQL = """
@@ -106,7 +106,7 @@ def create_graph_tables(engine, timeout, namespace=None):
     trans = connection.begin()
     logger.info("Setting lock_timeout to %d", timeout)
 
-    timeout_str = "{}s".format(int(timeout + 1))
+    timeout_str = f"{int(timeout + 1)}s"
     connection.execute("SET LOCAL lock_timeout = %s;", timeout_str)
 
     orm_base = ext.get_orm_base(namespace) if namespace else ORMBase
@@ -137,7 +137,7 @@ def create_tables(engine, delay, retries, namespace=None):
             raise RuntimeError("Max retries exceeded")
 
         logger.info(
-            "Trying again in {} seconds ({} retries remaining)".format(delay, retries)
+            f"Trying again in {delay} seconds ({retries} retries remaining)"
         )
         time.sleep(delay)
 

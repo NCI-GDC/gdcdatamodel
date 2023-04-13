@@ -19,11 +19,11 @@ def test_compute_tag(sample_data):
     """Tests version tags are computed correctly per node"""
 
     for node in sample_data:
-        print("\n..........{}...........".format(node))
+        print(f"\n..........{node}...........")
         v_tag = v.compute_tag(node)
         assert (
             v_tag == EXPECTED_TAGS[node.node_id]
-        ), "invalid tag computed for {}".format(node.node_id)
+        ), f"invalid tag computed for {node.node_id}"
 
 
 def test_multi_parent(sample_data):

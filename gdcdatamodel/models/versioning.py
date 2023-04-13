@@ -7,7 +7,7 @@ from sqlalchemy import and_, event, select
 UUID_NAMESPACE_SEED = os.getenv(
     "UUID_NAMESPACE_SEED", "86bb916a-24c5-48e4-8a46-5ea73a379d47"
 )
-UUID_NAMESPACE = uuid.UUID("urn:uuid:{}".format(UUID_NAMESPACE_SEED), version=4)
+UUID_NAMESPACE = uuid.UUID(f"urn:uuid:{UUID_NAMESPACE_SEED}", version=4)
 
 
 class TagKeys:
@@ -106,7 +106,7 @@ class TagBuilderConfig:
 
 def __generate_hash(seed, label):
     namespace = UUID_NAMESPACE
-    name = "{}-{}".format(seed, label)
+    name = f"{seed}-{label}"
     return str(uuid.uuid5(namespace, name))
 
 

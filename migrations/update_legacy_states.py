@@ -107,7 +107,7 @@ def print_cls_query_summary(graph):
         "%s: %d"
         % (
             "legacy_stateless_nodes".ljust(40),
-            sum([query.count() for query in cls_queries.itervalues()]),
+            sum(query.count() for query in cls_queries.itervalues()),
         )
     )
 

@@ -77,9 +77,9 @@ def add_test_database_user(db_config):
 
     try:
         g.engine.execute(
-            "CREATE USER {} WITH PASSWORD '{}'".format(dummy_user, dummy_pwd)
+            f"CREATE USER {dummy_user} WITH PASSWORD '{dummy_pwd}'"
         )
-        g.engine.execute("GRANT USAGE ON SCHEMA public TO {}".format(dummy_user))
+        g.engine.execute(f"GRANT USAGE ON SCHEMA public TO {dummy_user}")
         yield dummy_user, dummy_pwd
     finally:
         g.engine.execute("DROP OWNED BY {0}; DROP USER {0}".format(dummy_user))
@@ -161,7 +161,7 @@ def test_grant_permissions(
 
     # verify user does not have permission
     invalid_permission_fn(g)
-    run_admin_command(["graph-grant", "--{}={}".format(permission, dummy_user)])
+    run_admin_command(["graph-grant", f"--{permission}={dummy_user}"])
 
     # verify user now has permission
     valid_permission_fn(g)
@@ -200,12 +200,12 @@ def test_revoke_permissions(
     )
 
     # grant user permissions
-    run_admin_command(["graph-grant", "--{}={}".format(permission, dummy_user)])
+    run_admin_command(["graph-grant", f"--{permission}={dummy_user}"])
 
     # verify user has permission
     valid_permission_fn(g)
 
     # revoke permission
-    run_admin_command(["graph-revoke", "--{}={}".format(permission, dummy_user)])
+    run_admin_command(["graph-revoke", f"--{permission}={dummy_user}"])
     # verify user no longer has permission
     invalid_permission_fn(g)

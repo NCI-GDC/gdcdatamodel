@@ -42,7 +42,7 @@ def test_loading_same_dictionary():
 def test_case_cache_related_edge_resolution():
 
     def_ns = models.caching.get_related_case_edge_cls(models.AlignedReads())
-    def_class_name = "{}.{}".format(def_ns.__module__, def_ns.__name__)
+    def_class_name = f"{def_ns.__module__}.{def_ns.__name__}"
 
     assert "gdcdatamodel.models.AlignedReadsRelatesToCase" == def_class_name
 
@@ -50,5 +50,5 @@ def test_case_cache_related_edge_resolution():
     from gdcdatamodel.models import gdc  # noqa
 
     ns = models.caching.get_related_case_edge_cls(gdc.AlignedReads())
-    class_name = "{}.{}".format(ns.__module__, ns.__name__)
+    class_name = f"{ns.__module__}.{ns.__name__}"
     assert "gdcdatamodel.models.gdc.AlignedReadsRelatesToCase" == class_name

@@ -54,7 +54,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
     def drop_all_tables(cls):
         for scls in Node.get_subclasses():
             try:
-                cls.engine.execute("DROP TABLE {} CASCADE".format(scls.__tablename__))
+                cls.engine.execute(f"DROP TABLE {scls.__tablename__} CASCADE")
             except Exception as e:
                 cls.logger.warning(e)
 
