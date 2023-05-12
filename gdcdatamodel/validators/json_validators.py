@@ -22,7 +22,7 @@ def get_keys(error_msg):
         return []
 
 
-class GDCJSONValidator(object):
+class GDCJSONValidator:
     def __init__(self):
         self.schemas = gdcdictionary
 

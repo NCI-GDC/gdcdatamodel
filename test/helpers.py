@@ -16,10 +16,10 @@ def truncate(engine, namespace=None):
     conn = engine.connect()
     for table in abstract_node.get_subclass_table_names():
         if table != abstract_node.__tablename__:
-            conn.execute("delete from {}".format(table))
+            conn.execute(f"delete from {table}")
     for table in abstract_edge.get_subclass_table_names():
         if table != abstract_edge.__tablename__:
-            conn.execute("delete from {}".format(table))
+            conn.execute(f"delete from {table}")
 
     if not namespace:
         # add ng models only to main graph model
@@ -63,4 +63,4 @@ def truncate_ng_tables(conn):
 
     for meta in ng_models_metadata:
         for table in meta.tables:
-            conn.execute("DELETE FROM  {}".format(table))
+            conn.execute(f"DELETE FROM  {table}")
