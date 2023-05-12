@@ -1,7 +1,7 @@
 from gdcdictionary import gdcdictionary
 
 
-class GDCGraphValidator(object):
+class GDCGraphValidator:
     """
     Validator that validates entities' relationship with existing nodes in
     database.
@@ -28,7 +28,7 @@ class GDCGraphValidator(object):
                     self.optional_validators[validator_name].validate()
 
 
-class GDCLinksValidator(object):
+class GDCLinksValidator:
     def validate(self, entities, graph=None):
         for entity in entities:
             for link in gdcdictionary.schema[entity.node.label]["links"]:
@@ -57,7 +57,7 @@ class GDCLinksValidator(object):
         if schema.get("required") is True and len(submitted_links) == 0:
             names = ", ".join(schema_links[:-2] + [" or ".join(schema_links[-2:])])
             entity.record_error(
-                "Entity is missing a required link to {}".format(names),
+                f"Entity is missing a required link to {names}",
                 keys=schema_links,
             )
 
@@ -70,7 +70,7 @@ class GDCLinksValidator(object):
                 keys=schema_links,
             )
             for edge in entity.node.edges_out:
-                entity.record_error("{}".format(edge.dst.submitter_id))
+                entity.record_error(f"{edge.dst.submitter_id}")
 
         result = {"length": num_of_edges, "name": ", ".join(schema_links)}
 
@@ -86,7 +86,7 @@ class GDCLinksValidator(object):
             if multi in ["many_to_one", "one_to_one"]:
                 if len(targets) > 1:
                     entity.record_error(
-                        "'{}' link has to be {}".format(association, multi),
+                        f"'{association}' link has to be {multi}",
                         keys=[association],
                     )
 
@@ -108,13 +108,13 @@ class GDCLinksValidator(object):
         else:
             if link_sub_schema.get("required") is True:
                 entity.record_error(
-                    "Entity is missing required link to {}".format(association),
+                    f"Entity is missing required link to {association}",
                     keys=[association],
                 )
         return result
 
 
-class GDCUniqueKeysValidator(object):
+class GDCUniqueKeysValidator:
     def validate(self, entities, graph=None):
         for entity in entities:
             schema = gdcdictionary.schema[entity.node.label]

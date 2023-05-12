@@ -6,7 +6,7 @@ from gdcdatamodel.models import *
 from gdcdatamodel.validators import GDCGraphValidator, GDCJSONValidator
 
 
-class MockSubmissionEntity(object):
+class MockSubmissionEntity:
     def __init__(self):
         self.errors = []
         self.node = None
@@ -18,7 +18,7 @@ class MockSubmissionEntity(object):
 
 class TestValidators(BaseTestCase):
     def setUp(self):
-        super(TestValidators, self).setUp()
+        super().setUp()
 
         self.graph_validator = GDCGraphValidator()
         self.json_validator = GDCJSONValidator()

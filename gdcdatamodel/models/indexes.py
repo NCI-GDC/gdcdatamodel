@@ -32,20 +32,20 @@ def index_name(cls, description):
 
     """
 
-    name = "index_{}_{}".format(cls.__tablename__, description)
+    name = f"index_{cls.__tablename__}_{description}"
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
     # truncate the each part of the name
     if len(name) > 40:
         oldname = index_name
-        logger.debug("Edge tablename {} too long, shortening".format(oldname))
+        logger.debug(f"Edge tablename {oldname} too long, shortening")
         name = "index_{}_{}_{}".format(
             hashlib.md5(py3_to_bytes(cls.__tablename__)).hexdigest()[:8],
             "".join([a[:4] for a in cls.get_label().split("_")])[:20],
             "_".join([a[:8] for a in description.split("_")])[:25],
         )
 
-        logger.debug("Shortening {} -> {}".format(oldname, index_name))
+        logger.debug(f"Shortening {oldname} -> {index_name}")
 
     return name
 

@@ -57,7 +57,7 @@ def update_project_related_case_cache(project):
 
     """
 
-    logger.info("Project: {}".format(project.code))
+    logger.info(f"Project: {project.code}")
     for case in project.cases:
         recursive_update_related_case_caches(case, case)
 
@@ -83,7 +83,7 @@ def main():
     )
 
     args = parser.parse_args()
-    prompt = "Password for {}:".format(args.user)
+    prompt = f"Password for {args.user}:"
     password = args.password or getpass.getpass(prompt)
     g = PsqlGraphDriver(args.host, args.user, password, args.database)
 
