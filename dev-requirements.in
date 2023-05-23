@@ -1,5 +1,6 @@
 -c requirements.txt
 
+dataclasses; python_version < '3.7'
 notebook
 jupyter
 jupyter-client
