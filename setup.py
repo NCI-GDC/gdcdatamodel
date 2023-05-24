@@ -9,14 +9,14 @@ setup(
     setup_requires=["setuptools_scm<6"],
     packages=find_packages(),
     install_requires=[
-        "pytz~=2020.1",
-        "graphviz>=0.4.10,<0.17",
-        "jsonschema~=3.2",
-        "pyrsistent<0.17.0",
-        "decorator<=5.0.0",
-        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.6.5#egg=gdcdictionary",
-        "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.2#egg=gdc-ng-models",
-        "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@4.0.0#egg=psqlgraph",
+        "pytz",
+        "graphviz>=0.4.10",
+        "jsonschema",
+        "pyrsistent",
+        "decorator",
+        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.6.6-rc.1#egg=gdcdictionary",
+        "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.4-rc.2#egg=gdc-ng-models",
+        "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@4.0.1-rc.1#egg=psqlgraph",
     ],
     package_data={
         "gdcdatamodel": [
