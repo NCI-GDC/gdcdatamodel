@@ -14,9 +14,9 @@ cryptography==3.4.8
     # via gdc-ng-models
 decorator==5.1.1
     # via gdcdatamodel (setup.py)
-gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.4-rc.2
+gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.4
     # via gdcdatamodel (setup.py)
-gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.6.6-rc.1
+gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.6.6
     # via gdcdatamodel (setup.py)
 graphviz==0.19.1
     # via gdcdatamodel (setup.py)
@@ -26,7 +26,7 @@ jsonschema==3.2.0
     # via
     #   gdcdatamodel (setup.py)
     #   gdcdictionary
-psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@4.0.1-rc.1
+psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@4.0.1
     # via gdcdatamodel (setup.py)
 psycopg2==2.9.6
     # via
