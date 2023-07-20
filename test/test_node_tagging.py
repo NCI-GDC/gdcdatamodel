@@ -1,3 +1,4 @@
+import os
 from test.helpers import create_tables, truncate
 
 import pytest
@@ -11,9 +12,9 @@ def bg():
     """Fixture for database driver"""
 
     cfg = {
-        "host": "localhost",
-        "user": "test",
-        "password": "test",
+        "host": os.getenv("PG_HOST", "localhost"),
+        "user": os.getenv("PG_USER", "test"),
+        "password": os.getenv("PG_PASS", "test"),
         "database": "dev_models",
         "package_namespace": "basic",
     }

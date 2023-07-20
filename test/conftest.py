@@ -4,6 +4,7 @@ gdcdatamodel.test.conftest
 
 pytest setup for gdcdatamodel tests
 """
+import os
 import random
 import unittest
 import uuid
@@ -25,10 +26,10 @@ from gdcdatamodel.models import basic  # noqa
 @pytest.fixture(scope="session")
 def db_config():
     return {
-        "host": "localhost",
-        "user": "test",
-        "password": "test",
-        "database": "automated_test",
+        "host": os.getenv("PG_HOST", "localhost"),
+        "user": os.getenv("PG_HOST", "test"),
+        "password": os.getenv("PG_PASS", "test"),
+        "database": os.getenv("PG_NAME","automated_test"),
     }
 
 
