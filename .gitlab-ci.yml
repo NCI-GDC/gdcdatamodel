@@ -1,0 +1,49 @@
+---
+
+include:
+  - project: nci-gdc/gitlab-templates
+    ref: 0.2.0
+    file:
+      - templates/global/full.yaml
+      - templates/python/full.yaml
+      - templates/common/python.yaml
+
+tox:
+  stage: test
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ['3.6', '3.7', '3.8']
+  image: ${BASE_CONTAINER_REGISTRY}/python${PYTHON_VERSION}-builder
+  services:
+    - name: docker.osdc.io/ncigdc/ci-postgres-13:feat_dev-1924-postgres-init-script-3673ef90
+      alias: postgres
+  tags:
+    - dind
+  variables:
+    BASE_CONTAINER_VERSION: 2.3.1
+    # these are for postgres docker
+    POSTGRES_HOST_AUTH_METHOD: trust
+    PG_HOST: postgres
+    PG_INIT_SQL: |
+      create user test with superuser password 'test';
+      create database automated_test with owner test;
+      create database dev_models with owner test;
+  before_script:
+    - !reference [.load_github_key, script]
+    - pip install "tox<4"
+  script:
+    - tox -r -e py
+
+
+# used by release
+.python_versions:
+  parallel:
+    matrix:
+      - BUILD_PY_VERSION: [python3.6]
+      - RELEASE_PY_VERSION: [python3.6]
+
+release:
+  before_script:
+    - git fetch --unshallow || true
+  variables:
+    LEGACY_BASE_CONTAINER_VERSION: 2.3.0
