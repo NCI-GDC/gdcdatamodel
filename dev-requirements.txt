@@ -4,48 +4,21 @@
 #
 #    pip-compile --extra=dev --output-file=dev-requirements.txt
 #
-appnope==0.1.3
-    # via
-    #   ipykernel
-    #   ipython
-argon2-cffi==21.3.0
-    # via notebook
-argon2-cffi-bindings==21.2.0
-    # via argon2-cffi
-async-generator==1.10
-    # via nbclient
 attrs==22.2.0
     # via
     #   gdcdictionary
     #   jsonschema
     #   pytest
-backcall==0.2.0
-    # via ipython
-bleach==4.1.0
-    # via nbconvert
 cffi==1.15.1
-    # via
-    #   argon2-cffi-bindings
-    #   cryptography
+    # via cryptography
 coverage[toml]==6.2
     # via pytest-cov
 cryptography==3.4.8
     # via gdc-ng-models
 dataclasses==0.8 ; python_version < "3.7"
-    # via
-    #   argon2-cffi
-    #   gdcdatamodel (setup.py)
+    # via gdcdatamodel (setup.py)
 decorator==5.1.1
-    # via
-    #   gdcdatamodel (setup.py)
-    #   ipython
-    #   traitlets
-defusedxml==0.7.1
-    # via nbconvert
-entrypoints==0.4
-    # via
-    #   jupyter-client
-    #   nbconvert
+    # via gdcdatamodel (setup.py)
 gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.4
     # via gdcdatamodel (setup.py)
 gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.6.6
@@ -59,132 +32,24 @@ importlib-metadata==4.8.3
     #   pytest
 iniconfig==1.1.1
     # via pytest
-ipykernel==5.5.6
-    # via
-    #   ipywidgets
-    #   jupyter
-    #   jupyter-console
-    #   notebook
-    #   qtconsole
-ipython==7.16.3
-    # via
-    #   ipykernel
-    #   ipywidgets
-    #   jupyter-console
-ipython-genutils==0.2.0
-    # via
-    #   ipykernel
-    #   ipywidgets
-    #   nbformat
-    #   notebook
-    #   qtconsole
-    #   traitlets
-ipywidgets==7.7.5
-    # via jupyter
-jedi==0.17.2
-    # via ipython
-jinja2==3.0.3
-    # via
-    #   nbconvert
-    #   notebook
 jsonschema==3.2.0
     # via
     #   gdcdatamodel (setup.py)
     #   gdcdictionary
-    #   nbformat
-jupyter==1.0.0
-    # via gdcdatamodel (setup.py)
-jupyter-client==7.1.2
-    # via
-    #   gdcdatamodel (setup.py)
-    #   ipykernel
-    #   jupyter-console
-    #   nbclient
-    #   notebook
-    #   qtconsole
-jupyter-console==6.4.3
-    # via
-    #   gdcdatamodel (setup.py)
-    #   jupyter
-jupyter-core==4.9.2
-    # via
-    #   gdcdatamodel (setup.py)
-    #   jupyter-client
-    #   nbconvert
-    #   nbformat
-    #   notebook
-    #   qtconsole
-jupyterlab-pygments==0.1.2
-    # via nbconvert
-jupyterlab-widgets==1.1.4
-    # via ipywidgets
-markupsafe==2.0.1
-    # via jinja2
-mistune==0.8.4
-    # via nbconvert
-nbclient==0.5.9
-    # via nbconvert
-nbconvert==6.0.7
-    # via
-    #   jupyter
-    #   notebook
-nbformat==5.1.3
-    # via
-    #   nbclient
-    #   nbconvert
-    #   notebook
-nest-asyncio==1.5.6
-    # via
-    #   jupyter-client
-    #   nbclient
-    #   notebook
-notebook==6.4.10
-    # via
-    #   gdcdatamodel (setup.py)
-    #   jupyter
-    #   widgetsnbextension
 packaging==21.3
-    # via
-    #   bleach
-    #   pytest
-    #   qtpy
-pandocfilters==1.5.0
-    # via nbconvert
-parso==0.7.1
-    # via jedi
-pexpect==4.8.0
-    # via ipython
-pickleshare==0.7.5
-    # via ipython
+    # via pytest
 pluggy==1.0.0
     # via pytest
-prometheus-client==0.16.0
-    # via notebook
-prompt-toolkit==3.0.36
-    # via
-    #   ipython
-    #   jupyter-console
 psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@4.0.1
     # via gdcdatamodel (setup.py)
 psycopg2==2.9.6
     # via
     #   gdc-ng-models
     #   psqlgraph
-ptyprocess==0.7.0
-    # via
-    #   pexpect
-    #   terminado
 py==1.11.0
     # via pytest
 pycparser==2.21
     # via cffi
-pygments==2.14.0
-    # via
-    #   ipython
-    #   jupyter-console
-    #   jupyterlab-pygments
-    #   nbconvert
-    #   qtconsole
 pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.0
@@ -197,73 +62,26 @@ pytest==7.0.1
     #   pytest-cov
 pytest-cov==4.0.0
     # via gdcdatamodel (setup.py)
-python-dateutil==2.8.2
-    # via jupyter-client
 pytz==2020.5
     # via
     #   gdc-ng-models
     #   gdcdatamodel (setup.py)
 pyyaml==6.0.1
     # via gdcdictionary
-pyzmq==25.0.2
-    # via
-    #   jupyter-client
-    #   notebook
-    #   qtconsole
-qtconsole==5.2.2
-    # via jupyter
-qtpy==2.0.1
-    # via qtconsole
 rstr==3.0.0
     # via psqlgraph
-send2trash==1.8.2
-    # via notebook
 six==1.16.0
-    # via
-    #   bleach
-    #   jsonschema
-    #   python-dateutil
-    #   traitlets
+    # via jsonschema
 sqlalchemy==1.3.24
     # via
     #   gdc-ng-models
     #   psqlgraph
-terminado==0.12.1
-    # via notebook
-testpath==0.6.0
-    # via nbconvert
 tomli==1.2.3
     # via
     #   coverage
     #   pytest
-tornado==6.1
-    # via
-    #   ipykernel
-    #   jupyter-client
-    #   notebook
-    #   terminado
-traitlets==4.3.3
-    # via
-    #   ipykernel
-    #   ipython
-    #   ipywidgets
-    #   jupyter-client
-    #   jupyter-core
-    #   nbclient
-    #   nbconvert
-    #   nbformat
-    #   notebook
-    #   qtconsole
 typing-extensions==4.1.1
-    # via
-    #   argon2-cffi
-    #   importlib-metadata
-wcwidth==0.2.6
-    # via prompt-toolkit
-webencodings==0.5.1
-    # via bleach
-widgetsnbextension==3.6.4
-    # via ipywidgets
+    # via importlib-metadata
 xlocal==0.5
     # via psqlgraph
 zipp==3.6.0
