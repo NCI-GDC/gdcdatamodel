@@ -20,7 +20,6 @@ setup(
     ],
     extras_require={
         "dev": [
-            "dataclasses; python_version < '3.7'",
             "pytest",
             "pytest-cov",
         ],

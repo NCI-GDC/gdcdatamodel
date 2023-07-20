@@ -15,8 +15,6 @@ coverage[toml]==6.2
     # via pytest-cov
 cryptography==3.4.8
     # via gdc-ng-models
-dataclasses==0.8 ; python_version < "3.7"
-    # via gdcdatamodel (setup.py)
 decorator==5.1.1
     # via gdcdatamodel (setup.py)
 gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.4
