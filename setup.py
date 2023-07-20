@@ -20,14 +20,14 @@ setup(
     ],
     extras_require={
         "dev": [
-"dataclasses; python_version < '3.7'",
-"notebook",
-"jupyter",
-"jupyter-client",
-"jupyter-console",
-"jupyter-core",
-"pytest",
-"pytest-cov",
+            "dataclasses; python_version < '3.7'",
+            "notebook",
+            "jupyter",
+            "jupyter-client",
+            "jupyter-console",
+            "jupyter-core",
+            "pytest",
+            "pytest-cov",
         ]
     },
     package_data={
