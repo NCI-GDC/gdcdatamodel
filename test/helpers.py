@@ -1,5 +1,6 @@
+import os
 import psqlgraph
-from psqlgraph import Edge, Node, create_all, ext
+from psqlgraph import create_all, ext
 
 from gdcdatamodel import models
 
@@ -64,3 +65,11 @@ def truncate_ng_tables(conn):
     for meta in ng_models_metadata:
         for table in meta.tables:
             conn.execute(f"DELETE FROM  {table}")
+
+
+DB_CONFIG = {
+        "host": os.getenv("PG_HOST", "localhost"),
+        "user": os.getenv("PG_HOST", "test"),
+        "password": os.getenv("PG_PASS", "test"),
+        "database": os.getenv("PG_NAME","automated_test"),
+}

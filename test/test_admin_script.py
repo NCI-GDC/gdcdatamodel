@@ -6,9 +6,11 @@ from sqlalchemy.exc import ProgrammingError
 from gdcdatamodel import gdc_postgres_admin as pgadmin
 from gdcdatamodel import models
 
+from test.helpers import DB_CONFIG
 
-def get_base_args(host="localhost", database="automated_test", namespace=None):
-    return ["-H", host, "-U", "postgres", "-D", database, "-N", namespace or ""]
+
+def get_base_args(host=DB_CONFIG.get('host'), database=DB_CONFIG.get('database'), namespace=None):
+    return ["-H", host, "-U", DB_CONFIG.get('user'), "-D", database, "-N", namespace or ""]
 
 
 def get_admin_driver(db_config, namespace=None):
