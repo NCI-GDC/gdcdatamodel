@@ -2,7 +2,7 @@
 
 include:
   - project: nci-gdc/gitlab-templates
-    ref: bugfix/only_run_python_release_on_success
+    ref: 0.2.1
     file:
       - templates/global/full.yaml
       - templates/python/full.yaml
