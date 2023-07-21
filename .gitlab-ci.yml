@@ -2,7 +2,7 @@
 
 include:
   - project: nci-gdc/gitlab-templates
-    ref: 0.2.0
+    ref: bugfix/only_run_python_release_on_success
     file:
       - templates/global/full.yaml
       - templates/python/full.yaml
@@ -13,14 +13,13 @@ tox:
   parallel:
     matrix:
       - PYTHON_VERSION: ['3.6', '3.7', '3.8']
-  image: ${BASE_CONTAINER_REGISTRY}/python${PYTHON_VERSION}-builder
+  image: ${BASE_CONTAINER_REGISTRY}/python${PYTHON_VERSION}-builder:{BASE_CONTAINER_VERSION}
   services:
     - name: docker.osdc.io/ncigdc/ci-postgres-13:feat_dev-1924-postgres-init-script-3673ef90
       alias: postgres
   tags:
     - dind
   variables:
-    BASE_CONTAINER_VERSION: 2.3.1
     # these are for postgres docker
     POSTGRES_HOST_AUTH_METHOD: trust
     PG_HOST: postgres
@@ -45,5 +44,3 @@ tox:
 release:
   before_script:
     - git fetch --unshallow || true
-  variables:
-    LEGACY_BASE_CONTAINER_VERSION: 2.3.0
