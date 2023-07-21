@@ -1,4 +1,5 @@
-from test.helpers import create_tables, truncate
+import os
+from test import helpers
 
 import pytest
 from psqlgraph import PsqlGraphDriver
@@ -11,17 +12,17 @@ def bg():
     """Fixture for database driver"""
 
     cfg = {
-        "host": "localhost",
-        "user": "test",
-        "password": "test",
+        "host": os.getenv("PG_HOST", "localhost"),
+        "user": os.getenv("PG_USER", "test"),
+        "password": os.getenv("PG_PASS", "test"),
         "database": "dev_models",
         "package_namespace": "basic",
     }
 
     g = PsqlGraphDriver(**cfg)
-    create_tables(g.engine, namespace="basic")
+    helpers.create_tables(g.engine, namespace="basic")
     yield g
-    truncate(g.engine, namespace="basic")
+    helpers.truncate(g.engine, namespace="basic")
 
 
 @pytest.fixture(scope="module")

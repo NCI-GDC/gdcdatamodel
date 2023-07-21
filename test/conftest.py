@@ -7,8 +7,7 @@ pytest setup for gdcdatamodel tests
 import random
 import unittest
 import uuid
-from test.helpers import create_tables, truncate
-from test.models import BasicDictionary
+from test import helpers, models as test_models
 
 import pkg_resources
 import pytest
@@ -18,18 +17,13 @@ from sqlalchemy import create_engine
 
 from gdcdatamodel import models
 
-models.load_dictionary(BasicDictionary, "basic")
+models.load_dictionary(test_models.BasicDictionary, "basic")
 from gdcdatamodel.models import basic  # noqa
 
 
 @pytest.fixture(scope="session")
 def db_config():
-    return {
-        "host": "localhost",
-        "user": "test",
-        "password": "test",
-        "database": "automated_test",
-    }
+    return helpers.DB_CONFIG
 
 
 @pytest.fixture(scope="session")
@@ -46,11 +40,11 @@ def tables_created(db_config):
         )
     )
 
-    create_tables(engine)
+    helpers.create_tables(engine)
 
     yield
 
-    truncate(engine)
+    helpers.truncate(engine)
 
 
 @pytest.fixture(scope="session")
@@ -125,10 +119,10 @@ def redacted_fixture(g):
 @pytest.mark.usefixtures("db_class")
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        truncate(self.g.engine)
+        helpers.truncate(self.g.engine)
 
     def tearDown(self):
-        truncate(self.g.engine)
+        helpers.truncate(self.g.engine)
 
 
 @pytest.fixture(scope="module")
@@ -136,7 +130,7 @@ def sample_data():
     with pkg_resources.resource_stream(__name__, "schema/data/sample.yaml") as f:
         graph = yaml.safe_load(f)
 
-    f = mocks.GraphFactory(basic, BasicDictionary)
+    f = mocks.GraphFactory(basic, test_models.BasicDictionary)
     nodes = f.create_from_nodes_and_edges(
         nodes=graph["nodes"],
         edges=graph["edges"],
