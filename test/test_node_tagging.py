@@ -1,5 +1,5 @@
 import os
-from test.helpers import create_tables, truncate
+from test import helpers
 
 import pytest
 from psqlgraph import PsqlGraphDriver
@@ -20,9 +20,9 @@ def bg():
     }
 
     g = PsqlGraphDriver(**cfg)
-    create_tables(g.engine, namespace="basic")
+    helpers.create_tables(g.engine, namespace="basic")
     yield g
-    truncate(g.engine, namespace="basic")
+    helpers.truncate(g.engine, namespace="basic")
 
 
 @pytest.fixture(scope="module")

@@ -6,7 +6,7 @@ from psqlgraph import Edge, Node, PsqlGraphDriver
 from psqlgraph.exc import ValidationError
 
 from gdcdatamodel import models as md
-from test.helpers import DB_CONFIG
+from test import helpers
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,10 +14,10 @@ logging.basicConfig(level=logging.INFO)
 class TestDataModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        host = DB_CONFIG.get('host')
-        user = DB_CONFIG.get('user')
-        password = DB_CONFIG.get('password')
-        database = DB_CONFIG.get('database')
+        host = helpers.DB_CONFIG.get('host')
+        user = helpers.DB_CONFIG.get('user')
+        password = helpers.DB_CONFIG.get('password')
+        database = helpers.DB_CONFIG.get('database')
         cls.g = PsqlGraphDriver(host, user, password, database)
 
         cls._clear_tables()

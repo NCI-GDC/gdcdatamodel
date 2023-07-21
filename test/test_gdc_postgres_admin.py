@@ -11,7 +11,7 @@ from sqlalchemy.exc import ProgrammingError
 from gdcdatamodel import gdc_postgres_admin as pgadmin
 from gdcdatamodel import models
 
-from test.helpers import DB_CONFIG
+from test import helpers
 
 logging.basicConfig()
 
@@ -21,9 +21,9 @@ class TestGDCPostgresAdmin(unittest.TestCase):
     logger = logging.getLogger("TestGDCPostgresAdmin")
     logger.setLevel(logging.INFO)
 
-    host = DB_CONFIG.get('host')
-    user = DB_CONFIG.get('user')
-    database = DB_CONFIG.get('database')
+    host = helpers.DB_CONFIG.get('host')
+    user = helpers.DB_CONFIG.get('user')
+    database = helpers.DB_CONFIG.get('database')
 
     base_args = [
         "-H",
