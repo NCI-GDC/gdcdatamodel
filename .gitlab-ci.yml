@@ -15,7 +15,7 @@ tox:
       - PYTHON_VERSION: ['3.7', '3.8']
   image: ${BASE_CONTAINER_REGISTRY}/python${PYTHON_VERSION}-builder:${BASE_CONTAINER_VERSION}
   services:
-    - name: docker.osdc.io/ncigdc/ci-postgres-13:feat_dev-1924-postgres-init-script-3673ef90
+    - name: docker.osdc.io/ncigdc/ci-postgres-13:${BASE_CONTAINER_VERSION}
       alias: postgres
   tags:
     - dind
