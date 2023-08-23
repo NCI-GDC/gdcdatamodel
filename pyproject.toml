@@ -1,0 +1,33 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "setuptools_scm[toml]>=3.4"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+write_to = "gdcdatamodel/_version.py"
+
+[tool.black]
+line-length = 88
+target-version = [
+    'py37',
+]
+include = '\.pyi?$'
+
+[tool.coverage.run]
+branch = true
+context = "unit tests"
+source = ["gdcdatamodel"]
+
+[tool.coverage.html]
+title = "gdcdatamodel coverage report"
+directory = "htmlcov"
+show_contexts = true
+
+[tool.isort]
+profile = "black"
+known_third_party = ["addict", "authutils", "cdiserrors", "cdislogging", "ciso8601", "deepdiff", "defusedcsv", "dotenv", "envelopes", "flask", "flask_cors", "gdc_ng_models", "gdcdictionary", "httmock", "indexclient", "indexd", "indexd_test_utils", "jsonschema", "mock", "pkg_resources", "psqlgraph", "pytest", "requests", "setuptools", "simplejson", "six", "sqlalchemy", "yaml"]
+known_first_party = ["gdcdatamodel", "setup_batch", "setup_notifications", "setup_psqlgraph", "setup_redactionslog", "setup_report", "setup_study_data", "setup_transactionlogs"]
