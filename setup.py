@@ -31,9 +31,9 @@ setup(
         "jsonschema",
         "pyrsistent",
         "decorator",
-        "gdcdictionary @ git+https://github.com/NCI-GDC/gdcdictionary.git@2.6.6#egg=gdcdictionary",
-        "gdc-ng-models @ git+https://github.com/NCI-GDC/gdc-ng-models.git@1.6.4#egg=gdc-ng-models",
-        "psqlgraph @ git+https://github.com/NCI-GDC/psqlgraph.git@4.0.1#egg=psqlgraph",
+        "gdcdictionary",
+        "gdc-ng-models",
+        "psqlgraph",
     ],
     extras_require={
         "dev": [
