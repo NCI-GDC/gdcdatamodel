@@ -8,17 +8,16 @@ include:
       - templates/python/full.yaml
       - templates/common/python.yaml
 
-tox:
-  stage: test
+.python_versions:
   parallel:
     matrix:
-      - PYTHON_VERSION: ['3.7', '3.8']
-  image: ${BASE_CONTAINER_REGISTRY}/python${PYTHON_VERSION}-builder:${BASE_CONTAINER_VERSION}
+      - BUILD_PY_VERSION: [python3.7, python3.8]
+        RELEASE_PY_VERSION: [python3.7]
+
+tox:
   services:
     - name: docker.osdc.io/ncigdc/ci-postgres-13:2.3.2
       alias: postgres
-  tags:
-    - dind
   variables:
     # these are for postgres docker
     POSTGRES_HOST_AUTH_METHOD: trust
@@ -35,12 +34,6 @@ tox:
 
 
 # used by release
-.python_versions:
-  parallel:
-    matrix:
-      - BUILD_PY_VERSION: [python3.7]
-      - RELEASE_PY_VERSION: [python3.7]
-
 release:
   before_script:
     - git fetch --unshallow || true
