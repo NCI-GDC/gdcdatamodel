@@ -31,7 +31,7 @@ setup(
         "jsonschema",
         "pyrsistent",
         "decorator",
-        "gdcdictionary",
+        "gdcdictionary==2.6.9.dev9",
         "gdc-ng-models",
         "psqlgraph",
     ],
