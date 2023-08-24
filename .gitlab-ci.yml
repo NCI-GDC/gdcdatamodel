@@ -8,13 +8,10 @@ include:
       - templates/python/full.yaml
       - templates/common/python.yaml
 
-.python_versions:
+tox:
   parallel:
     matrix:
-      - BUILD_PY_VERSION: [python3.7, python3.8]
-        RELEASE_PY_VERSION: [python3.7]
-
-tox:
+      - BUILD_PY_VERSION: [python3.7, python3.8, python3.9]
   services:
     - name: docker.osdc.io/ncigdc/ci-postgres-13:2.3.2
       alias: postgres
