@@ -8,6 +8,7 @@ GDC Data Model
 Repo to keep information about the GDC data model design.
 
 - [GDC Data Model](#gdc-data-model)
+- [Developing](#developing-and-building-the-dependencies)
 - [Installation](#installation)
 - [Jupyter + Graphviz](#jupyter--graphviz)
   - [Documentation](#documentation)
@@ -18,6 +19,18 @@ Repo to keep information about the GDC data model design.
 - [Tests](#tests)
 - [Setup pre-commit hook to check for secrets](#setup-pre-commit-hook-to-check-for-secrets)
 - [Contributing](#contributing)
+
+# Developing and building the dependencies
+Using a python3.5 environment
+```
+pip install --force-reinstall pip-tools==5.5.0
+pip install --force-reinstall -v "setuptools_scm==5.0.2"
+pip install pre-commit
+pip-compile setup.py
+pip-compile dev-requirements.in
+```
+If you are having trouble with your pre-commit, you may want to check your `.git/hooks/pre-commit` file. The python 3.5 throws an error when using the `ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=pre-commit --skip-on-missing-config)`. You can remove the ARGS and rerun the `git commit`
+
 
 # Installation
 
