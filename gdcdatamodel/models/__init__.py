@@ -15,7 +15,7 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 
 """
 
-from cdisutils.log import get_logger
+from cdislogging import get_logger
 from collections import defaultdict
 from dictionaryutils import dictionary
 from .misc import FileReport  # noqa

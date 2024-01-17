@@ -26,7 +26,6 @@ setup(
         "graphviz~=0.4",
         "jsonschema~=3.2",
         "psqlgraph~=3.0",
-        "cdisutils",
         "sqlalchemy~=1.3",
         "strict-rfc3339==0.7",
     ],

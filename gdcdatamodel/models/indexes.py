@@ -11,7 +11,7 @@ query patterns (e.g. secondary_keys).
 
 """
 
-from cdisutils.log import get_logger
+from cdislogging import get_logger
 from sqlalchemy import Index, func, text
 from sqlalchemy.types import DateTime
 import hashlib

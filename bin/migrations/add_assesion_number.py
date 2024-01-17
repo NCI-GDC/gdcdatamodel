@@ -1,4 +1,4 @@
-from cdisutils import mappings
+import mappings
 import argparse
 from psqlgraph import PsqlGraphDriver
 from gdcdatamodel.models import *
