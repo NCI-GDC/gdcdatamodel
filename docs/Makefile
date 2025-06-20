@@ -4,9 +4,9 @@ html='html/gdc_docs.html'
 all: pdf
 
 pdf:
-	python bin/schemata_to_graphviz.py
+    python bin/schemata_to_graphviz.py
 
 .PHONY: pdf
 
 clean:
-	rm $(pdf) $(html)
+    rm $(pdf) $(html)

@@ -1,7 +1,47 @@
 ---
 repos:
--   repo: git@github.com:Yelp/detect-secrets
-    rev: v1.4.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
     hooks:
-    -   id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: fix-encoding-pragma
+        args: [--remove]
+      - id: no-commit-to-branch
+        args: [--branch, develop, --branch, master, --pattern, release/.*]
+      - id: pretty-format-json
+        args: [--autofix]
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: forbid-crlf
+      - id: forbid-tabs
+        exclude: .(py|yaml|yml|tsv)$
+      - id: remove-crlf
+      - id: remove-tabs
+        exclude: .(py|yaml|yml|tsv)$
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #  rev: v0.11.8
+  #  hooks:
+  #    - id: ruff
+  #      args: [--fix]
+  #    - id: ruff-format
+  - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+    rev: 0.2.3
+    hooks:
+      - id: yamlfmt
+        args: [--mapping, '2', --sequence, '4', --offset, '2', --width, '80']
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.24.2
+    hooks:
+      - id: toml-sort
+        args: [--in-place]
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
