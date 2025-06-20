@@ -12,6 +12,7 @@ propogate to all code that imports this package and MAY BREAK THINGS.
 - jsm
 
 """
+
 import hashlib
 import logging
 import os
@@ -194,7 +195,6 @@ def cls_inject_versioned_nodes_lookup(cls):
         :returns: A SQLAlchemy query for node versions.
 
         """
-
         session = self.get_session()
         if not session:
             raise RuntimeError(
@@ -204,7 +204,6 @@ def cls_inject_versioned_nodes_lookup(cls):
 
     def get_versions(self, session):
         """Returns a query for node versions given a session."""
-
         return (
             session.query(VersionedNode)
             .filter(VersionedNode.node_id == self.node_id)
@@ -269,7 +268,6 @@ def cls_inject_secondary_keys(cls, schema):
            objects
 
     """
-
     unique_keys = schema.get("uniqueKeys", [])
     cls.__pg_secondary_keys = [keys for keys in unique_keys if "id" not in keys]
 
@@ -316,7 +314,6 @@ def cls_inject_secondary_keys(cls, schema):
 
 def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
     """Returns a node class given a schema."""
-
     name = get_class_name_from_id(_id)
     links = get_links(schema)
 
@@ -354,7 +351,6 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
         Returns:
             bool: True if node can be tagged
         """
-
         return self.tag_builder_config.is_taggable(self)
 
     def get_tag_property_values(self):
@@ -377,7 +373,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
     @property
     def is_latest(self):
-        """latest version of the node based on tagging
+        """Latest version of the node based on tagging
 
         Returns:
             bool: True if its the latest version otherwise false
@@ -386,7 +382,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
 
     @property
     def ver(self):
-        """node version number based on tagging
+        """Node version number based on tagging
 
         versions are computed during save or via an external script
         Returns:
@@ -468,7 +464,7 @@ def NodeFactory(_id, schema, node_cls=Node, package_namespace=None):
             __tablename__=get_class_tablename_from_id(_id),
             __label__=_id,
             id=node_id,
-            **attributes
+            **attributes,
         ),
     )
 
@@ -498,7 +494,6 @@ def generate_edge_tablename(src_label, label, dst_label):
     is rather an undesirable workaround. - jsm
 
     """
-
     tablename = "edge_{}{}{}".format(
         src_label.replace("_", ""),
         label.replace("_", ""),
@@ -511,7 +506,7 @@ def generate_edge_tablename(src_label, label, dst_label):
         oldname = tablename
         logger.debug(f"Edge tablename {oldname} too long, shortening")
         tablename = "edge_{}_{}".format(
-            hashlib.md5(py3_to_bytes(tablename)).hexdigest()[:8],
+            hashlib.md5(py3_to_bytes(tablename), usedforsecurity=False).hexdigest()[:8],
             "{}{}{}".format(
                 "".join([a[:2] for a in src_label.split("_")])[:10],
                 "".join([a[:2] for a in label.split("_")])[:7],
@@ -668,7 +663,6 @@ def parse_edge(
     :returns: The outbound name of the edge
 
     """
-
     dst_label = link["target_type"]
     backref = link["backref"]
 
@@ -707,9 +701,7 @@ def load_edges(dictionary, node_cls=Node, edge_cls=Edge, package_namespace=None)
     { <link name>: {'backref': <backref name>, 'type': <source type> } }
 
     """
-
     for src_label, subschema in dictionary.schema.items():
-
         src_cls = node_cls.get_subclass(src_label)
         if not src_cls:
             raise RuntimeError(f"No source class labeled {src_label}")
@@ -770,7 +762,6 @@ def inject_pg_backrefs(dictionary, node_cls):
         { <link name>: {'name': <backref name>, 'src_type': <source type> } }
 
     """
-
     for src_label, subschema in dictionary.schema.items():
         for name, link in get_links(subschema).items():
             dst_cls = node_cls.get_subclass(link["target_type"])
@@ -795,7 +786,6 @@ def inject_pg_edges(node_cls):
         :returns: None, cls is mutated
 
         """
-
         for name, link in cls._pg_links.items():
             cls._pg_edges[name] = {
                 "backref": link["backref"],
@@ -810,7 +800,6 @@ def inject_pg_edges(node_cls):
         :returns: None, cls is mutated
 
         """
-
         for name, backref in cls._pg_backrefs.items():
             cls._pg_edges[name] = {
                 "backref": backref["name"],
@@ -833,7 +822,6 @@ def load_dictionary(dictionary=None, package_namespace=None):
         AssertionError: If method is called more than maxsize of the lru_cache, which is 10. This method should only
             be called once
     """
-
     if dictionary is None:
         from gdcdictionary import gdcdictionary
 

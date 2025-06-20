@@ -31,7 +31,6 @@ def index_name(cls, description):
     another rather an undesirable workaround. - jsm
 
     """
-
     name = f"index_{cls.__tablename__}_{description}"
 
     # If the name is too long, prepend it with the first 8 hex of it's hash
@@ -40,7 +39,9 @@ def index_name(cls, description):
         oldname = index_name
         logger.debug(f"Edge tablename {oldname} too long, shortening")
         name = "index_{}_{}_{}".format(
-            hashlib.md5(py3_to_bytes(cls.__tablename__)).hexdigest()[:8],
+            hashlib.md5(
+                py3_to_bytes(cls.__tablename__), usedforsecurity=False
+            ).hexdigest()[:8],
             "".join([a[:4] for a in cls.get_label().split("_")])[:20],
             "_".join([a[:8] for a in description.split("_")])[:25],
         )
@@ -59,7 +60,6 @@ def get_secondary_key_indexes(cls):
     - lower(cls._props[key].astext)
 
     """
-
     #: use text_pattern_ops, allows LIKE statements not starting with %
     index_op = "text_pattern_ops"
     secondary_keys = {key for pair in cls.__pg_secondary_keys for key in pair}
@@ -87,6 +87,5 @@ def get_secondary_key_indexes(cls):
 
 def cls_add_indexes(cls, indexes):
     """Add indexes to given class"""
-
     for i in indexes:
         cls.__table__.append_constraint(i)
