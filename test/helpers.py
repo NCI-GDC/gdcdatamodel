@@ -1,4 +1,5 @@
 import os
+
 import psqlgraph
 from psqlgraph import create_all, ext
 
@@ -6,9 +7,7 @@ from gdcdatamodel import models
 
 
 def truncate(engine, namespace=None):
-    """
-    Remove data from existing tables
-    """
+    """Remove data from existing tables"""
     abstract_node = psqlgraph.Node
     abstract_edge = psqlgraph.Edge
     if namespace:
@@ -29,10 +28,7 @@ def truncate(engine, namespace=None):
 
 
 def create_tables(engine, namespace=None):
-    """
-    create a table
-    """
-
+    """Create a table"""
     base = psqlgraph.base.ORMBase
     if namespace:
         base = ext.get_orm_base(namespace)
@@ -52,7 +48,6 @@ def create_ng_tables(engine):
 
 
 def truncate_ng_tables(conn):
-
     # Extend this list as needed
     ng_models_metadata = [
         models.versioned_nodes.Base.metadata,
@@ -68,8 +63,8 @@ def truncate_ng_tables(conn):
 
 
 DB_CONFIG = {
-        "host": os.getenv("PG_HOST", "localhost"),
-        "user": os.getenv("PG_HOST", "test"),
-        "password": os.getenv("PG_PASS", "test"),
-        "database": os.getenv("PG_NAME","automated_test"),
+    "host": os.getenv("PG_HOST", "localhost"),
+    "user": os.getenv("PG_USER", "test"),
+    "password": os.getenv("PG_PASS", "test"),
+    "database": os.getenv("PG_NAME", "automated_test"),
 }
