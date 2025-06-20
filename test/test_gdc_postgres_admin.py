@@ -116,7 +116,7 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
             g = PsqlGraphDriver(self.host, "pytest", "pyt3st", self.database)
 
-            #: If this failes, this test (not the code) is wrong!
+            #: If this fails, this test (not the code) is wrong!
             with self.assertRaises(ProgrammingError):
                 with g.session_scope():
                     g.nodes().count()
