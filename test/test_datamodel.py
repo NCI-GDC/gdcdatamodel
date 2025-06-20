@@ -1,6 +1,6 @@
 import logging
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from psqlgraph import Edge, Node, PsqlGraphDriver
 from psqlgraph.exc import ValidationError
@@ -22,11 +22,10 @@ def db_now(sql_eng: engine.Engine) -> datetime:
         the database time in millis since the unix epoch.
 
     """
+    # # for sqlalchemy 1.4/2.0
     # with sql_eng.connect() as conn:
-    #     # for sqlalchemy 1.4/2.0
     #     result: engine.Result = conn.execute(sqlalchemy.text("SELECT CURRENT_TIMESTAMP"))
     #     return result.scalar()
-
     conn = sql_eng.connect()
     result = conn.execute(sqlalchemy.text("SELECT CURRENT_TIMESTAMP"))
     assert isinstance(result, engine.result.ResultProxy)
