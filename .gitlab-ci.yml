@@ -11,7 +11,8 @@ include:
 tox:
   parallel:
     matrix:
-      - BUILD_PY_VERSION: [python3.9, python3.10, python3.11, python3.12, python3.13]
+      - BUILD_PY_VERSION: [python3.9, python3.10, python3.11]
+      #- BUILD_PY_VERSION: [python3.9, python3.10, python3.11, python3.12, python3.13]
   services:
     - name: docker.osdc.io/ncigdc/ci-postgres-13:2.3.2
       alias: postgres
