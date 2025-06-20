@@ -1,8 +1,4 @@
-"""
-gdcdatamodel.gdc_postgres_admin
-----------------------------------
-
-Module for stateful management of a GDC PostgreSQL installation.
+"""Module for creating the gdcdatamodel schema in production and for non-gdc users to create the schema.
 """
 
 import argparse
