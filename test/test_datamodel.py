@@ -1,14 +1,40 @@
 import logging
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from psqlgraph import Edge, Node, PsqlGraphDriver
 from psqlgraph.exc import ValidationError
 
 from gdcdatamodel import models as md
 from test import helpers
-
+from sqlalchemy import engine
 logging.basicConfig(level=logging.INFO)
+import sqlalchemy
+
+
+def db_now(sql_eng: engine.Engine) -> datetime:
+    """Returns the current timestamp from the DB.
+
+    Args:
+        sql_eng: A SqlAlchemy engine use to execute a direct DB query.
+
+    Returns:
+        the database time in millis since the unix epoch.
+
+    """
+    # with sql_eng.connect() as conn:
+    #     # for sqlalchemy 1.4/2.0
+    #     result: engine.Result = conn.execute(sqlalchemy.text("SELECT CURRENT_TIMESTAMP"))
+    #     return result.scalar()
+
+    conn = sql_eng.connect()
+    result = conn.execute(sqlalchemy.text("SELECT CURRENT_TIMESTAMP"))
+    assert isinstance(result, engine.result.ResultProxy)
+    row: engine.result.RowProxy = result.fetchone()
+    assert isinstance(row, engine.result.RowProxy)
+    result = row[0]
+    conn.close()
+    return result
 
 
 class TestDataModel(unittest.TestCase):
@@ -85,20 +111,24 @@ class TestDataModel(unittest.TestCase):
 
     def test_created_datetime_hook(self):
         """Test setting created/updated datetime when a node is created."""
-        time_before = datetime.now().isoformat()
+
+        # When running tests, the clocks on the postgres server versus
+        # the local clock for the pytest can be out of sync so you need
+        # to get it from the database
+        earlier = db_now(self.g.engine).isoformat()
 
         with self.g.session_scope() as s:
             s.add(md.Case("case1"))
 
-        time_after = datetime.now().isoformat()
+        later = db_now(self.g.engine).isoformat()
 
         with self.g.session_scope():
             case = self.g.nodes(md.Case).one()
 
             # Compare against the time both before and after the write to
             # ensure the comparison is fair.
-            assert time_before < case.created_datetime < time_after
-            assert time_before < case.updated_datetime < time_after
+            assert earlier < case.created_datetime < later
+            assert earlier < case.updated_datetime < later
 
     def test_updated_datetime_hook(self):
         """Test setting updated datetime when a node is updated."""

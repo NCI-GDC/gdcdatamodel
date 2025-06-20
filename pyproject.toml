@@ -13,7 +13,7 @@ write_to = "gdcdatamodel/_version.py"
 [tool.black]
 line-length = 88
 target-version = [
-    'py37',
+    'py39',
 ]
 include = '\.pyi?$'
 

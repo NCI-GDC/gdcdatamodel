@@ -20,8 +20,11 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     license="Apache",
     packages=find_packages(),
@@ -33,7 +36,7 @@ setup(
         "decorator",
         "gdcdictionary",
         "gdc-ng-models",
-        "psqlgraph",
+        "psqlgraph==6.0.4",
     ],
     extras_require={
         "dev": [
@@ -45,8 +48,8 @@ setup(
             "jupyter",
             "jupyter-client",
             "jupyter-console",
-            "jupyter-core"
-        ]
+            "jupyter-core",
+        ],
     },
     package_data={
         "gdcdatamodel": [
