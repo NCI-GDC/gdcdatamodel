@@ -17,14 +17,15 @@ tox:
       alias: postgres
   variables:
     BASE_CONTAINER_VERSION: 3.1.0
-    # these are for postgres docker
+    # Use the defaults for POSTGRES_USER and POSTGRES_PASSWORD
+    #   This allows the admin user `postgres` with no password.
     POSTGRES_DB: automated_test
-    #POSTGRES_USER: postgres
-    #POSTGRES_PASSWORD: ""
-    #POSTGRES_USER: test
-    #POSTGRES_PASSWORD: test
     POSTGRES_HOST_AUTH_METHOD: trust
     PG_HOST: postgres
+    PG_INIT_SQL: |
+      create user test with superuser password 'test';
+      create database automated_test with owner test;
+      create database dev_models with owner test;
 
 # tox:
 #   parallel:
