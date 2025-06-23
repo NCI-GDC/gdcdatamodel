@@ -50,10 +50,7 @@ def _create_db_and_role(conn, database: str, user: str, password: str):
     assert isinstance(result, engine.result.ResultProxy)
 
     row: engine.result.RowProxy = result.fetchone()
-    assert isinstance(row, engine.result.RowProxy)
-
-    # When the database does not exist, create it.
-    if not row[0]:
+    if row is None:
         create_stmt = f'CREATE DATABASE "{database}"'
         conn.execute(create_stmt)
 
