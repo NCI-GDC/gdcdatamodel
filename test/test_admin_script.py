@@ -5,20 +5,32 @@ from sqlalchemy.exc import ProgrammingError
 
 from gdcdatamodel import gdc_postgres_admin as pgadmin
 from gdcdatamodel import models
-
 from test import helpers
 
 
-def get_base_args(host=helpers.DB_CONFIG.get('host'), database=helpers.DB_CONFIG.get('database'), namespace=None):
-    return ["-H", host, "-U", helpers.DB_CONFIG.get('user'), "-D", database, "-N", namespace or ""]
+def get_base_args(
+    host=helpers.DB_CONFIG.get("host"),
+    database=helpers.DB_CONFIG.get("database"),
+    namespace=None,
+):
+    return [
+        "-H",
+        host,
+        "-U",
+        helpers.DB_CONFIG.get("user"),
+        "-D",
+        database,
+        "-N",
+        namespace or "",
+    ]
 
 
 def get_admin_driver(db_config, namespace=None):
-
     # assumes no password postgres user
     g = psqlgraph.PsqlGraphDriver(
         package_namespace=namespace,
-        host=db_config["host"],
+        # host=db_config["host"],
+        host="localhost",
         user="postgres",
         password=None,
         database=db_config["database"],
@@ -71,16 +83,13 @@ def valid_read_access_fn(g):
 
 @pytest.fixture()
 def add_test_database_user(db_config):
-
     dummy_user = "pytest_dummy"
     dummy_pwd = "pytest_du33y"
 
     g = get_admin_driver(db_config)
 
     try:
-        g.engine.execute(
-            f"CREATE USER {dummy_user} WITH PASSWORD '{dummy_pwd}'"
-        )
+        g.engine.execute(f"CREATE USER {dummy_user} WITH PASSWORD '{dummy_pwd}'")
         g.engine.execute(f"GRANT USAGE ON SCHEMA public TO {dummy_user}")
         yield dummy_user, dummy_pwd
     finally:
@@ -94,7 +103,6 @@ def test_create_tables(db_config, namespace):
         db_config (dict[str,str]): db connection config
         namespace (str): module namespace, None for default
     """
-
     # simulate loading a different dictionary
     if namespace:
         models.load_dictionary(dictionary=None, package_namespace=namespace)
@@ -146,7 +154,6 @@ def test_grant_permissions(
     invalid_permission_fn,
     valid_permission_fn,
 ):
-
     # simulate loading a different dictionary
     if namespace:
         models.load_dictionary(dictionary=None, package_namespace=namespace)
@@ -186,7 +193,6 @@ def test_revoke_permissions(
     invalid_permission_fn,
     valid_permission_fn,
 ):
-
     # simulate loading a different dictionary
     if namespace:
         models.load_dictionary(dictionary=None, package_namespace=namespace)
