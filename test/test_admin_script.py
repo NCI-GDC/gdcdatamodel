@@ -29,8 +29,7 @@ def get_admin_driver(db_config, namespace=None):
     # assumes no password postgres user
     g = psqlgraph.PsqlGraphDriver(
         package_namespace=namespace,
-        # host=db_config["host"],
-        host="localhost",
+        host=db_config["host"],
         user="postgres",
         password=None,
         database=db_config["database"],
