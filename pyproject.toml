@@ -14,9 +14,9 @@ target-version = [
 include = '\.pyi?$'
 
 [tool.coverage.html]
-title = "gdcdatamodel coverage report"
-directory = "htmlcov"
+directory = "docs/htmlcov"
 show_contexts = true
+title = "gdcdatamodel coverage report"
 
 [tool.coverage.run]
 branch = true
