@@ -51,6 +51,7 @@ def _create_db_and_role(conn, database: str, user: str, password: str):
 
     row: engine.result.RowProxy = result.fetchone()
     if row is None:
+        conn.execute("commit")  # exit any transaction you may be in.
         create_stmt = f'CREATE DATABASE "{database}"'
         conn.execute(create_stmt)
 
