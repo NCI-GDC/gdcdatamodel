@@ -33,7 +33,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         database,
     ]
 
-    # TODO: it looks like the graph and root_con_str were to be done by the owner of the database.
     g = PsqlGraphDriver(host, user, password, database)
 
     root_con_str = "postgres://{user}:{pwd}@{host}/{db}".format(
