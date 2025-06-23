@@ -8,8 +8,8 @@ import logging
 import random
 import unittest
 import uuid
+from importlib import resources
 
-import pkg_resources
 import pytest
 import sqlalchemy
 import yaml
@@ -167,7 +167,9 @@ class BaseTestCase(unittest.TestCase):
 
 @pytest.fixture(scope="module")
 def sample_data():
-    with pkg_resources.resource_stream(__name__, "schema/data/sample.yaml") as f:
+    # with pkg_resources.resource_stream(__name__, "schema/data/sample.yaml") as f:
+    #    graph = yaml.safe_load(f)
+    with resources.files(__name__).joinpath("schema/data/sample.yaml").open("rb") as f:
         graph = yaml.safe_load(f)
 
     f = mocks.GraphFactory(basic, test_models.BasicDictionary)
