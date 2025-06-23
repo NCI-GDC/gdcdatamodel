@@ -24,8 +24,9 @@ tox:
     PG_HOST: postgres
     PG_INIT_SQL: |
       create user test with superuser password 'test';
-      create database automated_test with owner test;
       create database dev_models with owner test;
+
+    # create database automated_test with owner test;
 
 # tox:
 #   parallel:
