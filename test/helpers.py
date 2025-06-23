@@ -68,3 +68,10 @@ DB_CONFIG = {
     "password": os.getenv("PG_PASS", "test"),
     "database": os.getenv("PG_NAME", "automated_test"),
 }
+
+DB_CONFIG_ADMIN = {
+    "host": os.getenv("PG_HOST", "localhost"),
+    "user": "postgres",
+    "password": None,
+    "database": os.getenv("PG_NAME", "automated_test"),
+}

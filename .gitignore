@@ -43,6 +43,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 test-reports/
+report.xml
 
 # Jenkins
 .local/

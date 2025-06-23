@@ -1,6 +1,4 @@
-"""
-Tests for gdcdatamodel.gdc_postgres_admin module
-"""
+"""Tests for gdcdatamodel.gdc_postgres_admin module"""
 
 import logging
 import unittest
@@ -10,20 +8,21 @@ from sqlalchemy.exc import ProgrammingError
 
 from gdcdatamodel import gdc_postgres_admin as pgadmin
 from gdcdatamodel import models
-
 from test import helpers
 
 logging.basicConfig()
 
 
 class TestGDCPostgresAdmin(unittest.TestCase):
-
     logger = logging.getLogger("TestGDCPostgresAdmin")
     logger.setLevel(logging.INFO)
 
-    host = helpers.DB_CONFIG.get('host')
-    user = helpers.DB_CONFIG.get('user')
-    database = helpers.DB_CONFIG.get('database')
+    host = helpers.DB_CONFIG_ADMIN.get("host")
+    user = helpers.DB_CONFIG_ADMIN.get("user")
+    password = helpers.DB_CONFIG_ADMIN.get("password")
+
+    # using the test database with the postgres admin user
+    database = helpers.DB_CONFIG.get("database")
 
     base_args = [
         "-H",
@@ -34,9 +33,11 @@ class TestGDCPostgresAdmin(unittest.TestCase):
         database,
     ]
 
-    g = PsqlGraphDriver(host, user, "", database)
+    # TODO: it looks like the graph and root_con_str were to be done by the owner of the database.
+    g = PsqlGraphDriver(host, user, password, database)
+
     root_con_str = "postgres://{user}:{pwd}@{host}/{db}".format(
-        user=user, host=host, pwd="", db=database
+        user=user, host=host, pwd=password, db=database
     )
     engine = pgadmin.create_engine(root_con_str)
 
@@ -85,7 +86,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_create_single(self):
         """Test simple table creation"""
-
         pgadmin.main(
             pgadmin.get_parser().parse_args(
                 ["graph-create", "--delay", "1", "--retries", "0"] + self.base_args
@@ -96,7 +96,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_create_double(self):
         """Test idempotency of table creation"""
-
         pgadmin.main(
             pgadmin.get_parser().parse_args(
                 ["graph-create", "--delay", "1", "--retries", "0"] + self.base_args
@@ -107,7 +106,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_priv_grant_read(self):
         """Test ability to grant read but not write privs"""
-
         self.create_all_tables()
 
         try:
@@ -143,7 +141,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_priv_grant_write(self):
         """Test ability to grant read/write privs"""
-
         self.create_all_tables()
 
         try:
@@ -170,7 +167,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_priv_revoke_read(self):
         """Test ability to revoke read privs"""
-
         self.create_all_tables()
 
         try:
@@ -209,7 +205,6 @@ class TestGDCPostgresAdmin(unittest.TestCase):
 
     def test_priv_revoke_write(self):
         """Test ability to revoke read/write privs"""
-
         self.create_all_tables()
 
         try:
