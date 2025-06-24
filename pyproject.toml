@@ -25,7 +25,7 @@ source = ["gdcdatamodel"]
 
 [tool.isort]
 profile = "black"
-known_third_party = ["addict", "authutils", "cdiserrors", "cdislogging", "ciso8601", "deepdiff", "defusedcsv", "dotenv", "envelopes", "flask", "flask_cors", "gdc_ng_models", "gdcdictionary", "httmock", "indexclient", "indexd", "indexd_test_utils", "jsonschema", "mock", "pkg_resources", "psqlgraph", "pytest", "requests", "setuptools", "simplejson", "six", "sqlalchemy", "yaml"]
+known_third_party = ["addict", "authutils", "cdiserrors", "cdislogging", "ciso8601", "deepdiff", "defusedcsv", "dotenv", "envelopes", "flask", "flask_cors", "gdc_ng_models", "gdcdictionary", "httmock", "importlib", "indexclient", "indexd", "indexd_test_utils", "jsonschema", "mock", "psqlgraph", "pytest", "requests", "setuptools", "simplejson", "six", "sqlalchemy", "yaml"]
 known_first_party = ["gdcdatamodel", "setup_batch", "setup_notifications", "setup_psqlgraph", "setup_redactionslog", "setup_report", "setup_study_data", "setup_transactionlogs"]
 
 [tool.setuptools_scm]

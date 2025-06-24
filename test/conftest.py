@@ -165,8 +165,6 @@ class BaseTestCase(unittest.TestCase):
 
 @pytest.fixture(scope="module")
 def sample_data():
-    # with pkg_resources.resource_stream(__name__, "schema/data/sample.yaml") as f:
-    #    graph = yaml.safe_load(f)
     with resources.files("test").joinpath("schema/data/sample.yaml").open("rb") as f:
         graph = yaml.safe_load(f)
 

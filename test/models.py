@@ -1,9 +1,10 @@
-import pkg_resources
+from importlib import resources
+
 import yaml
 
 
 def _load(name):
-    with pkg_resources.resource_stream(__name__, name) as f:
+    with resources.files("test").joinpath(name).open("rb") as f:
         return yaml.safe_load(f)
 
 
