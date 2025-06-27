@@ -1,5 +1,6 @@
-[![Build Status](https://travis-ci.com/NCI-GDC/gdcdatamodel.svg?branch=develop)](https://travis-ci.org/NCI-GDC/gdcdatamodel)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commitlogoColor=white)](https://github.com/pre-commit/pre-commit)
+# THIS PROJECT HAS BEEN ARCHIVED!
+
+The repository has been replaced in full by [gdcdatamodel2](https://github.com/NCI-GDC/gdcdatamodel2) and will no longer be maintained.
 
 ---
 GDC Data Model
